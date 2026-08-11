@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "2.0.0",
+  "policySetId": "8978-development-bootstrap",
+  "policySetVersion": "2.0.0",
+  "ownerApprovalThresholds": { "costUsd": 25, "recordCount": 100 },
+  "policies": [
+    {
+      "id": "dev-github-control-plane", "version": "2.0.0", "status": "active", "enabled": true,
+      "approvedBy": "owner", "approvalReference": "owner-user-instruction-2026-08-11", "validFrom": "2026-08-11T00:00:00Z", "validUntil": null,
+      "resources": [{ "kind": "github_repository", "provider": "github", "repository": "jhutchison2222/8978-ai-platform-control-plane", "environment": "development", "isolation": { "mode": "internal_8978" } }],
+      "operations": ["read","write_code","run_tests","commit","update_pull_request"], "maxRisk": "medium",
+      "limits": { "costUsd": 0, "recordCount": 100 }, "requiredTests": ["unit","artifact-validation","secret-scan"],
+      "reviewer": { "required": true, "independent": true }, "rollbackRequired": true
+    },
+    {
+      "id": "dev-cloudflare-workers-unresolved-account", "version": "2.0.0", "status": "active", "enabled": false,
+      "approvedBy": "owner", "approvalReference": "owner-user-instruction-2026-08-11", "validFrom": "2026-08-11T00:00:00Z", "validUntil": null,
+      "resources": [
+        { "kind": "cloudflare_worker", "provider": "cloudflare", "accountId": "__UNRESOLVED_CLOUDFLARE_ACCOUNT_ID__", "workerName": "8978-ai-orchestrator-dev", "environment": "development", "isolation": { "mode": "internal_8978" } },
+        { "kind": "cloudflare_worker", "provider": "cloudflare", "accountId": "__UNRESOLVED_CLOUDFLARE_ACCOUNT_ID__", "workerName": "project-knowledge-worker-dev", "environment": "development", "isolation": { "mode": "internal_8978" } }
+      ],
+      "operations": ["read","validate","deploy_development","rollback_development"], "maxRisk": "medium", "limits": { "costUsd": 5, "recordCount": 10 },
+      "requiredTests": ["unit","integration","smoke","rollback"], "reviewer": { "required": true, "independent": true }, "rollbackRequired": true
+    },
+    {
+      "id": "dev-cloudflare-data-unresolved-account-runtime", "version": "2.0.0", "status": "active", "enabled": false,
+      "approvedBy": "owner", "approvalReference": "owner-user-instruction-2026-08-11", "validFrom": "2026-08-11T00:00:00Z", "validUntil": null,
+      "resources": [
+        { "kind": "cloudflare_d1", "provider": "cloudflare", "accountId": "__UNRESOLVED_CLOUDFLARE_ACCOUNT_ID__", "databaseId": "9cd8094c-f334-44e6-bdd1-b325802474d5", "databaseName": "pk-d1-dev", "environment": "development", "isolation": { "mode": "internal_8978" } },
+        { "kind": "cloudflare_r2", "provider": "cloudflare", "accountId": "__UNRESOLVED_CLOUDFLARE_ACCOUNT_ID__", "bucketName": "pk-r2-dev", "environment": "development", "isolation": { "mode": "internal_8978" } },
+        { "kind": "cloudflare_queue", "provider": "cloudflare", "accountId": "__UNRESOLVED_CLOUDFLARE_ACCOUNT_ID__", "queueId": "__UNRESOLVED_QUEUE_ID__", "queueName": "__UNRESOLVED_QUEUE_NAME__", "environment": "development", "isolation": { "mode": "internal_8978" } },
+        { "kind": "cloudflare_workflow", "provider": "cloudflare", "accountId": "__UNRESOLVED_CLOUDFLARE_ACCOUNT_ID__", "workflowId": "__UNRESOLVED_WORKFLOW_ID__", "workflowName": "__UNRESOLVED_WORKFLOW_NAME__", "environment": "development", "isolation": { "mode": "internal_8978" } }
+      ],
+      "operations": ["read","validate","write_test_data","migrate_development","rollback_development"], "maxRisk": "medium", "limits": { "costUsd": 5, "recordCount": 100 },
+      "requiredTests": ["unit","integration","migration-dry-run","rollback"], "reviewer": { "required": true, "independent": true }, "rollbackRequired": true
+    },
+    {
+      "id": "dev-ghl-sandbox-unresolved-account", "version": "2.0.0", "status": "active", "enabled": false,
+      "approvedBy": "owner", "approvalReference": "owner-user-instruction-2026-08-11", "validFrom": "2026-08-11T00:00:00Z", "validUntil": null,
+      "resources": [{ "kind": "ghl_location", "provider": "ghl", "accountId": "__UNRESOLVED_GHL_ACCOUNT_ID__", "locationId": "GtErr1MjPdjYDGU8gUd6", "locationName": "openai api integration test", "environment": "development", "isolation": { "mode": "internal_8978" } }],
+      "operations": ["read","write_test_data","validate_mapping","rollback_test_data"], "maxRisk": "medium", "limits": { "costUsd": 0, "recordCount": 25 },
+      "requiredTests": ["unit","integration","sandbox-smoke"], "reviewer": { "required": true, "independent": true }, "rollbackRequired": true
+    },
+    {
+      "id": "dev-autocalls-test-unresolved-identifiers", "version": "2.0.0", "status": "active", "enabled": false,
+      "approvedBy": "owner", "approvalReference": "owner-user-instruction-2026-08-11", "validFrom": "2026-08-11T00:00:00Z", "validUntil": null,
+      "resources": [{ "kind": "autocalls_environment", "provider": "ai-employees.net", "accountId": "__UNRESOLVED_AUTOCALLS_ACCOUNT_ID__", "environmentId": "__UNRESOLVED_AUTOCALLS_TEST_ENVIRONMENT_ID__", "environment": "test", "isolation": { "mode": "internal_8978" } }],
+      "operations": ["read","configure_test_assistant","run_test_conversation","rollback_test_configuration"], "maxRisk": "medium", "limits": { "costUsd": 5, "recordCount": 25 },
+      "requiredTests": ["unit","integration","test-environment-smoke"], "reviewer": { "required": true, "independent": true }, "rollbackRequired": true
+    }
+  ]
+}

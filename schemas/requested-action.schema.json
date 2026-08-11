@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/requested-action.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actionId", "operation", "requestedTarget", "correlationId", "idempotencyKey", "rollbackRef", "evidence", "productionSensitive", "destructiveProductionOrCustomerData", "credentialScopeExpansion", "newProductionExternalWriteIntegration", "finalOwnerDecisionChange", "legalPrivacyComplianceContractualDecision"],
+  "properties": {
+    "actionId": { "type": "string", "minLength": 1 },
+    "operation": { "type": "string", "minLength": 1 },
+    "requestedTarget": { "type": "object", "additionalProperties": false, "required": ["locator"], "properties": { "locator": { "type": "string", "minLength": 1 } } },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "idempotencyKey": { "type": "string", "minLength": 1 },
+    "rollbackRef": { "type": "string", "minLength": 1 },
+    "evidence": { "type": "object", "additionalProperties": false, "required": ["makerAttestation", "checkerAttestation"], "properties": { "makerAttestation": { "type": "string", "minLength": 1 }, "checkerAttestation": { "type": "string", "minLength": 1 } } },
+    "productionSensitive": { "type": "boolean" },
+    "destructiveProductionOrCustomerData": { "type": "boolean" },
+    "credentialScopeExpansion": { "type": "boolean" },
+    "newProductionExternalWriteIntegration": { "type": "boolean" },
+    "finalOwnerDecisionChange": { "type": "boolean" },
+    "legalPrivacyComplianceContractualDecision": { "type": "boolean" },
+    "payload": {}
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/execution-record.schema.json",
+  "title": "Append-only Execution Evidence Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","eventType","actionDigest","correlationId","idempotencyScope","leaseId","recordedAt"],
+  "properties": {
+    "schemaVersion":{"const":"2.0.0"},"eventType":{"enum":["execution_intent","execution_succeeded","execution_failed"]},
+    "actionDigest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"correlationId":{"type":"string","minLength":1},
+    "idempotencyScope":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"leaseId":{"type":"string","minLength":1},
+    "authorization":{"enum":["authorized_by_standing_policy","authorized_by_owner_exception"]},"policy":{"type":["object","null"]},
+    "ownerDecisionId":{"type":["string","null"]},"resolvedTarget":{"type":"object"},"evidence":{"type":"object"},
+    "resultDigest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"error":{"type":"string"},"rollback":{},
+    "recordedAt":{"type":"string","format":"date-time"}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://8978.ai/schemas/customer-isolation.schema.json",
+  "oneOf":[
+    {"type":"object","additionalProperties":false,"required":["mode"],"properties":{"mode":{"const":"internal_8978"}}},
+    {"type":"object","additionalProperties":false,"required":["mode","customerId"],"properties":{"mode":{"const":"dedicated_customer"},"customerId":{"type":"string","minLength":1}}}
+  ]
+}
