@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/owner-approval-decision.schema.json",
+  "title": "Digest-bound Owner Exception Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisionId", "requestedActionDigest", "decision", "decidedBy", "decidedAt", "expiresAt", "signatureAlgorithm", "signature"],
+  "properties": {
+    "decisionId": { "type": "string", "minLength": 1 },
+    "requestedActionDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "decision": { "enum": ["approved", "denied"] },
+    "decidedBy": { "type": "string", "minLength": 1 },
+    "decidedAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "signatureAlgorithm": { "type": "string", "minLength": 1 },
+    "signature": { "type": "string", "minLength": 1 }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "8978-ai-platform-control-plane",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node scripts/validate-artifacts.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

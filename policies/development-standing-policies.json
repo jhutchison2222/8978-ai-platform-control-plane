@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0.0",
+  "policySetId": "8978-development-bootstrap",
+  "policySetVersion": "1.0.0",
+  "ownerApprovalThresholds": {
+    "costUsd": 25,
+    "recordCount": 100
+  },
+  "policies": [
+    {
+      "id": "dev-github-control-plane",
+      "version": "1.0.0",
+      "status": "active",
+      "enabled": true,
+      "approvedBy": "owner",
+      "approvalReference": "owner-user-instruction-2026-08-11",
+      "validFrom": "2026-08-11T00:00:00Z",
+      "validUntil": null,
+      "environments": ["development"],
+      "resources": [{ "kind": "github_repository", "id": "jhutchison2222/8978-ai-platform-control-plane" }],
+      "operations": ["read", "create_branch", "write_code", "run_tests", "commit", "update_pull_request"],
+      "maxRisk": "medium",
+      "limits": { "costUsd": 0, "recordCount": 100 },
+      "requiredTests": ["unit", "artifact-validation"],
+      "reviewer": { "required": true, "independent": true },
+      "rollbackRequired": true
+    },
+    {
+      "id": "dev-cloudflare-workers",
+      "version": "1.0.0",
+      "status": "active",
+      "enabled": true,
+      "approvedBy": "owner",
+      "approvalReference": "owner-user-instruction-2026-08-11",
+      "validFrom": "2026-08-11T00:00:00Z",
+      "validUntil": null,
+      "environments": ["development"],
+      "resources": [
+        { "kind": "cloudflare_worker", "id": "8978-ai-orchestrator-dev" },
+        { "kind": "cloudflare_worker", "id": "project-knowledge-worker-dev" }
+      ],
+      "operations": ["read", "validate", "deploy_development", "rollback_development"],
+      "maxRisk": "medium",
+      "limits": { "costUsd": 5, "recordCount": 10 },
+      "requiredTests": ["unit", "integration", "smoke"],
+      "reviewer": { "required": true, "independent": true },
+      "rollbackRequired": true
+    },
+    {
+      "id": "dev-cloudflare-data-services-placeholder",
+      "version": "1.0.0",
+      "status": "active",
+      "enabled": false,
+      "approvedBy": "owner",
+      "approvalReference": "owner-user-instruction-2026-08-11",
+      "validFrom": "2026-08-11T00:00:00Z",
+      "validUntil": null,
+      "environments": ["development"],
+      "resources": [
+        { "kind": "cloudflare_d1", "id": "__OWNER_APPROVED_DEVELOPMENT_D1_ID__" },
+        { "kind": "cloudflare_r2", "id": "__OWNER_APPROVED_DEVELOPMENT_R2_ID__" },
+        { "kind": "cloudflare_queue", "id": "__OWNER_APPROVED_DEVELOPMENT_QUEUE_ID__" },
+        { "kind": "cloudflare_workflow", "id": "__OWNER_APPROVED_DEVELOPMENT_WORKFLOW_ID__" }
+      ],
+      "operations": ["read", "validate", "write_test_data", "migrate_development", "rollback_development"],
+      "maxRisk": "medium",
+      "limits": { "costUsd": 5, "recordCount": 100 },
+      "requiredTests": ["unit", "integration", "migration-dry-run", "rollback"],
+      "reviewer": { "required": true, "independent": true },
+      "rollbackRequired": true
+    },
+    {
+      "id": "dev-ghl-sandbox-placeholder",
+      "version": "1.0.0",
+      "status": "active",
+      "enabled": false,
+      "approvedBy": "owner",
+      "approvalReference": "owner-user-instruction-2026-08-11",
+      "validFrom": "2026-08-11T00:00:00Z",
+      "validUntil": null,
+      "environments": ["development"],
+      "resources": [{ "kind": "ghl_location", "id": "__OWNER_APPROVED_GHL_SANDBOX_LOCATION_ID__" }],
+      "operations": ["read", "write_test_data", "validate_mapping", "rollback_test_data"],
+      "maxRisk": "medium",
+      "limits": { "costUsd": 0, "recordCount": 25 },
+      "requiredTests": ["unit", "integration", "sandbox-smoke"],
+      "reviewer": { "required": true, "independent": true },
+      "rollbackRequired": true
+    },
+    {
+      "id": "dev-ai-employees-test-placeholder",
+      "version": "1.0.0",
+      "status": "active",
+      "enabled": false,
+      "approvedBy": "owner",
+      "approvalReference": "owner-user-instruction-2026-08-11",
+      "validFrom": "2026-08-11T00:00:00Z",
+      "validUntil": null,
+      "environments": ["test"],
+      "resources": [{ "kind": "ai_employees_environment", "id": "__OWNER_APPROVED_AI_EMPLOYEES_TEST_ENVIRONMENT_ID__" }],
+      "operations": ["read", "configure_test_assistant", "run_test_conversation", "rollback_test_configuration"],
+      "maxRisk": "medium",
+      "limits": { "costUsd": 5, "recordCount": 25 },
+      "requiredTests": ["unit", "integration", "test-environment-smoke"],
+      "reviewer": { "required": true, "independent": true },
+      "rollbackRequired": true
+    }
+  ]
+}

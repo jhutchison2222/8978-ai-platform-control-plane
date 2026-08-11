@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/execution-record.schema.json",
+  "title": "Execution Evidence Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "authorization", "requestedActionDigest", "proposingAgent", "independentReviewer", "resource", "environment", "beforeState", "testEvidence", "executionResult", "afterState", "rollback", "correlationId", "idempotencyKey", "idempotencyScope"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "authorization": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mechanism", "policyId", "policyVersion", "ownerDecisionId"],
+          "properties": {
+            "mechanism": { "const": "standing_policy" },
+            "policyId": { "type": "string", "minLength": 1 },
+            "policyVersion": { "type": "string", "minLength": 1 },
+            "ownerDecisionId": { "type": "null" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mechanism", "policyId", "policyVersion", "ownerDecisionId"],
+          "properties": {
+            "mechanism": { "const": "owner_exception" },
+            "policyId": { "type": "null" },
+            "policyVersion": { "type": "null" },
+            "ownerDecisionId": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "requestedActionDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "proposingAgent": { "type": "string" },
+    "independentReviewer": { "type": ["string", "null"] },
+    "resource": { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "type": "string", "minLength": 1 }, "id": { "type": "string", "minLength": 1 } } },
+    "environment": { "enum": ["development", "test", "staging", "production"] },
+    "beforeState": {},
+    "testEvidence": { "type": "array" },
+    "executionResult": {},
+    "afterState": {},
+    "rollback": {},
+    "correlationId": { "type": "string", "minLength": 1 },
+    "idempotencyKey": { "type": "string", "minLength": 1 },
+    "idempotencyScope": { "type": "string", "minLength": 1 }
+  }
+}
