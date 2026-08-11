@@ -6,7 +6,6 @@ function typeMatches(value, type) {
   if (type === "number") return typeof value === "number" && Number.isFinite(value);
   return typeof value === type;
 }
-
 export function validateSchema(schema, value, path = "$") {
   const errors = [];
   if (schema.oneOf) {

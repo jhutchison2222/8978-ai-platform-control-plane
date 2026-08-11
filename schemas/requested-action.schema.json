@@ -1,56 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://8978.ai/schemas/requested-action.schema.json",
-  "title": "Requested Action",
   "type": "object",
   "additionalProperties": false,
-  "required": ["actionId", "operation", "resource", "environment", "risk", "costUsd", "recordCount", "productionSensitive", "destructiveProductionOrCustomerData", "credentialScopeExpansion", "newProductionExternalWriteIntegration", "finalOwnerDecisionChange", "legalPrivacyComplianceContractualDecision", "proposingAgent", "testEvidence", "correlationId", "idempotencyKey"],
+  "required": ["actionId", "operation", "requestedTarget", "correlationId", "idempotencyKey", "rollbackRef", "evidence", "productionSensitive", "destructiveProductionOrCustomerData", "credentialScopeExpansion", "newProductionExternalWriteIntegration", "finalOwnerDecisionChange", "legalPrivacyComplianceContractualDecision"],
   "properties": {
     "actionId": { "type": "string", "minLength": 1 },
     "operation": { "type": "string", "minLength": 1 },
-    "resource": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["kind", "id"],
-      "properties": { "kind": { "type": "string", "minLength": 1 }, "id": { "type": "string", "minLength": 1 } }
-    },
-    "environment": { "enum": ["development", "test", "staging", "production"] },
-    "risk": { "enum": ["low", "medium", "high", "critical"] },
-    "costUsd": { "type": "number", "minimum": 0 },
-    "recordCount": { "type": "integer", "minimum": 0 },
-    "productionSensitive": { "type": "boolean", "default": false },
-    "destructiveProductionOrCustomerData": { "type": "boolean", "default": false },
-    "credentialScopeExpansion": { "type": "boolean", "default": false },
-    "newProductionExternalWriteIntegration": { "type": "boolean", "default": false },
-    "finalOwnerDecisionChange": { "type": "boolean", "default": false },
-    "legalPrivacyComplianceContractualDecision": { "type": "boolean", "default": false },
-    "proposingAgent": { "type": "string", "minLength": 1 },
-    "review": {
-      "type": ["object", "null"],
-      "additionalProperties": false,
-      "properties": {
-        "reviewer": { "type": "string", "minLength": 1 },
-        "verdict": { "const": "approved" },
-        "requestedActionDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
-      },
-      "required": ["reviewer", "verdict", "requestedActionDigest"]
-    },
-    "testEvidence": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["testId", "result", "requestedActionDigest"],
-        "properties": {
-          "testId": { "type": "string" },
-          "result": { "const": "passed" },
-          "requestedActionDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
-        }
-      }
-    },
-    "rollbackPlan": { "type": ["object", "null"] },
+    "requestedTarget": { "type": "object", "additionalProperties": false, "required": ["locator"], "properties": { "locator": { "type": "string", "minLength": 1 } } },
     "correlationId": { "type": "string", "minLength": 1 },
     "idempotencyKey": { "type": "string", "minLength": 1 },
+    "rollbackRef": { "type": "string", "minLength": 1 },
+    "evidence": { "type": "object", "additionalProperties": false, "required": ["makerAttestation", "checkerAttestation"], "properties": { "makerAttestation": { "type": "string", "minLength": 1 }, "checkerAttestation": { "type": "string", "minLength": 1 } } },
+    "productionSensitive": { "type": "boolean" },
+    "destructiveProductionOrCustomerData": { "type": "boolean" },
+    "credentialScopeExpansion": { "type": "boolean" },
+    "newProductionExternalWriteIntegration": { "type": "boolean" },
+    "finalOwnerDecisionChange": { "type": "boolean" },
+    "legalPrivacyComplianceContractualDecision": { "type": "boolean" },
     "payload": {}
   }
 }

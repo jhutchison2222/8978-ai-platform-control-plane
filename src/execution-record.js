@@ -1,65 +1,55 @@
-export class InMemoryIdempotencyRegistry {
-  #claims = new Set();
+import { digestCanonicalValue } from "./canonical-digest.js";
 
-  claim(scope) {
-    if (this.#claims.has(scope)) return false;
-    this.#claims.add(scope);
-    return true;
-  }
+function scopeFor(action, authorization) {
+  return digestCanonicalValue({ environment: authorization.resolvedTarget.environment,
+    resource: authorization.resolvedTarget, operation: action.operation, idempotencyKey: action.idempotencyKey });
 }
 
-export async function createExecutionRecord(input) {
-  const { action, authorization, beforeState, result, afterState, rollback, idempotencyRegistry, gateway, executionNow } = input;
-  if (!gateway || typeof gateway.assertExecutable !== "function") {
-    throw new Error("A trusted policy gateway is required");
-  }
-  await gateway.assertExecutable(action, authorization, { now: executionNow ?? new Date() });
-  for (const field of ["beforeState", "result", "afterState", "rollback"]) {
-    if (!Object.hasOwn(input, field) || input[field] === undefined) {
-      throw new Error(`Execution evidence is missing ${field}`);
+async function appendVerified(auditStore, event) {
+  const receipt = await auditStore.append(event);
+  if (!receipt || !await auditStore.verifyReceipt(receipt, event)) throw new Error("Durable audit append could not be verified");
+  return receipt;
+}
+
+export async function executeAuthorizedAction({ action, authorization, gateway, runtime, execute, rollback, now = new Date(), leaseMs = 60_000 }) {
+  if (!gateway || typeof gateway.assertExecutable !== "function") throw new Error("Trusted gateway required");
+  if (runtime?.idempotencyStore?.atomic !== true || runtime?.idempotencyStore?.durability !== "durable") throw new Error("Durable atomic idempotency store required");
+  if (runtime?.auditStore?.appendOnly !== true || runtime?.auditStore?.durability !== "durable") throw new Error("Durable append-only audit store required");
+  if (typeof execute !== "function" || typeof rollback !== "function") throw new Error("Executable effect and rollback handlers required");
+  const scope = await scopeFor(action, authorization);
+  const reservation = await runtime.idempotencyStore.reserve({ scope, actionDigest: authorization.actionDigest, leaseMs, now });
+  if (!reservation?.reserved || typeof reservation.leaseId !== "string") throw new Error("Execution denied: idempotency reservation unavailable or duplicate");
+  let effectStarted = false;
+  try {
+    await gateway.assertExecutable(action, authorization, { now });
+    const intent = { schemaVersion: "2.0.0", eventType: "execution_intent", actionDigest: authorization.actionDigest,
+      correlationId: action.correlationId, idempotencyScope: scope, leaseId: reservation.leaseId,
+      authorization: authorization.outcome, policy: authorization.authorizingPolicy ?? null,
+      ownerDecisionId: authorization.ownerDecisionId ?? null, resolvedTarget: authorization.resolvedTarget,
+      evidence: authorization.evidenceSnapshot, recordedAt: now.toISOString() };
+    const intentReceipt = await appendVerified(runtime.auditStore, intent);
+    effectStarted = true;
+    const result = await execute({ action: structuredClone(action), resolvedTarget: authorization.resolvedTarget, intentReceipt });
+    const resultDigest = await digestCanonicalValue(result);
+    const terminal = { schemaVersion: "2.0.0", eventType: "execution_succeeded", actionDigest: authorization.actionDigest,
+      correlationId: action.correlationId, idempotencyScope: scope, leaseId: reservation.leaseId,
+      resultDigest, recordedAt: new Date().toISOString() };
+    const terminalReceipt = await appendVerified(runtime.auditStore, terminal);
+    const completed = await runtime.idempotencyStore.complete({ scope, leaseId: reservation.leaseId, resultDigest, terminalReceipt });
+    if (!completed?.completed) throw new Error("Execution completed but idempotency finalization failed");
+    return { result, intentReceipt, terminalReceipt, idempotencyScope: scope };
+  } catch (error) {
+    if (!effectStarted) await runtime.idempotencyStore.release({ scope, leaseId: reservation.leaseId });
+    if (effectStarted) {
+      let rollbackResult;
+      try { rollbackResult = await rollback({ action, resolvedTarget: authorization.resolvedTarget, cause: error }); }
+      catch (rollbackError) { rollbackResult = { status: "failed", error: rollbackError.message }; }
+      try {
+        await appendVerified(runtime.auditStore, { schemaVersion: "2.0.0", eventType: "execution_failed",
+          actionDigest: authorization.actionDigest, correlationId: action.correlationId, idempotencyScope: scope,
+          leaseId: reservation.leaseId, error: error.message, rollback: rollbackResult, recordedAt: new Date().toISOString() });
+      } catch { /* Preserve the original execution error; the active lease contains the uncertain state. */ }
     }
+    throw error;
   }
-  if (!action.correlationId || !action.idempotencyKey) {
-    throw new Error("Execution evidence requires correlation and idempotency identifiers");
-  }
-  if (!idempotencyRegistry) throw new Error("A durable idempotency registry is required");
-  const idempotencyScope = [
-    action.environment,
-    action.resource.kind,
-    action.resource.id,
-    action.operation,
-    action.idempotencyKey,
-  ].join(":");
-  if (!idempotencyRegistry.claim(idempotencyScope)) {
-    throw new Error("Duplicate execution blocked by idempotency key");
-  }
-  const evidence = authorization.evidenceSnapshot;
-  if (!evidence || !Array.isArray(evidence.testEvidence)) {
-    throw new Error("Gateway authorization is missing its evidence snapshot");
-  }
-  return {
-    schemaVersion: "1.0.0",
-    authorization: {
-      mechanism:
-        authorization.outcome === "authorized_by_standing_policy"
-          ? "standing_policy"
-          : "owner_exception",
-      policyId: authorization.authorizingPolicy?.policyId ?? null,
-      policyVersion: authorization.authorizingPolicy?.policyVersion ?? null,
-      ownerDecisionId: authorization.ownerDecisionId ?? null,
-    },
-    requestedActionDigest: authorization.actionDigest,
-    proposingAgent: evidence.proposingAgent,
-    independentReviewer: evidence.independentReviewer,
-    resource: evidence.resource,
-    environment: evidence.environment,
-    beforeState,
-    testEvidence: evidence.testEvidence,
-    executionResult: result,
-    afterState,
-    rollback,
-    correlationId: action.correlationId,
-    idempotencyKey: action.idempotencyKey,
-    idempotencyScope,
-  };
 }

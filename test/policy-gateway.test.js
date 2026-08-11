@@ -1,384 +1,142 @@
+import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
+import { canonicalize, digestCanonicalValue, parseJsonStrict } from "../src/canonical-digest.js";
+import { PolicyGateway, selectUniquePolicyMatch } from "../src/policy-gateway.js";
+import { assertCustomerIsolation, validateResolvedResource } from "../src/resource-contract.js";
+import { validateRuntimeReadiness, assertOrchestratorEnvelope, assertProjectKnowledgeRecord } from "../src/runtime-contracts.js";
+import { executeAuthorizedAction } from "../src/execution-record.js";
+import { DurableAppendOnlyAuditStore, DurableLeaseStore, DurableOwnerDecisionStore } from "../src/test-runtime-stores.js";
 
-import { digestRequestedAction } from "../src/canonical-digest.js";
-import {
-  authorizeByOwnerException,
-  evaluateAction,
-  PolicyGateway,
-  validateOwnerExceptionDecision,
-} from "../src/policy-gateway.js";
-import { createExecutionRecord, InMemoryIdempotencyRegistry } from "../src/execution-record.js";
-
-const policySet = JSON.parse(
-  await readFile(new URL("../policies/development-standing-policies.json", import.meta.url)),
-);
-const gateway = await PolicyGateway.create(policySet, {
-  revalidateStandingState: async () => true,
-});
+const policySet = JSON.parse(await readFile("policies/development-standing-policies.json", "utf8"));
+const repository = Object.freeze({ kind: "github_repository", provider: "github", repository: "jhutchison2222/8978-ai-platform-control-plane", environment: "development", isolation: { mode: "internal_8978" } });
 
 function action(overrides = {}) {
+  return { actionId: "action-1", operation: "write_code", requestedTarget: { locator: "control-plane" }, correlationId: "corr-1", idempotencyKey: "idem-1", rollbackRef: "rollback-ok",
+    evidence: { makerAttestation: "maker-signed", checkerAttestation: "checker-signed" }, productionSensitive: false,
+    destructiveProductionOrCustomerData: false, credentialScopeExpansion: false, newProductionExternalWriteIntegration: false,
+    finalOwnerDecisionChange: false, legalPrivacyComplianceContractualDecision: false, payload: { files: ["src/a.js"] }, ...overrides };
+}
+
+function runtime(overrides = {}) {
   return {
-    actionId: "action-1",
-    operation: "commit",
-    resource: { kind: "github_repository", id: "jhutchison2222/8978-ai-platform-control-plane" },
-    environment: "development",
-    risk: "medium",
-    costUsd: 0,
-    recordCount: 1,
-    productionSensitive: false,
-    destructiveProductionOrCustomerData: false,
-    credentialScopeExpansion: false,
-    newProductionExternalWriteIntegration: false,
-    finalOwnerDecisionChange: false,
-    legalPrivacyComplianceContractualDecision: false,
-    proposingAgent: "maker-agent",
-    review: null,
-    testEvidence: [],
-    rollbackPlan: { strategy: "revert_commit" },
-    correlationId: "corr-1",
-    idempotencyKey: "idem-1",
-    payload: { files: ["README.md"] },
-    ...overrides,
+    resourceResolver: { async resolve(hint) { if (hint.locator === "unavailable") throw new Error("offline"); if (hint.locator === "production") return { kind: "cloudflare_worker", provider: "cloudflare", accountId: "acct", workerName: "customer-worker", environment: "production", isolation: { mode: "dedicated_customer", customerId: "customer-1" }, bindings: { customerId: "customer-1", dedicatedWorkerName: "customer-worker", dedicatedD1DatabaseId: "d1-customer-1", sharedProductionD1: false } }; return repository; } },
+    identityVerifier: { async verify(attestation, { role, actionDigest }) { if (attestation === "maker-signed" && role === "maker") return { principalId: "maker-principal", actionDigest }; if (attestation === "checker-signed" && role === "checker") return { principalId: "checker-principal", actionDigest }; if (attestation === "maker-alias" && role === "checker") return { principalId: "maker-principal", actionDigest }; throw new Error("unauthenticated"); } },
+    evidenceProvider: { async getTestEvidence(actionDigest, required) { return required.map((testId) => ({ testId, result: "passed", actionDigest, issuedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", evidenceDigest: "sha256:" + "a".repeat(64) })); } },
+    rollbackVerifier: { async verify(reference, { actionDigest }) { return reference === "rollback-ok" ? { valid: true, executable: true, actionDigest, issuedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", evidenceDigest: "sha256:" + "b".repeat(64) } : { valid: false }; } },
+    limitProvider: { async resolve(_action, _resolved, { actionDigest }) { return { risk: "medium", costUsd: 0, recordCount: 1, actionDigest, evidenceDigest: "sha256:" + "c".repeat(64) }; } },
+    ownerVerifier: { async verify(decision) { return decision.signature === "valid"; } }, ownerDecisionStore: new DurableOwnerDecisionStore(),
+    idempotencyStore: new DurableLeaseStore(), auditStore: new DurableAppendOnlyAuditStore(),
+    revalidateStandingState: async () => true,
+    projectKnowledge: { async readGoverningKnowledge() { return { recordId: "pk-1", status: "CURRENT", version: "1", digest: "sha256:" + "d".repeat(64), retrievedAt: "2026-08-11T19:00:00Z" }; } },
+    workflowDispatcher: { async dispatch() { return { accepted: true }; } }, queuePublisher: { async publish() { return { accepted: true }; } }, ...overrides,
   };
 }
 
-async function boundAction(overrides = {}) {
-  const requested = action(overrides);
-  const requestedActionDigest = await digestRequestedAction(requested);
-  requested.review = {
-    reviewer: "checker-agent",
-    verdict: "approved",
-    requestedActionDigest,
-  };
-  requested.testEvidence = [
-    { testId: "unit", result: "passed", requestedActionDigest },
-    { testId: "artifact-validation", result: "passed", requestedActionDigest },
-  ];
-  return requested;
-}
+test("1: multiple policy matches fail closed before divergent limits are evaluated", () => {
+  const selected = selectUniquePolicyMatch([{ id: "wide", limits: { recordCount: 100 } }, { id: "narrow", limits: { recordCount: 0 } }]);
+  assert.deepEqual(selected, { selected: null, reason: "ambiguous_standing_policy_match" });
+});
 
-test("standing policy authorizes an in-scope development action", async () => {
-  const result = await gateway.evaluate(await boundAction());
+test("2: authoritative resolver controls provider, account, resource, and environment", async () => {
+  const gateway = await PolicyGateway.create(policySet, runtime());
+  const forged = action({ requestedTarget: { locator: "control-plane", provider: "cloudflare", environment: "production" } });
+  const result = await gateway.evaluate(forged);
   assert.equal(result.outcome, "authorized_by_standing_policy");
-  assert.deepEqual(result.authorizingPolicy, {
-    policyId: "dev-github-control-plane",
-    policyVersion: "1.0.0",
-  });
+  assert.equal(result.resolvedTarget.provider, "github");
+  const unavailable = await gateway.evaluate(action({ requestedTarget: { locator: "unavailable" } }));
+  assert.deepEqual(unavailable, { outcome: "denied", reason: "authoritative_resolution_unavailable", details: undefined });
 });
 
-test("malformed action input is denied without an owner approval request", async () => {
-  const result = await evaluateAction(action({ risk: "unknown" }), policySet);
-  assert.equal(result.outcome, "denied");
-  assert.equal(result.reason, "invalid_requested_action");
-  assert.equal(result.ownerApprovalRequest, undefined);
+test("3: maker and checker require authenticated distinct principals", async () => {
+  const gateway = await PolicyGateway.create(policySet, runtime());
+  const forged = await gateway.evaluate(action({ evidence: { makerAttestation: "maker-signed", checkerAttestation: "forged" } }));
+  assert.equal(forged.outcome, "validation_required");
+  const alias = await gateway.evaluate(action({ evidence: { makerAttestation: "maker-signed", checkerAttestation: "maker-alias" } }));
+  assert.ok(alias.unmetGates.some((gate) => gate.reason === "independent_authenticated_principals_required"));
 });
 
-test("normal validation gaps block without creating owner approval", async () => {
-  const result = await evaluateAction(action(), policySet);
-  assert.equal(result.outcome, "validation_required");
-  assert.equal(result.ownerApprovalRequest, undefined);
+test("4: trusted limits, tests, and executable rollback fail closed when unavailable or fabricated", async () => {
+  const noLimits = await PolicyGateway.create(policySet, runtime({ limitProvider: { async resolve() { throw new Error("offline"); } } }));
+  assert.equal((await noLimits.evaluate(action())).reason, "trusted_limits_unavailable");
+  const fakeTests = await PolicyGateway.create(policySet, runtime({ evidenceProvider: { async getTestEvidence(digest, required) { return required.map((testId) => ({ testId, result: "passed", actionDigest: digest, evidenceDigest: "model-supplied" })); } } }));
+  assert.equal((await fakeTests.evaluate(action())).outcome, "validation_required");
+  const noRollback = await PolicyGateway.create(policySet, runtime({ rollbackVerifier: { async verify() { return { valid: true, executable: false }; } } }));
+  assert.equal((await noRollback.evaluate(action())).outcome, "validation_required");
 });
 
-test("no active policy fails closed and creates a digest-bound exception request", async () => {
-  const requested = action({ resource: { kind: "cloudflare_d1", id: "unapproved-d1" } });
-  const result = await evaluateAction(requested, policySet);
-  assert.equal(result.outcome, "owner_approval_required");
-  assert.deepEqual(result.ownerApprovalRequest.reasons, ["no_active_standing_policy"]);
-  assert.equal(result.ownerApprovalRequest.requestedActionDigest, await digestRequestedAction(requested));
-  await assert.rejects(() => gateway.assertExecutable(requested, result), /Execution denied/);
-});
-
-test("disabled placeholders cannot authorize execution", async () => {
-  const result = await evaluateAction(
-    action({
-      operation: "write_test_data",
-      resource: { kind: "cloudflare_d1", id: "__OWNER_APPROVED_DEVELOPMENT_D1_ID__" },
-    }),
-    policySet,
-  );
-  assert.equal(result.outcome, "owner_approval_required");
-});
-
-test("production and sensitive flags always use the owner exception path", async () => {
-  const production = await evaluateAction(action({ environment: "production" }), policySet);
-  assert.equal(production.outcome, "owner_approval_required");
-  assert.ok(production.ownerApprovalRequest.reasons.includes("production_environment"));
-
-  const credential = await evaluateAction(action({ credentialScopeExpansion: true }), policySet);
-  assert.ok(credential.ownerApprovalRequest.reasons.includes("credential_scope_expansion"));
-});
-
-test("policy limit overruns create an owner exception request", async () => {
-  const result = await evaluateAction(action({ recordCount: 101 }), policySet);
-  assert.equal(result.outcome, "owner_approval_required");
-  assert.ok(result.ownerApprovalRequest.reasons.includes("resource_threshold_exceeded"));
-});
-
-test("policy boundaries are inclusive and operation, environment, risk, and cost are enforced", async () => {
-  const boundary = await evaluateAction(await boundAction({ recordCount: 100 }), policySet);
-  assert.equal(boundary.outcome, "authorized_by_standing_policy");
-
-  for (const requested of [
-    action({ operation: "delete_repository" }),
-    action({ environment: "staging" }),
-    action({ risk: "high" }),
-    action({ costUsd: 0.01 }),
-  ]) {
-    const result = await evaluateAction(requested, policySet);
-    assert.equal(result.outcome, "owner_approval_required");
-  }
-});
-
-test("every exceptional owner boundary precedes standing authorization", async () => {
-  const flags = [
-    "productionSensitive",
-    "destructiveProductionOrCustomerData",
-    "credentialScopeExpansion",
-    "newProductionExternalWriteIntegration",
-    "finalOwnerDecisionChange",
-    "legalPrivacyComplianceContractualDecision",
-  ];
-  for (const flag of flags) {
-    const result = await evaluateAction(action({ [flag]: true }), policySet);
-    assert.equal(result.outcome, "owner_approval_required", flag);
-  }
-});
-
-test("missing, self-authored, or digest-mismatched review and missing rollback block execution", async () => {
-  const requested = await boundAction();
-  const cases = [
-    { ...requested, review: null },
-    { ...requested, review: { ...requested.review, reviewer: "maker-agent" } },
-    { ...requested, review: { ...requested.review, requestedActionDigest: "sha256:" + "0".repeat(64) } },
-    { ...requested, rollbackPlan: null },
-  ];
-  for (const candidate of cases) {
-    const result = await evaluateAction(candidate, policySet);
-    assert.equal(result.outcome, "validation_required");
-    assert.equal(result.ownerApprovalRequest, undefined);
-  }
-});
-
-test("expired and duplicate matching policies fail closed", async () => {
-  const requested = await boundAction();
-  const expired = structuredClone(policySet);
-  expired.policies[0].validUntil = "2026-08-10T00:00:00Z";
-  const noMatch = await evaluateAction(requested, expired, new Date("2026-08-11T00:00:00Z"));
-  assert.equal(noMatch.outcome, "owner_approval_required");
-
-  const duplicate = structuredClone(policySet);
-  duplicate.policies.push({ ...structuredClone(duplicate.policies[0]), id: "duplicate-policy" });
-  const ambiguous = await evaluateAction(requested, duplicate);
-  assert.deepEqual(ambiguous.ownerApprovalRequest.reasons, ["ambiguous_standing_policy_match"]);
-});
-
-test("owner exception validation rejects payload substitution", async () => {
-  const original = action({ resource: { kind: "cloudflare_d1", id: "unapproved-d1" } });
-  const changed = action({ resource: { kind: "cloudflare_d1", id: "different-d1" } });
-  const decision = {
-    decisionId: "decision-1",
-    requestedActionDigest: await digestRequestedAction(original),
-    decision: "approved",
-    decidedBy: "owner",
-    decidedAt: "2026-08-11T18:00:00Z",
-    expiresAt: "2026-08-12T18:00:00Z",
-    signatureAlgorithm: "test",
-    signature: "signed",
-  };
-  const result = await validateOwnerExceptionDecision(
-    changed,
-    decision,
-    async () => true,
-    { now: new Date("2026-08-11T19:00:00Z"), revalidateCurrentState: async () => true },
-  );
-  assert.deepEqual(result, { valid: false, reason: "digest_mismatch" });
-});
-
-test("owner exception cannot authorize a malformed requested action", async () => {
-  const malformed = { foo: "bar" };
-  const decision = {
-    decisionId: "decision-malformed",
-    requestedActionDigest: await digestRequestedAction(malformed),
-    decision: "approved",
-    expiresAt: "2026-08-12T18:00:00Z",
-  };
-  const result = await authorizeByOwnerException(malformed, decision, async () => true, {
-    now: new Date("2026-08-11T19:00:00Z"),
-    revalidateCurrentState: async () => true,
-  });
-  assert.deepEqual(result, { outcome: "denied", reason: "invalid_requested_action" });
-});
-
-test("gateway rejects injected, changed, and directly constructed policy sets", async () => {
-  const injected = structuredClone(policySet);
-  injected.policies[0].resources[0].id = "attacker/repository";
-  await assert.rejects(() => PolicyGateway.create(injected), /digest is not owner-approved/);
-  assert.throws(() => new PolicyGateway(policySet), /approved trust anchor/);
-});
-
-test("owner exception requires signature, expiry, and immediate state revalidation", async () => {
-  const requested = action({ resource: { kind: "cloudflare_d1", id: "unapproved-d1" } });
-  const decision = {
-    decisionId: "decision-2",
-    requestedActionDigest: await digestRequestedAction(requested),
-    decision: "approved",
-    decidedBy: "owner",
-    decidedAt: "2026-08-11T18:00:00Z",
-    expiresAt: "2026-08-12T18:00:00Z",
-    signatureAlgorithm: "test",
-    signature: "signed",
-  };
-  const missingRevalidation = await authorizeByOwnerException(
-    requested,
-    decision,
-    async () => true,
-    { now: new Date("2026-08-11T19:00:00Z") },
-  );
-  assert.deepEqual(missingRevalidation, {
-    outcome: "denied",
-    reason: "pre_execution_revalidation_required",
-  });
-
-  const authorized = await authorizeByOwnerException(
-    requested,
-    decision,
-    async () => true,
-    {
-      now: new Date("2026-08-11T19:00:00Z"),
-      revalidateCurrentState: async () => true,
-    },
-  );
-  assert.equal(authorized.outcome, "authorized_by_owner_exception");
-});
-
-test("owner exception is revalidated again at the execution boundary", async () => {
-  const requested = action({ resource: { kind: "cloudflare_d1", id: "unapproved-d1" } });
-  let stateIsCurrent = true;
-  const decision = {
-    decisionId: "decision-short-lived",
-    requestedActionDigest: await digestRequestedAction(requested),
-    decision: "approved",
-    decidedBy: "owner",
-    decidedAt: "2026-08-11T18:59:00Z",
-    expiresAt: "2026-08-11T19:00:01Z",
-    signatureAlgorithm: "test",
-    signature: "signed",
-  };
-  const authorization = await gateway.authorizeOwnerException(
-    requested,
-    decision,
-    async () => true,
-    {
-      now: new Date("2026-08-11T19:00:00Z"),
-      revalidateCurrentState: async () => stateIsCurrent,
-    },
-  );
+test("5: owner verifier is construction-only and decisions are single-use", async () => {
+  const gateway = await PolicyGateway.create(policySet, runtime());
+  const requested = action({ operation: "delete_repository" });
+  const request = await gateway.evaluate(requested);
+  assert.equal(request.outcome, "owner_approval_required");
+  const decision = { decisionId: "decision-1", requestedActionDigest: request.actionDigest, decision: "approved", decidedBy: "owner", decidedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", issuerKeyId: "owner-key", signatureAlgorithm: "Ed25519", signature: "valid" };
+  const authorization = await gateway.authorizeOwnerException(requested, decision, { now: new Date("2026-08-11T19:00:00Z"), verifySignature: async () => true });
   assert.equal(authorization.outcome, "authorized_by_owner_exception");
-
-  stateIsCurrent = false;
-  await assert.rejects(
-    () => gateway.assertExecutable(requested, authorization, { now: new Date("2026-08-11T19:00:02Z") }),
-    /owner exception decision_expired/,
-  );
+  await gateway.assertExecutable(requested, authorization, { now: new Date("2026-08-11T19:01:00Z") });
+  await assert.rejects(() => gateway.assertExecutable(requested, authorization, { now: new Date("2026-08-11T19:02:00Z") }), /replay/);
+  const concurrentDecision = { ...decision, decisionId: "decision-concurrent" };
+  const concurrentAuthorization = await gateway.authorizeOwnerException(requested, concurrentDecision, { now: new Date("2026-08-11T19:00:00Z") });
+  const concurrent = await Promise.allSettled([gateway.assertExecutable(requested, concurrentAuthorization, { now: new Date("2026-08-11T19:03:00Z") }), gateway.assertExecutable(requested, concurrentAuthorization, { now: new Date("2026-08-11T19:03:00Z") })]);
+  assert.deepEqual(concurrent.map((result) => result.status).sort(), ["fulfilled", "rejected"]);
+  const bad = await gateway.authorizeOwnerException(requested, { ...decision, decisionId: "decision-2", signature: "forged" }, { now: new Date("2026-08-11T19:00:00Z") });
+  assert.equal(bad.reason, "invalid_owner_signature");
 });
 
-test("owner decision must be structurally signed and temporally sane", async () => {
-  const requested = action({ resource: { kind: "cloudflare_d1", id: "unapproved-d1" } });
-  const result = await validateOwnerExceptionDecision(
-    requested,
-    {
-      decisionId: "decision-unsigned",
-      requestedActionDigest: await digestRequestedAction(requested),
-      decision: "approved",
-      decidedBy: "owner",
-      decidedAt: "2026-08-12T18:00:00Z",
-      expiresAt: "2026-08-11T18:00:00Z",
-      signatureAlgorithm: "",
-      signature: "",
-    },
-    async () => true,
-    { now: new Date("2026-08-11T19:00:00Z"), revalidateCurrentState: async () => true },
-  );
-  assert.equal(result.valid, false);
-  assert.equal(result.reason, "invalid_decision");
+test("6: awaited atomic idempotency leases block concurrency and allow expiry recovery", async () => {
+  const store = new DurableLeaseStore(); const now = new Date("2026-08-11T19:00:00Z");
+  const first = await store.reserve({ scope: "scope", actionDigest: "d", leaseMs: 1000, now });
+  assert.equal((await store.reserve({ scope: "scope", actionDigest: "d", leaseMs: 1000, now })).reserved, false);
+  const recovered = await store.reserve({ scope: "scope", actionDigest: "d", leaseMs: 1000, now: new Date(now.valueOf() + 1001) });
+  assert.equal(recovered.recovered, true);
+  assert.equal((await store.complete({ scope: "scope", leaseId: first.leaseId, resultDigest: "x" })).completed, false);
+  assert.equal((await store.complete({ scope: "scope", leaseId: recovered.leaseId, resultDigest: "x" })).completed, true);
 });
 
-test("execution record persists required standing-policy evidence", async () => {
-  const requested = await boundAction();
-  const authorization = await gateway.evaluate(requested);
-  const idempotencyRegistry = new InMemoryIdempotencyRegistry();
-  const record = await createExecutionRecord({
-    action: requested,
-    authorization,
-    beforeState: { sha: "before" },
-    result: { status: "succeeded" },
-    afterState: { sha: "after" },
-    rollback: { strategy: "revert_commit", status: "available" },
-    idempotencyRegistry,
-    gateway,
-  });
-  assert.equal(record.authorization.policyId, "dev-github-control-plane");
-  assert.equal(record.requestedActionDigest, authorization.actionDigest);
-  assert.equal(record.independentReviewer, "checker-agent");
-  assert.equal(record.correlationId, "corr-1");
-  assert.equal(record.idempotencyKey, "idem-1");
-  await assert.rejects(
-    () =>
-      createExecutionRecord({
-        action: requested,
-        authorization,
-        beforeState: {},
-        result: {},
-        afterState: {},
-        rollback: {},
-        idempotencyRegistry,
-        gateway,
-      }),
-    /Duplicate execution/,
-  );
+test("7: durable append-only audit is verified before effects and hash chains events", async () => {
+  const rt = runtime(); const gateway = await PolicyGateway.create(policySet, rt); const requested = action(); const authorization = await gateway.evaluate(requested);
+  let effects = 0;
+  const executed = await executeAuthorizedAction({ action: requested, authorization, gateway, runtime: rt, execute: async () => { effects += 1; return { ok: true }; }, rollback: async () => ({ status: "not_needed" }), now: new Date("2026-08-11T19:00:00Z") });
+  assert.equal(effects, 1); assert.equal(rt.auditStore.events().length, 2);
+  assert.equal(rt.auditStore.events()[1].receipt.previousDigest, rt.auditStore.events()[0].receipt.eventDigest);
+  assert.equal(await rt.auditStore.verifyReceipt(executed.intentReceipt, { tampered: true }), false);
+  const concurrentStore = new DurableAppendOnlyAuditStore();
+  const concurrentReceipts = await Promise.all([concurrentStore.append({ event: 1 }), concurrentStore.append({ event: 2 })]);
+  assert.deepEqual(concurrentReceipts.map((receipt) => receipt.sequence), [1, 2]);
+  assert.equal(concurrentReceipts[1].previousDigest, concurrentReceipts[0].eventDigest);
+  const rtFail = runtime(); rtFail.auditStore.failNext = true; const gFail = await PolicyGateway.create(policySet, rtFail); const authFail = await gFail.evaluate(action());
+  await assert.rejects(() => executeAuthorizedAction({ action: action(), authorization: authFail, gateway: gFail, runtime: rtFail, execute: async () => { effects += 1; }, rollback: async () => ({}) }), /audit unavailable/);
+  assert.equal(effects, 1);
 });
 
-test("execution boundary rejects forged authorization and action mutation", async () => {
-  const requested = await boundAction();
-  const authorization = await gateway.evaluate(requested);
-  const registry = new InMemoryIdempotencyRegistry();
-  const evidence = {
-    action: requested,
-    beforeState: {},
-    result: {},
-    afterState: {},
-    rollback: {},
-    idempotencyRegistry: registry,
-    gateway,
-  };
+test("8: RFC 8785 canonicalization is stable and rejects non-I-JSON", async () => {
+  assert.equal(canonicalize({ b: 1, a: [3, { z: "x", y: true }], n: -0 }), '{"a":[3,{"y":true,"z":"x"}],"b":1,"n":0}');
+  assert.equal(await digestCanonicalValue({ a: 1, b: 2 }), await digestCanonicalValue({ b: 2, a: 1 }));
+  for (const value of [{ x: undefined }, { x: NaN }, { x: Infinity }, [, 1], { x: "\ud800" }, { x: 1n }]) assert.throws(() => canonicalize(value));
+  assert.throws(() => parseJsonStrict('{"a":1,"a":2}'), /Duplicate/);
+});
 
-  await assert.rejects(
-    () => createExecutionRecord({ ...evidence, authorization: { ...authorization } }),
-    /not issued by this gateway/,
-  );
-  await assert.rejects(
-    () =>
-      createExecutionRecord({
-        ...evidence,
-        action: { ...requested, payload: { files: ["different-file"] } },
-        authorization,
-      }),
-    /changed after authorization/,
-  );
+test("9: discriminated resources enforce provider fields and production customer isolation", () => {
+  assert.deepEqual(validateResolvedResource(repository), []);
+  assert.ok(validateResolvedResource({ ...repository, provider: "cloudflare" }).includes("provider_kind_mismatch"));
+  const prod = { kind: "cloudflare_d1", provider: "cloudflare", accountId: "acct", databaseId: "d1", databaseName: "customer-d1", environment: "production", isolation: { mode: "dedicated_customer", customerId: "c1" } };
+  assert.ok(assertCustomerIsolation(prod, { customerId: "c2", dedicatedWorkerName: "w", dedicatedD1DatabaseId: "d1", sharedProductionD1: false }).includes("customer_binding_mismatch"));
+  assert.ok(assertCustomerIsolation(prod, { customerId: "c1", dedicatedWorkerName: "w", dedicatedD1DatabaseId: "d1", sharedProductionD1: true }).includes("shared_production_d1_prohibited"));
+});
 
-  await assert.rejects(
-    () =>
-      createExecutionRecord({
-        action: requested,
-        authorization,
-        result: {},
-        afterState: {},
-        rollback: {},
-        idempotencyRegistry: new InMemoryIdempotencyRegistry(),
-        gateway,
-      }),
-    /missing beforeState/,
-  );
+test("10: runtime readiness, Project Knowledge, Workflow, and Queue contracts fail closed", async () => {
+  const incomplete = validateRuntimeReadiness({}); assert.equal(incomplete.ready, false); assert.ok(incomplete.missing.includes("projectKnowledge"));
+  await assert.rejects(() => PolicyGateway.create(policySet, {}), /Runtime is not ready/);
+  const noPk = await PolicyGateway.create(policySet, runtime({ projectKnowledge: { async readGoverningKnowledge() { throw new Error("not attached"); } } }));
+  assert.equal((await noPk.evaluate(action())).reason, "governing_project_knowledge_unavailable");
+  assert.throws(() => assertProjectKnowledgeRecord({ status: "PROPOSED" }), /unavailable/);
+  assert.throws(() => assertOrchestratorEnvelope({ messageId: "m" }), /actionDigest/);
+  const envelope = { messageId: "m", actionDigest: "sha256:" + "e".repeat(64), correlationId: "c", idempotencyKey: "i", workflowName: "wf", queueName: "q" };
+  assert.equal(assertOrchestratorEnvelope(envelope), true);
+});
+
+test("standing authorization revalidates trusted evidence and kill-switch state", async () => {
+  let available = true; const rt = runtime({ evidenceProvider: { async getTestEvidence(digest, required) { if (!available) throw new Error("offline"); return required.map((testId) => ({ testId, result: "passed", actionDigest: digest, issuedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", evidenceDigest: "sha256:" + "f".repeat(64) })); } } });
+  const gateway = await PolicyGateway.create(policySet, rt); const requested = action(); const authorization = await gateway.evaluate(requested); available = false;
+  await assert.rejects(() => gateway.assertExecutable(requested, authorization), /stale/);
 });
