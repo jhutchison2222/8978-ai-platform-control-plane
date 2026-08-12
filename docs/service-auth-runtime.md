@@ -36,7 +36,8 @@ A receiver must complete authentication and atomic nonce consumption before any 
 `ServiceAuthReplayDurableObject` uses SQLite-backed Durable Object storage:
 
 - `nonce` is the primary key;
-- `INSERT OR IGNORE` performs the single-use decision;
+- `INSERT ... ON CONFLICT DO NOTHING RETURNING nonce` performs the single-use decision;
+- consumption is determined by whether the insert returns a row, not by `rowsWritten`, because Cloudflare counts index writes in that billing-oriented counter;
 - cleanup and insertion execute inside `transactionSync`;
 - expired entries are removed in bounded batches;
 - malformed, expired, or unreasonably long retention windows fail closed.
