@@ -11,7 +11,7 @@ Batch 2 begins the remaining master-prompt transfer with two inbound phone archi
 ## Processing boundaries
 
 1. Preserve source behavior and historical conflicts.
-2. Apply Batch 1 current overrides only during normalization; do not silently rewrite source history.
+2. Compare against Batch 1 PROPOSED normalization and explicit current user direction; neither source self-labels nor proposed records become governing through comparison.
 3. Treat HighLevel custom fields/values as historical mapping evidence. AutoCalls remains the target communications runtime.
 4. Separate reusable behavior, subscriber configuration, entity knowledge, contact discoveries, and runtime action capability.
 5. Do not promote automatically.
