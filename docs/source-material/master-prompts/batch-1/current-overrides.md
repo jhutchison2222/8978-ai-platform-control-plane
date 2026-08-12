@@ -1,8 +1,8 @@
 # Current Higher-Precedence Overrides
 
-Status: CURRENT USER-DIRECTED OVERRIDES FOR NORMALIZATION
+Status: SOURCE MATERIAL — HIGH-PRECEDENCE USER-DIRECTED INPUT FOR NORMALIZATION
 
-These rules supersede conflicting historical source text while preserving the older wording as provenance.
+Within Batch 1 normalization, these user-directed rules take precedence over conflicting historical source text while preserving the older wording as provenance. This precedence does not make this file governing `CURRENT` or `FINAL` Project Knowledge. Every normalized record remains `PROPOSED` until the required review, validation, approval, version, and digest gates are satisfied.
 
 - AutoCalls is the intended AI communications/runtime platform. GHL native Voice AI material is historical/reference source material, not the target runtime.
 - Internal template/persona names must not become customer-facing names unless selected by the customer.
