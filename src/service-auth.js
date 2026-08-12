@@ -94,7 +94,8 @@ export async function verifyServiceAuth({
   const bodyDigest = read(HEADER.bodyDigest);
   const encodedSignature = read(HEADER.signature);
   if (version !== VERSION || !principalId || !keyId || !timestamp || !nonce || !encodedSignature ||
-      !/^sha256:[a-f0-9]{64}$/u.test(bodyDigest ?? "") || !/^sha256:[a-f0-9]{64}$/u.test(actualBodyDigest ?? "")) throw new Error("Service authentication required");\n  if (bodyDigest !== actualBodyDigest) throw new Error("Service-auth body digest mismatch");
+      !/^sha256:[a-f0-9]{64}$/u.test(bodyDigest ?? "") || !/^sha256:[a-f0-9]{64}$/u.test(actualBodyDigest ?? "")) throw new Error("Service authentication required");
+  if (bodyDigest !== actualBodyDigest) throw new Error("Service-auth body digest mismatch");
   const issuedAt = new Date(timestamp);
   if (!Number.isFinite(issuedAt.valueOf()) || Math.abs(now.valueOf() - issuedAt.valueOf()) > allowedClockSkewMs) {
     throw new Error("Service-auth timestamp outside replay window");
