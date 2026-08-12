@@ -75,7 +75,7 @@ export async function createServiceAuthHeaders({
 }
 
 export async function verifyServiceAuth({
-  request, secretResolver, replayStore, now = new Date(), allowedClockSkewMs = 300_000,
+  request, actualBodyDigest, secretResolver, replayStore, now = new Date(), allowedClockSkewMs = 300_000,
 }) {
   if (!(request instanceof Request)) throw new TypeError("Service-auth verification requires a Request");
   if (typeof secretResolver?.resolve !== "function") throw new Error("Trusted service secret resolver required");
@@ -94,7 +94,7 @@ export async function verifyServiceAuth({
   const bodyDigest = read(HEADER.bodyDigest);
   const encodedSignature = read(HEADER.signature);
   if (version !== VERSION || !principalId || !keyId || !timestamp || !nonce || !encodedSignature ||
-      !/^sha256:[a-f0-9]{64}$/u.test(bodyDigest ?? "")) throw new Error("Service authentication required");
+      !/^sha256:[a-f0-9]{64}$/u.test(bodyDigest ?? "") || !/^sha256:[a-f0-9]{64}$/u.test(actualBodyDigest ?? "")) throw new Error("Service authentication required");\n  if (bodyDigest !== actualBodyDigest) throw new Error("Service-auth body digest mismatch");
   const issuedAt = new Date(timestamp);
   if (!Number.isFinite(issuedAt.valueOf()) || Math.abs(now.valueOf() - issuedAt.valueOf()) > allowedClockSkewMs) {
     throw new Error("Service-auth timestamp outside replay window");
