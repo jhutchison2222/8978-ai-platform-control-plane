@@ -16,6 +16,8 @@ const envelopeSchema = await load("schemas/orchestrator-envelope.schema.json");
 const runtimeSchema = await load("schemas/runtime-readiness.schema.json");
 const isolationSchema = await load("schemas/customer-isolation.schema.json");
 const customerBindingsSchema = await load("schemas/customer-runtime-bindings.schema.json");
+const wrangler = await load("wrangler.jsonc");
+const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 
 const batch1Proposed = await load("docs/project-knowledge/proposed/batch-1/proposed-records.json");
 const batch1Review = await load("docs/reviews/pr-3/PR-3-Batch-1-Master-Prompt-Architecture-Review.json");
@@ -74,6 +76,21 @@ assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceRes
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
 if (validateSchema(customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker",dedicatedD1DatabaseId:"d1",sharedProductionD1:true }).length === 0) throw new Error("Shared production D1 negative fixture unexpectedly passed");
 if (validateSchema(resourceSchema, { kind:"github_repository",provider:"cloudflare",repository:"x",environment:"development",isolation:{} }).length === 0) throw new Error("Resource discriminator negative fixture unexpectedly passed");
+
+if (wrangler.name !== "8978-ai-control-plane-dev" || wrangler.main !== "src/control-plane-worker.js") throw new Error("Worker must remain development-scoped with the reviewed entry point");
+if (wrangler.compatibility_date !== "2026-08-12" || !wrangler.compatibility_flags?.includes("nodejs_compat")) throw new Error("Worker compatibility configuration changed without review");
+if (wrangler.workers_dev !== false || wrangler.preview_urls !== false) throw new Error("Development Worker cannot expose workers.dev or preview URLs");
+if (wrangler.vars?.CONTROL_PLANE_MODE !== "development" || wrangler.vars?.ALLOW_EXTERNAL_WRITES !== "false") throw new Error("Worker external-write boundary must remain fail closed");
+if (Object.hasOwn(wrangler.vars ?? {}, "SERVICE_AUTH_KEYS_JSON")) throw new Error("Service-auth keys must be secret bindings, never plaintext vars");
+for (const binding of ["d1_databases", "r2_buckets", "queues", "workflows", "services", "hyperdrive", "vectorize"]) {
+  if (wrangler[binding] !== undefined) throw new Error(`Development Worker cannot add ${binding} bindings in this foundation`);
+}
+const replayBindings = wrangler.durable_objects?.bindings ?? [];
+if (replayBindings.length !== 1 || replayBindings[0].name !== "SERVICE_AUTH_REPLAY" || replayBindings[0].class_name !== "ServiceAuthReplayDurableObject") throw new Error("Worker must retain the single service-auth replay Durable Object binding");
+if (wrangler.migrations?.length !== 1 || wrangler.migrations[0].tag !== "v1" || JSON.stringify(wrangler.migrations[0].new_sqlite_classes) !== JSON.stringify(["ServiceAuthReplayDurableObject"])) throw new Error("Worker must retain the reviewed SQLite Durable Object migration");
+for (const required of ["authenticateServiceRequest", "CloudflareDurableReplayStore", "PolicyGateway.create", "execution_disabled", "authorization", "proxy-authorization"]) {
+  if (!workerSource.includes(required)) throw new Error(`Worker fail-closed invariant missing: ${required}`);
+}
 
 if (batch1Proposed.status !== "PROPOSED" || batch1Proposed.governing !== false) throw new Error("Batch 1 package must remain PROPOSED and non-governing");
 if (!Array.isArray(batch1Proposed.records) || batch1Proposed.records.length !== 19) throw new Error("Batch 1 must contain exactly 19 proposed records");

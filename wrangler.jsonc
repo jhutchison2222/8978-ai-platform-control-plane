@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "8978-ai-control-plane-dev",
+  "main": "src/control-plane-worker.js",
+  "compatibility_date": "2026-08-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "CONTROL_PLANE_MODE": "development",
+    "ALLOW_EXTERNAL_WRITES": "false"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SERVICE_AUTH_REPLAY",
+        "class_name": "ServiceAuthReplayDurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ServiceAuthReplayDurableObject"]
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  }
+}
