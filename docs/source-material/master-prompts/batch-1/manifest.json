@@ -1,0 +1,53 @@
+{
+  "package": "8978-master-prompt-architecture-batch-1",
+  "status": "SOURCE_MATERIAL_ONLY",
+  "created_on": "2026-08-11",
+  "repository_visibility": "private",
+  "source_policy": {
+    "promote_to_final_automatically": false,
+    "preserve_historical_conflicts": true,
+    "secrets_allowed": false,
+    "normalization_target": "Project Knowledge PROPOSED records"
+  },
+  "sources": [
+    {
+      "source_name": "DATABASE REACTIVATION OUTBOUND SYSTEM - checklist.docx",
+      "source_created": "2026-06-22",
+      "package_file": "01-database-reactivation-master.md",
+      "topics": ["database_reactivation", "sales_edge", "top_sales_pro", "transfers", "crm_read_first", "opt_out", "discovery"]
+    },
+    {
+      "source_name": "Pasted text.txt - James Professional AI Sales Rep Demo Agent",
+      "source_created": "2026-07-13",
+      "package_file": "02-sarah-james-sales-demo.md",
+      "topics": ["sarah_james", "demo", "sales", "crm_read_first", "layered_emotional_selling", "pricing_history", "summaries"]
+    },
+    {
+      "source_name": "Pasted SmartSite setup conversations - Kelly/Matt",
+      "source_window": "2026-06-15_to_2026-07-03",
+      "package_file": "03-kelly-matt-smartsite-architecture.md",
+      "topics": ["kelly_matt", "smartsite", "two_tier_demo", "website_visitors", "transfer", "roleplay", "closing", "historical_conflicts"]
+    },
+    {
+      "source_name": "ai_employees_master_data_dictionary_v1.xlsx",
+      "source_created": "2026-07-27",
+      "package_file": "04-data-dictionary-architecture.md",
+      "topics": ["canonical_data_dictionary", "d1", "ghl", "autocalls", "field_scoping", "handoffs", "controlled_vocabulary", "entity_normalization"]
+    }
+  ],
+  "required_outputs_after_review": [
+    "Source Inventory",
+    "Proposed Master Prompt Component Taxonomy",
+    "Conflict/Supersession Register",
+    "Missing-Material Register",
+    "Data/Field Dependency Map",
+    "PROPOSED Project Knowledge records"
+  ],
+  "information_classes": [
+    "reusable_master_knowledge",
+    "customer_subscriber_configuration",
+    "entity_specific_sales_knowledge",
+    "contact_specific_discoveries_and_conversation_history"
+  ],
+  "archive_note": "This GitHub package contains curated provenance-labeled extracts, not byte-for-byte originals. Original files should be archived in R2 when supported object upload is available."
+}
