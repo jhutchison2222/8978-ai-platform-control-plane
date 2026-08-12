@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0.0",
+  "packageId": "8978-master-prompt-architecture-batch-3",
+  "status": "PROPOSED",
+  "governing": false,
+  "sourcePackagePath": "docs/source-material/master-prompts/batch-3",
+  "summaryCounts": {
+    "sources": 7,
+    "sourceOriginals": 5,
+    "provenanceReconciliations": 1,
+    "componentDeltaItems": 12,
+    "conflicts": 10,
+    "missingMaterialItems": 13,
+    "dependencyGroups": 10,
+    "proposedProjectKnowledgeRecords": 12
+  },
+  "normalizationRules": [
+    "All records remain PROPOSED and non-governing.",
+    "Source self-labels cannot promote records to CURRENT or FINAL.",
+    "Internal labels and ordinal names cannot select installed runtime behavior.",
+    "Action and field references do not establish AutoCalls capability.",
+    "Service authentication remains HMAC-based with replay defense and no OAuth dependency."
+  ],
+  "records": [
+    {
+      "recordId": "PK-B3-PROP-001",
+      "title": "Batch 3 provenance-hardened source corpus registration",
+      "type": "artifact_set",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Register five exact Library-backed originals, seven package files, and one prior-source reconciliation as source-only evidence with no automatic promotion.",
+      "promotionDependencies": ["Verify source authorship, semantic versions, approvals, and supersession history."]
+    },
+    {
+      "recordId": "PK-B3-PROP-002",
+      "title": "Installed SmartSite immutable profile selection",
+      "type": "architecture_decision",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Select installed behavior through an immutable profile ID and pinned composition manifest, never through Janet/Steve labels or ordinal names.",
+      "promotionDependencies": ["Approve profile registry and composition-manifest schema."]
+    },
+    {
+      "recordId": "PK-B3-PROP-003",
+      "title": "Optional specialist-transfer assistant profile",
+      "type": "agent_flow_profile",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Model an installed website assistant that owns the front-line conversation and may offer a downstream specialist without making that specialist mandatory.",
+      "promotionDependencies": ["Resolve current transfer capability, destination, handoff, refusal, and fallback contracts."]
+    },
+    {
+      "recordId": "PK-B3-PROP-004",
+      "title": "Standalone full-conversation assistant profile",
+      "type": "agent_flow_profile",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Model a no-downstream-specialist installed assistant that can carry the configured sales path while retaining state-priority and capability gates.",
+      "promotionDependencies": ["Resolve the Janet2 label conflict and verify allowed installed actions."]
+    },
+    {
+      "recordId": "PK-B3-PROP-005",
+      "title": "Traditional lead-warmer profile",
+      "type": "agent_flow_profile",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Model a distinct installed lead-warmer and appointment-setter profile whose deeper sales work routes to configured human staff.",
+      "promotionDependencies": ["Approve profile-specific human routing, after-hours, and fallback matrices."]
+    },
+    {
+      "recordId": "PK-B3-PROP-006",
+      "title": "Downstream specialist continuity profile",
+      "type": "handoff_flow",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "A downstream installed website specialist continues an acknowledged front-line handoff and uses bounded recovery rather than inventing missing context.",
+      "promotionDependencies": ["Approve typed handoff, acknowledgement, ownership, freshness, and recovery schemas."]
+    },
+    {
+      "recordId": "PK-B3-PROP-007",
+      "title": "Installed-versus-demo mode boundary",
+      "type": "prompt_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Installed customer-facing agents must not inherit demo selling, roleplay, debrief, or platform-subscription behavior unless an explicit versioned mode authorizes it.",
+      "promotionDependencies": ["Approve mode/state schema and cross-mode negative fixtures."]
+    },
+    {
+      "recordId": "PK-B3-PROP-008",
+      "title": "Internal label and source-version conflict quarantine",
+      "type": "conflict_record",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Quarantine the Janet2 assumed-transfer versus standalone conflict and all unstable internal labels until a source-version authority chain resolves them.",
+      "promotionDependencies": ["Obtain complete immutable source history and owner-approved supersession decisions."]
+    },
+    {
+      "recordId": "PK-B3-PROP-009",
+      "title": "Layered discovery and state-priority precedence",
+      "type": "sales_method",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Use adequate layered discovery and an open-ended benefit-forward close; historical individual closes and numeric attempts never override high intent or stop states.",
+      "promotionDependencies": ["Approve version-pinned acceptance fixtures and governing Project Knowledge comparison."]
+    },
+    {
+      "recordId": "PK-B3-PROP-010",
+      "title": "Installed action capability gate",
+      "type": "runtime_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Booking, quote, estimate, payment, workflow, notification, transfer, routing, and write-back are candidate action families only and fail closed without verified AutoCalls contracts.",
+      "promotionDependencies": ["Inventory current AutoCalls capabilities and approve authorization, destination, idempotency, limit, result, and fallback contracts."]
+    },
+    {
+      "recordId": "PK-B3-PROP-011",
+      "title": "Installed context, handoff, and record ownership candidate",
+      "type": "data_architecture",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "D1 candidate records own normalized installed-agent context, discoveries, handoffs, summaries, action results, routing outcomes, and provenance; CRM contains governed mirrors only.",
+      "promotionDependencies": ["Approve canonical schemas, mapping registry, privacy, retention, and reconciliation rules."]
+    },
+    {
+      "recordId": "PK-B3-PROP-012",
+      "title": "Batch 3 unresolved-material gate",
+      "type": "promotion_gate",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "No Batch 3 record or prompt component may become governing until every blocking missing-material item is resolved, tested, owner-approved, and independently checked.",
+      "promotionDependencies": ["Resolve B3-M01 through B3-M13 and record immutable evidence digests."]
+    }
+  ],
+  "nonBatch3RuntimeConstraints": [
+    {
+      "constraint": "Cloudflare service authentication remains HMAC-based with replay defense and no OAuth dependency.",
+      "classification": "implementation_constraint_outside_batch_3_source_promotion",
+      "changesBatch3RecordCount": false
+    }
+  ]
+}

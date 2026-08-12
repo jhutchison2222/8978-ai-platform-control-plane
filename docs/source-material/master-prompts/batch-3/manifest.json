@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "batchId": "master-prompt-architecture-batch-3",
+  "status": "SOURCE_MATERIAL_ONLY",
+  "sourcePolicy": {
+    "promoteToFinalAutomatically": false,
+    "secretsAllowed": false,
+    "rawFullPromptsCommitted": false,
+    "runtimeAuthority": false
+  },
+  "sources": [
+    {
+      "sourceId": "B3-ORIG-001",
+      "libraryFileId": "libfile_c1afc912bdec819198c3f6a7e2ec8e07",
+      "displayName": "Pasted text(13).txt",
+      "createdAt": "2026-06-17T18:21:17.921262Z",
+      "sizeBytes": 67135,
+      "sha256": "fbaf2e9dfcb62a4ec4cec9ee4b8d57c0e86f3ddb7bce71ad2e6aeb22578cfef7",
+      "lineCount": 1703,
+      "packageFile": "01-smartsite-optional-transfer-assistant.md",
+      "classification": "INSTALLED_SMARTSITE_OPTIONAL_TRANSFER_SOURCE"
+    },
+    {
+      "sourceId": "B3-ORIG-002",
+      "libraryFileId": "libfile_d580ff22c0bc8191abc6ed252c8f6449",
+      "displayName": "Pasted text (2)(1).txt",
+      "createdAt": "2026-06-17T21:26:49.074631Z",
+      "sizeBytes": 72122,
+      "sha256": "f2bd4c2b15e0a3ea96064505f8460928711a93541a933c18737d24b8f10d7707",
+      "lineCount": 2043,
+      "packageFile": "02-smartsite-standalone-sales-assistant.md",
+      "classification": "INSTALLED_SMARTSITE_STANDALONE_SALES_SOURCE"
+    },
+    {
+      "sourceId": "B3-ORIG-003",
+      "libraryFileId": "libfile_0eab8c4629608191941e4e1d02b5b26f",
+      "displayName": "Pasted text (3).txt",
+      "createdAt": "2026-06-17T21:27:11.705761Z",
+      "sizeBytes": 69889,
+      "sha256": "761dc42853d37a5e5dec8678ebd8992fab801c185d2b88c65b58c654fd7921c2",
+      "lineCount": 2003,
+      "packageFile": "03-smartsite-traditional-lead-warmer.md",
+      "classification": "INSTALLED_SMARTSITE_TRADITIONAL_LEAD_WARMER_SOURCE"
+    },
+    {
+      "sourceId": "B3-ORIG-004",
+      "libraryFileId": "libfile_b8b6963a97348191a3b67081ea9cb7fe",
+      "displayName": "Pasted text(16).txt",
+      "createdAt": "2026-06-17T19:23:20.545658Z",
+      "sizeBytes": 60206,
+      "sha256": "143941ddd2fd4bcd7513c43103e18509dcdbf6158ca19369716c9cca5f6bfdb0",
+      "lineCount": 1585,
+      "packageFile": "04-smartsite-downstream-sales-specialist.md",
+      "classification": "INSTALLED_SMARTSITE_DOWNSTREAM_SPECIALIST_SOURCE"
+    },
+    {
+      "sourceId": "B3-ORIG-005",
+      "libraryFileId": "libfile_e160971fb8f48191814bb5804e71ca5b",
+      "displayName": "Pasted text(20).txt",
+      "createdAt": "2026-06-19T21:37:15.087451Z",
+      "sizeBytes": 78834,
+      "sha256": "7a0baf4c728d19f53598ee36975ec8bc639396c0b8b23d2a3122937c06114351",
+      "lineCount": 2220,
+      "packageFile": "05-shared-sales-capable-agent-framework.md",
+      "classification": "SHARED_SALES_CAPABLE_AGENT_FRAMEWORK_SOURCE"
+    }
+  ],
+  "provenanceReconciliations": [
+    {
+      "priorPackageFile": "docs/source-material/master-prompts/batch-1/01-database-reactivation-master.md",
+      "libraryFileId": "libfile_80b7c6ce696881918802e246e1ec3391",
+      "displayName": "DATABASE REACTIVATION OUTBOUND SYSTEM - checklist.docx",
+      "sizeBytes": 40457,
+      "sha256": "95be2e77730f91d14896e9f300e6ada79f5aa06678018bfeed6a4e3467fd06a7",
+      "renderedPages": 38,
+      "effect": "Adds immutable source identity and digest evidence only; creates no new Batch 3 record and promotes nothing."
+    }
+  ],
+  "archiveNote": "Complete source files remain Library-backed. GitHub contains curated provenance-labeled extracts only."
+}
