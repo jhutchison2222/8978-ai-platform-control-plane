@@ -42,10 +42,13 @@ export class ServiceAuthReplayDurableObject extends DurableObject {
         )
       `, now);
       const insertion = this.ctx.storage.sql.exec(
-        "INSERT OR IGNORE INTO consumed_nonces (nonce, issued_at, expires_at, consumed_at) VALUES (?, ?, ?, ?)",
+        `INSERT INTO consumed_nonces (nonce, issued_at, expires_at, consumed_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(nonce) DO NOTHING
+         RETURNING nonce`,
         nonce, issuedAtMs, expiresAtMs, now,
       );
-      return insertion.rowsWritten === 1;
+      return insertion.next().done === false;
     });
 
     return Object.freeze({ consumed });
