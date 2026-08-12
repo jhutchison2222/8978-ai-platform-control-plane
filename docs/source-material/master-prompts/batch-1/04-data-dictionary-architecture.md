@@ -34,7 +34,7 @@ This supports the current architecture requirement that products, services, offe
 
 ## Important historical conflict
 
-The workbook Executive Summary contains an older design assumption describing one primary multi-tenant D1 database with strict tenant IDs. That is now superseded for production customer isolation. Current production architecture requires a separate Worker and separate D1 database for each paying production customer. The workbook remains useful for field-level normalization and migration logic but not as authority for the old shared-production tenancy model.
+The workbook Executive Summary contains an older design assumption describing one primary multi-tenant D1 database with strict tenant IDs. That is now superseded for production customer isolation. Current production architecture requires a separate Worker and separate D1 database for every production customer. The workbook remains useful for field-level normalization and migration logic but not as authority for the old shared-production tenancy model.
 
 ## Source-of-truth pattern
 
