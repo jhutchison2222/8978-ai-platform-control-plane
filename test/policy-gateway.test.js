@@ -22,8 +22,8 @@ function runtime(overrides = {}) {
   return {
     resourceResolver: { async resolve(hint) { if (hint.locator === "unavailable") throw new Error("offline"); if (hint.locator === "production") return { kind: "cloudflare_worker", provider: "cloudflare", accountId: "acct", workerName: "customer-worker", environment: "production", isolation: { mode: "dedicated_customer", customerId: "customer-1" }, bindings: { customerId: "customer-1", dedicatedWorkerName: "customer-worker", dedicatedD1DatabaseId: "d1-customer-1", sharedProductionD1: false } }; return repository; } },
     identityVerifier: { async verify(attestation, { role, actionDigest }) { if (attestation === "maker-signed" && role === "maker") return { principalId: "maker-principal", actionDigest }; if (attestation === "checker-signed" && role === "checker") return { principalId: "checker-principal", actionDigest }; if (attestation === "maker-alias" && role === "checker") return { principalId: "maker-principal", actionDigest }; throw new Error("unauthenticated"); } },
-    evidenceProvider: { async getTestEvidence(actionDigest, required) { return required.map((testId) => ({ testId, result: "passed", actionDigest, issuedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", evidenceDigest: "sha256:" + "a".repeat(64) })); } },
-    rollbackVerifier: { async verify(reference, { actionDigest }) { return reference === "rollback-ok" ? { valid: true, executable: true, actionDigest, issuedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", evidenceDigest: "sha256:" + "b".repeat(64) } : { valid: false }; } },
+    evidenceProvider: { async getTestEvidence(actionDigest, required) { return required.map((testId) => ({ testId, result: "passed", actionDigest, issuedAt: "2000-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z", evidenceDigest: "sha256:" + "a".repeat(64) })); } },
+    rollbackVerifier: { async verify(reference, { actionDigest }) { return reference === "rollback-ok" ? { valid: true, executable: true, actionDigest, issuedAt: "2000-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z", evidenceDigest: "sha256:" + "b".repeat(64) } : { valid: false }; } },
     limitProvider: { async resolve(_action, _resolved, { actionDigest }) { return { risk: "medium", costUsd: 0, recordCount: 1, actionDigest, evidenceDigest: "sha256:" + "c".repeat(64) }; } },
     ownerVerifier: { async verify(decision) { return decision.signature === "valid"; } }, ownerDecisionStore: new DurableOwnerDecisionStore(),
     idempotencyStore: new DurableLeaseStore(), auditStore: new DurableAppendOnlyAuditStore(),
@@ -136,7 +136,7 @@ test("10: runtime readiness, Project Knowledge, Workflow, and Queue contracts fa
 });
 
 test("standing authorization revalidates trusted evidence and kill-switch state", async () => {
-  let available = true; const rt = runtime({ evidenceProvider: { async getTestEvidence(digest, required) { if (!available) throw new Error("offline"); return required.map((testId) => ({ testId, result: "passed", actionDigest: digest, issuedAt: "2026-08-11T18:00:00Z", expiresAt: "2026-08-12T18:00:00Z", evidenceDigest: "sha256:" + "f".repeat(64) })); } } });
+  let available = true; const rt = runtime({ evidenceProvider: { async getTestEvidence(digest, required) { if (!available) throw new Error("offline"); return required.map((testId) => ({ testId, result: "passed", actionDigest: digest, issuedAt: "2000-01-01T00:00:00Z", expiresAt: "2100-01-01T00:00:00Z", evidenceDigest: "sha256:" + "f".repeat(64) })); } } });
   const gateway = await PolicyGateway.create(policySet, rt); const requested = action(); const authorization = await gateway.evaluate(requested); available = false;
   await assert.rejects(() => gateway.assertExecutable(requested, authorization), /stale/);
 });
