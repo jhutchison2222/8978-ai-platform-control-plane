@@ -4,9 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "npm run test:node && npm run test:worker",
+    "test:node": "node --test test/*.test.js",
+    "test:worker": "vitest run",
     "check": "node scripts/validate-artifacts.js",
-    "secret-scan": "node scripts/secret-scan.js"
+    "secret-scan": "node scripts/secret-scan.js",
+    "cf:types": "wrangler types",
+    "cf:types:check": "wrangler types --check",
+    "cf:dry-run": "wrangler deploy --dry-run --outdir .wrangler/dry-run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "latest",
+    "@cloudflare/workers-types": "latest",
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
   },
   "engines": {
     "node": ">=20"

@@ -44,7 +44,7 @@ A receiver must complete authentication and atomic nonce consumption before any 
 
 The routing adapter advertises `atomic = true` and `durability = "durable"`, satisfying the verifier contract. The in-memory store in `test/service-auth.test.js` remains only a deterministic unit-test fixture.
 
-Cloudflare configuration must add the generated namespace binding and a SQLite-class migration before deployment. The unresolved configuration shape is:
+The development-only configuration in `wrangler.jsonc` now adds the generated namespace binding and a SQLite-class migration. It remains undeployed and contains no production route, account identifier, or secret:
 
 ```jsonc
 {
@@ -60,14 +60,14 @@ Cloudflare configuration must add the generated namespace binding and a SQLite-c
   },
   "migrations": [
     {
-      "tag": "service-auth-replay-v1",
+      "tag": "v1",
       "new_sqlite_classes": ["ServiceAuthReplayDurableObject"]
     }
   ]
 }
 ```
 
-This is a configuration contract, not authorization to create or deploy the binding. Binding types must be generated with `wrangler types` after an actual Worker configuration is approved.
+This is a development configuration contract, not authorization to create or deploy the binding. Binding types are generated with `wrangler types` and checked in CI.
 
 ## Rotation
 
@@ -81,7 +81,7 @@ This repository slice adds portable signing and verification, bounded request ad
 
 ## Remaining adapters and gates
 
-- approved Worker entrypoint and generated environment types
+- independent acceptance of the candidate development Worker entrypoint and generated environment types
 - authoritative principal, key, secret-binding, and rotation registry
 - Project Knowledge reader
 - Workflow dispatcher
@@ -90,7 +90,7 @@ This repository slice adds portable signing and verification, bounded request ad
 - durable idempotency and owner-decision stores
 - provider-specific AutoCalls and CRM adapters
 - structured observability with credential-shape redaction
-- Cloudflare runtime tests using `@cloudflare/vitest-pool-workers`
+- deployment-stage smoke, rollback, and secret-rotation tests in an explicitly approved Cloudflare development account
 - independent Claude review bound to the exact candidate commit
 
 All deployment and production policies remain disabled until authoritative identifiers, approved configuration, runtime integration tests, and independent checker evidence are available.
