@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "1.0.0",
+  "packageId": "8978-master-prompt-architecture-batch-1",
+  "status": "PROPOSED",
+  "governing": false,
+  "sourcePackagePath": "docs/source-material/master-prompts/batch-1",
+  "records": [
+    {
+      "recordId": "pk.b1.runtime.autocalls-primary",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "runtime_platform",
+      "statement": "AutoCalls is the primary AI communications runtime. HighLevel is optional as a CRM/integration and historical HighLevel Voice AI material is not runtime authority.",
+      "sourceRefs": [
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.ghl-voice-ai-runtime"
+      ]
+    },
+    {
+      "recordId": "pk.b1.identity.customer-facing",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "identity_disclosure",
+      "statement": "Internal template/persona names remain internal. Installed agents use customer-selected names and titles; demo-role disclosure is limited to the approved demo boundary.",
+      "sourceRefs": [
+        "B1-S01",
+        "B1-S02",
+        "B1-S03",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.internal-name-disclosure"
+      ]
+    },
+    {
+      "recordId": "pk.b1.context.read-first",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "context_hydration",
+      "statement": "Read authoritative CRM, D1, and handoff context before questioning; do not re-ask populated facts, and accept live corrections over stale context.",
+      "sourceRefs": [
+        "B1-S01",
+        "B1-S02",
+        "B1-O01"
+      ],
+      "supersedes": []
+    },
+    {
+      "recordId": "pk.b1.sales.layered-emotional",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "sales_method",
+      "statement": "When conditions support discovery, connect multiple hot buttons/issues to underlying issues, current emotion, desired future state, future-state emotion, solution value, and an open-ended benefit-forward trial close. Do not trial close from one isolated issue.",
+      "sourceRefs": [
+        "B1-S01",
+        "B1-S02",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.minimum-three-shortcut",
+        "historical.isolated-trial-close"
+      ]
+    },
+    {
+      "recordId": "pk.b1.sales.momentum-stop",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "conversation_state",
+      "statement": "Do not slow explicit high-intent buying action with unnecessary discovery. Stop probing on frustration, clear refusal, human request, opt-out, direct action, or another configured terminal condition.",
+      "sourceRefs": [
+        "B1-S01",
+        "B1-S02",
+        "B1-S03",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.discovery-always-first"
+      ]
+    },
+    {
+      "recordId": "pk.b1.smartsite.flow",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "channel_entry",
+      "statement": "Kelly is the website front-end role and Matt is the deeper transferred sales role. Matt is not the direct-inbound entry point for the intended SmartSite flow. Kelly continues closing when no transfer occurs.",
+      "sourceRefs": [
+        "B1-S03",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.matt-direct-inbound",
+        "historical.kelly-dead-end"
+      ]
+    },
+    {
+      "recordId": "pk.b1.smartsite.two-tier-provenance",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "data_capture",
+      "statement": "Simulated visitor discoveries and actual prospect/business-owner discoveries are separate subjects with separate provenance and relationships.",
+      "sourceRefs": [
+        "B1-S03",
+        "B1-S04",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.mixed-demo-discovery"
+      ]
+    },
+    {
+      "recordId": "pk.b1.smartsite.pricing",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "entity_specific_sales_knowledge",
+      "component": "offer_pricing",
+      "statement": "AI SmartSite Base is $197 per month and Pro is $297 per month. Do not claim included or unlimited AI minutes/conversations and do not proactively introduce minutes.",
+      "sourceRefs": [
+        "B1-S02",
+        "B1-S03",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.smartsite-177-247",
+        "historical.included-unlimited-minutes"
+      ]
+    },
+    {
+      "recordId": "pk.b1.data.normalized-entities",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "data_architecture",
+      "statement": "Products, services, offers, plans, promotions, AI employee types/instances, demos, niches, differentiators, and their sales knowledge use normalized related entities rather than mixed records.",
+      "sourceRefs": [
+        "B1-S04",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.mixed-entity-records"
+      ]
+    },
+    {
+      "recordId": "pk.b1.runtime.production-isolation",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "customer_isolation",
+      "statement": "Each paying production customer requires a dedicated Worker and dedicated D1 binding. Shared production D1 tenancy is prohibited.",
+      "sourceRefs": [
+        "B1-S04",
+        "B1-O01"
+      ],
+      "supersedes": [
+        "historical.shared-production-d1"
+      ]
+    },
+    {
+      "recordId": "pk.b1.runtime.service-auth",
+      "version": "proposed-1",
+      "status": "PROPOSED",
+      "class": "reusable_master_knowledge",
+      "component": "authentication",
+      "statement": "Cloudflare runtime integrations use machine-to-machine service authentication through managed secrets and bindings. Interactive OAuth is not a runtime dependency.",
+      "sourceRefs": [
+        "current-user-direction-2026-08-12"
+      ],
+      "supersedes": [
+        "historical.cloudflare-oauth-runtime-dependency"
+      ]
+    }
+  ]
+}
