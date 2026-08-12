@@ -28,6 +28,18 @@ const batch2Readme = await readFile("docs/source-material/master-prompts/batch-2
 const batch2DirectInbound = await readFile("docs/source-material/master-prompts/batch-2/01-direct-inbound-phone-sales-specialist.md", "utf8");
 const batch2NoTransfer = await readFile("docs/source-material/master-prompts/batch-2/02-phone-receptionist-no-ai-sales-rep.md", "utf8");
 
+const batch3Proposed = await load("docs/project-knowledge/proposed/batch-3/proposed-records.json");
+const batch3Manifest = await load("docs/source-material/master-prompts/batch-3/manifest.json");
+const batch3Review = await readFile("docs/project-knowledge/proposed/batch-3/normalization-review.md", "utf8");
+const batch3Readme = await readFile("docs/source-material/master-prompts/batch-3/README.md", "utf8");
+const batch3Sources = await Promise.all([
+  "01-smartsite-optional-transfer-assistant.md",
+  "02-smartsite-standalone-sales-assistant.md",
+  "03-smartsite-traditional-lead-warmer.md",
+  "04-smartsite-downstream-sales-specialist.md",
+  "05-shared-sales-capable-agent-framework.md",
+].map((name) => readFile(`docs/source-material/master-prompts/batch-3/${name}`, "utf8")));
+
 function assertValid(name, schema, value) {
   const errors = validateSchema(schema, value); if (errors.length) throw new Error(`${name} schema validation failed:\n${errors.join("\n")}`);
 }
@@ -107,6 +119,49 @@ if (!/no-AI-sales-specialist-transfer receptionist as a distinct versioned profi
 if (!/candidate action families only/iu.test(JSON.stringify(batch2Proposed)) || !/no candidate action family establishes an implemented AutoCalls capability/iu.test(JSON.stringify(batch2Proposed))) throw new Error("Batch 2 must not claim unsupported AutoCalls action capability");
 if (/Apply Batch 1 current overrides only/iu.test(batch2Readme)) throw new Error("Batch 2 must not treat Batch 1 source overrides as governing authority");
 
+if (batch3Proposed.status !== "PROPOSED" || batch3Proposed.governing !== false) throw new Error("Batch 3 package must remain PROPOSED and non-governing");
+if (!Array.isArray(batch3Proposed.records) || batch3Proposed.records.length !== 12) throw new Error("Batch 3 must contain exactly 12 proposed records");
+const expectedBatch3Ids = Array.from({ length: 12 }, (_, index) => `PK-B3-PROP-${String(index + 1).padStart(3, "0")}`);
+const batch3Ids = batch3Proposed.records.map((record) => record.recordId);
+if (new Set(batch3Ids).size !== 12 || JSON.stringify(batch3Ids) !== JSON.stringify(expectedBatch3Ids)) throw new Error("Batch 3 record IDs must be unique and exactly PK-B3-PROP-001 through PK-B3-PROP-012");
+for (const record of batch3Proposed.records) {
+  if (record.status !== "PROPOSED" || record.governing !== false) throw new Error(`Batch 3 record ${record.recordId} must remain PROPOSED and non-governing`);
+}
+const expectedBatch3Counts = { sources:7, sourceOriginals:5, provenanceReconciliations:1, componentDeltaItems:12, conflicts:10, missingMaterialItems:13, dependencyGroups:10, proposedProjectKnowledgeRecords:12 };
+for (const [key, value] of Object.entries(expectedBatch3Counts)) if (batch3Proposed.summaryCounts?.[key] !== value) throw new Error(`Batch 3 summary count mismatch for ${key}`);
+if (batch3Manifest.status !== "SOURCE_MATERIAL_ONLY" || batch3Manifest.sourcePolicy?.promoteToFinalAutomatically !== false || batch3Manifest.sourcePolicy?.secretsAllowed !== false || batch3Manifest.sourcePolicy?.rawFullPromptsCommitted !== false || batch3Manifest.sourcePolicy?.runtimeAuthority !== false) throw new Error("Batch 3 manifest authority or security boundary changed");
+if (!Array.isArray(batch3Manifest.sources) || batch3Manifest.sources.length !== 5) throw new Error("Batch 3 manifest must contain exactly five source originals");
+const expectedBatch3Digests = [
+  "fbaf2e9dfcb62a4ec4cec9ee4b8d57c0e86f3ddb7bce71ad2e6aeb22578cfef7",
+  "f2bd4c2b15e0a3ea96064505f8460928711a93541a933c18737d24b8f10d7707",
+  "761dc42853d37a5e5dec8678ebd8992fab801c185d2b88c65b58c654fd7921c2",
+  "143941ddd2fd4bcd7513c43103e18509dcdbf6158ca19369716c9cca5f6bfdb0",
+  "7a0baf4c728d19f53598ee36975ec8bc639396c0b8b23d2a3122937c06114351",
+];
+const batch3Digests = batch3Manifest.sources.map((source) => source.sha256);
+if (new Set(batch3Digests).size !== 5 || JSON.stringify(batch3Digests) !== JSON.stringify(expectedBatch3Digests)) throw new Error("Batch 3 source digests must remain exact, unique, and ordered");
+for (const source of batch3Manifest.sources) {
+  if (!/^libfile_[a-f0-9]{32}$/u.test(source.libraryFileId) || !Number.isInteger(source.sizeBytes) || source.sizeBytes <= 0 || !Number.isInteger(source.lineCount) || source.lineCount <= 0) throw new Error(`Batch 3 source provenance is incomplete for ${source.sourceId}`);
+}
+if (!Array.isArray(batch3Manifest.provenanceReconciliations) || batch3Manifest.provenanceReconciliations.length !== 1 || batch3Manifest.provenanceReconciliations[0].effect !== "Adds immutable source identity and digest evidence only; creates no new Batch 3 record and promotes nothing.") throw new Error("Batch 3 database-reactivation reconciliation must remain provenance-only");
+for (const [name, value] of [["README", batch3Readme], ...batch3Sources.map((value, index) => [`source ${index + 1}`, value])]) {
+  if (!/Status: SOURCE MATERIAL ONLY/u.test(value)) throw new Error(`Batch 3 ${name} must remain source material only`);
+}
+const countBatch3Ids = (prefix, expected) => {
+  const matches = [...batch3Review.matchAll(new RegExp(`\\| ${prefix}\\d{2} \\|`, "gu"))].map((match) => match[0]);
+  if (matches.length !== expected || new Set(matches).size !== expected) throw new Error(`Batch 3 review must contain exactly ${expected} unique ${prefix} entries`);
+};
+countBatch3Ids("B3-T", 12);
+countBatch3Ids("B3-C", 10);
+countBatch3Ids("B3-M", 13);
+countBatch3Ids("B3-D", 10);
+const batch3Serialized = JSON.stringify(batch3Proposed);
+if (!/Janet2 assumed-transfer versus standalone conflict/iu.test(batch3Serialized) || !/never through Janet\/Steve labels or ordinal names/iu.test(batch3Serialized)) throw new Error("Batch 3 internal-label conflict must remain quarantined");
+if (!/candidate action families only and fail closed without verified AutoCalls contracts/iu.test(batch3Serialized)) throw new Error("Batch 3 must not claim unsupported AutoCalls action capability");
+const batch3ServiceAuthRule = "Cloudflare service authentication remains HMAC-based with replay defense and no OAuth dependency.";
+if (!batch3Proposed.normalizationRules?.includes("Service authentication remains HMAC-based with replay defense and no OAuth dependency.") || batch3Proposed.nonBatch3RuntimeConstraints?.length !== 1 || batch3Proposed.nonBatch3RuntimeConstraints[0].constraint !== batch3ServiceAuthRule || !batch3Proposed.nonBatch3RuntimeConstraints.every((constraint) => constraint.changesBatch3RecordCount === false)) throw new Error("Batch 3 must preserve service-auth independence without changing its record count");
+if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"))) throw new Error("Batch 3 source files cannot self-promote to CURRENT or FINAL");
+
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, fixtures, trust anchor, 19 non-governing Batch 1 records, and 10 non-governing Batch 2 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
