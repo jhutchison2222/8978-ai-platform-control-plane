@@ -6,6 +6,17 @@ Source package: `docs/source-material/master-prompts/batch-1/`
 
 This review preserves the source package and cannot satisfy the runtime requirement for `FINAL` or `CURRENT` Project Knowledge. Promotion requires source comparison, validation, an independent Claude review bound to the exact commit, correction of blocking findings, version/digest generation, and owner-approved promotion.
 
+## Reconciliation outcome
+
+The independent architecture review in `docs/reviews/pr-3/` was reconciled against the repository-side normalization at PR head `023bee96d4f3005710fa9371e8565460ad781915`. Its 24-component taxonomy, 14 conflict entries, 22 missing-material items, 16 dependency groups, and 19 Project Knowledge candidates are the complete review registers. `proposed-records.json` is now the machine-readable 19-record normalization set.
+
+Two repository-side defects were corrected during reconciliation:
+
+- `current-overrides.md` is source-only input. Its self-label and relative precedence claims do not make it authoritative or governing.
+- Production isolation applies to every production customer; the narrower `paying` qualifier is not retained.
+
+Commercial terms, disposition tags, tool/action contracts, and exact platform mappings remain unverified proposals. The external Claude check remains pending and must be bound to the final candidate commit.
+
 ## 1. Source Inventory
 
 | ID | Packaged extract | Original | Coverage | Disposition |
@@ -14,7 +25,7 @@ This review preserves the source package and cannot satisfy the runtime requirem
 | B1-S02 | `02-sarah-james-sales-demo.md` | James prompt text, 2026-07-13 | Sarah→James, roleplay, layered selling, summaries, pricing conflicts | Normalize orchestration and method; supersede old pricing/minutes |
 | B1-S03 | `03-kelly-matt-smartsite-architecture.md` | Kelly/Matt conversations, 2026-06-15–2026-07-03 | Website flow, two-tier discovery, transfer/closing, field gaps | Normalize SmartSite architecture; separate visitor and owner subjects |
 | B1-S04 | `04-data-dictionary-architecture.md` | Master data dictionary XLSX, 2026-07-27 | Canonical D1, mirrors, handoffs, vocabulary, entities | Normalize principles; defer exact mappings until workbook transfer |
-| B1-O01 | `current-overrides.md` | Current user direction through 2026-07-31 | Runtime, identity, pricing, minutes, trial closes, tags, isolation | Highest-precedence Batch 1 authority |
+| B1-O01 | `current-overrides.md` | Curated user-direction extract through 2026-07-31 | Runtime, identity, pricing, minutes, trial closes, tags, isolation | High-precedence source input for conflict analysis only; non-governing and unable to self-promote |
 
 The package contains curated extracts, not byte-for-byte originals. Reusable master knowledge, subscriber configuration, entity-specific sales knowledge, and contact/session discoveries remain separate information classes.
 
@@ -41,20 +52,20 @@ Prompt composition binds components to agent, channel, customer, offer, entity, 
 
 | ID | Historical evidence | Current outcome |
 |---|---|---|
-| B1-C01 | SmartSite $177/$247 | Use $197 Base and $297 Pro; preserve old prices only as history |
-| B1-C02 | Included/free/unlimited AI minutes | Make no such claims and do not proactively discuss minutes |
+| B1-C01 | SmartSite $177/$247 | Preserve both generations; treat $197/$297 only as an unverified, effective-dated commercial candidate |
+| B1-C02 | Included/free/unlimited AI minutes | Candidate prohibition remains PROPOSED; separate it from reactive usage-cost framing and verify both commercially |
 | B1-C03 | GHL Voice AI target runtime | AutoCalls is the communications runtime; GHL is optional CRM/integration |
 | B1-C04 | Internal names exposed when installed | Installed agents use customer-selected names/titles |
 | B1-C05 | Matt as direct inbound phone agent | Kelly engages website visitor first; Matt continues website handoff |
 | B1-C06 | Trial close after isolated issue/minimum shortcut | Use layered multi-discovery emotional/value sequence |
 | B1-C07 | Yes/no or “would it be worth it” closes | Use open-ended benefit-forward trial closes |
 | B1-C08 | Discovery always before action | Preserve explicit buying momentum; stop probing on frustration |
-| B1-C09 | Shared production D1 | Dedicated Worker and D1 per paying production customer |
+| B1-C09 | Shared production D1 | Governing baseline requires a dedicated Worker and D1 per production customer; preserve the shared-tenancy statement only as history |
 | B1-C10 | Matt demonstrates without closing | Matt sells/closes; Kelly does so when no transfer occurs |
 | B1-C11 | Pro bonuses become primary sale | Original niche/demo solution stays primary |
 | B1-C12 | Visitor and owner discoveries mixed | Store separate subjects, provenance, and relationships |
 
-Supersession changes effective behavior without deleting historical evidence.
+Supersession changes effective behavior without deleting historical evidence. The table above is a concise implementation view; the complete 14-entry register is in the independent review artifact.
 
 ## 4. Missing-Material Register
 
@@ -73,7 +84,7 @@ Supersession changes effective behavior without deleting historical evidence.
 | B1-M11 | Jurisdiction/customer compliance rules | Complete campaign safeguards | Production campaigns |
 | B1-M12 | Customer onboarding/configuration schemas | Bind masters to subscriber resources | Customer activation |
 
-Items can be non-blocking for development while still blocking promotion, deployment, or production.
+Items can be non-blocking for development while still blocking promotion, deployment, or production. The table above is an implementation-focused subset; the independent review's 22-item register is the complete missing-material register for Batch 1.
 
 ## 5. Data and Field Dependency Map
 
