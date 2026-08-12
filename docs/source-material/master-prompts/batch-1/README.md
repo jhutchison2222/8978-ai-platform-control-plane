@@ -13,7 +13,7 @@ This package is intentionally curated rather than treated as a final prompt. It 
 - `03-kelly-matt-smartsite-architecture.md` — Kelly→Matt SmartSite transfer model and historical Matt demo drafts, including the important correction that Matt acts as the prospect's AI Sales Rep for website visitors rather than taking direct calls.
 - `04-data-dictionary-architecture.md` — selected architecture findings from the master data dictionary: source-of-truth, D1 targets, GHL mirrors, AutoCalls variables, conversation/handoff scoping, controlled vocabulary and entity separation.
 - `manifest.json` — source/provenance inventory and processing instructions.
-- `current-overrides.md` — current known higher-precedence rules that must supersede conflicting historical source text without deleting provenance.
+- `current-overrides.md` — high-precedence user-directed source input for normalization. It supersedes conflicting historical source text within the review process without becoming `CURRENT` or `FINAL` Project Knowledge.
 
 ## Processing rules
 
