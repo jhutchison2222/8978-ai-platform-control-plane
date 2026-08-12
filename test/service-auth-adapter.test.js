@@ -132,7 +132,6 @@ test("ServiceAuthFetcher signs calls through an injected Service Binding-style f
         request,
         secretResolver: resolver,
         replayStore,
-        now: NOW,
       });
       return Response.json({ principalId: authenticated.identity.principalId });
     },
