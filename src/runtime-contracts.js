@@ -23,10 +23,24 @@ export function validateRuntimeReadiness(runtime) {
 
 export function assertProjectKnowledgeRecord(record) {
   if (!record || !["FINAL", "CURRENT"].includes(record.status)) throw new Error("Governing Project Knowledge unavailable");
-  for (const field of ["recordId", "version", "digest", "retrievedAt"]) {
+  for (const field of ["recordId", "version", "digest", "retrievedAt", "actionDigest", "scope"]) {
     if (typeof record[field] !== "string" || !record[field]) throw new Error(`Project Knowledge missing ${field}`);
   }
-  if (record.credentials !== undefined || record.secrets !== undefined) throw new Error("Project Knowledge must not contain provider credentials");
+  if (!/^sha256:[a-f0-9]{64}$/.test(record.digest) || !/^sha256:[a-f0-9]{64}$/.test(record.actionDigest)) {
+    throw new Error("Project Knowledge digest binding is invalid");
+  }
+  if (!record.knowledge || typeof record.knowledge !== "object" || Array.isArray(record.knowledge)) {
+    throw new Error("Project Knowledge content is unavailable");
+  }
+  const forbidden = new Set(["apikey", "authorization", "credential", "credentials", "privatekey", "proxyauthorization", "refreshtoken", "secret", "secrets", "token", "tokens", "accesstoken"]);
+  const pending = [record];
+  while (pending.length) {
+    const current = pending.pop();
+    for (const [key, value] of Object.entries(current)) {
+      if (forbidden.has(key.toLowerCase().replace(/[^a-z0-9]/g, ""))) throw new Error("Project Knowledge must not contain provider credentials");
+      if (value && typeof value === "object") pending.push(value);
+    }
+  }
   return true;
 }
 

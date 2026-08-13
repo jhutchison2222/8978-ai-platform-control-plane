@@ -21,6 +21,8 @@ The migration at `migrations/authority/0001_authority_read_model.sql` defines:
 
 The additive `0002_validation_evidence.sql` migration extends this read model with authenticated identity keys, required-test evidence, and rollback evidence. Its separate trust rules are documented in `docs/validation-evidence-runtime.md`.
 
+The additive, empty `0003_governing_project_knowledge.sql` migration adds a governing Project Knowledge snapshot table. It promotes nothing and remains unbound; its trust rules are documented in `docs/project-knowledge-runtime.md`.
+
 The runtime adapter contains only parameterized `SELECT` queries. A separate, future authority-management path must own writes, approvals, promotion, and rollback. Those capabilities must not be added to this adapter.
 
 ## Deliberately unbound

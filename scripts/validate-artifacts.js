@@ -24,7 +24,11 @@ const authorityAdapterSource = await readFile("src/d1-authority-runtime.js", "ut
 const authorityMigration = await readFile("migrations/authority/0001_authority_read_model.sql", "utf8");
 const validationAdapterSource = await readFile("src/d1-validation-runtime.js", "utf8");
 const validationMigration = await readFile("migrations/authority/0002_validation_evidence.sql", "utf8");
+const projectKnowledgeAdapterSource = await readFile("src/d1-project-knowledge-runtime.js", "utf8");
+const projectKnowledgeMigration = await readFile("migrations/authority/0003_governing_project_knowledge.sql", "utf8");
 const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
+const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
+const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -176,6 +180,42 @@ if (workerSource.includes("D1Ed25519IdentityVerifier") || workerSource.includes(
     developmentRuntimeSource.includes("D1Ed25519IdentityVerifier") || developmentRuntimeSource.includes("D1TestEvidenceProvider") ||
     developmentRuntimeSource.includes("D1RollbackVerifier")) throw new Error("Validation evidence adapters cannot be activated before the reviewed D1 binding step");
 
+for (const required of [
+  "D1GoverningProjectKnowledgeReader", "authority_project_knowledge", "governing = 1", "enabled = 1",
+  "status = 'CURRENT'", "status = 'FINAL'", ".bind(this.scope, statuses.current, statuses.final, lookup.timestamp).all()",
+  "canonicalize(knowledge) !== row.knowledge_json", "MAX_KNOWLEDGE_BYTES", "assertNoSecretFields(knowledge)",
+  "await digestCanonicalValue(digestRecord) !== row.knowledge_digest", "actionDigest: request.actionDigest",
+]) if (!projectKnowledgeAdapterSource.includes(required)) throw new Error(`Project Knowledge read invariant missing: ${required}`);
+if (writeSqlPattern.test(projectKnowledgeAdapterSource) || /\bfetch\s*\(/u.test(projectKnowledgeAdapterSource)) {
+  throw new Error("Project Knowledge adapter must remain read-only and cannot use external fetch");
+}
+for (const required of [
+  "CREATE TABLE authority_project_knowledge", "status IN ('CURRENT', 'FINAL')", "governing = 1",
+  "enabled IN (0, 1)", "valid_until_ms > valid_from_ms", "length(version) > 0",
+  "authority_project_knowledge_active_scope",
+]) if (!projectKnowledgeMigration.includes(required)) throw new Error(`Project Knowledge migration invariant missing: ${required}`);
+assertTableConstraints(projectKnowledgeMigration, "authority_project_knowledge", [
+  "record_id TEXT PRIMARY KEY", "status IN ('CURRENT', 'FINAL')", "governing = 1",
+  "enabled IN (0, 1)", "valid_until_ms > valid_from_ms", "length(version) > 0",
+]);
+if (/\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bREPLACE\b/iu.test(projectKnowledgeMigration)) {
+  throw new Error("Project Knowledge migration must create empty schema without seed or mutation statements");
+}
+for (const prohibitedStatus of ["PROPOSED", "DRAFT", "SOURCE_MATERIAL_ONLY"]) {
+  if (projectKnowledgeMigration.includes(prohibitedStatus)) throw new Error(`Project Knowledge migration cannot admit ${prohibitedStatus}`);
+}
+for (const secretKey of ["apikey", "authorization", "credential", "credentials", "privatekey", "proxyauthorization", "refreshtoken", "secret", "secrets", "token", "tokens", "accesstoken"]) {
+  if (!projectKnowledgeAdapterSource.includes(`\"${secretKey}\"`)) throw new Error(`Project Knowledge recursive secret-field guard missing: ${secretKey}`);
+}
+if (!policyGatewaySource.includes("knowledge.actionDigest !== actionDigest") || !runtimeContractsSource.includes('"actionDigest", "scope"') ||
+    !runtimeContractsSource.includes("Project Knowledge digest binding is invalid") || !runtimeContractsSource.includes("const pending = [record]") ||
+    !runtimeContractsSource.includes('key.toLowerCase().replace(/[^a-z0-9]/g, "")')) {
+  throw new Error("Project Knowledge must remain independently bound to the gateway-computed action digest");
+}
+if (workerSource.includes("D1GoverningProjectKnowledgeReader") || developmentRuntimeSource.includes("D1GoverningProjectKnowledgeReader")) {
+  throw new Error("Project Knowledge adapter cannot be activated before the reviewed D1 binding and promotion step");
+}
+
 if (batch1Proposed.status !== "PROPOSED" || batch1Proposed.governing !== false) throw new Error("Batch 1 package must remain PROPOSED and non-governing");
 if (!Array.isArray(batch1Proposed.records) || batch1Proposed.records.length !== 19) throw new Error("Batch 1 must contain exactly 19 proposed records");
 const expectedBatch1Ids = Array.from({ length: 19 }, (_, index) => `PK-PROP-${String(index + 1).padStart(3, "0")}`);
@@ -265,4 +305,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, three read-only authority migrations, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

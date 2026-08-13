@@ -166,6 +166,9 @@ export class PolicyGateway {
     try { knowledge = await this.#runtime.projectKnowledge.readGoverningKnowledge({ statuses: ["FINAL", "CURRENT"], actionDigest }); }
     catch { return { outcome: "denied", reason: "governing_project_knowledge_unavailable", actionDigest }; }
     try { assertProjectKnowledgeRecord(knowledge); } catch { return { outcome: "denied", reason: "governing_project_knowledge_unavailable", actionDigest }; }
+    if (knowledge.actionDigest !== actionDigest) {
+      return { outcome: "denied", reason: "governing_project_knowledge_unavailable", actionDigest };
+    }
     const authorization = freeze({ outcome: "authorized_by_standing_policy", actionDigest,
       authorizingPolicy: { policyId: policy.id, policyVersion: policy.version }, resolvedTarget: resolved,
       evidenceSnapshot: { maker: gates.maker, checker: gates.checker, testEvidence: gates.tests,

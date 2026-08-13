@@ -5,6 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { canonicalize, digestCanonicalValue, digestRequestedAction } from "../../src/canonical-digest.js";
 import { D1AuthoritativeResourceResolver, D1TrustedLimitProvider } from "../../src/d1-authority-runtime.js";
 import { D1Ed25519IdentityVerifier, D1RollbackVerifier, D1TestEvidenceProvider } from "../../src/d1-validation-runtime.js";
+import { D1GoverningProjectKnowledgeReader } from "../../src/d1-project-knowledge-runtime.js";
 import { PolicyGateway } from "../../src/policy-gateway.js";
 import { resourceKey } from "../../src/resource-contract.js";
 import { createUnavailableRuntime } from "../../src/unavailable-runtime.js";
@@ -140,6 +141,21 @@ async function seedResourceAndLimits(actionDigest) {
   await seedRollback({ rollbackRef: "rollback-validation-1", actionDigest });
 }
 
+async function seedGoverningKnowledge() {
+  const recordId = "pk-runtime-development";
+  const status = "CURRENT";
+  const version = "1";
+  const scope = "control-plane";
+  const knowledge = { directives: [{ id: "external-writes", value: "disabled" }] };
+  const digestRecord = { recordId, status, version, scope, knowledge };
+  await env.AUTHORITY_DB.prepare(`
+    INSERT INTO authority_project_knowledge
+      (record_id, knowledge_scope, status, governing, enabled, knowledge_json, knowledge_digest,
+       valid_from_ms, valid_until_ms, version)
+    VALUES (?1, ?2, ?3, 1, 1, ?4, ?5, ?6, ?7, ?8)
+  `).bind(recordId, scope, status, canonicalize(knowledge), await digestCanonicalValue(digestRecord), farPast, farFuture, version).run();
+}
+
 describe("D1 validation evidence runtime", () => {
   beforeAll(async () => {
     await applyD1Migrations(env.AUTHORITY_DB, env.AUTHORITY_TEST_MIGRATIONS);
@@ -149,6 +165,7 @@ describe("D1 validation evidence runtime", () => {
 
   beforeEach(async () => {
     await env.AUTHORITY_DB.batch([
+      env.AUTHORITY_DB.prepare("DELETE FROM authority_project_knowledge"),
       env.AUTHORITY_DB.prepare("DELETE FROM authority_identity_keys"),
       env.AUTHORITY_DB.prepare("DELETE FROM authority_test_evidence"),
       env.AUTHORITY_DB.prepare("DELETE FROM authority_rollbacks"),
@@ -267,11 +284,12 @@ describe("D1 validation evidence runtime", () => {
     await expect(rollback.verify("rollback-false", { actionDigest, now })).rejects.toThrow(/unavailable/);
   });
 
-  it("advances the real gateway through identity, tests, and rollback to Project Knowledge", async () => {
+  it("advances the real gateway through governing Project Knowledge to standing authorization", async () => {
     const now = new Date();
     const requested = action();
     const actionDigest = await digestRequestedAction(requested, repository);
     await seedResourceAndLimits(actionDigest);
+    await seedGoverningKnowledge();
     await seedKey({ keyId: "maker-key", principalId: "maker-principal", role: "maker", keyPair: makerKeys });
     await seedKey({ keyId: "checker-key", principalId: "checker-principal", role: "checker", keyPair: checkerKeys });
     requested.evidence = {
@@ -284,9 +302,13 @@ describe("D1 validation evidence runtime", () => {
       identityVerifier: new D1Ed25519IdentityVerifier(env.AUTHORITY_DB),
       evidenceProvider: new D1TestEvidenceProvider(env.AUTHORITY_DB),
       rollbackVerifier: new D1RollbackVerifier(env.AUTHORITY_DB),
+      projectKnowledge: new D1GoverningProjectKnowledgeReader(env.AUTHORITY_DB),
     });
     const gateway = await PolicyGateway.create(policies, runtime);
-    expect(await gateway.evaluate(requested, now)).toEqual({ outcome: "denied", reason: "governing_project_knowledge_unavailable", actionDigest });
+    const result = await gateway.evaluate(requested, now);
+    expect(result.outcome).toBe("authorized_by_standing_policy");
+    expect(result.actionDigest).toBe(actionDigest);
+    expect(result.evidenceSnapshot.projectKnowledge).toMatchObject({ recordId: "pk-runtime-development", actionDigest });
   });
 
   it("the real gateway rejects independently signed maker and checker claims for one principal", async () => {
