@@ -29,7 +29,7 @@ The runtime adapter contains only parameterized `SELECT` queries. A separate, fu
 
 ## Deliberately unbound
 
-The real Worker has no D1 binding, route, account ID, or database ID for this read model. The existing `pk-d1-dev` Project Knowledge database is not reused as mixed-purpose runtime authority storage. Tests create a local `AUTHORITY_DB` through the Cloudflare Workers Vitest pool and apply the actual migration with `applyD1Migrations()`.
+The real Worker configuration has no D1 binding, route, account ID, or database ID for this read model. The existing `pk-d1-dev` Project Knowledge database is not reused as mixed-purpose runtime authority storage. The development runtime can now compose all reviewed readers when `AUTHORITY_DB` is injected, but only tests provide that binding. Tests create a local D1 instance through the Cloudflare Workers Vitest pool and apply the actual migrations with `applyD1Migrations()`.
 
 Binding a dedicated development database requires a separate owner-authorized infrastructure step with an authoritative account/database identifier, independent review, and rollback evidence. Until then, Worker readiness remains `false`, action evaluation still fails closed at authoritative resource resolution, and `/v1/actions/execute` remains unconditionally disabled.
 

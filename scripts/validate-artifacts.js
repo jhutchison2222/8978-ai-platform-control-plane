@@ -28,6 +28,7 @@ const projectKnowledgeAdapterSource = await readFile("src/d1-project-knowledge-r
 const projectKnowledgeMigration = await readFile("migrations/authority/0003_governing_project_knowledge.sql", "utf8");
 const ownerControlAdapterSource = await readFile("src/d1-owner-control-runtime.js", "utf8");
 const ownerControlMigration = await readFile("migrations/authority/0004_owner_control.sql", "utf8");
+const authorityRuntimeCompositionSource = await readFile("src/d1-authority-runtime-composition.js", "utf8");
 const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
 const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
 const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
@@ -150,7 +151,7 @@ assertTableConstraints(authorityMigration, "authority_resources", [...commonAuth
 assertTableConstraints(authorityMigration, "authority_limits", [...commonAuthorityConstraints, "valid_until_ms > valid_from_ms", "cost_usd >= 0", "record_count >= 0"]);
 if (!vitestSource.includes('d1Databases: ["AUTHORITY_DB"]') || !vitestSource.includes("readD1Migrations(\"migrations/authority\")") ||
     !vitestSource.includes("AUTHORITY_TEST_MIGRATIONS")) throw new Error("Authority D1 must be migration-backed in the Workers test runtime");
-if (workerSource.includes("AUTHORITY_DB") || developmentRuntimeSource.includes("AUTHORITY_DB")) throw new Error("Authority D1 cannot be activated before its reviewed deployment binding step");
+if (workerSource.includes("AUTHORITY_DB")) throw new Error("Worker entrypoint cannot directly access authority D1 before its reviewed deployment binding step");
 if (!secretScanSource.includes('"migrations"')) throw new Error("D1 migrations must remain inside the default secret-scan roots");
 
 for (const required of [
@@ -254,6 +255,29 @@ const ownerControlGatewayPatterns = [
 for (const [label, pattern] of ownerControlGatewayPatterns) {
   if (!pattern.test(policyGatewaySource)) throw new Error(`Owner-control gateway invariant missing: ${label}`);
 }
+for (const required of [
+  "D1AuthoritativeResourceResolver", "D1TrustedLimitProvider", "D1Ed25519IdentityVerifier",
+  "D1TestEvidenceProvider", "D1RollbackVerifier", "D1GoverningProjectKnowledgeReader",
+  "D1Ed25519OwnerDecisionVerifier", "D1StandingStateRevalidator", "Object.freeze({",
+  "standingState.revalidate.bind(standingState)", 'projectKnowledgeScope = "control-plane"',
+]) if (!authorityRuntimeCompositionSource.includes(required)) throw new Error(`Authority runtime composition invariant missing: ${required}`);
+if (writeSqlPattern.test(authorityRuntimeCompositionSource) || /\bfetch\s*\(/u.test(authorityRuntimeCompositionSource)) {
+  throw new Error("Authority runtime composition must remain read-only and cannot use external fetch");
+}
+for (const required of [
+  'typeof env?.AUTHORITY_DB?.prepare === "function"',
+  "createD1AuthorityRuntimeDependencies(env.AUTHORITY_DB)", "...authorityDependencies",
+  "D1_AUTHORITY_RUNTIME_DEPENDENCIES", "developmentUnavailableRuntimeDependencies(env)",
+]) if (!developmentRuntimeSource.includes(required) && !workerSource.includes(required)) {
+  throw new Error(`Development authority composition invariant missing: ${required}`);
+}
+if (writeSqlPattern.test(developmentRuntimeSource) || /\bfetch\s*\(/u.test(developmentRuntimeSource)) {
+  throw new Error("Development runtime must remain read-only and cannot use external fetch");
+}
+if (!workerSource.includes('ready: false') ||
+    !workerSource.includes('if (path === "/v1/actions/execute") return response(503, { outcome: "denied", reason: "execution_disabled" });')) {
+  throw new Error("Authority composition cannot enable runtime readiness or action execution");
+}
 if (workerSource.includes("D1Ed25519OwnerDecisionVerifier") || workerSource.includes("D1StandingStateRevalidator") ||
     developmentRuntimeSource.includes("D1Ed25519OwnerDecisionVerifier") || developmentRuntimeSource.includes("D1StandingStateRevalidator")) {
   throw new Error("Owner-control adapters cannot be activated before the reviewed D1 binding and key/state installation step");
@@ -348,4 +372,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, 8 code-composed authority dependencies, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

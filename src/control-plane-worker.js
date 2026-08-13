@@ -2,7 +2,7 @@ import policies from "../policies/development-standing-policies.json" with { typ
 import { CloudflareDurableReplayStore } from "./cloudflare-replay-store.js";
 import { parseJsonStrict } from "./canonical-digest.js";
 import { AuditStateDurableObject, IdempotencyStateDurableObject, OwnerDecisionStateDurableObject } from "./control-plane-state-durable-objects.js";
-import { createDevelopmentRuntime, DEVELOPMENT_UNAVAILABLE_RUNTIME_DEPENDENCIES } from "./development-runtime.js";
+import { createDevelopmentRuntime, developmentUnavailableRuntimeDependencies } from "./development-runtime.js";
 import { PolicyGateway } from "./policy-gateway.js";
 import { authenticateServiceRequest } from "./service-auth-adapter.js";
 import { ServiceAuthReplayDurableObject } from "./service-auth-replay-durable-object.js";
@@ -96,7 +96,7 @@ export default {
         ready: false,
         mode: "development",
         externalWritesEnabled: false,
-        missingAuthoritativeDependencies: DEVELOPMENT_UNAVAILABLE_RUNTIME_DEPENDENCIES,
+        missingAuthoritativeDependencies: developmentUnavailableRuntimeDependencies(env),
         durableDependencies: ["idempotencyStore", "ownerDecisionStore", "auditStore"],
         serviceIdentity: {
           mechanism: authenticated.identity.mechanism,
