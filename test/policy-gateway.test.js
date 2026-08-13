@@ -28,7 +28,7 @@ function runtime(overrides = {}) {
     ownerVerifier: { async verify(decision) { return decision.signature === "valid"; } }, ownerDecisionStore: new DurableOwnerDecisionStore(),
     idempotencyStore: new DurableLeaseStore(), auditStore: new DurableAppendOnlyAuditStore(),
     revalidateStandingState: async () => true,
-    projectKnowledge: { async readGoverningKnowledge() { return { recordId: "pk-1", status: "CURRENT", version: "1", digest: "sha256:" + "d".repeat(64), retrievedAt: "2026-08-11T19:00:00Z" }; } },
+    projectKnowledge: { async readGoverningKnowledge({ actionDigest }) { return { recordId: "pk-1", status: "CURRENT", version: "1", scope: "control-plane", knowledge: { rule: "test-only" }, digest: "sha256:" + "d".repeat(64), retrievedAt: "2026-08-11T19:00:00Z", actionDigest }; } },
     workflowDispatcher: { async dispatch() { return { accepted: true }; } }, queuePublisher: { async publish() { return { accepted: true }; } }, ...overrides,
   };
 }
@@ -130,6 +130,7 @@ test("10: runtime readiness, Project Knowledge, Workflow, and Queue contracts fa
   const noPk = await PolicyGateway.create(policySet, runtime({ projectKnowledge: { async readGoverningKnowledge() { throw new Error("not attached"); } } }));
   assert.equal((await noPk.evaluate(action())).reason, "governing_project_knowledge_unavailable");
   assert.throws(() => assertProjectKnowledgeRecord({ status: "PROPOSED" }), /unavailable/);
+  assert.throws(() => assertProjectKnowledgeRecord({ recordId:"pk",status:"CURRENT",version:"1",scope:"control-plane",knowledge:{nested:{api_key:"forbidden"}},digest:"sha256:"+"d".repeat(64),retrievedAt:"2026-08-11T19:00:00Z",actionDigest:"sha256:"+"a".repeat(64) }), /credentials/);
   assert.throws(() => assertOrchestratorEnvelope({ messageId: "m" }), /actionDigest/);
   const envelope = { messageId: "m", actionDigest: "sha256:" + "e".repeat(64), correlationId: "c", idempotencyKey: "i", workflowName: "wf", queueName: "q" };
   assert.equal(assertOrchestratorEnvelope(envelope), true);
