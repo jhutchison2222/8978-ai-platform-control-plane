@@ -11,6 +11,10 @@ test("default secret scan covers deploy-adjacent top-level configuration", () =>
   }
 });
 
+test("default secret scan covers D1 migrations", () => {
+  assert.ok(DEFAULT_SECRET_SCAN_ROOTS.includes("migrations"), "migrations are not scanned");
+});
+
 test("secret scan rejects credentials in Wrangler and Vitest configuration", async (context) => {
   const directory = await mkdtemp(join(tmpdir(), "8978-secret-scan-"));
   context.after(() => rm(directory, { recursive: true, force: true }));

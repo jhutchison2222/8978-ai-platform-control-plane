@@ -25,7 +25,7 @@ Owner verifiers are injected only during gateway construction. Owner decisions a
 
 The audit store must declare durable append-only behavior. Every append returns a verified receipt containing sequence, previous digest, and event digest. The first append occurs before the external effect. Terminal success or failure and rollback evidence are appended to the same chain. A failed or unverifiable intent append prevents the effect.
 
-`src/test-runtime-stores.js` contains deterministic test doubles for Node contract tests. The development Worker now injects separately tested SQLite Durable Object implementations for idempotency leases, owner-decision consumption, and append-only audit chains. The remaining authoritative adapters are still unavailable, and provider credentials are runtime secrets that must never be stored in Project Knowledge or evidence payloads.
+`src/test-runtime-stores.js` contains deterministic test doubles for Node contract tests. The development Worker now injects separately tested SQLite Durable Object implementations for idempotency leases, owner-decision consumption, and append-only audit chains. A migration-backed, read-only D1 implementation now exists for resource resolution and digest-bound limits, but it is deliberately unbound from the Worker until a dedicated development authority database is provisioned and independently reviewed. The remaining authoritative adapters are still unavailable, and provider credentials are runtime secrets that must never be stored in Project Knowledge or evidence payloads.
 
 ## Runtime target
 

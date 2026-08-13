@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 export const DEFAULT_SECRET_SCAN_ROOTS = Object.freeze([
-  ".github", "docs", "policies", "schemas", "scripts", "src", "test",
+  ".github", "docs", "migrations", "policies", "schemas", "scripts", "src", "test",
   ".gitignore", "README.md", "package.json", "package-lock.json",
   "vitest.config.js", "worker-configuration.d.ts", "wrangler.jsonc",
 ]);

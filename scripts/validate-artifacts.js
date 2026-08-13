@@ -20,6 +20,11 @@ const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
 const durableAdapterSource = await readFile("src/cloudflare-runtime-stores.js", "utf8");
+const authorityAdapterSource = await readFile("src/d1-authority-runtime.js", "utf8");
+const authorityMigration = await readFile("migrations/authority/0001_authority_read_model.sql", "utf8");
+const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
+const vitestSource = await readFile("vitest.config.js", "utf8");
+const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
 const batch1Proposed = await load("docs/project-knowledge/proposed/batch-1/proposed-records.json");
 const batch1Review = await load("docs/reviews/pr-3/PR-3-Batch-1-Master-Prompt-Architecture-Review.json");
@@ -107,6 +112,24 @@ for (const required of ["transactionSync", "this.ctx.id.name !== decisionId", "O
   if (!durableStateSource.includes(required)) throw new Error(`Durable-state atomicity invariant missing: ${required}`);
 }
 if (/DELETE FROM audit_events/iu.test(durableStateSource) || /\bfetch\s*\(/u.test(durableStateSource + durableAdapterSource)) throw new Error("Durable state cannot delete audit events or use external fetch");
+
+for (const required of [
+  "D1AuthoritativeResourceResolver", "D1TrustedLimitProvider", "status IN ('CURRENT', 'FINAL')",
+  "valid_from_ms <= ?2", "valid_from_ms <= ?3", ".bind(...bindings).all()", "digestCanonicalValue(resource)",
+  "resourceKey(resource) !== row.resource_key", "Authoritative ${label} is ambiguous", "actionDigest",
+]) if (!authorityAdapterSource.includes(required)) throw new Error(`Authoritative D1 read invariant missing: ${required}`);
+if (/\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER)\b/iu.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
+  throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
+}
+for (const required of [
+  "CREATE TABLE authority_resources", "CREATE TABLE authority_limits", "record_id TEXT PRIMARY KEY",
+  "status IN ('CURRENT', 'FINAL')", "enabled IN (0, 1)", "valid_until_ms > valid_from_ms",
+  "authority_resources_active_locator", "authority_limits_active_resource_operation",
+]) if (!authorityMigration.includes(required)) throw new Error(`Authoritative D1 migration invariant missing: ${required}`);
+if (!vitestSource.includes('d1Databases: ["AUTHORITY_DB"]') || !vitestSource.includes("readD1Migrations(\"migrations/authority\")") ||
+    !vitestSource.includes("AUTHORITY_TEST_MIGRATIONS")) throw new Error("Authority D1 must be migration-backed in the Workers test runtime");
+if (workerSource.includes("AUTHORITY_DB") || developmentRuntimeSource.includes("AUTHORITY_DB")) throw new Error("Authority D1 cannot be activated before its reviewed deployment binding step");
+if (!secretScanSource.includes('"migrations"')) throw new Error("D1 migrations must remain inside the default secret-scan roots");
 
 if (batch1Proposed.status !== "PROPOSED" || batch1Proposed.governing !== false) throw new Error("Batch 1 package must remain PROPOSED and non-governing");
 if (!Array.isArray(batch1Proposed.records) || batch1Proposed.records.length !== 19) throw new Error("Batch 1 must contain exactly 19 proposed records");
