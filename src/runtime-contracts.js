@@ -45,9 +45,22 @@ export function assertProjectKnowledgeRecord(record) {
 }
 
 export function assertOrchestratorEnvelope(envelope) {
-  for (const field of ["messageId", "actionDigest", "correlationId", "idempotencyKey", "workflowName", "queueName"]) {
-    if (typeof envelope?.[field] !== "string" || !envelope[field]) throw new Error(`Invalid orchestrator envelope: ${field}`);
+  const fields = ["actionDigest", "correlationId", "idempotencyKey", "messageId", "projectKnowledgeRef", "queueName", "workflowName"];
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope) ||
+      JSON.stringify(Object.keys(envelope).sort()) !== JSON.stringify(fields)) throw new Error("Invalid orchestrator envelope fields");
+  const component = /^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,255}$/;
+  for (const field of ["messageId", "correlationId", "idempotencyKey", "workflowName", "queueName"]) {
+    if (typeof envelope[field] !== "string" || !component.test(envelope[field])) throw new Error(`Invalid orchestrator envelope: ${field}`);
   }
-  if (!envelope.actionDigest.startsWith("sha256:")) throw new Error("Invalid orchestrator action digest");
+  if (envelope.messageId.length > 100) throw new Error("Invalid orchestrator envelope: messageId exceeds Workflow limit");
+  if (!/^sha256:[a-f0-9]{64}$/.test(envelope.actionDigest)) throw new Error("Invalid orchestrator action digest");
+  const reference = envelope.projectKnowledgeRef;
+  const referenceFields = ["digest", "recordId", "status", "version"];
+  if (!reference || typeof reference !== "object" || Array.isArray(reference) ||
+      JSON.stringify(Object.keys(reference).sort()) !== JSON.stringify(referenceFields) ||
+      !component.test(reference.recordId ?? "") || !component.test(reference.version ?? "") ||
+      !new Set(["CURRENT", "FINAL"]).has(reference.status) || !/^sha256:[a-f0-9]{64}$/.test(reference.digest ?? "")) {
+    throw new Error("Invalid orchestrator Project Knowledge reference");
+  }
   return true;
 }

@@ -9,8 +9,8 @@ This Worker exposes the existing policy gateway behind service-to-service HMAC-S
 - `CONTROL_PLANE_MODE` must equal `development`.
 - `ALLOW_EXTERNAL_WRITES` must equal the string `false`.
 - `workers_dev` and preview URLs are disabled in `wrangler.jsonc`.
-- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. The read-only D1 adapters are code-composed behind an exact optional `AUTHORITY_DB` contract, but `wrangler.jsonc` deliberately does not provide that binding.
-- The idempotency, owner-decision, and audit adapters are durable development implementations. Without an injected authority D1 binding, every authoritative reader remains a throwing unavailable adapter and evaluation fails closed at authoritative resource resolution.
+- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. Read-only authority and orchestrator-dispatch adapters are code-composed behind exact optional binding contracts, but `wrangler.jsonc` deliberately provides none of those bindings.
+- The idempotency, owner-decision, and audit adapters are durable development implementations. Without injected authority and complete Workflow/Queue bindings, the remaining slots use throwing unavailable adapters.
 - `/v1/actions/execute` always returns `execution_disabled`.
 
 ## Authentication
@@ -29,7 +29,7 @@ The shown value is a shape example, not a usable secret. Requests use the `x-897
 
 ## Authenticated routes
 
-- `GET /v1/runtime/readiness` reports `ready: false`, the disabled-write boundary, and missing dependency names. The real local Workers test runtime injects D1 and therefore reports only Workflow and Queue as unavailable; the checked-in deployable configuration has no D1 binding and remains authority-unavailable.
+- `GET /v1/runtime/readiness` always reports `ready: false`, the disabled-write boundary, and missing dependency names. The real local Workers test runtime injects D1, Workflow, and Queue bindings and therefore exercises complete dependency composition; the checked-in deployable configuration has none of those bindings and remains unavailable.
 - `POST /v1/actions/evaluate` parses strict JSON and calls the trusted development `PolicyGateway`.
 - `/v1/actions/execute` is present only as an explicit fail-closed denial.
 
