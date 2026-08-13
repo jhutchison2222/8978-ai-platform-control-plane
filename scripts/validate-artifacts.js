@@ -130,6 +130,7 @@ for (const migration of activationPlan.authorityDatabase.migrations) {
 }
 for (const required of [
   '"pk-d1-dev"', '"9cd8094c-f334-44e6-bdd1-b325802474d5"', 'databaseName !== "8978-ai-authority-dev"',
+  'Existing authority database reuse is prohibited',
   'binding !== "AUTHORITY_DB"', 'binding !== "ORCHESTRATOR_WORKFLOW"', 'binding !== "ORCHESTRATOR_QUEUE"',
   'plan.status !== "READY"', 'plan.activationAuthorized', 'plan.workerDeploymentAuthorized',
   'plan.rollback.backupDigest === null', 'maker and checker evidence must be independent',

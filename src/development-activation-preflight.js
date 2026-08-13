@@ -46,8 +46,10 @@ export function assertDevelopmentActivationPlan(plan) {
 
   exactFields(plan.authorityDatabase, EXPECTED_FIELDS.database, "authority database");
   const database = plan.authorityDatabase;
+  if (PROHIBITED_AUTHORITY_DATABASES.has(database.databaseName) || PROHIBITED_AUTHORITY_DATABASES.has(database.databaseId)) {
+    throw new Error("Existing authority database reuse is prohibited");
+  }
   if (database.binding !== "AUTHORITY_DB" || database.databaseName !== "8978-ai-authority-dev" ||
-      PROHIBITED_AUTHORITY_DATABASES.has(database.databaseName) || PROHIBITED_AUTHORITY_DATABASES.has(database.databaseId) ||
       (database.databaseId !== null && (typeof database.databaseId !== "string" || !DATABASE_ID.test(database.databaseId)))) {
     throw new Error("Dedicated authority database identity is invalid");
   }

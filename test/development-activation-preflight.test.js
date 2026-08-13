@@ -134,3 +134,19 @@ test("preflight rejects mixed-purpose authority storage, migration drift, and we
     assert.throws(() => developmentActivationBlockers(changed));
   }
 });
+
+test("preflight directly enforces both existing authority database reuse prohibitions", () => {
+  const prohibitedName = readyPlan();
+  prohibitedName.authorityDatabase.databaseName = "pk-d1-dev";
+  assert.throws(
+    () => assertDevelopmentActivationPlan(prohibitedName),
+    /Existing authority database reuse is prohibited/,
+  );
+
+  const prohibitedId = readyPlan();
+  prohibitedId.authorityDatabase.databaseId = "9cd8094c-f334-44e6-bdd1-b325802474d5";
+  assert.throws(
+    () => assertDevelopmentActivationPlan(prohibitedId),
+    /Existing authority database reuse is prohibited/,
+  );
+});
