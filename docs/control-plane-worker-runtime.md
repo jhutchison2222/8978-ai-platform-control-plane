@@ -9,8 +9,8 @@ This Worker exposes the existing policy gateway behind service-to-service HMAC-S
 - `CONTROL_PLANE_MODE` must equal `development`.
 - `ALLOW_EXTERNAL_WRITES` must equal the string `false`.
 - `workers_dev` and preview URLs are disabled in `wrangler.jsonc`.
-- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. Read-only D1 adapters and migrations now exist for resources, limits, signed identity, test evidence, rollback evidence, governing Project Knowledge, authenticated owner decisions, and standing-state revalidation, but they are test-only and deliberately unbound.
-- The idempotency, owner-decision, and audit adapters are durable development implementations. Every other unresolved authoritative runtime adapter throws, so evaluation still fails closed at authoritative resource resolution.
+- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. The read-only D1 adapters are code-composed behind an exact optional `AUTHORITY_DB` contract, but `wrangler.jsonc` deliberately does not provide that binding.
+- The idempotency, owner-decision, and audit adapters are durable development implementations. Without an injected authority D1 binding, every authoritative reader remains a throwing unavailable adapter and evaluation fails closed at authoritative resource resolution.
 - `/v1/actions/execute` always returns `execution_disabled`.
 
 ## Authentication
@@ -29,7 +29,7 @@ The shown value is a shape example, not a usable secret. Requests use the `x-897
 
 ## Authenticated routes
 
-- `GET /v1/runtime/readiness` reports `ready: false`, the disabled-write boundary, and missing authoritative dependency names.
+- `GET /v1/runtime/readiness` reports `ready: false`, the disabled-write boundary, and missing dependency names. The real local Workers test runtime injects D1 and therefore reports only Workflow and Queue as unavailable; the checked-in deployable configuration has no D1 binding and remains authority-unavailable.
 - `POST /v1/actions/evaluate` parses strict JSON and calls the trusted development `PolicyGateway`.
 - `/v1/actions/execute` is present only as an explicit fail-closed denial.
 
