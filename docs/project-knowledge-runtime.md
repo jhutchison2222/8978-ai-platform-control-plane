@@ -18,6 +18,6 @@ Recursive key inspection rejects credential-, secret-, token-, authorization-, A
 
 ## Deliberately empty and unbound
 
-The migration creates schema only and inserts no records. `wrangler.jsonc`, `src/control-plane-worker.js`, and `src/development-runtime.js` remain unchanged and contain no `AUTHORITY_DB` binding. The Worker therefore remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains unconditionally denied.
+The migration creates schema only and inserts no records. The development runtime can now compose this reader from an injected `AUTHORITY_DB`, but `wrangler.jsonc` contains no D1 binding. The Worker therefore remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains unconditionally denied.
 
 A future authority-management PR must define authenticated promotion, conflict resolution, provenance, rollback, and independent approval before inserting any governing record. A later infrastructure PR must separately provision and bind a dedicated development authority D1 database.
