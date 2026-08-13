@@ -23,6 +23,8 @@ The additive `0002_validation_evidence.sql` migration extends this read model wi
 
 The additive, empty `0003_governing_project_knowledge.sql` migration adds a governing Project Knowledge snapshot table. It promotes nothing and remains unbound; its trust rules are documented in `docs/project-knowledge-runtime.md`.
 
+The additive, empty `0004_owner_control.sql` migration adds public owner-key and standing-state tables. It installs no key or state and remains unbound; its trust rules are documented in `docs/owner-control-runtime.md`.
+
 The runtime adapter contains only parameterized `SELECT` queries. A separate, future authority-management path must own writes, approvals, promotion, and rollback. Those capabilities must not be added to this adapter.
 
 ## Deliberately unbound
