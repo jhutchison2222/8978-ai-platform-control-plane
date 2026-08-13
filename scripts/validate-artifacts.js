@@ -271,6 +271,9 @@ for (const required of [
 ]) if (!developmentRuntimeSource.includes(required) && !workerSource.includes(required)) {
   throw new Error(`Development authority composition invariant missing: ${required}`);
 }
+if (writeSqlPattern.test(developmentRuntimeSource) || /\bfetch\s*\(/u.test(developmentRuntimeSource)) {
+  throw new Error("Development runtime must remain read-only and cannot use external fetch");
+}
 if (!workerSource.includes('ready: false') ||
     !workerSource.includes('if (path === "/v1/actions/execute") return response(503, { outcome: "denied", reason: "execution_disabled" });')) {
   throw new Error("Authority composition cannot enable runtime readiness or action execution");
