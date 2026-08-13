@@ -22,6 +22,8 @@ const durableStateSource = await readFile("src/control-plane-state-durable-objec
 const durableAdapterSource = await readFile("src/cloudflare-runtime-stores.js", "utf8");
 const authorityAdapterSource = await readFile("src/d1-authority-runtime.js", "utf8");
 const authorityMigration = await readFile("migrations/authority/0001_authority_read_model.sql", "utf8");
+const validationAdapterSource = await readFile("src/d1-validation-runtime.js", "utf8");
+const validationMigration = await readFile("migrations/authority/0002_validation_evidence.sql", "utf8");
 const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
@@ -118,7 +120,8 @@ for (const required of [
   "valid_from_ms <= ?2", "valid_from_ms <= ?3", ".bind(...bindings).all()", "digestCanonicalValue(resource)",
   "resourceKey(resource) !== row.resource_key", "Authoritative ${label} is ambiguous", "actionDigest",
 ]) if (!authorityAdapterSource.includes(required)) throw new Error(`Authoritative D1 read invariant missing: ${required}`);
-if (/\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER)\b/iu.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
+const writeSqlPattern = /\b(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|UPDATE\s+[A-Za-z_]|DELETE\s+FROM|REPLACE\s+INTO|CREATE\s+(?:TABLE|INDEX|VIEW|TRIGGER)|DROP\s+(?:TABLE|INDEX|VIEW|TRIGGER)|ALTER\s+TABLE|PRAGMA\b|ATTACH\s+(?:DATABASE\s+)?|DETACH\s+(?:DATABASE\s+)?|VACUUM\b|REINDEX\b)/iu;
+if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
 }
 for (const required of [
@@ -126,10 +129,52 @@ for (const required of [
   "status IN ('CURRENT', 'FINAL')", "enabled IN (0, 1)", "valid_until_ms > valid_from_ms",
   "authority_resources_active_locator", "authority_limits_active_resource_operation",
 ]) if (!authorityMigration.includes(required)) throw new Error(`Authoritative D1 migration invariant missing: ${required}`);
+function assertTableConstraints(source, tableName, required) {
+  const marker = `CREATE TABLE ${tableName} (`;
+  const start = source.indexOf(marker);
+  const end = start === -1 ? -1 : source.indexOf("\n);", start + marker.length);
+  if (start === -1 || end === -1) throw new Error(`SQL table definition unavailable: ${tableName}`);
+  const body = source.slice(start + marker.length, end);
+  for (const constraint of required) {
+    if (!body.includes(constraint)) throw new Error(`${tableName} constraint missing: ${constraint}`);
+  }
+}
+const commonAuthorityConstraints = ["record_id TEXT PRIMARY KEY", "status IN ('CURRENT', 'FINAL')", "enabled IN (0, 1)", "version > 0"];
+assertTableConstraints(authorityMigration, "authority_resources", [...commonAuthorityConstraints, "valid_until_ms > valid_from_ms"]);
+assertTableConstraints(authorityMigration, "authority_limits", [...commonAuthorityConstraints, "valid_until_ms > valid_from_ms", "cost_usd >= 0", "record_count >= 0"]);
 if (!vitestSource.includes('d1Databases: ["AUTHORITY_DB"]') || !vitestSource.includes("readD1Migrations(\"migrations/authority\")") ||
     !vitestSource.includes("AUTHORITY_TEST_MIGRATIONS")) throw new Error("Authority D1 must be migration-backed in the Workers test runtime");
 if (workerSource.includes("AUTHORITY_DB") || developmentRuntimeSource.includes("AUTHORITY_DB")) throw new Error("Authority D1 cannot be activated before its reviewed deployment binding step");
 if (!secretScanSource.includes('"migrations"')) throw new Error("D1 migrations must remain inside the default secret-scan roots");
+
+for (const required of [
+  "D1Ed25519IdentityVerifier", "D1TestEvidenceProvider", "D1RollbackVerifier", "crypto.subtle.importKey",
+  'crypto.subtle.verify("Ed25519"', "canonicalize(payload) !== payloadText", "expiresAtMs - issuedAtMs > MAX_ATTESTATION_MS",
+  "payload.role !== role", "payload.actionDigest !== actionDigest", "row.principal_id !== payload.principalId",
+  "await digestCanonicalValue(keyRecord) !== row.key_digest", "await digestCanonicalValue(record) !== row.evidence_digest",
+  "Validation ${label} is ambiguous", "status IN ('CURRENT', 'FINAL')", ".bind(...bindings).all()",
+]) if (!validationAdapterSource.includes(required)) throw new Error(`Validation evidence invariant missing: ${required}`);
+if (writeSqlPattern.test(validationAdapterSource) || /\bfetch\s*\(/u.test(validationAdapterSource)) {
+  throw new Error("Validation evidence adapter must remain read-only and cannot use external fetch");
+}
+for (const required of [
+  "CREATE TABLE authority_identity_keys", "CREATE TABLE authority_test_evidence", "CREATE TABLE authority_rollbacks",
+  "algorithm = 'Ed25519'", "status IN ('CURRENT', 'FINAL')", "enabled IN (0, 1)",
+  "expires_at_ms > issued_at_ms", "authority_identity_keys_active_key", "authority_test_evidence_active_action",
+  "authority_rollbacks_active_reference",
+]) if (!validationMigration.includes(required)) throw new Error(`Validation evidence migration invariant missing: ${required}`);
+assertTableConstraints(validationMigration, "authority_identity_keys", [
+  ...commonAuthorityConstraints, "algorithm = 'Ed25519'", "valid_until_ms > valid_from_ms",
+]);
+assertTableConstraints(validationMigration, "authority_test_evidence", [
+  ...commonAuthorityConstraints, "result IN ('passed', 'failed')", "expires_at_ms > issued_at_ms",
+]);
+assertTableConstraints(validationMigration, "authority_rollbacks", [
+  ...commonAuthorityConstraints, "valid IN (0, 1)", "executable IN (0, 1)", "expires_at_ms > issued_at_ms",
+]);
+if (workerSource.includes("D1Ed25519IdentityVerifier") || workerSource.includes("D1TestEvidenceProvider") || workerSource.includes("D1RollbackVerifier") ||
+    developmentRuntimeSource.includes("D1Ed25519IdentityVerifier") || developmentRuntimeSource.includes("D1TestEvidenceProvider") ||
+    developmentRuntimeSource.includes("D1RollbackVerifier")) throw new Error("Validation evidence adapters cannot be activated before the reviewed D1 binding step");
 
 if (batch1Proposed.status !== "PROPOSED" || batch1Proposed.governing !== false) throw new Error("Batch 1 package must remain PROPOSED and non-governing");
 if (!Array.isArray(batch1Proposed.records) || batch1Proposed.records.length !== 19) throw new Error("Batch 1 must contain exactly 19 proposed records");
