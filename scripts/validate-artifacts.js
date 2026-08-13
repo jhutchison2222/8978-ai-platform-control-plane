@@ -246,11 +246,14 @@ assertTableConstraints(ownerControlMigration, "authority_standing_state", [
 if (/\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bREPLACE\b/iu.test(ownerControlMigration)) {
   throw new Error("Owner-control migration must create empty schema without seed or mutation statements");
 }
-for (const required of [
-  "ownerVerifier.verify(decision, { actionDigest: prepared.actionDigest, now })",
-  "ownerVerifier.verify(context.decision, { actionDigest: authorization.actionDigest, now })",
-  "revalidateStandingState(action, authorization, { now })", "ownerSignatureValid = false", "standingStateValid = false",
-]) if (!policyGatewaySource.includes(required)) throw new Error(`Owner-control gateway invariant missing: ${required}`);
+const ownerControlGatewayPatterns = [
+  ["initial owner verification must fail closed", /let ownerSignatureValid = false;\s*try \{ ownerSignatureValid = await this\.#runtime\.ownerVerifier\.verify\(decision, \{ actionDigest: prepared\.actionDigest, now \}\); \} catch \{\}\s*if \(!ownerSignatureValid\) return \{ outcome: "denied", reason: "invalid_owner_signature" \};/u],
+  ["pre-execution owner verification must fail closed", /let ownerSignatureValid = false;\s*try \{ ownerSignatureValid = await this\.#runtime\.ownerVerifier\.verify\(context\.decision, \{ actionDigest: authorization\.actionDigest, now \}\); \} catch \{\}\s*if \(!ownerSignatureValid\) throw new Error\("Execution denied: owner signature invalid"\);/u],
+  ["standing-state revalidation must fail closed", /let standingStateValid = false;\s*try \{ standingStateValid = await this\.#runtime\.revalidateStandingState\(action, authorization, \{ now \}\); \} catch \{\}\s*if \(!standingStateValid\) throw new Error\("Execution denied: kill switch or state revalidation failed"\);/u],
+];
+for (const [label, pattern] of ownerControlGatewayPatterns) {
+  if (!pattern.test(policyGatewaySource)) throw new Error(`Owner-control gateway invariant missing: ${label}`);
+}
 if (workerSource.includes("D1Ed25519OwnerDecisionVerifier") || workerSource.includes("D1StandingStateRevalidator") ||
     developmentRuntimeSource.includes("D1Ed25519OwnerDecisionVerifier") || developmentRuntimeSource.includes("D1StandingStateRevalidator")) {
   throw new Error("Owner-control adapters cannot be activated before the reviewed D1 binding and key/state installation step");
