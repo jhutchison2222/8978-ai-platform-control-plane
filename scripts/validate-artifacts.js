@@ -18,6 +18,8 @@ const isolationSchema = await load("schemas/customer-isolation.schema.json");
 const customerBindingsSchema = await load("schemas/customer-runtime-bindings.schema.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
+const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
+const durableAdapterSource = await readFile("src/cloudflare-runtime-stores.js", "utf8");
 
 const batch1Proposed = await load("docs/project-knowledge/proposed/batch-1/proposed-records.json");
 const batch1Review = await load("docs/reviews/pr-3/PR-3-Batch-1-Master-Prompt-Architecture-Review.json");
@@ -85,12 +87,26 @@ if (Object.hasOwn(wrangler.vars ?? {}, "SERVICE_AUTH_KEYS_JSON")) throw new Erro
 for (const binding of ["d1_databases", "r2_buckets", "queues", "workflows", "services", "hyperdrive", "vectorize"]) {
   if (wrangler[binding] !== undefined) throw new Error(`Development Worker cannot add ${binding} bindings in this foundation`);
 }
-const replayBindings = wrangler.durable_objects?.bindings ?? [];
-if (replayBindings.length !== 1 || replayBindings[0].name !== "SERVICE_AUTH_REPLAY" || replayBindings[0].class_name !== "ServiceAuthReplayDurableObject") throw new Error("Worker must retain the single service-auth replay Durable Object binding");
-if (wrangler.migrations?.length !== 1 || wrangler.migrations[0].tag !== "v1" || JSON.stringify(wrangler.migrations[0].new_sqlite_classes) !== JSON.stringify(["ServiceAuthReplayDurableObject"])) throw new Error("Worker must retain the reviewed SQLite Durable Object migration");
+const durableBindings = wrangler.durable_objects?.bindings ?? [];
+const expectedDurableBindings = [
+  ["SERVICE_AUTH_REPLAY", "ServiceAuthReplayDurableObject"],
+  ["IDEMPOTENCY_STORE", "IdempotencyStateDurableObject"],
+  ["OWNER_DECISION_STORE", "OwnerDecisionStateDurableObject"],
+  ["AUDIT_STORE", "AuditStateDurableObject"],
+];
+if (JSON.stringify(durableBindings.map(({ name, class_name: className }) => [name, className])) !== JSON.stringify(expectedDurableBindings)) throw new Error("Worker Durable Object bindings must remain exact and ordered");
+if (wrangler.migrations?.length !== 2 || wrangler.migrations[0].tag !== "v1" || JSON.stringify(wrangler.migrations[0].new_sqlite_classes) !== JSON.stringify(["ServiceAuthReplayDurableObject"]) ||
+    wrangler.migrations[1].tag !== "v2" || JSON.stringify(wrangler.migrations[1].new_sqlite_classes) !== JSON.stringify(["IdempotencyStateDurableObject", "OwnerDecisionStateDurableObject", "AuditStateDurableObject"])) throw new Error("Worker SQLite Durable Object migrations must preserve v1 replay and exact v2 durable state classes");
 for (const required of ["authenticateServiceRequest", "CloudflareDurableReplayStore", "PolicyGateway.create", "execution_disabled", "authorization", "proxy-authorization"]) {
   if (!workerSource.includes(required)) throw new Error(`Worker fail-closed invariant missing: ${required}`);
 }
+for (const required of ["IDEMPOTENCY_STORE", "OWNER_DECISION_STORE", "AUDIT_STORE", "createDevelopmentRuntime", "durableDependencies"]) {
+  if (!workerSource.includes(required)) throw new Error(`Worker durable-state wiring missing: ${required}`);
+}
+for (const required of ["transactionSync", "this.ctx.id.name !== decisionId", "ON CONFLICT(id) DO NOTHING", "UPDATE audit_head SET scope=COALESCE(scope", "Audit append contention limit exceeded"]) {
+  if (!durableStateSource.includes(required)) throw new Error(`Durable-state atomicity invariant missing: ${required}`);
+}
+if (/DELETE FROM audit_events/iu.test(durableStateSource) || /\bfetch\s*\(/u.test(durableStateSource + durableAdapterSource)) throw new Error("Durable state cannot delete audit events or use external fetch");
 
 if (batch1Proposed.status !== "PROPOSED" || batch1Proposed.governing !== false) throw new Error("Batch 1 package must remain PROPOSED and non-governing");
 if (!Array.isArray(batch1Proposed.records) || batch1Proposed.records.length !== 19) throw new Error("Batch 1 must contain exactly 19 proposed records");

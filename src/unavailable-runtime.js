@@ -4,7 +4,7 @@ const unavailable = (name) => async () => {
   throw new Error(`Development runtime dependency unavailable: ${name}`);
 };
 
-export function createUnavailableRuntime() {
+export function createUnavailableRuntime(overrides = {}) {
   const runtime = {
     resourceResolver: { resolve: unavailable("resourceResolver") },
     identityVerifier: { verify: unavailable("identityVerifier") },
@@ -30,6 +30,7 @@ export function createUnavailableRuntime() {
     projectKnowledge: { readGoverningKnowledge: unavailable("projectKnowledge") },
     workflowDispatcher: { dispatch: unavailable("workflowDispatcher") },
     queuePublisher: { publish: unavailable("queuePublisher") },
+    ...overrides,
   };
   return Object.freeze(runtime);
 }

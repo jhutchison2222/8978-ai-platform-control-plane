@@ -15,6 +15,18 @@
       {
         "name": "SERVICE_AUTH_REPLAY",
         "class_name": "ServiceAuthReplayDurableObject"
+      },
+      {
+        "name": "IDEMPOTENCY_STORE",
+        "class_name": "IdempotencyStateDurableObject"
+      },
+      {
+        "name": "OWNER_DECISION_STORE",
+        "class_name": "OwnerDecisionStateDurableObject"
+      },
+      {
+        "name": "AUDIT_STORE",
+        "class_name": "AuditStateDurableObject"
       }
     ]
   },
@@ -22,6 +34,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["ServiceAuthReplayDurableObject"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["IdempotencyStateDurableObject", "OwnerDecisionStateDurableObject", "AuditStateDurableObject"]
     }
   ],
   "observability": {
