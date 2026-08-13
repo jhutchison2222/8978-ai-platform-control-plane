@@ -103,7 +103,7 @@ for (const required of ["authenticateServiceRequest", "CloudflareDurableReplaySt
 for (const required of ["IDEMPOTENCY_STORE", "OWNER_DECISION_STORE", "AUDIT_STORE", "createDevelopmentRuntime", "durableDependencies"]) {
   if (!workerSource.includes(required)) throw new Error(`Worker durable-state wiring missing: ${required}`);
 }
-for (const required of ["transactionSync", "ON CONFLICT(id) DO NOTHING", "UPDATE audit_head SET scope=COALESCE(scope", "Audit append contention limit exceeded"]) {
+for (const required of ["transactionSync", "this.ctx.id.name !== decisionId", "ON CONFLICT(id) DO NOTHING", "UPDATE audit_head SET scope=COALESCE(scope", "Audit append contention limit exceeded"]) {
   if (!durableStateSource.includes(required)) throw new Error(`Durable-state atomicity invariant missing: ${required}`);
 }
 if (/DELETE FROM audit_events/iu.test(durableStateSource) || /\bfetch\s*\(/u.test(durableStateSource + durableAdapterSource)) throw new Error("Durable state cannot delete audit events or use external fetch");

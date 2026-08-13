@@ -14,7 +14,7 @@ Candidate commit: use the immutable Draft PR #8 head SHA recorded in the PR desc
 6. Verify sharding: idempotency by scope digest, owner decision by decision ID, and audit by scope digest; reject any global singleton shard.
 7. Verify every namespace adapter validates keys and advertises only the durability/atomicity properties its Durable Object actually provides.
 8. Stress idempotency with concurrent reservations. Confirm exactly one winner, active/completed duplicate denial, expiry recovery, stale-lease rejection, exact-lease release, and duration bounds.
-9. Stress owner decisions with identical and conflicting action digests. Confirm each decision ID is consumable exactly once.
+9. Stress owner decisions with identical and conflicting action digests. Confirm each decision ID is consumable exactly once and that direct RPC input cannot supply a decision ID different from the Durable Object's own named shard, including before the first write.
 10. Stress audit appends with at least 100 concurrent events on one scope and concurrent events on multiple scopes. Inspect SQLite directly and prove sequences are gap-free, every previous digest matches, every stored canonical event matches its receipt, and no fork exists.
 11. Review the optimistic audit compare-and-swap carefully. Confirm head update and event insert are in one `transactionSync()` and every losing caller recomputes from the new head.
 12. Confirm malformed/non-I-JSON inputs fail before storage and no audit deletion or external fetch exists in the Durable Object or adapter code.

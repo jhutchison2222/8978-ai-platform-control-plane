@@ -20,7 +20,7 @@ Reservations are created atomically with a cryptographically random lease ID. An
 
 ## Owner-decision consumption
 
-Each shard holds one row whose decision ID is unique. `INSERT ... ON CONFLICT(id) DO NOTHING RETURNING decision_id` makes the first valid consumer the only winner. Reusing the same decision ID with a different action digest is also denied, and a direct attempt to present another decision ID to the same shard cannot create a second row.
+Each shard holds one row whose decision ID is unique. Before storage, the Durable Object requires the RPC decision ID to equal its own `ctx.id.name`, binding the payload to the namespace adapter's `getByName(decisionId)` route. `INSERT ... ON CONFLICT(id) DO NOTHING RETURNING decision_id` makes the first valid consumer the only winner. Reusing the same decision ID with a different action digest is also denied, and a direct attempt to present another decision ID to the same shard is rejected even before the first write.
 
 ## Append-only audit chain
 

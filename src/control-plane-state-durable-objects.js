@@ -100,6 +100,7 @@ export class OwnerDecisionStateDurableObject extends DurableObject {
   async consume({ decisionId, actionDigest, consumedAtMs }) {
     requireComponent("owner decision ID", decisionId); requireDigest("owner decision action digest", actionDigest);
     if (!Number.isFinite(consumedAtMs)) throw new Error("Invalid owner decision consumption time");
+    if (this.ctx.id.name !== decisionId) throw new Error("Owner decision shard identity mismatch");
     const insertion = this.ctx.storage.sql.exec(`
       INSERT INTO consumed_decision (id, decision_id, action_digest, consumed_at)
       VALUES (1, ?, ?, ?)

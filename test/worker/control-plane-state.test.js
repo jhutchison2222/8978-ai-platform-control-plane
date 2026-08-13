@@ -142,7 +142,14 @@ describe("durable control-plane state", () => {
 
     const decisions = env.OWNER_DECISION_STORE.getByName("owner-shard-a");
     expect(await decisions.consume({ decisionId: "owner-shard-a", actionDigest: digest("2"), consumedAtMs: nowMs })).toEqual({ consumed: true });
-    expect(await decisions.consume({ decisionId: "owner-shard-b", actionDigest: digest("2"), consumedAtMs: nowMs })).toEqual({ consumed: false });
+    await runInDurableObject(decisions, async (instance) => {
+      await expect(instance.consume({ decisionId: "owner-shard-b", actionDigest: digest("2"), consumedAtMs: nowMs })).rejects.toThrow(/shard identity mismatch/);
+    });
+    const emptyDecisionShard = env.OWNER_DECISION_STORE.getByName("owner-shard-c");
+    await runInDurableObject(emptyDecisionShard, async (instance) => {
+      await expect(instance.consume({ decisionId: "owner-shard-d", actionDigest: digest("2"), consumedAtMs: nowMs })).rejects.toThrow(/shard identity mismatch/);
+    });
+    expect(await emptyDecisionShard.consume({ decisionId: "owner-shard-c", actionDigest: digest("2"), consumedAtMs: nowMs })).toEqual({ consumed: true });
 
     const audit = env.AUDIT_STORE.getByName(digest("c"));
     await audit.append({ scope: digest("c"), event: { idempotencyScope: digest("c"), eventIndex: 1 } });
