@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED",
+  "governing": false,
+  "environment": "development",
+  "activationAuthorized": false,
+  "workerDeploymentAuthorized": false,
+  "worker": {
+    "name": "8978-ai-control-plane-dev",
+    "workersDev": false,
+    "previewUrls": false,
+    "externalWritesEnabled": false,
+    "executeRouteEnabled": false
+  },
+  "authorityDatabase": {
+    "binding": "AUTHORITY_DB",
+    "databaseName": "8978-ai-authority-dev",
+    "databaseId": null,
+    "resourceCreated": false,
+    "bindingInstalled": false,
+    "migrationsApplied": false,
+    "remoteSchemaVerified": false,
+    "migrations": [
+      {
+        "path": "migrations/authority/0001_authority_read_model.sql",
+        "sha256": "fded8c2fe248ecd7cfbb1214d0449f012b7099220f85e80fcd3012b3b9ade424"
+      },
+      {
+        "path": "migrations/authority/0002_validation_evidence.sql",
+        "sha256": "75e03891d1b93baf4d10bb0d248b9779405b31f78458f6874e629c320ed5b4b9"
+      },
+      {
+        "path": "migrations/authority/0003_governing_project_knowledge.sql",
+        "sha256": "8383c73014a72d30fd179628b0ff8411bf0ab27572585a281279227d03fb3c7a"
+      },
+      {
+        "path": "migrations/authority/0004_owner_control.sql",
+        "sha256": "4f7d4cb7939eefb8e6c2f7f292c7e806399b3366e135d775fa317214d7f67185"
+      }
+    ]
+  },
+  "workflow": {
+    "binding": "ORCHESTRATOR_WORKFLOW",
+    "name": "8978-ai-orchestrator-dev",
+    "className": "OrchestratorWorkflow",
+    "resourceCreated": false,
+    "bindingInstalled": false
+  },
+  "queue": {
+    "binding": "ORCHESTRATOR_QUEUE",
+    "name": "8978-ai-orchestrator-dev",
+    "resourceCreated": false,
+    "bindingInstalled": false
+  },
+  "evidence": {
+    "reviewedCommit": null,
+    "makerValidationDigest": null,
+    "checkerValidationDigest": null,
+    "resourceActivationAuthorizationDigest": null,
+    "workerDeploymentAuthorizationDigest": null,
+    "rollbackEvidenceDigest": null
+  },
+  "rollback": {
+    "strategy": "unbind_before_delete",
+    "restoreCommit": "848190a3517c7b23c537450a5f1e6832f1690f8d",
+    "backupDigest": null,
+    "unbindFirst": true,
+    "automaticResourceDeletion": false
+  }
+}
