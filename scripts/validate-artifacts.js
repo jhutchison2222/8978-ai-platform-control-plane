@@ -1,5 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { digestCanonicalValue, parseJsonStrict } from "../src/canonical-digest.js";
+import { AUTHORITY_MIGRATIONS, developmentActivationPreflight } from "../src/development-activation-preflight.js";
 import { TRUSTED_POLICY_SET_DIGESTS } from "../src/trusted-policy-sets.js";
 import { validateSchema } from "./json-schema-lite.js";
 
@@ -16,6 +18,8 @@ const envelopeSchema = await load("schemas/orchestrator-envelope.schema.json");
 const runtimeSchema = await load("schemas/runtime-readiness.schema.json");
 const isolationSchema = await load("schemas/customer-isolation.schema.json");
 const customerBindingsSchema = await load("schemas/customer-runtime-bindings.schema.json");
+const activationPlanSchema = await load("schemas/development-activation-plan.schema.json");
+const activationPlan = await load("deployment/development-activation-plan.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
@@ -34,6 +38,7 @@ const orchestratorWorkflowSource = await readFile("src/orchestrator-workflow.js"
 const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
 const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
 const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
+const activationPreflightSource = await readFile("src/development-activation-preflight.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -92,8 +97,54 @@ assertValid("audit event", eventSchema, { schemaVersion:"2.0.0",eventType:"execu
 assertValid("orchestrator envelope", envelopeSchema, { messageId:"m",actionDigest:digest,correlationId:"c",idempotencyKey:"i",workflowName:"unresolved-disabled",queueName:"unresolved-disabled",projectKnowledgeRef:{recordId:"pk",status:"CURRENT",version:"1",digest} });
 assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceResolver","identityVerifier","evidenceProvider","rollbackVerifier","limitProvider","ownerVerifier","ownerDecisionStore","idempotencyStore","auditStore","projectKnowledge","workflowDispatcher","queuePublisher"].map((key) => [key, {}]).concat([["revalidateStandingState", "injected-function"]])));
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
+assertValid("development activation plan", activationPlanSchema, activationPlan);
 if (validateSchema(customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker",dedicatedD1DatabaseId:"d1",sharedProductionD1:true }).length === 0) throw new Error("Shared production D1 negative fixture unexpectedly passed");
 if (validateSchema(resourceSchema, { kind:"github_repository",provider:"cloudflare",repository:"x",environment:"development",isolation:{} }).length === 0) throw new Error("Resource discriminator negative fixture unexpectedly passed");
+
+const activationReport = await developmentActivationPreflight(activationPlan);
+if (activationReport.ready !== false || activationReport.blockers.length !== 20 ||
+    !activationReport.blockers.includes("independent_evidence_verifier_unavailable")) {
+  throw new Error("Development activation plan must remain blocked by exactly 20 gates including independent evidence verification");
+}
+if (activationPlan.status !== "PLANNED" || activationPlan.governing !== false || activationPlan.environment !== "development" ||
+    activationPlan.activationAuthorized !== false || activationPlan.workerDeploymentAuthorized !== false ||
+    activationPlan.authorityDatabase.databaseId !== null) throw new Error("Development activation plan cannot self-promote or install an authority identifier");
+for (const value of [
+  activationPlan.authorityDatabase.resourceCreated, activationPlan.authorityDatabase.bindingInstalled,
+  activationPlan.authorityDatabase.migrationsApplied, activationPlan.authorityDatabase.remoteSchemaVerified,
+  activationPlan.workflow.resourceCreated, activationPlan.workflow.bindingInstalled,
+  activationPlan.queue.resourceCreated, activationPlan.queue.bindingInstalled,
+]) if (value !== false) throw new Error("Development activation resource state must remain false before infrastructure authorization");
+if (Object.values(activationPlan.evidence).some((value) => value !== null) || activationPlan.rollback.backupDigest !== null) {
+  throw new Error("Development activation evidence cannot be fabricated in the planning foundation");
+}
+if (activationPlan.rollback.restoreCommit !== "848190a3517c7b23c537450a5f1e6832f1690f8d" ||
+    activationPlan.rollback.strategy !== "unbind_before_delete" || activationPlan.rollback.unbindFirst !== true ||
+    activationPlan.rollback.automaticResourceDeletion !== false) throw new Error("Development activation rollback must restore PR #14 and unbind before any manual deletion");
+if (JSON.stringify(activationPlan.authorityDatabase.migrations) !== JSON.stringify(AUTHORITY_MIGRATIONS)) {
+  throw new Error("Development activation migration manifest drifted from source constants");
+}
+for (const migration of activationPlan.authorityDatabase.migrations) {
+  const actual = createHash("sha256").update(await readFile(migration.path)).digest("hex");
+  if (actual !== migration.sha256) throw new Error(`Development activation migration digest mismatch: ${migration.path}`);
+}
+for (const required of [
+  '"pk-d1-dev"', '"9cd8094c-f334-44e6-bdd1-b325802474d5"', 'databaseName !== "8978-ai-authority-dev"',
+  'binding !== "AUTHORITY_DB"', 'binding !== "ORCHESTRATOR_WORKFLOW"', 'binding !== "ORCHESTRATOR_QUEUE"',
+  'plan.status !== "READY"', 'plan.activationAuthorized', 'plan.workerDeploymentAuthorized',
+  'plan.rollback.backupDigest === null', 'maker and checker evidence must be independent',
+  'Resource activation and Worker deployment authorizations must be distinct',
+  'typeof evidenceVerifier.verify !== "function"', 'independent_evidence_verifier_unavailable',
+  'independent_evidence_verification_failed', 'verification.makerPrincipalId === verification.checkerPrincipalId',
+  'verification.ownerPrincipalId === verification.makerPrincipalId',
+  'verification.resourceActivationAuthorizationDigest !== evidence.resourceActivationAuthorizationDigest',
+]) if (!activationPreflightSource.includes(required)) throw new Error(`Development activation preflight invariant missing: ${required}`);
+const activationDangerousPattern = /\bfetch\s*\(|\b(?:exec|spawn)\s*\(|\bwrangler\b|\.prepare\s*\(|\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM|REINDEX)\b/iu;
+if (activationDangerousPattern.test(activationPreflightSource)) throw new Error("Development activation preflight must remain validation-only");
+if (workerSource.includes("development-activation-preflight") || developmentRuntimeSource.includes("development-activation-preflight")) {
+  throw new Error("Development activation preflight cannot be imported by the Worker runtime");
+}
+if (!secretScanSource.includes('"deployment"')) throw new Error("Deployment manifests must remain inside the default secret-scan roots");
 
 if (wrangler.name !== "8978-ai-control-plane-dev" || wrangler.main !== "src/control-plane-worker.js") throw new Error("Worker must remain development-scoped with the reviewed entry point");
 if (wrangler.compatibility_date !== "2026-08-12" || !wrangler.compatibility_flags?.includes("nodejs_compat")) throw new Error("Worker compatibility configuration changed without review");
@@ -419,4 +470,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, 8 code-composed authority dependencies, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

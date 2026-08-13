@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-activation-plan.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","status","governing","environment","activationAuthorized","workerDeploymentAuthorized","worker","authorityDatabase","workflow","queue","evidence","rollback"],
+  "properties": {
+    "schemaVersion": {"const":"1.0.0"},
+    "status": {"enum":["PLANNED","REVIEWED","READY"]},
+    "governing": {"const":false},
+    "environment": {"const":"development"},
+    "activationAuthorized": {"type":"boolean"},
+    "workerDeploymentAuthorized": {"type":"boolean"},
+    "worker": {
+      "type":"object","additionalProperties":false,
+      "required":["name","workersDev","previewUrls","externalWritesEnabled","executeRouteEnabled"],
+      "properties":{"name":{"const":"8978-ai-control-plane-dev"},"workersDev":{"const":false},"previewUrls":{"const":false},"externalWritesEnabled":{"const":false},"executeRouteEnabled":{"const":false}}
+    },
+    "authorityDatabase": {
+      "type":"object","additionalProperties":false,
+      "required":["binding","databaseName","databaseId","resourceCreated","bindingInstalled","migrationsApplied","remoteSchemaVerified","migrations"],
+      "properties":{
+        "binding":{"const":"AUTHORITY_DB"},"databaseName":{"const":"8978-ai-authority-dev"},"databaseId":{"type":["string","null"],"pattern":"^[0-9a-f-]{36}$"},
+        "resourceCreated":{"type":"boolean"},"bindingInstalled":{"type":"boolean"},"migrationsApplied":{"type":"boolean"},"remoteSchemaVerified":{"type":"boolean"},
+        "migrations":{"type":"array","minItems":4,"items":{"type":"object","additionalProperties":false,"required":["path","sha256"],"properties":{"path":{"type":"string","minLength":1},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}}}
+      }
+    },
+    "workflow": {
+      "type":"object","additionalProperties":false,"required":["binding","name","className","resourceCreated","bindingInstalled"],
+      "properties":{"binding":{"const":"ORCHESTRATOR_WORKFLOW"},"name":{"const":"8978-ai-orchestrator-dev"},"className":{"const":"OrchestratorWorkflow"},"resourceCreated":{"type":"boolean"},"bindingInstalled":{"type":"boolean"}}
+    },
+    "queue": {
+      "type":"object","additionalProperties":false,"required":["binding","name","resourceCreated","bindingInstalled"],
+      "properties":{"binding":{"const":"ORCHESTRATOR_QUEUE"},"name":{"const":"8978-ai-orchestrator-dev"},"resourceCreated":{"type":"boolean"},"bindingInstalled":{"type":"boolean"}}
+    },
+    "evidence": {
+      "type":"object","additionalProperties":false,"required":["reviewedCommit","makerValidationDigest","checkerValidationDigest","resourceActivationAuthorizationDigest","workerDeploymentAuthorizationDigest","rollbackEvidenceDigest"],
+      "properties":{"reviewedCommit":{"type":["string","null"],"pattern":"^[a-f0-9]{40}$"},"makerValidationDigest":{"type":["string","null"],"pattern":"^sha256:[a-f0-9]{64}$"},"checkerValidationDigest":{"type":["string","null"],"pattern":"^sha256:[a-f0-9]{64}$"},"resourceActivationAuthorizationDigest":{"type":["string","null"],"pattern":"^sha256:[a-f0-9]{64}$"},"workerDeploymentAuthorizationDigest":{"type":["string","null"],"pattern":"^sha256:[a-f0-9]{64}$"},"rollbackEvidenceDigest":{"type":["string","null"],"pattern":"^sha256:[a-f0-9]{64}$"}}
+    },
+    "rollback": {
+      "type":"object","additionalProperties":false,"required":["strategy","restoreCommit","backupDigest","unbindFirst","automaticResourceDeletion"],
+      "properties":{"strategy":{"const":"unbind_before_delete"},"restoreCommit":{"type":"string","pattern":"^[a-f0-9]{40}$"},"backupDigest":{"type":["string","null"],"pattern":"^sha256:[a-f0-9]{64}$"},"unbindFirst":{"const":true},"automaticResourceDeletion":{"const":false}}
+    }
+  }
+}
