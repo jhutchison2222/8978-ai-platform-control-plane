@@ -5,7 +5,7 @@
   "additionalProperties": false,
   "required": ["messageId","actionDigest","correlationId","idempotencyKey","workflowName","queueName","projectKnowledgeRef"],
   "properties": {
-    "messageId":{"type":"string","minLength":1},"actionDigest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"correlationId":{"type":"string","minLength":1},"idempotencyKey":{"type":"string","minLength":1},"workflowName":{"type":"string","minLength":1},"queueName":{"type":"string","minLength":1},
-    "projectKnowledgeRef":{"type":"object","additionalProperties":false,"required":["recordId","status","version","digest"],"properties":{"recordId":{"type":"string","minLength":1},"status":{"enum":["FINAL","CURRENT"]},"version":{"type":"string","minLength":1},"digest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"}}}
+    "messageId":{"type":"string","minLength":1,"maxLength":100,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},"actionDigest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"correlationId":{"type":"string","minLength":1,"maxLength":256,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},"idempotencyKey":{"type":"string","minLength":1,"maxLength":256,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},"workflowName":{"type":"string","minLength":1,"maxLength":256,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},"queueName":{"type":"string","minLength":1,"maxLength":256,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},
+    "projectKnowledgeRef":{"type":"object","additionalProperties":false,"required":["recordId","status","version","digest"],"properties":{"recordId":{"type":"string","minLength":1,"maxLength":256,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},"status":{"enum":["FINAL","CURRENT"]},"version":{"type":"string","minLength":1,"maxLength":256,"pattern":"^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"},"digest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"}}}
   }
 }

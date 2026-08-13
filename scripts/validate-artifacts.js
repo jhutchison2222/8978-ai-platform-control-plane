@@ -29,6 +29,8 @@ const projectKnowledgeMigration = await readFile("migrations/authority/0003_gove
 const ownerControlAdapterSource = await readFile("src/d1-owner-control-runtime.js", "utf8");
 const ownerControlMigration = await readFile("migrations/authority/0004_owner_control.sql", "utf8");
 const authorityRuntimeCompositionSource = await readFile("src/d1-authority-runtime-composition.js", "utf8");
+const orchestratorAdapterSource = await readFile("src/cloudflare-orchestrator-adapters.js", "utf8");
+const orchestratorWorkflowSource = await readFile("src/orchestrator-workflow.js", "utf8");
 const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
 const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
 const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
@@ -273,6 +275,51 @@ for (const required of [
 }
 if (writeSqlPattern.test(developmentRuntimeSource) || /\bfetch\s*\(/u.test(developmentRuntimeSource)) {
   throw new Error("Development runtime must remain read-only and cannot use external fetch");
+}
+for (const required of [
+  "CloudflareWorkflowDispatcher", "CloudflareQueuePublisher", "MAX_ENVELOPE_BYTES = 131_072",
+  "assertOrchestratorEnvelope(envelope)", "canonicalize(envelope)",
+  "encoder.encode(canonical).byteLength > MAX_ENVELOPE_BYTES", "message.workflowName !== this.workflowName",
+  "message.queueName !== this.queueName", "const instance = await this.binding.create({ id: message.messageId, params: message })",
+  "instance.id !== message.messageId", 'await this.binding.send(message, { contentType: "json" })',
+]) if (!orchestratorAdapterSource.includes(required)) throw new Error(`Orchestrator adapter invariant missing: ${required}`);
+const orchestratorConstructorGuards = [
+  ["Workflow", /export class CloudflareWorkflowDispatcher \{[\s\S]*?constructor\(binding, \{ workflowName \} = \{\}\) \{\s*if \(!binding \|\| typeof binding\.create !== "function"\) throw new TypeError\("Workflow binding is unavailable"\);/u],
+  ["Queue", /export class CloudflareQueuePublisher \{[\s\S]*?constructor\(binding, \{ queueName \} = \{\}\) \{\s*if \(!binding \|\| typeof binding\.send !== "function"\) throw new TypeError\("Queue binding is unavailable"\);/u],
+];
+for (const [label, pattern] of orchestratorConstructorGuards) {
+  if (!pattern.test(orchestratorAdapterSource)) throw new Error(`${label} adapter constructor must reject an unavailable binding method`);
+}
+if (/\bfetch\s*\(/u.test(orchestratorAdapterSource) || writeSqlPattern.test(orchestratorAdapterSource)) {
+  throw new Error("Orchestrator adapters must use bindings only and remain authority-read-only");
+}
+for (const required of [
+  "extends WorkflowEntrypoint", 'step.do("validate-orchestrator-envelope"', "assertOrchestratorEnvelope(envelope)",
+  'outcome: "execution_disabled"',
+]) if (!orchestratorWorkflowSource.includes(required)) throw new Error(`Orchestrator Workflow invariant missing: ${required}`);
+if (/\bfetch\s*\(/u.test(orchestratorWorkflowSource) || writeSqlPattern.test(orchestratorWorkflowSource)) {
+  throw new Error("Orchestrator Workflow cannot perform external or authority writes");
+}
+for (const required of [
+  'typeof env?.ORCHESTRATOR_WORKFLOW?.create === "function"',
+  'typeof env?.ORCHESTRATOR_QUEUE?.send === "function"', "...orchestratorDependencies",
+  'workflowName: "8978-ai-orchestrator-dev"', 'queueName: "8978-ai-orchestrator-dev"',
+]) if (!developmentRuntimeSource.includes(required)) throw new Error(`Orchestrator composition invariant missing: ${required}`);
+if (!developmentRuntimeSource.includes('return typeof env?.ORCHESTRATOR_WORKFLOW?.create === "function" && typeof env?.ORCHESTRATOR_QUEUE?.send === "function";')) {
+  throw new Error("Orchestrator bindings must be composed only as a complete Workflow-and-Queue pair");
+}
+for (const required of [
+  'const fields = ["actionDigest", "correlationId", "idempotencyKey", "messageId", "projectKnowledgeRef", "queueName", "workflowName"]',
+  'const referenceFields = ["digest", "recordId", "status", "version"]', 'new Set(["CURRENT", "FINAL"])',
+  '/^sha256:[a-f0-9]{64}$/.test(reference.digest', 'envelope.messageId.length > 100',
+]) if (!runtimeContractsSource.includes(required)) throw new Error(`Orchestrator envelope invariant missing: ${required}`);
+if (envelopeSchema.properties.messageId.maxLength !== 100 || envelopeSchema.properties.correlationId.maxLength !== 256 ||
+    envelopeSchema.properties.projectKnowledgeRef.properties.recordId.maxLength !== 256) {
+  throw new Error("Orchestrator envelope schema must enforce Cloudflare and component identifier limits");
+}
+if (!vitestSource.includes('queueProducers: ["ORCHESTRATOR_QUEUE"]') ||
+    !vitestSource.includes("ORCHESTRATOR_WORKFLOW") || !vitestSource.includes('className: "OrchestratorWorkflow"')) {
+  throw new Error("Orchestrator bindings must remain local-test-only and platform-shaped");
 }
 if (!workerSource.includes('ready: false') ||
     !workerSource.includes('if (path === "/v1/actions/execute") return response(503, { outcome: "denied", reason: "execution_disabled" });')) {

@@ -52,7 +52,7 @@ describe("development control-plane Worker", () => {
     expect(body.missingAuthoritativeDependencies).not.toContain("identityVerifier");
     expect(body.missingAuthoritativeDependencies).not.toContain("projectKnowledge");
     expect(body.serviceIdentity).toEqual({ mechanism: "hmac-sha256", principalId: "test-orchestrator", keyId: "test-key-1" });
-    expect(body.missingAuthoritativeDependencies).toEqual(["workflowDispatcher", "queuePublisher"]);
+    expect(body.missingAuthoritativeDependencies).toEqual([]);
   });
 
   it("allows exactly one winner in a concurrent nonce race through the real SQLite Durable Object", async () => {

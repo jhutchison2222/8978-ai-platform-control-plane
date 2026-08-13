@@ -38,7 +38,7 @@ describe("D1 authority runtime composition", () => {
   it("activates authority reads only when AUTHORITY_DB is actually injected", async () => {
     const runtime = createDevelopmentRuntime(env);
     expect(runtime.resourceResolver.constructor.name).toBe("D1AuthoritativeResourceResolver");
-    expect(developmentUnavailableRuntimeDependencies(env)).toEqual(["workflowDispatcher", "queuePublisher"]);
+    expect(developmentUnavailableRuntimeDependencies(env)).toEqual([]);
     await expect(runtime.resourceResolver.resolve({ locator: "missing-authority-record" })).rejects.toThrow(/unavailable/);
 
     const withoutAuthority = {

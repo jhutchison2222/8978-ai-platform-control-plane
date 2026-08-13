@@ -3,6 +3,7 @@ import { CloudflareDurableReplayStore } from "./cloudflare-replay-store.js";
 import { parseJsonStrict } from "./canonical-digest.js";
 import { AuditStateDurableObject, IdempotencyStateDurableObject, OwnerDecisionStateDurableObject } from "./control-plane-state-durable-objects.js";
 import { createDevelopmentRuntime, developmentUnavailableRuntimeDependencies } from "./development-runtime.js";
+import { OrchestratorWorkflow } from "./orchestrator-workflow.js";
 import { PolicyGateway } from "./policy-gateway.js";
 import { authenticateServiceRequest } from "./service-auth-adapter.js";
 import { ServiceAuthReplayDurableObject } from "./service-auth-replay-durable-object.js";
@@ -111,4 +112,4 @@ export default {
   },
 };
 
-export { AuditStateDurableObject, IdempotencyStateDurableObject, OwnerDecisionStateDurableObject, ServiceAuthReplayDurableObject };
+export { AuditStateDurableObject, IdempotencyStateDurableObject, OrchestratorWorkflow, OwnerDecisionStateDurableObject, ServiceAuthReplayDurableObject };

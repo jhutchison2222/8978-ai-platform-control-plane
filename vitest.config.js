@@ -15,6 +15,13 @@ export default defineConfig({
       miniflare: {
         bindings: { SERVICE_AUTH_KEYS_JSON: TEST_SERVICE_AUTH_KEYS, AUTHORITY_TEST_MIGRATIONS },
         d1Databases: ["AUTHORITY_DB"],
+        queueProducers: ["ORCHESTRATOR_QUEUE"],
+        workflows: {
+          ORCHESTRATOR_WORKFLOW: {
+            name: "8978-ai-orchestrator-dev",
+            className: "OrchestratorWorkflow",
+          },
+        },
       },
     }),
   ],

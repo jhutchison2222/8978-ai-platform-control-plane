@@ -23,7 +23,7 @@ Every dependency retains the read-only, integrity-checking behavior reviewed in 
 
 `createDevelopmentRuntime()` composes these readers only when an injected environment contains an `AUTHORITY_DB` object with the D1 `prepare()` contract. Without that binding, the existing throwing unavailable adapters remain in place and evaluation fails closed.
 
-The Workers test environment injects a real local D1 binding, so readiness there reports only `workflowDispatcher` and `queuePublisher` as unavailable. The checked-in `wrangler.jsonc` still has no D1 binding, so the deployable configuration continues to report all authority readers unavailable.
+The Workers test environment injects a real local D1 binding plus local Workflow and Queue bindings, so every dependency contract is composed there while readiness deliberately remains `false`. The checked-in `wrangler.jsonc` still has none of those bindings, so the deployable configuration continues to report authority and orchestrator dependencies unavailable.
 
 ## Deliberately not activated
 

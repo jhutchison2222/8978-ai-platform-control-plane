@@ -131,8 +131,9 @@ test("10: runtime readiness, Project Knowledge, Workflow, and Queue contracts fa
   assert.equal((await noPk.evaluate(action())).reason, "governing_project_knowledge_unavailable");
   assert.throws(() => assertProjectKnowledgeRecord({ status: "PROPOSED" }), /unavailable/);
   assert.throws(() => assertProjectKnowledgeRecord({ recordId:"pk",status:"CURRENT",version:"1",scope:"control-plane",knowledge:{nested:{api_key:"forbidden"}},digest:"sha256:"+"d".repeat(64),retrievedAt:"2026-08-11T19:00:00Z",actionDigest:"sha256:"+"a".repeat(64) }), /credentials/);
-  assert.throws(() => assertOrchestratorEnvelope({ messageId: "m" }), /actionDigest/);
-  const envelope = { messageId: "m", actionDigest: "sha256:" + "e".repeat(64), correlationId: "c", idempotencyKey: "i", workflowName: "wf", queueName: "q" };
+  assert.throws(() => assertOrchestratorEnvelope({ messageId: "m" }), /fields/);
+  const envelope = { messageId: "m", actionDigest: "sha256:" + "e".repeat(64), correlationId: "c", idempotencyKey: "i", workflowName: "wf", queueName: "q",
+    projectKnowledgeRef: { recordId: "pk", status: "FINAL", version: "1", digest: "sha256:" + "f".repeat(64) } };
   assert.equal(assertOrchestratorEnvelope(envelope), true);
 });
 
