@@ -26,6 +26,8 @@ const validationAdapterSource = await readFile("src/d1-validation-runtime.js", "
 const validationMigration = await readFile("migrations/authority/0002_validation_evidence.sql", "utf8");
 const projectKnowledgeAdapterSource = await readFile("src/d1-project-knowledge-runtime.js", "utf8");
 const projectKnowledgeMigration = await readFile("migrations/authority/0003_governing_project_knowledge.sql", "utf8");
+const ownerControlAdapterSource = await readFile("src/d1-owner-control-runtime.js", "utf8");
+const ownerControlMigration = await readFile("migrations/authority/0004_owner_control.sql", "utf8");
 const developmentRuntimeSource = await readFile("src/development-runtime.js", "utf8");
 const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
 const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
@@ -216,6 +218,44 @@ if (workerSource.includes("D1GoverningProjectKnowledgeReader") || developmentRun
   throw new Error("Project Knowledge adapter cannot be activated before the reviewed D1 binding and promotion step");
 }
 
+for (const required of [
+  "D1Ed25519OwnerDecisionVerifier", "D1StandingStateRevalidator", "DECISION_FIELDS", "MAX_OWNER_DECISION_MS",
+  "Owner decision fields must be exact", 'payload.signatureAlgorithm !== "Ed25519"',
+  "expiresAtMs - decidedAtMs > MAX_OWNER_DECISION_MS", "crypto.subtle.importKey", 'crypto.subtle.verify(',
+  "await digestCanonicalValue(keyRecord) !== row.key_digest", "digestRequestedAction(action, authorization.resolvedTarget)",
+  "authorization.authorizingPolicy?.policyId", "authorization.authorizingPolicy?.policyVersion",
+  "await digestCanonicalValue(record) !== row.evidence_digest", 'row.state === "enabled" && row.kill_switch === 0',
+  "status IN ('CURRENT', 'FINAL')", ".bind(...bindings).all()",
+]) if (!ownerControlAdapterSource.includes(required)) throw new Error(`Owner-control runtime invariant missing: ${required}`);
+if (writeSqlPattern.test(ownerControlAdapterSource) || /\bfetch\s*\(/u.test(ownerControlAdapterSource) || ownerControlAdapterSource.includes("privateKey")) {
+  throw new Error("Owner-control runtime must remain read-only, fetch-free, and public-key-only");
+}
+for (const required of [
+  "CREATE TABLE authority_owner_keys", "CREATE TABLE authority_standing_state", "algorithm = 'Ed25519'",
+  "state IN ('enabled', 'disabled')", "kill_switch IN (0, 1)", "status IN ('CURRENT', 'FINAL')",
+  "enabled IN (0, 1)", "valid_until_ms > valid_from_ms", "authority_owner_keys_active_key",
+  "authority_standing_state_active_policy",
+]) if (!ownerControlMigration.includes(required)) throw new Error(`Owner-control migration invariant missing: ${required}`);
+assertTableConstraints(ownerControlMigration, "authority_owner_keys", [
+  ...commonAuthorityConstraints, "algorithm = 'Ed25519'", "valid_until_ms > valid_from_ms",
+]);
+assertTableConstraints(ownerControlMigration, "authority_standing_state", [
+  ...commonAuthorityConstraints, "state IN ('enabled', 'disabled')", "kill_switch IN (0, 1)",
+  "valid_until_ms > valid_from_ms",
+]);
+if (/\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bREPLACE\b/iu.test(ownerControlMigration)) {
+  throw new Error("Owner-control migration must create empty schema without seed or mutation statements");
+}
+for (const required of [
+  "ownerVerifier.verify(decision, { actionDigest: prepared.actionDigest, now })",
+  "ownerVerifier.verify(context.decision, { actionDigest: authorization.actionDigest, now })",
+  "revalidateStandingState(action, authorization, { now })", "ownerSignatureValid = false", "standingStateValid = false",
+]) if (!policyGatewaySource.includes(required)) throw new Error(`Owner-control gateway invariant missing: ${required}`);
+if (workerSource.includes("D1Ed25519OwnerDecisionVerifier") || workerSource.includes("D1StandingStateRevalidator") ||
+    developmentRuntimeSource.includes("D1Ed25519OwnerDecisionVerifier") || developmentRuntimeSource.includes("D1StandingStateRevalidator")) {
+  throw new Error("Owner-control adapters cannot be activated before the reviewed D1 binding and key/state installation step");
+}
+
 if (batch1Proposed.status !== "PROPOSED" || batch1Proposed.governing !== false) throw new Error("Batch 1 package must remain PROPOSED and non-governing");
 if (!Array.isArray(batch1Proposed.records) || batch1Proposed.records.length !== 19) throw new Error("Batch 1 must contain exactly 19 proposed records");
 const expectedBatch1Ids = Array.from({ length: 19 }, (_, index) => `PK-PROP-${String(index + 1).padStart(3, "0")}`);
@@ -305,4 +345,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, three read-only authority migrations, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
