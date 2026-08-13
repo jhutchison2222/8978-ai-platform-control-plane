@@ -9,7 +9,7 @@ This Worker exposes the existing policy gateway behind service-to-service HMAC-S
 - `CONTROL_PLANE_MODE` must equal `development`.
 - `ALLOW_EXTERNAL_WRITES` must equal the string `false`.
 - `workers_dev` and preview URLs are disabled in `wrangler.jsonc`.
-- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. Read-only D1 adapters and migrations now exist for resources, limits, signed identity, test evidence, rollback evidence, and governing Project Knowledge, but they are test-only and deliberately unbound.
+- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. Read-only D1 adapters and migrations now exist for resources, limits, signed identity, test evidence, rollback evidence, governing Project Knowledge, authenticated owner decisions, and standing-state revalidation, but they are test-only and deliberately unbound.
 - The idempotency, owner-decision, and audit adapters are durable development implementations. Every other unresolved authoritative runtime adapter throws, so evaluation still fails closed at authoritative resource resolution.
 - `/v1/actions/execute` always returns `execution_disabled`.
 

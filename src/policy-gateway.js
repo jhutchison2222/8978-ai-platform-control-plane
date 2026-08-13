@@ -187,7 +187,9 @@ export class PolicyGateway {
     }
     const decidedAt = new Date(decision.decidedAt); const expiresAt = new Date(decision.expiresAt);
     if (!(decidedAt <= now && now < expiresAt)) return { outcome: "denied", reason: "owner_decision_not_current" };
-    if (!await this.#runtime.ownerVerifier.verify(decision, { actionDigest: prepared.actionDigest })) return { outcome: "denied", reason: "invalid_owner_signature" };
+    let ownerSignatureValid = false;
+    try { ownerSignatureValid = await this.#runtime.ownerVerifier.verify(decision, { actionDigest: prepared.actionDigest, now }); } catch {}
+    if (!ownerSignatureValid) return { outcome: "denied", reason: "invalid_owner_signature" };
     const authorization = freeze({ outcome: "authorized_by_owner_exception", actionDigest: prepared.actionDigest,
       ownerDecisionId: decision.decisionId, resolvedTarget: prepared.resolved, evidenceSnapshot: { trustedLimits: prepared.trustedLimits } });
     this.#issued.set(authorization, { mechanism: "owner_exception", decision: structuredClone(decision) }); return authorization;
@@ -200,9 +202,13 @@ export class PolicyGateway {
     if (context.mechanism === "standing_policy") {
       const fresh = await this.evaluate(action, now);
       if (fresh.outcome !== "authorized_by_standing_policy" || fresh.actionDigest !== authorization.actionDigest) throw new Error("Execution denied: standing authorization stale");
-      if (!await this.#runtime.revalidateStandingState(action, authorization)) throw new Error("Execution denied: kill switch or state revalidation failed");
+      let standingStateValid = false;
+      try { standingStateValid = await this.#runtime.revalidateStandingState(action, authorization, { now }); } catch {}
+      if (!standingStateValid) throw new Error("Execution denied: kill switch or state revalidation failed");
     } else {
-      if (!await this.#runtime.ownerVerifier.verify(context.decision, { actionDigest: authorization.actionDigest })) throw new Error("Execution denied: owner signature invalid");
+      let ownerSignatureValid = false;
+      try { ownerSignatureValid = await this.#runtime.ownerVerifier.verify(context.decision, { actionDigest: authorization.actionDigest, now }); } catch {}
+      if (!ownerSignatureValid) throw new Error("Execution denied: owner signature invalid");
       const use = await this.#runtime.ownerDecisionStore.consume({ decisionId: authorization.ownerDecisionId, actionDigest: authorization.actionDigest, now });
       if (!use?.consumed) throw new Error("Execution denied: owner decision replay");
     }
