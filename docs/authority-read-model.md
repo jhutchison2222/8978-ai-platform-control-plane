@@ -19,6 +19,8 @@ The migration at `migrations/authority/0001_authority_read_model.sql` defines:
 - `authority_resources`: locator, status, validity window, canonical resource JSON, derived resource key, content digest, and version.
 - `authority_limits`: resource key, operation, status, validity window, risk, cost, record count, evidence digest, and version.
 
+The additive `0002_validation_evidence.sql` migration extends this read model with authenticated identity keys, required-test evidence, and rollback evidence. Its separate trust rules are documented in `docs/validation-evidence-runtime.md`.
+
 The runtime adapter contains only parameterized `SELECT` queries. A separate, future authority-management path must own writes, approvals, promotion, and rollback. Those capabilities must not be added to this adapter.
 
 ## Deliberately unbound
