@@ -44,6 +44,10 @@ describe("development control-plane Worker", () => {
     expect(result.status).toBe(200);
     expect(body.ready).toBe(false);
     expect(body.externalWritesEnabled).toBe(false);
+    expect(body.durableDependencies).toEqual(["idempotencyStore", "ownerDecisionStore", "auditStore"]);
+    expect(body.missingAuthoritativeDependencies).not.toContain("idempotencyStore");
+    expect(body.missingAuthoritativeDependencies).not.toContain("ownerDecisionStore");
+    expect(body.missingAuthoritativeDependencies).not.toContain("auditStore");
     expect(body.serviceIdentity).toEqual({ mechanism: "hmac-sha256", principalId: "test-orchestrator", keyId: "test-key-1" });
     expect(body.missingAuthoritativeDependencies).toContain("workflowDispatcher");
   });

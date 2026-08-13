@@ -1,7823 +1,1272 @@
-Warning: truncated output (original token count: 143511)
-Total output lines: 15185
+Y™Áäx-ÆÈ‹j◊ù¢Îi∫⁄+äßj[hëÈ‹¢ÈÌ◊›x˜DËµ©h∫⁄n∂XßzÕK à\€[ùY\ÿXõH
+ã¬ãÀ»Ÿ[ô\ò]YûH‹ò[ô€\àûHù[õö[ô»‹ò[ô€\à\\ÿ
+\⁄àòçåçåôLôòŸLçNMåôçYXåÃYô
+BãÀ»ù[ù[YH\\»Ÿ[ô\ò]Y⁄]€‹öŸ\ôKååçåLKåHåçãLLLàõŸZú◊ÿ€€\]ö[ù\ôòXŸH◊–ò\ŸQ[ùó—[ùà¬ÇP””ïì”‘SëW”S—Nàô]ô[‹Y[ùé¬ÇPS’◊—VTìêS’‘íUTŒàôò[ŸHé¬ÇT—TïíP—W–UU‘ëTVNà\òXõSÿöôX›ò[Y\‹XŸO[\‹ù
+ãã‹‹òÀÿ€€ùõ€\[ôK]€‹öŸ\àäKîŸ\ùöXŸP]]ô\^Q\òXõSÿöôX›é¬ÇRQST’Sê÷W‘’‘ëNà\òXõSÿöôX›ò[Y\‹XŸO[\‹ù
+ãã‹‹òÀÿ€€ùõ€\[ôK]€‹öŸ\àäKíY[\›[òﬁT›]Q\òXõSÿöôX›é¬ÇS’”ëTó—P“T“S”ó‘’‘ëNà\òXõSÿöôX›ò[Y\‹XŸO[\‹ù
+ãã‹‹òÀÿ€€ùõ€\[ôK]€‹öŸ\àäKì›€ô\ëX⁄\⁄[€î›]Q\òXõSÿöôX›é¬ÇPUQU‘’‘ëNà\òXõSÿöôX›ò[Y\‹XŸO[\‹ù
+ãã‹‹òÀÿ€€ùõ€\[ôK]€‹öŸ\àäKê]Y]›]Q\òXõSÿöôX›é¬üBôX€\ôHò[Y\‹XŸH€›Yõ\ôH¬ÇZ[ù\ôòXŸH€ÿò[õ‹»¬ÇB[XZ[ì[Ÿ[Nà\[Ÿà[\‹ù
+ãã‹‹òÀÿ€€ùõ€\[ôK]€‹öŸ\àäN¬ÇBY\òXõSò[Y\‹XŸ\ŒàîŸ\ùöXŸP]]ô\^Q\òXõSÿöôX›àíY[\›[òﬁT›]Q\òXõSÿöôX›àì›€ô\ëX⁄\⁄[€î›]Q\òXõSÿöôX›àê]Y]›]Q\òXõSÿöôX›é¬Ç_BÇZ[ù\ôòXŸH[ùà^[ô»◊–ò\ŸQ[ùó—[ùàﬂBüBö[ù\ôòXŸH[ùà^[ô»◊–ò\ŸQ[ùó—[ùàﬂBù\H›ö[ô⁄YûUò[Y\œ[ùï\H^[ô»ôX€‹ô›ö[ôÀ[ö€õ›€èèàH¬ÇV–ö[ô[ô»[àŸ^[Ÿà[ùï\WNà[ùï\V–ö[ô[ô◊H^[ô»›ö[ô»»[ùï\V–ö[ô[ô◊Hà›ö[ôŒ¬üN¬ôX€\ôHò[Y\‹XŸHõŸRî»¬ÇZ[ù\ôòXŸHõÿŸ\‹—[ùà^[ô»›ö[ô⁄YûUò[Y\œX⁄œ€›Yõ\ôKë[ùãê””ïì”‘SëW”S—HàêS’◊—VTìêS’‘íUT»èèàﬂBüBÇãÀ»ôY⁄[àù[ù[YH\\¬ã àH
+ääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääÇê€‹\öY⁄
+ H€›Yõ\ôKà[öY⁄»ô\Ÿ\ùôYÇê€‹\öY⁄
+ HZX‹õ‹€Ÿù€‹ú‹ò][€ãà[öY⁄»ô\Ÿ\ùôYÇÇìXŸ[úŸY[ô\àH\X⁄HXŸ[úŸKô\ú⁄[€àãå
+HìXŸ[úŸHäN»[›HX^Hõ›\ŸBù\»ö[H^Ÿ\[à€€\X[òŸH⁄]HXŸ[úŸKà[›HX^HÿùZ[àH€‹HŸàBìXŸ[úŸH]ãÀ›››Àò\X⁄Kõ‹ôÀ€XŸ[úŸ\À”P—Sî—KLãåïT»”—HT»ì’íQQ”àSà
+êT»T àêT“TÀ“U’U–TîêSïQT»‘à””ëUS”î»—àSñBí“SëRUTàVëT‘»‘àSTQQSê”QSë»“U’USRUUS”àSñHSTQQï–TîêSïQT»‘à””ëUS”î»—àUKíUëT‘»ì‘àHTïP’STàTî‘—KìQTê“SïPìUH‘àì”ãRSëîíSë—SQSïÇîŸYHH\X⁄Hô\ú⁄[€àãåXŸ[úŸHõ‹à‹X⁄YöX»[ô›XYŸH€›ô\õö[ô»\õZ\‹⁄[€ú¬ò[ô[Z]][€ú»[ô\àHXŸ[úŸKÇäääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääääà
+ã¬ã à\€[ùY\ÿXõH
+ã¬ãÀ»õ⁄[ú‹X›[€àî’[ù\ŸY€ÿò[ﬁ[Xõ€¬ôX€\ôHò\à€õY\‹ÿYŸNàô]ô\é¬ã äÇà
+àH
+äò”Q^Ÿ\[€ò
+äà[ù\ôòXŸHô\ô\Ÿ[ù»[àXõõ‹õX[]ô[ù
+ÿ[Y[à
+äô^Ÿ\[€äääH]ÿÿ›\ú»\»Hô\›[Ÿàÿ[[ô»HY]Ÿ‹àXÿŸ\‹⁄[ô»Hõ‹\ùHŸàHŸXàTKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—”Q^Ÿ\[€äBà
+ã¬ôX€\ôH€\‹»”Q^Ÿ\[€à^[ô»\úõ‹à¬à€€ú›ùX›‹äY\‹ÿYŸOŒà›ö[ôÀò[YOŒà›ö[ô N¬à äÇà
+àH
+äòY\‹ÿYŸX
+äàôXY[€õHõ‹\ùHŸàHHY\‹ÿYŸH‹à\ÿ‹ö\[€à\‹€ÿ⁄X]Y⁄]H⁄]ô[à\úõ‹àò[YKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—”Q^Ÿ\[€ã€Y\‹ÿYŸJBà
+ã¬àôXY€õHY\‹ÿYŸNà›ö[ôŒ¬à äÇà
+àH
+äòò[YX
+äàôXY[€õHõ‹\ùHŸàH€ôHŸàH›ö[ô‹»\‹€ÿ⁄X]Y⁄][à\úõ‹àò[YKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—”Q^Ÿ\[€ã€ò[YJBà
+ã¬àôXY€õHò[YNà›ö[ôŒ¬à äÇà
+àH
+äò€ŸX
+äàôXY[€õHõ‹\ùHŸàH”Q^Ÿ\[€à[ù\ôòXŸHô]\õú»€ôHŸàHYÿXﬁH\úõ‹à€ŸH€€ú›[ùÀ‹àYàõ€ôHX]⁄Çà
+à\ôXÿ]Yà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—”Q^Ÿ\[€ãÿ€ŸJBà
+ã¬àôXY€õH€ŸNàù[Xô\é¬à›]X»ôXY€õHSëV‘“VëW—Tîéàù[Xô\é¬à›]X»ôXY€õH”T’íSë◊‘“VëW—Tîéàù[Xô\é¬à›]X»ôXY€õHQTêTê“W‘ëTUQT’—Tîéàù[Xô\é¬à›]X»ôXY€õH‘ì”ë◊—–’SQSï—Tîéàù[Xô\é¬à›]X»ôXY€õHSïêSQ–“TêP’Tó—Tîéàù[Xô\é¬à›]X»ôXY€õHì◊—UW–S’—Q—Tîéàù[Xô\é¬à›]X»ôXY€õHì◊”S—QíP–US”ó–S’—Q—Tîéàù[Xô\é¬à›]X»ôXY€õHì’—ì’Së—Tîéàù[Xô\é¬à›]X»ôXY€õHì’‘’T‘ïQ—Tîéàù[Xô\é¬à›]X»ôXY€õHSïT—W–UíPïUW—Tîéàù[Xô\é¬à›]X»ôXY€õHSïêSQ‘’UW—Tîéàù[Xô\é¬à›]X»ôXY€õH÷SïV—Tîéàù[Xô\é¬à›]X»ôXY€õHSïêSQ”S—QíP–US”ó—Tîéàù[Xô\é¬à›]X»ôXY€õHêSQT‘P—W—Tîéàù[Xô\é¬à›]X»ôXY€õHSïêSQ–P–—T‘◊—Tîéàù[Xô\é¬à›]X»ôXY€õHêSQUS”ó—Tîéàù[Xô\é¬à›]X»ôXY€õHTW”RT”PU“—Tîéàù[Xô\é¬à›]X»ôXY€õH—P’TíUW—Tîéàù[Xô\é¬à›]X»ôXY€õHëU”‘í◊—Tîéàù[Xô\é¬à›]X»ôXY€õHPì‘ï—Tîéàù[Xô\é¬à›]X»ôXY€õHTì”RT”PU“—Tîéàù[Xô\é¬à›]X»ôXY€õHUS’W—V—QQQ—Tîéàù[Xô\é¬à›]X»ôXY€õHSQS’U—Tîéàù[Xô\é¬à›]X»ôXY€õHSïêSQ”ì—W’TW—Tîéàù[Xô\é¬à›]X»ôXY€õHUW–””ëW—Tîéàù[Xô\é¬àŸ]›X⁄ 
+Nà[ûN¬àŸ]›X⁄ ò[YNà[ûJN¬üBù\H€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\H¬àô]⁄àô]⁄]ô[ù¬àÿ⁄Y[Yàÿ⁄Y[Y]ô[ù¬à]Y]YNà]Y]YQ]ô[ù¬à[ö[ôYôZôX›[€éàõ€Z\ŸTôZôX›[€ë]ô[ù¬àôZôX›[€ö[ôYàõ€Z\ŸTôZôX›[€ë]ô[ù¬üN¬ôX€\ôHXú›òX›€\‹»€‹öŸ\ë€ÿò[ÿ€‹H^[ô»]ô[ù\ôŸ]€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\à¬à]ô[ù\ôŸ]à\[Ÿà]ô[ù\ôŸ]¬üBã àH
+äò€€ú€€X
+äàÿöôX›õ›öY\»XÿŸ\‹»»HXùYŸ⁄[ô»€€ú€€H
+KôÀãHŸXà€€ú€€H[àö\ôYõﬁ
+Kà
+Çà
+àH
+äò€€ú€€X
+äàÿöôX›õ›öY\»XÿŸ\‹»»HXùYŸ⁄[ô»€€ú€€H
+KôÀãHŸXà€€ú€€H[àö\ôYõﬁ
+KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€JBà
+ã¬ö[ù\ôòXŸH€€ú€€H¬àò\‹Ÿ\ùä€€ô][€èŒàõ€€X[ãããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kò€X\ä
+X
+äà›]X»Y]Ÿ€X\ú»H€€ú€€HYà‹‹⁄XõKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€Kÿ€X\ó‹›]X Bà
+ã¬à€X\ä
+Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kò€›[ù
 
-/* eslint-disable */
-// Generated by Wrangler by running `wrangler types` (hash: f4911c5d970ccd237789a62e990f83aa)
-// Runtime types generated with workerd@1.20260811.1 2026-08-12 nodejs_compat
-interface __BaseEnv_Env {
-	CONTROL_PLANE_MODE: "development";
-	ALLOW_EXTERNAL_WRITES: "false";
-	SERVICE_AUTH_REPLAY: DurableObjectNamespace<import("./src/control-plane-worker").ServiceAuthReplayDurableObject>;
-}
-declare namespace Cloudflare {
-	interface GlobalProps {
-		mainModule: typeof import("./src/control-plane-worker");
-		durableNamespaces: "ServiceAuthReplayDurableObject";
-	}
-	interface Env extends __BaseEnv_Env {}
-}
-interface Env extends __BaseEnv_Env {}
-type StringifyValues<EnvType extends Record<string, unknown>> = {
-	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
-};
-declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "CONTROL_PLANE_MODE" | "ALLOW_EXTERNAL_WRITES">> {}
-}
+X
+äà›]X»Y]ŸŸ‹»Hù[Xô\àŸà[Y\»]\»\ùX›[\àÿ[»€›[ù
 
-// Begin runtime types
-/*! *****************************************************************************
-Copyright (c) Cloudflare. All rights reserved.
-Copyright (c) Microsoft Corporation. All rights reserved.
+X\»ôY[àÿ[YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€Kÿ€›[ù‹›]X Bà
+ã¬à€›[ù
+Xô[Œà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kò€›[ùô\Ÿ]
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-/* eslint-disable */
-// noinspection JSUnusedGlobalSymbols
-declare var onmessage: never;
-/**
- * The **`DOMException`** interface represents an abnormal event (called an **exception**) that occurs as a result of calling a method or accessing a property of a web API.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/DOMException)
- */
-declare class DOMException extends Error {
-    constructor(message?: string, name?: string);
-    /**
-     * The **`message`** read-only property of the a message or description associated with the given error name.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/DOMException/message)
-     */
-    readonly message: string;
-    /**
-     * The **`name`** read-only property of the one of the strings associated with an error name.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/DOMException/name)
-     */
-    readonly name: string;
-    /**
-     * The **`code`** read-only property of the DOMException interface returns one of the legacy error code constants, or `0` if none match.
-     * @deprecated
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/DOMException/code)
-     */
-    readonly code: number;
-    static readonly INDEX_SIZE_ERR: number;
-    static readonly DOMSTRING_SIZE_ERR: number;
-    static readonly HIERARCHY_REQUEST_ERR: number;
-    static readonly WRONG_DOCUMENT_ERR: number;
-    static readonly INVALID_CHARACTER_ERR: number;
-    static readonly NO_DATA_ALLOWED_ERR: number;
-    static readonly NO_MODIFICATION_ALLOWED_ERR: number;
-    static readonly NOT_FOUND_ERR: number;
-    static readonly NOT_SUPPORTED_ERR: number;
-    static readonly INUSE_ATTRIBUTE_ERR: number;
-    static readonly INVALID_STATE_ERR: number;
-    static readonly SYNTAX_ERR: number;
-    static readonly INVALID_MODIFICATION_ERR: number;
-    static readonly NAMESPACE_ERR: number;
-    static readonly INVALID_ACCESS_ERR: number;
-    static readonly VALIDATION_ERR: number;
-    static readonly TYPE_MISMATCH_ERR: number;
-    static readonly SECURITY_ERR: number;
-    static readonly NETWORK_ERR: number;
-    static readonly ABORT_ERR: number;
-    static readonly URL_MISMATCH_ERR: number;
-    static readonly QUOTA_EXCEEDED_ERR: number;
-    static readonly TIMEOUT_ERR: number;
-    static readonly INVALID_NODE_TYPE_ERR: number;
-    static readonly DATA_CLONE_ERR: number;
-    get stack(): any;
-    set stack(value: any);
-}
-type WorkerGlobalScopeEventMap = {
-    fetch: FetchEvent;
-    scheduled: ScheduledEvent;
-    queue: QueueEvent;
-    unhandledrejection: PromiseRejectionEvent;
-    rejectionhandled: PromiseRejectionEvent;
-};
-declare abstract class WorkerGlobalScope extends EventTarget<WorkerGlobalScopeEventMap> {
-    EventTarget: typeof EventTarget;
-}
-/* The **`console`** object provides access to the debugging console (e.g., the Web console in Firefox). *
- * The **`console`** object provides access to the debugging console (e.g., the Web console in Firefox).
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console)
- */
-interface Console {
-    "assert"(condition?: boolean, ...data: any[]): void;
-    /**
-     * The **`console.clear()`** static method clears the console if possible.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/clear_static)
-     */
-    clear(): void;
-    /**
-     * The **`console.count()`** static method logs the number of times that this particular call to `count()` has been called.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/count_static)
-     */
-    count(label?: string): void;
-    /**
-     * The **`console.countReset()`** static method resets counter used with console/count_static.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/countReset_static)
-     */
-    countReset(label?: string): void;
-    /**
-     * The **`console.debug()`** static method outputs a message to the console at the 'debug' log level.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/debug_static)
-     */
-    debug(...data: any[]): void;
-    /**
-     * The **`console.dir()`** static method displays a list of the properties of the specified JavaScript object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/dir_static)
-     */
-    dir(item?: any, options?: any): void;
-    /**
-     * The **`console.dirxml()`** static method displays an interactive tree of the descendant elements of the specified XML/HTML element.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/dirxml_static)
-     */
-    dirxml(...data: any[]): void;
-    /**
-     * The **`console.error()`** static method outputs a message to the console at the 'error' log level.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/error_static)
-     */
-    error(...data: any[]): void;
-    /**
-     * The **`console.group()`** static method creates a new inline group in the Web console log, causing any subsequent console messages to be indented by an additional level, until console/groupEnd_static is called.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/group_static)
-     */
-    group(...data: any[]): void;
-    /**
-     * The **`console.groupCollapsed()`** static method creates a new inline group in the console.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/groupCollapsed_static)
-     */
-    groupCollapsed(...data: any[]): void;
-    /**
-     * The **`console.groupEnd()`** static method exits the current inline group in the console.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/groupEnd_static)
-     */
-    groupEnd(): void;
-    /**
-     * The **`console.info()`** static method outputs a message to the console at the 'info' log level.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/info_static)
-     */
-    info(...data: any[]): void;
-    /**
-     * The **`console.log()`** static method outputs a message to the console.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/log_static)
-     */
-    log(...data: any[]): void;
-    /**
-     * The **`console.table()`** static method displays tabular data as a table.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/table_static)
-     */
-    table(tabularData?: any, properties?: string[]): void;
-    /**
-     * The **`console.time()`** static method starts a timer you can use to track how long an operation takes.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/time_static)
-     */
-    time(label?: string): void;
-    /**
-     * The **`console.timeEnd()`** static method stops a timer that was previously started by calling console/time_static.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/timeEnd_static)
-     */
-    timeEnd(label?: string): void;
-    /**
-     * The **`console.timeLog()`** static method logs the current value of a timer that was previously started by calling console/time_static.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/timeLog_static)
-     */
-    timeLog(label?: string, ...data: any[]): void;
-    timeStamp(label?: string): void;
-    /**
-     * The **`console.trace()`** static method outputs a stack trace to the console.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/trace_static)
-     */
-    trace(...data: any[]): void;
-    /**
-     * The **`console.warn()`** static method outputs a warning message to the console at the 'warning' log level.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/console/warn_static)
-     */
-    warn(...data: any[]): void;
-}
-declare const console: Console;
-type BufferSource = ArrayBufferView | ArrayBuffer;
-type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array | BigInt64Array | BigUint64Array;
-declare namespace WebAssembly {
-    class CompileError extends Error {
-        constructor(message?: string);
-    }
-    class RuntimeError extends Error {
-        constructor(message?: string);
-    }
-    type ValueType = "anyfunc" | "externref" | "f32" | "f64" | "i32" | "i64" | "v128";
-    interface GlobalDescriptor {
-        value: ValueType;
-        mutable?: boolean;
-    }
-    class Global {
-        constructor(descriptor: GlobalDescriptor, value?: any);
-        value: any;
-        valueOf(): any;
-    }
-    type ImportValue = ExportValue | number;
-    type ModuleImports = Record<string, ImportValue>;
-    type Imports = Record<string, ModuleImports>;
-    type ExportValue = Function | Global | Memory | Table;
-    type Exports = Record<string, ExportValue>;
-    class Instance {
-        constructor(module: Module, imports?: Imports);
-        readonly exports: Exports;
-    }
-    interface MemoryDescriptor {
-        initial: number;
-        maximum?: number;
-        shared?: boolean;
-    }
-    class Memory {
-        constructor(descriptor: MemoryDescriptor);
-        readonly buffer: ArrayBuffer;
-        grow(delta: number): number;
-    }
-    type ImportExportKind = "function" | "global" | "memory" | "table";
-    interface ModuleExportDescriptor {
-        kind: ImportExportKind;
-        name: string;
-    }
-    interface ModuleImportDescriptor {
-        kind: ImportExportKind;
-        module: string;
-        name: string;
-    }
-    abstract class Module {
-        static customSections(module: Module, sectionName: string): ArrayBuffer[];
-        static exports(module: Module): ModuleExportDescriptor[];
-        static imports(module: Module): ModuleImportDescriptor[];
-    }
-    type TableKind = "anyfunc" | "externref";
-    interface TableDescriptor {
-        element: TableKind;
-        initial: number;
-        maximum?: number;
-    }
-    class Table {
-        constructor(descriptor: TableDescriptor, value?: any);
-        readonly length: number;
-        get(index: number): any;
-        grow(delta: number, value?: any): number;
-        set(index: number, value?: any): void;
-    }
-    function instantiate(module: Module, imports?: Imports): Promise<Instance>;
-    function validate(bytes: BufferSource): boolean;
-}
-/**
- * The **`ServiceWorkerGlobalScope`** interface of the Service Worker API represents the global execution context of a service worker.
- * Available only in secure contexts.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ServiceWorkerGlobalScope)
- */
-interface ServiceWorkerGlobalScope extends WorkerGlobalScope {
-    DOMException: typeof DOMException;
-    WorkerGlobalScope: typeof WorkerGlobalScope;
-    btoa(data: string): string;
-    atob(data: string): string;
-    setTimeout(callback: (...args: any[]) => void, msDelay?: number): number;
-    setTimeout<Args extends any[]>(callback: (...args: Args) => void, msDelay?: number, ...args: Args): number;
-    clearTimeout(timeoutId: number | null): void;
-    setInterval(callback: (...args: any[]) => void, msDelay?: number): number;
-    setInterval<Args extends any[]>(callback: (...args: Args) => void, msDelay?: number, ...args: Args): number;
-    clearInterval(timeoutId: number | null): void;
-    queueMicrotask(task: Function): void;
-    structuredClone<T>(value: T, options?: StructuredSerializeOptions): T;
-    reportError(error: any): void;
-    fetch(input: RequestInfo | URL, init?: RequestInit<RequestInitCfProperties>): Promise<Response>;
-    self: ServiceWorkerGlobalScope;
-    crypto: Crypto;
-    caches: CacheStorage;
-    scheduler: Scheduler;
-    performance: Performance;
-    Cloudflare: Cloudflare;
-    readonly origin: string;
-    Event: typeof Event;
-    ExtendableEvent: typeof ExtendableEvent;
-    CustomEvent: typeof CustomEvent;
-    PromiseRejectionEvent: typeof PromiseRejectionEvent;
-    FetchEvent: typeof FetchEvent;
-    TailEvent: typeof TailEvent;
-    TraceEvent: typeof TailEvent;
-    ScheduledEvent: typeof ScheduledEvent;
-    MessageEvent: typeof MessageEvent;
-    CloseEvent: typeof CloseEvent;
-    ReadableStreamDefaultReader: typeof ReadableStreamDefaultReader;
-    ReadableStreamBYOBReader: typeof ReadableStreamBYOBReader;
-    ReadableStream: typeof ReadableStream;
-    WritableStream: typeof WritableStream;
-    WritableStreamDefaultWriter: typeof WritableStreamDefaultWriter;
-    TransformStream: typeof TransformStream;
-    ByteLengthQueuingStrategy: typeof ByteLengthQueuingStrategy;
-    CountQueuingStrategy: typeof CountQueuingStrategy;
-    ErrorEvent: typeof ErrorEvent;
-    MessageChannel: typeof MessageChannel;
-    MessagePort: typeof MessagePort;
-    EventSource: typeof EventSource;
-    ReadableStreamBYOBRequest: typeof ReadableStreamBYOBRequest;
-    ReadableStreamDefaultController: typeof ReadableStreamDefaultController;
-    ReadableByteStreamController: typeof ReadableByteStreamController;
-    WritableStreamDefaultController: typeof WritableStreamDefaultController;
-    TransformStreamDefaultController: typeof TransformStreamDefaultController;
-    Buffer: any;
-    process: any;
-    global: ServiceWorkerGlobalScope;
-    setImmediate($function: (...param0: any[]) => void, ...args: any[]): Immediate;
-    clearImmediate(immediate: Immediate | null): void;
-    CompressionStream: typeof CompressionStream;
-    DecompressionStream: typeof DecompressionStream;
-    TextEncoderStream: typeof TextEncoderStream;
-    TextDecoderStream: typeof TextDecoderStream;
-    Headers: typeof Headers;
-    Body: typeof Body;
-    Request: typeof Request;
-    Response: typeof Response;
-    WebSocket: typeof WebSocket;
-    WebSocketPair: typeof WebSocketPair;
-    WebSocketRequestResponsePair: typeof WebSocketRequestResponsePair;
-    AbortController: typeof AbortController;
-    AbortSignal: typeof AbortSignal;
-    TextDecoder: typeof TextDecoder;
-    TextEncoder: typeof TextEncoder;
-    navigator: Navigator;
-    Navigator: typeof Navigator;
-    URL: typeof URL;
-    URLSearchParams: typeof URLSearchParams;
-    URLPattern: typeof URLPattern;
-    Blob: typeof Blob;
-    File: typeof File;
-    FormData: typeof FormData;
-    Crypto: typeof Crypto;
-    SubtleCrypto: typeof SubtleCrypto;
-    CryptoKey: typeof CryptoKey;
-    CacheStorage: typeof CacheStorage;
-    Cache: typeof Cache;
-    FixedLengthStream: typeof FixedLengthStream;
-    IdentityTransformStream: typeof IdentityTransformStream;
-    HTMLRewriter: typeof HTMLRewriter;
-    Performance: typeof Performance;
-    PerformanceEntry: typeof PerformanceEntry;
-    PerformanceMark: typeof PerformanceMark;
-    PerformanceMeasure: typeof PerformanceMeasure;
-    PerformanceResourceTiming: typeof PerformanceResourceTiming;
-    PerformanceObserver: typeof PerformanceObserver;
-    PerformanceObserverEntryList: typeof PerformanceObserverEntryList;
-}
-declare function addEventListener<Type extends keyof WorkerGlobalScopeEventMap>(type: Type, handler: EventListenerOrEventListenerObject<WorkerGlobalScopeEventMap[Type]>, options?: EventTargetAddEventListenerOptions | boolean): void;
-declare function removeEventListener<Type extends keyof WorkerGlobalScopeEventMap>(type: Type, handler: EventListenerOrEventListenerObject<WorkerGlobalScopeEventMap[Type]>, options?: EventTargetEventListenerOptions | boolean): void;
-/**
- * The **`dispatchEvent()`** method of the EventTarget sends an Event to the object, (synchronously) invoking the affected event listeners in the appropriate order.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventTarget/dispatchEvent)
- */
-declare function dispatchEvent(event: WorkerGlobalScopeEventMap[keyof WorkerGlobalScopeEventMap]): boolean;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/btoa) */
-declare function btoa(data: string): string;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/atob) */
-declare function atob(data: string): string;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/setTimeout) */
-declare function setTimeout(callback: (...args: any[]) => void, msDelay?: number): number;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/setTimeout) */
-declare function setTimeout<Args extends any[]>(callback: (...args: Args) => void, msDelay?: number, ...args: Args): number;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/clearTimeout) */
-declare function clearTimeout(timeoutId: number | null): void;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/setInterval) */
-declare function setInterval(callback: (...args: any[]) => void, msDelay?: number): number;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/setInterval) */
-declare function setInterval<Args extends any[]>(callback: (...args: Args) => void, msDelay?: number, ...args: Args): number;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/clearInterval) */
-declare function clearInterval(timeoutId: number | null): void;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/queueMicrotask) */
-declare function queueMicrotask(task: Function): void;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/structuredClone) */
-declare function structuredClone<T>(value: T, options?: StructuredSerializeOptions): T;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/reportError) */
-declare function reportError(error: any): void;
-/* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Window/fetch) */
-declare function fetch(input: RequestInfo | URL, init?: RequestInit<RequestInitCfProperties>): Promise<Response>;
-declare const self: ServiceWorkerGlobalScope;
-/**
-* The Web Crypto API provides a set of low-level functions for common cryptographic tasks.
-* The Workers runtime implements the full surface of this API, but with some differences in
-* the [supported algorithms](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/#supported-algorithms)
-* compared to those implemented in most browsers.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)
-*/
-declare const crypto: Crypto;
-/**
-* The Cache API allows fine grained control of reading and writing from the Cloudflare global network cache.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/)
-*/
-declare const caches: CacheStorage;
-declare const scheduler: Scheduler;
-/**
-* The Workers runtime supports a subset of the Performance API, used to measure timing and performance,
-* as well as timing of subrequests and other operations.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/)
-*/
-declare const performance: Performance;
-declare const Cloudflare: Cloudflare;
-declare const origin: string;
-declare const Buffer: any;
-declare const process: any;
-declare const global: ServiceWorkerGlobalScope;
-declare function setImmediate($function: (...param0: any[]) => void, ...args: any[]): Immediate;
-declare function clearImmediate(immediate: Immediate | null): void;
-declare const navigator: Navigator;
-interface TestController {
-}
-interface ExecutionContext<Props = unknown> {
-    waitUntil(promise: Promise<any>): void;
-    passThroughOnException(): void;
-    readonly exports: Cloudflare.Exports;
-    readonly props: Props;
-    cache?: CacheContext;
-    readonly access?: CloudflareAccessContext;
-    tracing: Tracing;
-    abort(reason?: any): void;
-}
-type ExportedHandlerFetchHandler<Env = unknown, CfHostMetadata = unknown, Props = unknown> = (request: Request<CfHostMetadata, IncomingRequestCfProperties<CfHostMetadata>>, env: Env, ctx: ExecutionContext<Props>) => Response | Promise<Response>;
-type ExportedHandlerConnectHandler<Env = unknown, Props = unknown> = (socket: Socket, env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-type ExportedHandlerTailHandler<Env = unknown, Props = unknown> = (events: TraceItem[], env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-type ExportedHandlerTraceHandler<Env = unknown, Props = unknown> = (traces: TraceItem[], env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-type ExportedHandlerTailStreamHandler<Env = unknown, Props = unknown> = (event: TailStream.TailEvent<TailStream.Onset>, env: Env, ctx: ExecutionContext<Props>) => TailStream.TailEventHandlerType | Promise<TailStream.TailEventHandlerType>;
-type ExportedHandlerScheduledHandler<Env = unknown, Props = unknown> = (controller: ScheduledController, env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-type ExportedHandlerQueueHandler<Env = unknown, Message = unknown, Props = unknown> = (batch: MessageBatch<Message>, env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-type ExportedHandlerTestHandler<Env = unknown, Props = unknown> = (controller: TestController, env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-interface ExportedHandler<Env = unknown, QueueHandlerMessage = unknown, CfHostMetadata = unknown, Props = unknown> {
-    fetch?: ExportedHandlerFetchHandler<Env, CfHostMetadata, Props>;
-    connect?: ExportedHandlerConnectHandler<Env, Props>;
-    tail?: ExportedHandlerTailHandler<Env, Props>;
-    trace?: ExportedHandlerTraceHandler<Env, Props>;
-    tailStream?: ExportedHandlerTailStreamHandler<Env, Props>;
-    scheduled?: ExportedHandlerScheduledHandler<Env, Props>;
-    test?: ExportedHandlerTestHandler<Env, Props>;
-    email?: EmailExportedHandler<Env, Props>;
-    queue?: ExportedHandlerQueueHandler<Env, QueueHandlerMessage, Props>;
-}
-interface StructuredSerializeOptions {
-    transfer?: any[];
-}
-declare abstract class Navigator {
-    sendBeacon(url: string, body?: BodyInit): boolean;
-    readonly userAgent: string;
-    readonly hardwareConcurrency: number;
-    readonly platform: string;
-    readonly language: string;
-    readonly languages: string[];
-}
-interface AlarmInvocationInfo {
-    readonly isRetry: boolean;
-    readonly retryCount: number;
-    readonly scheduledTime: number;
-}
-interface Immediate {
-    ref(): void;
-    unref(): void;
-    hasRef(): boolean;
-}
-interface Cloudflare {
-    readonly compatibilityFlags: Record<string, boolean>;
-}
-interface CachePurgeError {
-    code: number;
-    message: string;
-}
-interface CachePurgeResult {
-    success: boolean;
-    errors: CachePurgeError[];
-}
-interface CachePurgeOptions {
-    tags?: string[];
-    pathPrefixes?: string[];
-    purgeEverything?: boolean;
-}
-interface CacheContext {
-    purge(options: CachePurgeOptions): Promise<CachePurgeResult>;
-}
-interface CloudflareAccessContext {
-    readonly aud: string;
-    getIdentity(): Promise<CloudflareAccessIdentity | undefined>;
-}
-declare abstract class ColoLocalActorNamespace {
-    get(actorId: string): Fetcher;
-}
-interface DurableObject {
-    fetch(request: Request): Response | Promise<Response>;
-    connect?(socket: Socket): void | Promise<void>;
-    alarm?(alarmInfo?: AlarmInvocationInfo): void | Promise<void>;
-    webSocketMessage?(ws: WebSocket, message: string | ArrayBuffer): void | Promise<void>;
-    webSocketClose?(ws: WebSocket, code: number, reason: string, wasClean: boolean): void | Promise<void>;
-    webSocketError?(ws: WebSocket, error: unknown): void | Promise<void>;
-}
-type DurableObjectStub<T extends Rpc.DurableObjectBranded | undefined = undefined> = Fetcher<T, "alarm" | "connect" | "webSocketMessage" | "webSocketClose" | "webSocketError"> & {
-    readonly id: DurableObjectId;
-    readonly name?: string;
-};
-interface DurableObjectId {
-    toString(): string;
-    equals(other: DurableObjectId): boolean;
-    readonly name?: string;
-    readonly jurisdiction?: string;
-}
-declare abstract class DurableObjectNamespace<T extends Rpc.DurableObjectBranded | undefined = undefined> {
-    newUniqueId(options?: DurableObjectNamespaceNewUniqueIdOptions): DurableObjectId;
-    idFromName(name: string): DurableObjectId;
-    idFromString(id: string): DurableObjectId;
-    get(id: DurableObjectId, options?: DurableObjectNamespaceGetDurableObjectOptions): DurableObjectStub<T>;
-    getByName(name: string, options?: DurableObjectNamespaceGetDurableObjectOptions): DurableObjectStub<T>;
-    jurisdiction(jurisdiction: DurableObjectJurisdiction): DurableObjectNamespace<T>;
-}
-type DurableObjectJurisdiction = "eu" | "fedramp" | "fedramp-high" | "us";
-interface DurableObjectNamespaceNewUniqueIdOptions {
-    jurisdiction?: DurableObjectJurisdiction;
-}
-type DurableObjectLocationHint = "wnam" | "enam" | "sam" | "weur" | "eeur" | "apac" | "apac-ne" | "apac-se" | "oc" | "afr" | "me";
-type DurableObjectRoutingMode = "primary-only";
-interface DurableObjectNamespaceGetDurableObjectOptions {
-    locationHint?: DurableObjectLocationHint;
-    routingMode?: DurableObjectRoutingMode;
-}
-interface DurableObjectClass<_T extends Rpc.DurableObjectBranded | undefined = undefined> {
-}
-interface DurableObjectState<Props = unknown> {
-    waitUntil(promise: Promise<any>): void;
-    readonly exports: Cloudflare.Exports;
-    readonly props: Props;
-    readonly id: DurableObjectId;
-    readonly storage: DurableObjectStorage;
-    container?: Container;
-    facets: DurableObjectFacets;
-    blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T>;
-    acceptWebSocket(ws: WebSocket, tags?: string[]): void;
-    getWebSockets(tag?: string): WebSocket[];
-    setWebSocketAutoResponse(maybeReqResp?: WebSocketRequestResponsePair): void;
-    getWebSocketAutoResponse(): WebSocketRequestResponsePair | null;
-    getWebSocketAutoResponseTimestamp(ws: WebSocket): Date | null;
-    setHibernatableWebSocketEventTimeout(timeoutMs?: number): void;
-    getHibernatableWebSocketEventTimeout(): number | null;
-    getTags(ws: WebSocket): string[];
-    abort(reason?: string): void;
-}
-interface DurableObjectTransaction {
-    get<T = unknown>(key: string, options?: DurableObjectGetOptions): Promise<T | undefined>;
-    get<T = unknown>(keys: string[], options?: DurableObjectGetOptions): Promise<Map<string, T>>;
-    list<T = unknown>(options?: DurableObjectListOptions): Promise<Map<string, T>>;
-    put<T>(key: string, value: T, options?: DurableObjectPutOptions): Promise<void>;
-    put<T>(entries: Record<string, T>, options?: DurableObjectPutOptions): Promise<void>;
-    delete(key: string, options?: DurableObjectPutOptions): Promise<boolean>;
-    delete(keys: string[], options?: DurableObjectPutOptions): Promise<number>;
-    rollback(): void;
-    getAlarm(options?: DurableObjectGetAlarmOptions): Promise<number | null>;
-    setAlarm(scheduledTime: number | Date, options?: DurableObjectSetAlarmOptions): Promise<void>;
-    deleteAlarm(options?: DurableObjectSetAlarmOptions): Promise<void>;
-}
-interface DurableObjectStorage {
-    get<T = unknown>(key: string, options?: DurableObjectGetOptions): Promise<T | undefined>;
-    get<T = unknown>(keys: string[], options?: DurableObjectGetOptions): Promise<Map<string, T>>;
-    list<T = unknown>(options?: DurableObjectListOptions): Promise<Map<string, T>>;
-    put<T>(key: string, value: T, options?: DurableObjectPutOptions): Promise<void>;
-    put<T>(entries: Record<string, T>, options?: DurableObjectPutOptions): Promise<void>;
-    delete(key: string, options?: DurableObjectPutOptions): Promise<boolean>;
-    delete(keys: string[], options?: DurableObjectPutOptions): Promise<number>;
-    deleteAll(options?: DurableObjectPutOptions): Promise<void>;
-    transaction<T>(closure: (txn: DurableObjectTransaction) => Promise<T>): Promise<T>;
-    getAlarm(options?: DurableObjectGetAlarmOptions): Promise<number | null>;
-    setAlarm(scheduledTime: number | Date, options?: DurableObjectSetAlarmOptions): Promise<void>;
-    deleteAlarm(options?: DurableObjectSetAlarmOptions): Promise<void>;
-    sync(): Promise<void>;
-    sql: SqlStorage;
-    kv: SyncKvStorage;
-    transactionSync<T>(closure: () => T): T;
-    getCurrentBookmark(): Promise<string>;
-    getBookmarkForTime(timestamp: number | Date): Promise<string>;
-    onNextSessionRestoreBookmark(bookmark: string): Promise<string>;
-}
-interface DurableObjectListOptions {
-    start?: string;
-    startAfter?: string;
-    end?: string;
-    prefix?: string;
-    reverse?: boolean;
-    limit?: number;
-    allowConcurrency?: boolean;
-    noCache?: boolean;
-}
-interface DurableObjectGetOptions {
-    allowConcurrency?: boolean;
-    noCache?: boolean;
-}
-interface DurableObjectGetAlarmOptions {
-    allowConcurrency?: boolean;
-}
-interface DurableObjectPutOptions {
-    allowConcurrency?: boolean;
-    allowUnconfirmed?: boolean;
-    noCache?: boolean;
-}
-interface DurableObjectSetAlarmOptions {
-    allowConcurrency?: boolean;
-    allowUnconfirmed?: boolean;
-}
-declare class WebSocketRequestResponsePair {
-    constructor(request: string, response: string);
-    get request(): string;
-    get response(): string;
-}
-interface DurableObjectFacets {
-    get<T extends Rpc.DurableObjectBranded | undefined = undefined>(name: string, getStartupOptions: () => FacetStartupOptions<T> | Promise<FacetStartupOptions<T>>): Fetcher<T>;
-    abort(name: string, reason: any): void;
-    delete(name: string): void;
-    clone(src: string, dst: string): void;
-}
-interface FacetStartupOptions<T extends Rpc.DurableObjectBranded | undefined = undefined> {
-    id?: DurableObjectId | string;
-    class: DurableObjectClass<T>;
-}
-interface AnalyticsEngineDataset {
-    writeDataPoint(event?: AnalyticsEngineDataPoint): void;
-}
-interface AnalyticsEngineDataPoint {
-    indexes?: ((ArrayBuffer | string) | null)[];
-    doubles?: number[];
-    blobs?: ((ArrayBuffer | string) | null)[];
-}
-/**
- * The **`Event`** interface represents an event which takes place on an `EventTarget`.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event)
- */
-declare class Event {
-    constructor(type: string, init?: EventInit);
-    /**
-     * The **`type`** read-only property of the Event interface returns a string containing the event's type.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/type)
-     */
-    get type(): string;
-    /**
-     * The **`eventPhase`** read-only property of the being evaluated.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/eventPhase)
-     */
-    get eventPhase(): number;
-    /**
-     * The read-only **`composed`** property of the or not the event will propagate across the shadow DOM boundary into the standard DOM.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/composed)
-     */
-    get composed(): boolean;
-    /**
-     * The **`bubbles`** read-only property of the Event interface indicates whether the event bubbles up through the DOM tree or not.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/bubbles)
-     */
-    get bubbles(): boolean;
-    /**
-     * The **`cancelable`** read-only property of the Event interface indicates whether the event can be canceled, and therefore prevented as if the event never happened.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/cancelable)
-     */
-    get cancelable(): boolean;
-    /**
-     * The **`defaultPrevented`** read-only property of the Event interface returns a boolean value indicating whether or not the call to Event.preventDefault() canceled the event.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/defaultPrevented)
-     */
-    get defaultPrevented(): boolean;
-    /**
-     * The Event property **`returnValue`** indicates whether the default action for this event has been prevented or not.
-     * @deprecated
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/returnValue)
-     */
-    get returnValue(): boolean;
-    /**
-     * The **`currentTarget`** read-only property of the Event interface identifies the element to which the event handler has been attached.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/currentTarget)
-     */
-    get currentTarget(): EventTarget | undefined;
-    /**
-     * The read-only **`target`** property of the dispatched.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/target)
-     */
-    get target(): EventTarget | undefined;
-    /**
-     * The deprecated **`Event.srcElement`** is an alias for the Event.target property.
-     * @deprecated
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/srcElement)
-     */
-    get srcElement(): EventTarget | undefined;
-    /**
-     * The **`timeStamp`** read-only property of the Event interface returns the time (in milliseconds) at which the event was created.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/timeStamp)
-     */
-    get timeStamp(): number;
-    /**
-     * The **`isTrusted`** read-only property of the when the event was generated by the user agent (including via user actions and programmatic methods such as HTMLElement.focus()), and `false` when the event was dispatched via The only exception is the `click` event, which initializes the `isTrusted` property to `false` in user agents.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/isTrusted)
-     */
-    get isTrusted(): boolean;
-    /**
-     * The **`cancelBubble`** property of the Event interface is deprecated.
-     * @deprecated
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/cancelBubble)
-     */
-    get cancelBubble(): boolean;
-    /**
-     * The **`cancelBubble`** property of the Event interface is deprecated.
-     * @deprecated
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/cancelBubble)
-     */
-    set cancelBubble(value: boolean);
-    /**
-     * The **`stopImmediatePropagation()`** method of the If several listeners are attached to the same element for the same event type, they are called in the order in which they were added.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/stopImmediatePropagation)
-     */
-    stopImmediatePropagation(): void;
-    /**
-     * The **`preventDefault()`** method of the Event interface tells the user agent that if the event does not get explicitly handled, its default action should not be taken as it normally would be.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/preventDefault)
-     */
-    preventDefault(): void;
-    /**
-     * The **`stopPropagation()`** method of the Event interface prevents further propagation of the current event in the capturing and bubbling phases.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/stopPropagation)
-     */
-    stopPropagation(): void;
-    /**
-     * The **`composedPath()`** method of the Event interface returns the event's path which is an array of the objects on which listeners will be invoked.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Event/composedPath)
-     */
-    composedPath(): EventTarget[];
-    static readonly NONE: number;
-    static readonly CAPTURING_PHASE: number;
-    static readonly AT_TARGET: number;
-    static readonly BUBBLING_PHASE: number;
-}
-interface EventInit {
-    bubbles?: boolean;
-    cancelable?: boolean;
-    composed?: boolean;
-}
-type EventListener<EventType extends Event = Event> = (event: EventType) => void;
-interface EventListenerObject<EventType extends Event = Event> {
-    handleEvent(event: EventType): void;
-}
-type EventListenerOrEventListenerObject<EventType extends Event = Event> = EventListener<EventType> | EventListenerObject<EventType>;
-/**
- * The **`EventTarget`** interface is implemented by objects that can receive events and may have listeners for them.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventTarget)
- */
-declare class EventTarget<EventMap extends Record<string, Event> = Record<string, Event>> {
-    constructor();
-    /**
-     * The **`addEventListener()`** method of the EventTarget interface sets up a function that will be called whenever the specified event is delivered to the target.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventTarget/addEventListener)
-     */
-    addEventListener<Type extends keyof EventMap>(type: Type, handler: EventListenerOrEventListenerObject<EventMap[Type]>, options?: EventTargetAddEventListenerOptions | boolean): void;
-    /**
-     * The **`removeEventListener()`** method of the EventTarget interface removes an event listener previously registered with EventTarget.addEventListener() from the target.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventTarget/removeEventListener)
-     */
-    removeEventListener<Type extends keyof EventMap>(type: Type, handler: EventListenerOrEventListenerObject<EventMap[Type]>, options?: EventTargetEventListenerOptions | boolean): void;
-    /**
-     * The **`dispatchEvent()`** method of the EventTarget sends an Event to the object, (synchronously) invoking the affected event listeners in the appropriate order.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventTarget/dispatchEvent)
-     */
-    dispatchEvent(event: EventMap[keyof EventMap]): boolean;
-}
-interface EventTargetEventListenerOptions {
-    capture?: boolean;
-}
-interface EventTargetAddEventListenerOptions {
-    capture?: boolean;
-    passive?: boolean;
-    once?: boolean;
-    signal?: AbortSignal;
-}
-interface EventTargetHandlerObject {
-    handleEvent: (event: Event) => any | undefined;
-}
-/**
- * The **`AbortController`** interface represents a controller object that allows you to abort one or more Web requests as and when desired.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController)
- */
-declare class AbortController {
-    constructor();
-    /**
-     * The **`signal`** read-only property of the AbortController interface returns an AbortSignal object instance, which can be used to communicate with/abort an asynchronous operation as desired.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController/signal)
-     */
-    get signal(): AbortSignal;
-    /**
-     * The **`abort()`** method of the AbortController interface aborts an asynchronous operation before it has completed.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController/abort)
-     */
-    abort(reason?: any): void;
-}
-/**
- * The **`AbortSignal`** interface represents a signal object that allows you to communicate with an asynchronous operation (such as a fetch request) and abort it if required via an AbortController object.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal)
- */
-declare abstract class AbortSignal extends EventTarget {
-    /**
-     * The **`AbortSignal.abort()`** static method returns an AbortSignal that is already set as aborted (and which does not trigger an AbortSignal/abort_event event).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/abort_static)
-     */
-    static abort(reason?: any): AbortSignal;
-    /**
-     * The **`AbortSignal.timeout()`** static method returns an AbortSignal that will automatically abort after a specified time.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static)
-     */
-    static timeout(delay: number): AbortSignal;
-    /**
-     * The **`AbortSignal.any()`** static method takes an iterable of abort signals and returns an AbortSignal.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/any_static)
-     */
-    static any(signals: AbortSignal[]): AbortSignal;
-    /**
-     * The **`aborted`** read-only property returns a value that indicates whether the asynchronous operations the signal is communicating with are aborted (`true`) or not (`false`).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/aborted)
-     */
-    get aborted(): boolean;
-    /**
-     * The **`reason`** read-only property returns a JavaScript value that indicates the abort reason.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/reason)
-     */
-    get reason(): any;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/abort_event) */
-    get onabort(): any | null;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/abort_event) */
-    set onabort(value: any | null);
-    /**
-     * The **`throwIfAborted()`** method throws the signal's abort AbortSignal.reason if the signal has been aborted; otherwise it does nothing.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortSignal/throwIfAborted)
-     */
-    throwIfAborted(): void;
-}
-interface Scheduler {
-    wait(delay: number, maybeOptions?: SchedulerWaitOptions): Promise<void>;
-}
-interface SchedulerWaitOptions {
-    signal?: AbortSignal;
-}
-/**
- * The **`ExtendableEvent`** interface extends the lifetime of the `install` and `activate` events dispatched on the global scope as part of the service worker lifecycle.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ExtendableEvent)
- */
-declare abstract class ExtendableEvent extends Event {
-    /**
-     * The **`ExtendableEvent.waitUntil()`** method tells the event dispatcher that work is ongoing.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ExtendableEvent/waitUntil)
-     */
-    waitUntil(promise: Promise<any>): void;
-}
-/**
- * The **`CustomEvent`** interface represents events initialized by an application for any purpose.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CustomEvent)
- */
-declare class CustomEvent<T = any> extends Event {
-    constructor(type: string, init?: CustomEventCustomEventInit);
-    /**
-     * The read-only **`detail`** property of the CustomEvent interface returns any data passed when initializing the event.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CustomEvent/detail)
-     */
-    get detail(): T;
-}
-interface CustomEventCustomEventInit {
-    bubbles?: boolean;
-    cancelable?: boolean;
-    composed?: boolean;
-    detail?: any;
-}
-/**
- * The **`Blob`** interface represents a blob, which is a file-like object of immutable, raw data; they can be read as text or binary data, or converted into a ReadableStream so its methods can be used for processing the data.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob)
- */
-declare class Blob {
-    constructor(bits?: ((ArrayBuffer | ArrayBufferView) | string | Blob)[], options?: BlobOptions);
-    /**
-     * The **`size`** read-only property of the Blob interface returns the size of the Blob or File in bytes.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/size)
-     */
-    get size(): number;
-    /**
-     * The **`type`** read-only property of the Blob interface returns the MIME type of the file.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/type)
-     */
-    get type(): string;
-    /**
-     * The **`slice()`** method of the Blob interface creates and returns a new `Blob` object which contains data from a subset of the blob on which it's called.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/slice)
-     */
-    slice(start?: number, end?: number, type?: string): Blob;
-    /**
-     * The **`arrayBuffer()`** method of the Blob interface returns a Promise that resolves with the contents of the blob as binary data contained in an ArrayBuffer.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/arrayBuffer)
-     */
-    arrayBuffer(): Promise<ArrayBuffer>;
-    /**
-     * The **`bytes()`** method of the Blob interface returns a Promise that resolves with a Uint8Array containing the contents of the blob as an array of bytes.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/bytes)
-     */
-    bytes(): Promise<Uint8Array>;
-    /**
-     * The **`text()`** method of the string containing the contents of the blob, interpreted as UTF-8.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/text)
-     */
-    text(): Promise<string>;
-    /**
-     * The **`stream()`** method of the Blob interface returns a ReadableStream which upon reading returns the data contained within the `Blob`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Blob/stream)
-     */
-    stream(): ReadableStream;
-}
-interface BlobOptions {
-    type?: string;
-}
-/**
- * The **`File`** interface provides information about files and allows JavaScript in a web page to access their content.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/File)
- */
-declare class File extends Blob {
-    constructor(bits: ((ArrayBuffer | ArrayBufferView) | string | Blob)[] | undefined, name: string, options?: FileOptions);
-    /**
-     * The **`name`** read-only property of the File interface returns the name of the file represented by a File object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/File/name)
-     */
-    get name(): string;
-    /**
-     * The **`lastModified`** read-only property of the File interface provides the last modified date of the file as the number of milliseconds since the Unix epoch (January 1, 1970 at midnight).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/File/lastModified)
-     */
-    get lastModified(): number;
-}
-interface FileOptions {
-    type?: string;
-    lastModified?: number;
-}
-/**
-* The Cache API allows fine grained control of reading and writing from the Cloudflare global network cache.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/)
-*/
-declare abstract class CacheStorage {
-    /**
-     * The **`open()`** method of the the Cache object matching the `cacheName`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CacheStorage/open)
-     */
-    open(cacheName: string): Promise<Cache>;
-    readonly default: Cache;
-}
-/**
-* The Cache API allows fine grained control of reading and writing from the Cloudflare global network cache.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/)
-*/
-declare abstract class Cache {
-    /* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/#delete) */
-    delete(request: RequestInfo | URL, options?: CacheQueryOptions): Promise<boolean>;
-    /* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/#match) */
-    match(request: RequestInfo | URL, options?: CacheQueryOptions): Promise<Response | undefined>;
-    /* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/cache/#put) */
-    put(request: RequestInfo | URL, response: Response): Promise<void>;
-}
-interface CacheQueryOptions {
-    ignoreMethod?: boolean;
-}
-/**
-* The Web Crypto API provides a set of low-level functions for common cryptographic tasks.
-* The Workers runtime implements the full surface of this API, but with some differences in
-* the [supported algorithms](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/#supported-algorithms)
-* compared to those implemented in most browsers.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)
-*/
-declare abstract class Crypto {
-    /**
-     * The **`Crypto.subtle`** read-only property returns a cryptographic operations.
-     * Available only in secure contexts.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Crypto/subtle)
-     */
-    get subtle(): SubtleCrypto;
-    /**
-     * The **`Crypto.getRandomValues()`** method lets you get cryptographically strong random values.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Crypto/getRandomValues)
-     */
-    getRandomValues<T extends Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | BigInt64Array | BigUint64Array>(buffer: T): T;
-    /**
-     * The **`randomUUID()`** method of the Crypto interface is used to generate a v4 UUID using a cryptographically secure random number generator.
-     * Available only in secure contexts.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Crypto/randomUUID)
-     */
-    randomUUID(): string;
-    DigestStream: typeof DigestStream;
-}
-/**
- * The **`SubtleCrypto`** interface of the Web Crypto API provides a number of low-level cryptographic functions.
- * Available only in secure contexts.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto)
- */
-declare abstract class SubtleCrypto {
-    /**
-     * The **`encrypt()`** method of the SubtleCrypto interface encrypts data.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/encrypt)
-     */
-    encrypt(algorithm: string | SubtleCryptoEncryptAlgorithm, key: CryptoKey, plainText: ArrayBuffer | ArrayBufferView): Promise<ArrayBuffer>;
-    /**
-     * The **`decrypt()`** method of the SubtleCrypto interface decrypts some encrypted data.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/decrypt)
-     */
-    decrypt(algorithm: string | SubtleCryptoEncryptAlgorithm, key: CryptoKey, cipherText: ArrayBuffer | ArrayBufferView): Promise<ArrayBuffer>;
-    /**
-     * The **`sign()`** method of the SubtleCrypto interface generates a digital signature.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/sign)
-     */
-    sign(algorithm: string | SubtleCryptoSignAlgorithm, key: CryptoKey, data: ArrayBuffer | ArrayBufferView): Promise<ArrayBuffer>;
-    /**
-     * The **`verify()`** method of the SubtleCrypto interface verifies a digital signature.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/verify)
-     */
-    verify(algorithm: string | SubtleCryptoSignAlgorithm, key: CryptoKey, signature: ArrayBuffer | ArrayBufferView, data: ArrayBuffer | ArrayBufferView): Promise<boolean>;
-    /**
-     * The **`digest()`** method of the SubtleCrypto interface generates a _digest_ of the given data, using the specified hash function.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/digest)
-     */
-    digest(algorithm: string | SubtleCryptoHashAlgorithm, data: ArrayBuffer | ArrayBufferView): Promise<ArrayBuffer>;
-    /**
-     * The **`generateKey()`** method of the SubtleCrypto interface is used to generate a new key (for symmetric algorithms) or key pair (for public-key algorithms).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/generateKey)
-     */
-    generateKey(algorithm: string | SubtleCryptoGenerateKeyAlgorithm, extractable: boolean, keyUsages: string[]): Promise<CryptoKey | CryptoKeyPair>;
-    /**
-     * The **`deriveKey()`** method of the SubtleCrypto interface can be used to derive a secret key from a master key.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/deriveKey)
-     */
-    deriveKey(algorithm: string | SubtleCryptoDeriveKeyAlgorithm, baseKey: CryptoKey, derivedKeyAlgorithm: string | SubtleCryptoImportKeyAlgorithm, extractable: boolean, keyUsages: string[]): Promise<CryptoKey>;
-    /**
-     * The **`deriveBits()`** method of the key.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/deriveBits)
-     */
-    deriveBits(algorithm: string | SubtleCryptoDeriveKeyAlgorithm, baseKey: CryptoKey, length?: number | null): Promise<ArrayBuffer>;
-    /**
-     * The **`importKey()`** method of the SubtleCrypto interface imports a key: that is, it takes as input a key in an external, portable format and gives you a CryptoKey object that you can use in the Web Crypto API.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/importKey)
-     */
-    importKey(format: string, keyData: (ArrayBuffer | ArrayBufferView) | JsonWebKey, algorithm: string | SubtleCryptoImportKeyAlgorithm, extractable: boolean, keyUsages: string[]): Promise<CryptoKey>;
-    /**
-     * The **`exportKey()`** method of the SubtleCrypto interface exports a key: that is, it takes as input a CryptoKey object and gives you the key in an external, portable format.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/exportKey)
-     */
-    exportKey(format: string, key: CryptoKey): Promise<ArrayBuffer | JsonWebKey>;
-    /**
-     * The **`wrapKey()`** method of the SubtleCrypto interface 'wraps' a key.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/wrapKey)
-     */
-    wrapKey(format: string, key: CryptoKey, wrappingKey: CryptoKey, wrapAlgorithm: string | SubtleCryptoEncryptAlgorithm): Promise<ArrayBuffer>;
-    /**
-     * The **`unwrapKey()`** method of the SubtleCrypto interface 'unwraps' a key.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/unwrapKey)
-     */
-    unwrapKey(format: string, wrappedKey: ArrayBuffer | ArrayBufferView, unwrappingKey: CryptoKey, unwrapAlgorithm: string | SubtleCryptoEncryptAlgorithm, unwrappedKeyAlgorithm: string | SubtleCryptoImportKeyAlgorithm, extractable: boolean, keyUsages: string[]): Promise<CryptoKey>;
-    timingSafeEqual(a: ArrayBuffer | ArrayBufferView, b: ArrayBuffer | ArrayBufferView): boolean;
-}
-/**
- * The **`CryptoKey`** interface of the Web Crypto API represents a cryptographic key obtained from one of the SubtleCrypto methods SubtleCrypto.generateKey, SubtleCrypto.deriveKey, SubtleCrypto.importKey, or SubtleCrypto.unwrapKey.
- * Available only in secure contexts.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CryptoKey)
- */
-declare abstract class CryptoKey {
-    /**
-     * The read-only **`type`** property of the CryptoKey interface indicates which kind of key is represented by the object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CryptoKey/type)
-     */
-    readonly type: string;
-    /**
-     * The read-only **`extractable`** property of the CryptoKey interface indicates whether or not the key may be extracted using `SubtleCrypto.exportKey()` or `SubtleCrypto.wrapKey()`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CryptoKey/extractable)
-     */
-    readonly extractable: boolean;
-    /**
-     * The read-only **`algorithm`** property of the CryptoKey interface returns an object describing the algorithm for which this key can be used, and any associated extra parameters.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CryptoKey/algorithm)
-     */
-    readonly algorithm: CryptoKeyKeyAlgorithm | CryptoKeyAesKeyAlgorithm | CryptoKeyHmacKeyAlgorithm | CryptoKeyRsaKeyAlgorithm | CryptoKeyEllipticKeyAlgorithm | CryptoKeyArbitraryKeyAlgorithm;
-    /**
-     * The read-only **`usages`** property of the CryptoKey interface indicates what can be done with the key.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CryptoKey/usages)
-     */
-    readonly usages: string[];
-}
-interface CryptoKeyPair {
-    publicKey: CryptoKey;
-    privateKey: CryptoKey;
-}
-interface JsonWebKey {
-    kty: string;
-    use?: string;
-    key_ops?: string[];
-    alg?: string;
-    ext?: boolean;
-    crv?: string;
-    x?: string;
-    y?: string;
-    d?: string;
-    n?: string;
-    e?: string;
-    p?: string;
-    q?: string;
-    dp?: string;
-    dq?: string;
-    qi?: string;
-    oth?: RsaOtherPrimesInfo[];
-    k?: string;
-}
-interface RsaOtherPrimesInfo {
-    r?: string;
-    d?: string;
-    t?: string;
-}
-interface SubtleCryptoDeriveKeyAlgorithm {
-    name: string;
-    salt?: (ArrayBuffer | ArrayBufferView);
-    iterations?: number;
-    hash?: (string | SubtleCryptoHashAlgorithm);
-    $public?: CryptoKey;
-    info?: (ArrayBuffer | ArrayBufferView);
-}
-interface SubtleCryptoEncryptAlgorithm {
-    name: string;
-    iv?: (ArrayBuffer | ArrayBufferView);
-    additionalData?: (ArrayBuffer | ArrayBufferView);
-    tagLength?: number;
-    counter?: (ArrayBuffer | ArrayBufferView);
-    length?: number;
-    label?: (ArrayBuffer | ArrayBufferView);
-}
-interface SubtleCryptoGenerateKeyAlgorithm {
-    name: string;
-    hash?: (string | SubtleCryptoHashAlgorithm);
-    modulusLength?: number;
-    publicExponent?: (ArrayBuffer | ArrayBufferView);
-    length?: number;
-    namedCurve?: string;
-}
-interface SubtleCryptoHashAlgorithm {
-    name: string;
-}
-interface SubtleCryptoImportKeyAlgorithm {
-    name: string;
-    hash?: (string | SubtleCryptoHashAlgorithm);
-    length?: number;
-    namedCurve?: string;
-    compressed?: boolean;
-}
-interface SubtleCryptoSignAlgorithm {
-    name: string;
-    hash?: (string | SubtleCryptoHashAlgorithm);
-    dataLength?: number;
-    saltLength?: number;
-}
-interface CryptoKeyKeyAlgorithm {
-    name: string;
-}
-interface CryptoKeyAesKeyAlgorithm {
-    name: string;
-    length: number;
-}
-interface CryptoKeyHmacKeyAlgorithm {
-    name: string;
-    hash: CryptoKeyKeyAlgorithm;
-    length: number;
-}
-interface CryptoKeyRsaKeyAlgorithm {
-    name: string;
-    modulusLength: number;
-    publicExponent: ArrayBuffer | ArrayBufferView;
-    hash?: CryptoKeyKeyAlgorithm;
-}
-interface CryptoKeyEllipticKeyAlgorithm {
-    name: string;
-    namedCurve: string;
-}
-interface CryptoKeyArbitraryKeyAlgorithm {
-    name: string;
-    hash?: CryptoKeyKeyAlgorithm;
-    namedCurve?: string;
-    length?: number;
-}
-declare class DigestStream extends WritableStream<ArrayBuffer | ArrayBufferView> {
-    constructor(algorithm: string | SubtleCryptoHashAlgorithm);
-    readonly digest: Promise<ArrayBuffer>;
-    get bytesWritten(): number | bigint;
-}
-/**
- * The **`TextDecoder`** interface represents a decoder for a specific text encoding, such as `UTF-8`, `ISO-8859-2`, `KOI8-R`, `GBK`, etc.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextDecoder)
- */
-declare class TextDecoder {
-    constructor(label?: string, options?: TextDecoderConstructorOptions);
-    /**
-     * The **`TextDecoder.decode()`** method returns a string containing text decoded from the buffer passed as a parameter.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextDecoder/decode)
-     */
-    decode(input?: (ArrayBuffer | ArrayBufferView), options?: TextDecoderDecodeOptions): string;
-    get encoding(): string;
-    get fatal(): boolean;
-    get ignoreBOM(): boolean;
-}
-/**
- * The **`TextEncoder`** interface takes a stream of code points as input and emits a stream of UTF-8 bytes.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextEncoder)
- */
-declare class TextEncoder {
-    constructor();
-    /**
-     * The **`TextEncoder.encode()`** method takes a string as input, and returns a Global_Objects/Uint8Array containing the text given in parameters encoded with the specific method for that TextEncoder object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextEncoder/encode)
-     */
-    encode(input?: string): Uint8Array;
-    /**
-     * The **`TextEncoder.encodeInto()`** method takes a string to encode and a destination Uint8Array to put resulting UTF-8 encoded text into, and returns a dictionary object indicating the progress of the encoding.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextEncoder/encodeInto)
-     */
-    encodeInto(input: string, buffer: Uint8Array): TextEncoderEncodeIntoResult;
-    get encoding(): string;
-}
-interface TextDecoderConstructorOptions {
-    fatal: boolean;
-    ignoreBOM: boolean;
-}
-interface TextDecoderDecodeOptions {
-    stream: boolean;
-}
-interface TextEncoderEncodeIntoResult {
-    read: number;
-    written: number;
-}
-/**
- * The **`ErrorEvent`** interface represents events providing information related to errors in scripts or in files.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ErrorEvent)
- */
-declare class ErrorEvent extends Event {
-    constructor(type: string, init?: ErrorEventErrorEventInit);
-    /**
-     * The **`filename`** read-only property of the ErrorEvent interface returns a string containing the name of the script file in which the error occurred.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ErrorEvent/filename)
-     */
-    get filename(): string;
-    /**
-     * The **`message`** read-only property of the ErrorEvent interface returns a string containing a human-readable error message describing the problem.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ErrorEvent/message)
-     */
-    get message(): string;
-    /**
-     * The **`lineno`** read-only property of the ErrorEvent interface returns an integer containing the line number of the script file on which the error occurred.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ErrorEvent/lineno)
-     */
-    get lineno(): number;
-    /**
-     * The **`colno`** read-only property of the ErrorEvent interface returns an integer containing the column number of the script file on which the error occurred.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ErrorEvent/colno)
-     */
-    get colno(): number;
-    /**
-     * The **`error`** read-only property of the ErrorEvent interface returns a JavaScript value, such as an Error or DOMException, representing the error associated with this event.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ErrorEvent/error)
-     */
-    get error(): any;
-}
-interface ErrorEventErrorEventInit {
-    message?: string;
-    filename?: string;
-    lineno?: number;
-    colno?: number;
-    error?: any;
-}
-/**
- * The **`MessageEvent`** interface represents a message received by a target object.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageEvent)
- */
-declare class MessageEvent extends Event {
-    constructor(type: string, initializer: MessageEventInit);
-    /**
-     * The **`data`** read-only property of the The data sent by the message emitter; this can be any data type, depending on what originated this event.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageEvent/data)
-     */
-    readonly data: any;
-    /**
-     * The **`origin`** read-only property of the origin of the message emitter.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageEvent/origin)
-     */
-    readonly origin: string | null;
-    /**
-     * The **`lastEventId`** read-only property of the unique ID for the event.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageEvent/lastEventId)
-     */
-    readonly lastEventId: string;
-    /**
-     * The **`source`** read-only property of the a WindowProxy, MessagePort, or a `MessageEventSource` (which can be a WindowProxy, message emitter.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageEvent/source)
-     */
-    readonly source: MessagePort | null;
-    /**
-     * The **`ports`** read-only property of the containing all MessagePort objects sent with the message, in order.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageEvent/ports)
-     */
-    readonly ports: MessagePort[];
-}
-interface MessageEventInit {
-    data: ArrayBuffer | string;
-}
-/**
- * The **`PromiseRejectionEvent`** interface represents events which are sent to the global script context when JavaScript Promises are rejected.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PromiseRejectionEvent)
- */
-declare abstract class PromiseRejectionEvent extends Event {
-    /**
-     * The PromiseRejectionEvent interface's **`promise`** read-only property indicates the JavaScript rejected.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PromiseRejectionEvent/promise)
-     */
-    readonly promise: Promise<any>;
-    /**
-     * The PromiseRejectionEvent **`reason`** read-only property is any JavaScript value or Object which provides the reason passed into Promise.reject().
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PromiseRejectionEvent/reason)
-     */
-    readonly reason: any;
-}
-/**
- * The **`FormData`** interface provides a way to construct a set of key/value pairs representing form fields and their values, which can be sent using the Window/fetch, XMLHttpRequest.send() or navigator.sendBeacon() methods.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData)
- */
-declare class FormData {
-    constructor();
-    /**
-     * The **`append()`** method of the FormData interface appends a new value onto an existing key inside a `FormData` object, or adds the key if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append)
-     */
-    append(name: string, value: string | Blob): void;
-    /**
-     * The **`append()`** method of the FormData interface appends a new value onto an existing key inside a `FormData` object, or adds the key if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append)
-     */
-    append(name: string, value: string): void;
-    /**
-     * The **`append()`** method of the FormData interface appends a new value onto an existing key inside a `FormData` object, or adds the key if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/append)
-     */
-    append(name: string, value: Blob, filename?: string): void;
-    /**
-     * The **`delete()`** method of the FormData interface deletes a key and its value(s) from a `FormData` object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/delete)
-     */
-    delete(name: string): void;
-    /**
-     * The **`get()`** method of the FormData interface returns the first value associated with a given key from within a `FormData` object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/get)
-     */
-    get(name: string): (File | string) | null;
-    /**
-     * The **`getAll()`** method of the FormData interface returns all the values associated with a given key from within a `FormData` object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/getAll)
-     */
-    getAll(name: string): (File | string)[];
-    /**
-     * The **`has()`** method of the FormData interface returns whether a `FormData` object contains a certain key.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/has)
-     */
-    has(name: string): boolean;
-    /**
-     * The **`set()`** method of the FormData interface sets a new value for an existing key inside a `FormData` object, or adds the key/value if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set)
-     */
-    set(name: string, value: string | Blob): void;
-    /**
-     * The **`set()`** method of the FormData interface sets a new value for an existing key inside a `FormData` object, or adds the key/value if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set)
-     */
-    set(name: string, value: string): void;
-    /**
-     * The **`set()`** method of the FormData interface sets a new value for an existing key inside a `FormData` object, or adds the key/value if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FormData/set)
-     */
-    set(name: string, value: Blob, filename?: string): void;
-    /* Returns an array of key, value pairs for every entry in the list. */
-    entries(): IterableIterator<[
-        key: string,
-        value: File | string
-    ]>;
-    /* Returns a list of keys in the list. */
-    keys(): IterableIterator<string>;
-    /* Returns a list of values in the list. */
-    values(): IterableIterator<(File | string)>;
-    forEach<This = unknown>(callback: (this: This, value: File | string, key: string, parent: FormData) => void, thisArg?: This): void;
-    [Symbol.iterator](): IterableIterator<[
-        key: string,
-        value: File | string
-    ]>;
-}
-interface ContentOptions {
-    html?: boolean;
-}
-declare class HTMLRewriter {
-    constructor();
-    on(selector: string, handlers: HTMLRewriterElementContentHandlers): HTMLRewriter;
-    onDocument(handlers: HTMLRewriterDocumentContentHandlers): HTMLRewriter;
-    transform(response: Response): Response;
-}
-interface HTMLRewriterElementContentHandlers {
-    element?(element: Element): void | Promise<void>;
-    comments?(comment: Comment): void | Promise<void>;
-    text?(element: Text): void | Promise<void>;
-}
-interface HTMLRewriterDocumentContentHandlers {
-    doctype?(doctype: Doctype): void | Promise<void>;
-    comments?(comment: Comment): void | Promise<void>;
-    text?(text: Text): void | Promise<void>;
-    end?(end: DocumentEnd): void | Promise<void>;
-}
-interface Doctype {
-    readonly name: string | null;
-    readonly publicId: string | null;
-    readonly systemId: string | null;
-}
-interface Element {
-    tagName: string;
-    readonly attributes: IterableIterator<string[]>;
-    readonly removed: boolean;
-    readonly namespaceURI: string;
-    getAttribute(name: string): string | null;
-    hasAttribute(name: string): boolean;
-    setAttribute(name: string, value: string): Element;
-    removeAttribute(name: string): Element;
-    before(content: string | ReadableStream | Response, options?: ContentOptions): Element;
-    after(content: string | ReadableStream | Response, options?: ContentOptions): Element;
-    prepend(content: string | ReadableStream | Response, options?: ContentOptions): Element;
-    append(content: string | ReadableStream | Response, options?: ContentOptions): Element;
-    replace(content: string | ReadableStream | Response, options?: ContentOptions): Element;
-    remove(): Element;
-    removeAndKeepContent(): Element;
-    setInnerContent(content: string | ReadableStream | Response, options?: ContentOptions): Element;
-    onEndTag(handler: (tag: EndTag) => void | Promise<void>): void;
-}
-interface EndTag {
-    name: string;
-    before(content: string | ReadableStream | Response, options?: ContentOptions): EndTag;
-    after(content: string | ReadableStream | Response, options?: ContentOptions): EndTag;
-    remove(): EndTag;
-}
-interface Comment {
-    text: string;
-    readonly removed: boolean;
-    before(content: string, options?: ContentOptions): Comment;
-    after(content: string, options?: ContentOptions): Comment;
-    replace(content: string, options?: ContentOptions): Comment;
-    remove(): Comment;
-}
-interface Text {
-    readonly text: string;
-    readonly lastInTextNode: boolean;
-    readonly removed: boolean;
-    before(content: string | ReadableStream | Response, options?: ContentOptions): Text;
-    after(content: string | ReadableStream | Response, options?: ContentOptions): Text;
-    replace(content: string | ReadableStream | Response, options?: ContentOptions): Text;
-    remove(): Text;
-}
-interface DocumentEnd {
-    append(content: string, options?: ContentOptions): DocumentEnd;
-}
-/**
- * This is the event type for `fetch` events dispatched on the ServiceWorkerGlobalScope.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FetchEvent)
- */
-declare abstract class FetchEvent extends ExtendableEvent {
-    /**
-     * The **`request`** read-only property of the the event handler.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FetchEvent/request)
-     */
-    readonly request: Request;
-    /**
-     * The **`respondWith()`** method of allows you to provide a promise for a Response yourself.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/FetchEvent/respondWith)
-     */
-    respondWith(promise: Response | Promise<Response>): void;
-    passThroughOnException(): void;
-}
-type HeadersInit = Headers | Iterable<Iterable<string>> | Record<string, string>;
-/**
- * The **`Headers`** interface of the Fetch API allows you to perform various actions on HTTP request and response headers.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers)
- */
-declare class Headers {
-    constructor(init?: HeadersInit);
-    /**
-     * The **`get()`** method of the Headers interface returns a byte string of all the values of a header within a `Headers` object with a given name.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers/get)
-     */
-    get(name: string): string | null;
-    getAll(name: string): string[];
-    /**
-     * The **`getSetCookie()`** method of the Headers interface returns an array containing the values of all Set-Cookie headers associated with a response.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers/getSetCookie)
-     */
-    getSetCookie(): string[];
-    /**
-     * The **`has()`** method of the Headers interface returns a boolean stating whether a `Headers` object contains a certain header.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers/has)
-     */
-    has(name: string): boolean;
-    /**
-     * The **`set()`** method of the Headers interface sets a new value for an existing header inside a `Headers` object, or adds the header if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers/set)
-     */
-    set(name: string, value: string): void;
-    /**
-     * The **`append()`** method of the Headers interface appends a new value onto an existing header inside a `Headers` object, or adds the header if it does not already exist.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers/append)
-     */
-    append(name: string, value: string): void;
-    /**
-     * The **`delete()`** method of the Headers interface deletes a header from the current `Headers` object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Headers/delete)
-     */
-    delete(name: string): void;
-    forEach<This = unknown>(callback: (this: This, value: string, key: string, parent: Headers) => void, thisArg?: This): void;
-    /* Returns an iterator allowing to go through all key/value pairs contained in this object. */
-    entries(): IterableIterator<[
-        key: string,
-        value: string
-    ]>;
-    /* Returns an iterator allowing to go through all keys of the key/value pairs contained in this object. */
-    keys(): IterableIterator<string>;
-    /* Returns an iterator allowing to go through all values of the key/value pairs contained in this object. */
-    values(): IterableIterator<string>;
-    [Symbol.iterator](): IterableIterator<[
-        key: string,
-        value: string
-    ]>;
-}
-type BodyInit = ReadableStream<Uint8Array> | string | ArrayBuffer | ArrayBufferView | Blob | URLSearchParams | FormData | Iterable<ArrayBuffer | ArrayBufferView> | AsyncIterable<ArrayBuffer | ArrayBufferView>;
-declare abstract class Body {
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/body) */
-    get body(): ReadableStream | null;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/bodyUsed) */
-    get bodyUsed(): boolean;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/arrayBuffer) */
-    arrayBuffer(): Promise<ArrayBuffer>;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/bytes) */
-    bytes(): Promise<Uint8Array>;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/text) */
-    text(): Promise<string>;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/json) */
-    json<T>(): Promise<T>;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/formData) */
-    formData(): Promise<FormData>;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/blob) */
-    blob(): Promise<Blob>;
-}
-/**
- * The **`Response`** interface of the Fetch API represents the response to a request.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response)
- */
-declare var Response: {
-    prototype: Response;
-    new (body?: BodyInit | null, init?: ResponseInit): Response;
-    error(): Response;
-    redirect(url: string, status?: number): Response;
-    json(any: any, maybeInit?: (ResponseInit | Response)): Response;
-};
-/**
- * The **`Response`** interface of the Fetch API represents the response to a request.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response)
- */
-interface Response extends Body {
-    /**
-     * The **`clone()`** method of the Response interface creates a clone of a response object, identical in every way, but stored in a different variable.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/clone)
-     */
-    clone(): Response;
-    /**
-     * The **`status`** read-only property of the Response interface contains the HTTP status codes of the response.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/status)
-     */
-    status: number;
-    /**
-     * The **`statusText`** read-only property of the Response interface contains the status message corresponding to the HTTP status code in Response.status.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/statusText)
-     */
-    statusText: string;
-    /**
-     * The **`headers`** read-only property of the with the response.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/headers)
-     */
-    headers: Headers;
-    /**
-     * The **`ok`** read-only property of the Response interface contains a Boolean stating whether the response was successful (status in the range 200-299) or not.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/ok)
-     */
-    ok: boolean;
-    /**
-     * The **`redirected`** read-only property of the Response interface indicates whether or not the response is the result of a request you made which was redirected.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/redirected)
-     */
-    redirected: boolean;
-    /**
-     * The **`url`** read-only property of the Response interface contains the URL of the response.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/url)
-     */
-    url: string;
-    webSocket: WebSocket | null;
-    cf: any | undefined;
-    /**
-     * The **`type`** read-only property of the Response interface contains the type of the response.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Response/type)
-     */
-    type: "default" | "error";
-}
-interface ResponseInit {
-    status?: number;
-    statusText?: string;
-    headers?: HeadersInit;
-    cf?: any;
-    webSocket?: (WebSocket | null);
-    encodeBody?: "automatic" | "manual";
-}
-type RequestInfo<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>> = Request<CfHostMetadata, Cf> | string;
-/**
- * The **`Request`** interface of the Fetch API represents a resource request.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request)
- */
-declare var Request: {
-    prototype: Request;
-    new <CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>>(input: RequestInfo<CfProperties> | URL, init?: RequestInit<Cf>): Request<CfHostMetadata, Cf>;
-};
-/**
- * The **`Request`** interface of the Fetch API represents a resource request.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request)
- */
-interface Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>> extends Body {
-    /**
-     * The **`clone()`** method of the Request interface creates a copy of the current `Request` object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/clone)
-     */
-    clone(): Request<CfHostMetadata, Cf>;
-    /**
-     * The **`method`** read-only property of the `POST`, etc.) A String indicating the method of the request.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/method)
-     */
-    method: string;
-    /**
-     * The **`url`** read-only property of the Request interface contains the URL of the request.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/url)
-     */
-    url: string;
-    /**
-     * The **`headers`** read-only property of the with the request.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/headers)
-     */
-    headers: Headers;
-    /**
-     * The **`redirect`** read-only property of the Request interface contains the mode for how redirects are handled.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/redirect)
-     */
-    redirect: string;
-    fetcher: Fetcher | null;
-    /**
-     * The read-only **`signal`** property of the Request interface returns the AbortSignal associated with the request.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/signal)
-     */
-    signal: AbortSignal;
-    cf?: Cf;
-    /**
-     * The **`integrity`** read-only property of the Request interface contains the subresource integrity value of the request.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/integrity)
-     */
-    integrity: string;
-    /**
-     * The **`keepalive`** read-only property of the Request interface contains the request's `keepalive` setting (`true` or `false`), which indicates whether the browser will keep the associated request alive if the page that initiated it is unloaded before the request is complete.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/keepalive)
-     */
-    keepalive: boolean;
-    /**
-     * The **`cache`** read-only property of the Request interface contains the cache mode of the request.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Request/cache)
-     */
-    cache?: "no-store" | "no-cache";
-}
-interface RequestInit<Cf = CfProperties> {
-    /* A string to set request's method. */
-    method?: string;
-    /* A Headers object, an object literal, or an array of two-item arrays to set request's headers. */
-    headers?: HeadersInit;
-    /* A BodyInit object or null to set request's body. */
-    body?: BodyInit | null;
-    /* A string indicating whether request follows redirects, results in an error upon encountering a redirect, or returns the redirect (in an opaque fashion). Sets request's redirect. */
-    redirect?: string;
-    fetcher?: (Fetcher | null);
-    cf?: Cf;
-    /* A string indicating how the request will interact with the browser's cache to set request's cache. */
-    cache?: "no-store" | "no-cache";
-    /* A cryptographic hash of the resource to be fetched by request. Sets request's integrity. */
-    integrity?: string;
-    /* An AbortSignal to set request's signal. */
-    signal?: (AbortSignal | null);
-    encodeResponseBody?: "automatic" | "manual";
-}
-type Service<T extends (new (...args: any[]) => Rpc.WorkerEntrypointBranded) | Rpc.WorkerEntrypointBranded | ExportedHandler<any, any, any> | undefined = undefined> = T extends new (...args: any[]) => Rpc.WorkerEntrypointBranded ? Fetcher<InstanceType<T>> : T extends Rpc.WorkerEntrypointBranded ? Fetcher<T> : T extends Exclude<Rpc.EntrypointBranded, Rpc.WorkerEntrypointBranded> ? never : Fetcher<undefined>;
-type Fetcher<T extends Rpc.EntrypointBranded | undefined = undefined, Reserved extends string = never> = (T extends Rpc.EntrypointBranded ? Rpc.Provider<T, Reserved | "fetch" | "connect"> : unknown) & {
-    fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
-    connect(address: SocketAddress | string, options?: SocketOptions): Socket;
-};
-interface KVNamespaceListKey<Metadata, Key extends string = string> {
-    name: Key;
-    expiration?: number;
-    metadata?: Metadata;
-}
-type KVNamespaceListResult<Metadata, Key extends string = string> = {
-    list_complete: false;
-    keys: KVNamespaceListKey<Metadata, Key>[];
-    cursor: string;
-    cacheStatus: string | null;
-} | {
-    list_complete: true;
-    keys: KVNamespaceListKey<Metadata, Key>[];
-    cacheStatus: string | null;
-};
-interface KVNamespace<Key extends string = string> {
-    get(key: Key, options?: Partial<KVNamespaceGetOptions<undefined>>): Promise<string | null>;
-    get(key: Key, type: "text"): Promise<string | null>;
-    get<ExpectedValue = unknown>(key: Key, type: "json"): Promise<ExpectedValue | null>;
-    get(key: Key, type: "arrayBuffer"): Promise<ArrayBuffer | null>;
-    get(key: Key, type: "stream"): Promise<ReadableStream | null>;
-    get(key: Key, options?: KVNamespaceGetOptions<"text">): Promise<string | null>;
-    get<ExpectedValue = unknown>(key: Key, options?: KVNamespaceGetOptions<"json">): Promise<ExpectedValue | null>;
-    get(key: Key, options?: KVNamespaceGetOptions<"arrayBuffer">): Promise<ArrayBuffer | null>;
-    get(key: Key, options?: KVNamespaceGetOptions<"stream">): Promise<ReadableStream | null>;
-    get(key: Array<Key>, type: "text"): Promise<Map<string, string | null>>;
-    get<ExpectedValue = unknown>(key: Array<Key>, type: "json"): Promise<Map<string, ExpectedValue | null>>;
-    get(key: Array<Key>, options?: Partial<KVNamespaceGetOptions<undefined>>): Promise<Map<string, string | null>>;
-    get(key: Array<Key>, options?: KVNamespaceGetOptions<"text">): Promise<Map<string, string | null>>;
-    get<ExpectedValue = unknown>(key: Array<Key>, options?: KVNamespaceGetOptions<"json">): Promise<Map<string, ExpectedValue | null>>;
-    list<Metadata = unknown>(options?: KVNamespaceListOptions): Promise<KVNamespaceListResult<Metadata, Key>>;
-    put(key: Key, value: string | ArrayBuffer | ArrayBufferView | ReadableStream, options?: KVNamespacePutOptions): Promise<void>;
-    getWithMetadata<Metadata = unknown>(key: Key, options?: Partial<KVNamespaceGetOptions<undefined>>): Promise<KVNamespaceGetWithMetadataResult<string, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Key, type: "text"): Promise<KVNamespaceGetWithMetadataResult<string, Metadata>>;
-    getWithMetadata<ExpectedValue = unknown, Metadata = unknown>(key: Key, type: "json"): Promise<KVNamespaceGetWithMetadataResult<ExpectedValue, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Key, type: "arrayBuffer"): Promise<KVNamespaceGetWithMetadataResult<ArrayBuffer, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Key, type: "stream"): Promise<KVNamespaceGetWithMetadataResult<ReadableStream, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Key, options: KVNamespaceGetOptions<"text">): Promise<KVNamespaceGetWithMetadataResult<string, Metadata>>;
-    getWithMetadata<ExpectedValue = unknown, Metadata = unknown>(key: Key, options: KVNamespaceGetOptions<"json">): Promise<KVNamespaceGetWithMetadataResult<ExpectedValue, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Key, options: KVNamespaceGetOptions<"arrayBuffer">): Promise<KVNamespaceGetWithMetadataResult<ArrayBuffer, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Key, options: KVNamespaceGetOptions<"stream">): Promise<KVNamespaceGetWithMetadataResult<ReadableStream, Metadata>>;
-    getWithMetadata<Metadata = unknown>(key: Array<Key>, type: "text"): Promise<Map<string, KVNamespaceGetWithMetadataResult<string, Metadata>>>;
-    getWithMetadata<ExpectedValue = unknown, Metadata = unknown>(key: Array<Key>, type: "json"): Promise<Map<string, KVNamespaceGetWithMetadataResult<ExpectedValue, Metadata>>>;
-    getWithMetadata<Metadata = unknown>(key: Array<Key>, options?: Partial<KVNamespaceGetOptions<undefined>>): Promise<Map<string, KVNamespaceGetWithMetadataResult<string, Metadata>>>;
-    getWithMetadata<Metadata = unknown>(key: Array<Key>, options?: KVNamespaceGetOptions<"text">): Promise<Map<string, KVNamespaceGetWithMetadataResult<string, Metadata>>>;
-    getWithMetadata<ExpectedValue = unknown, Metadata = unknown>(key: Array<Key>, options?: KVNamespaceGetOptions<"json">): Promise<Map<string, KVNamespaceGetWithMetadataResult<ExpectedValue, Metadata>>>;
-    delete(key: Key): Promise<void>;
-}
-interface KVNamespaceListOptions {
-    limit?: number;
-    prefix?: (string | null);
-    cursor?: (string | null);
-}
-interface KVNamespaceGetOptions<Type> {
-    type: Type;
-    cacheTtl?: number;
-}
-interface KVNamespacePutOptions {
-    expiration?: number;
-    expirationTtl?: number;
-    metadata?: (any | null);
-}
-interface KVNamespaceGetWithMetadataResult<Value, Metadata> {
-    value: Value | null;
-    metadata: Metadata | null;
-    cacheStatus: string | null;
-}
-type QueueContentType = "text" | "bytes" | "json" | "v8";
-interface Queue<Body = unknown> {
-    metrics(): Promise<QueueMetrics>;
-    send(message: Body, options?: QueueSendOptions): Promise<QueueSendResponse>;
-    sendBatch(messages: Iterable<MessageSendRequest<Body>>, options?: QueueSendBatchOptions): Promise<QueueSendBatchResponse>;
-}
-interface QueueSendMetrics {
-    backlogCount: number;
-    backlogBytes: number;
-    oldestMessageTimestamp?: Date;
-}
-interface QueueSendMetadata {
-    metrics: QueueSendMetrics;
-}
-interface QueueSendResponse {
-    metadata: QueueSendMetadata;
-}
-interface QueueSendBatchMetrics {
-    backlogCount: number;
-    backlogBytes: number;
-    oldestMessageTimestamp?: Date;
-}
-interface QueueSendBatchMetadata {
-    metrics: QueueSendBatchMetrics;
-}
-interface QueueSendBatchResponse {
-    metadata: QueueSendBatchMetadata;
-}
-interface QueueSendOptions {
-    contentType?: QueueContentType;
-    delaySeconds?: number;
-}
-interface QueueSendBatchOptions {
-    delaySeconds?: number;
-}
-interface MessageSendRequest<Body = unknown> {
-    body: Body;
-    contentType?: QueueContentType;
-    delaySeconds?: number;
-}
-interface QueueMetrics {
-    backlogCount: number;
-    backlogBytes: number;
-    oldestMessageTimestamp?: Date;
-}
-interface MessageBatchMetrics {
-    backlogCount: number;
-    backlogBytes: number;
-    oldestMessageTimestamp?: Date;
-}
-interface MessageBatchMetadata {
-    metrics: MessageBatchMetrics;
-}
-interface QueueRetryOptions {
-    delaySeconds?: number;
-}
-interface Message<Body = unknown> {
-    readonly id: string;
-    readonly timestamp: Date;
-    readonly body: Body;
-    readonly attempts: number;
-    retry(options?: QueueRetryOptions): void;
-    ack(): void;
-}
-interface QueueEvent<Body = unknown> extends ExtendableEvent {
-    readonly messages: readonly Message<Body>[];
-    readonly queue: string;
-    readonly metadata: MessageBatchMetadata;
-    retryAll(options?: QueueRetryOptions): void;
-    ackAll(): void;
-}
-interface MessageBatch<Body = unknown> {
-    readonly messages: readonly Message<Body>[];
-    readonly queue: string;
-    readonly metadata: MessageBatchMetadata;
-    retryAll(options?: QueueRetryOptions): void;
-    ackAll(): void;
-}
-interface R2Error extends Error {
-    readonly name: string;
-    readonly code: number;
-    readonly message: string;
-    readonly action: string;
-    readonly stack: any;
-}
-interface R2ListOptions {
-    limit?: number;
-    prefix?: string;
-    cursor?: string;
-    delimiter?: string;
-    startAfter?: string;
-    include?: ("httpMetadata" | "customMetadata")[];
-}
-interface R2Bucket {
-    head(key: string): Promise<R2Object | null>;
-    get(key: string, options: R2GetOptions & {
-        onlyIf: R2Conditional | Headers;
-    }): Promise<R2ObjectBody | R2Object | null>;
-    get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | null>;
-    put(key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob, options?: R2PutOptions & {
-        onlyIf: R2Conditional | Headers;
-    }): Promise<R2Object | null>;
-    put(key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob, options?: R2PutOptions): Promise<R2Object>;
-    createMultipartUpload(key: string, options?: R2MultipartOptions): Promise<R2MultipartUpload>;
-    resumeMultipartUpload(key: string, uploadId: string): R2MultipartUpload;
-    delete(keys: string | string[]): Promise<void>;
-    list(options?: R2ListOptions): Promise<R2Objects>;
-}
-interface R2MultipartUpload {
-    readonly key: string;
-    readonly uploadId: string;
-    uploadPart(partNumber: number, value: ReadableStream | (ArrayBuffer | ArrayBufferView) | string | Blob, options?: R2UploadPartOptions): Promise<R2UploadedPart>;
-    abort(): Promise<void>;
-    complete(uploadedParts: R2UploadedPart[]): Promise<R2Object>;
-}
-interface R2UploadedPart {
-    partNumber: number;
-    etag: string;
-}
-declare abstract class R2Object {
-    readonly key: string;
-    readonly version: string;
-    readonly size: number;
-    readonly etag: string;
-    readonly httpEtag: string;
-    readonly checksums: R2Checksums;
-    readonly uploaded: Date;
-    readonly httpMetadata?: R2HTTPMetadata;
-    readonly customMetadata?: Record<string, string>;
-    readonly range?: R2Range;
-    readonly storageClass: string;
-    readonly ssecKeyMd5?: string;
-    writeHttpMetadata(headers: Headers): void;
-}
-interface R2ObjectBody extends R2Object {
-    get body(): ReadableStream;
-    get bodyUsed(): boolean;
-    arrayBuffer(): Promise<ArrayBuffer>;
-    bytes(): Promise<Uint8Array>;
-    text(): Promise<string>;
-    json<T>(): Promise<T>;
-    blob(): Promise<Blob>;
-}
-type R2Range = {
-    offset: number;
-    length?: number;
-} | {
-    offset?: number;
-    length: number;
-} | {
-    suffix: number;
-};
-interface R2Conditional {
-    etagMatches?: string;
-    etagDoesNotMatch?: string;
-    uploadedBefore?: Date;
-    uploadedAfter?: Date;
-    secondsGranularity?: boolean;
-}
-interface R2GetOptions {
-    onlyIf?: (R2Conditional | Headers);
-    range?: (R2Range | Headers);
-    ssecKey?: (ArrayBuffer | string);
-}
-interface R2PutOptions {
-    onlyIf?: (R2Conditional | Headers);
-    httpMetadata?: (R2HTTPMetadata | Headers);
-    customMetadata?: Record<string, string>;
-    md5?: ((ArrayBuffer | ArrayBufferView) | string);
-    sha1?: ((ArrayBuffer | ArrayBufferView) | string);
-    sha256?: ((ArrayBuffer | ArrayBufferView) | string);
-    sha384?: ((ArrayBuffer | ArrayBufferView) | string);
-    sha512?: ((ArrayBuffer | ArrayBufferView) | string);
-    storageClass?: string;
-    ssecKey?: (ArrayBuffer | string);
-}
-interface R2MultipartOptions {
-    httpMetadata?: (R2HTTPMetadata | Headers);
-    customMetadata?: Record<string, string>;
-    storageClass?: string;
-    ssecKey?: (ArrayBuffer | string);
-}
-interface R2Checksums {
-    readonly md5?: ArrayBuffer;
-    readonly sha1?: ArrayBuffer;
-    readonly sha256?: ArrayBuffer;
-    readonly sha384?: ArrayBuffer;
-    readonly sha512?: ArrayBuffer;
-    toJSON(): R2StringChecksums;
-}
-interface R2StringChecksums {
-    md5?: string;
-    sha1?: string;
-    sha256?: string;
-    sha384?: string;
-    sha512?: string;
-}
-interface R2HTTPMetadata {
-    contentType?: string;
-    contentLanguage?: string;
-    contentDisposition?: string;
-    contentEncoding?: string;
-    cacheControl?: string;
-    cacheExpiry?: Date;
-}
-type R2Objects = {
-    objects: R2Object[];
-    delimitedPrefixes: string[];
-} & ({
-    truncated: true;
-    cursor: string;
-} | {
-    truncated: false;
-});
-interface R2UploadPartOptions {
-    ssecKey?: (ArrayBuffer | string);
-}
-declare abstract class ScheduledEvent extends ExtendableEvent {
-    readonly scheduledTime: number;
-    readonly cron: string;
-    noRetry(): void;
-}
-interface ScheduledController {
-    readonly scheduledTime: number;
-    readonly cron: string;
-    noRetry(): void;
-}
-interface QueuingStrategy<T = any> {
-    highWaterMark?: (number | bigint);
-    size?: (chunk: T) => number | bigint;
-}
-interface UnderlyingSink<W = any> {
-    type?: string;
-    start?: (controller: WritableStreamDefaultController) => void | Promise<void>;
-    write?: (chunk: W, controller: WritableStreamDefaultController) => void | Promise<void>;
-    abort?: (reason: any) => void | Promise<void>;
-    close?: () => void | Promise<void>;
-}
-interface UnderlyingByteSource {
-    type: "bytes";
-    autoAllocateChunkSize?: number;
-    start?: (controller: ReadableByteStreamController) => void | Promise<void>;
-    pull?: (controller: ReadableByteStreamController) => void | Promise<void>;
-    cancel?: (reason: any) => void | Promise<void>;
-}
-interface UnderlyingSource<R = any> {
-    type?: "" | undefined;
-    start?: (controller: ReadableStreamDefaultController<R>) => void | Promise<void>;
-    pull?: (controller: ReadableStreamDefaultController<R>) => void | Promise<void>;
-    cancel?: (reason: any) => void | Promise<void>;
-    expectedLength?: (number | bigint);
-}
-interface Transformer<I = any, O = any> {
-    readableType?: string;
-    writableType?: string;
-    start?: (controller: TransformStreamDefaultController<O>) => void | Promise<void>;
-    transform?: (chunk: I, controller: TransformStreamDefaultController<O>) => void | Promise<void>;
-    flush?: (controller: TransformStreamDefaultController<O>) => void | Promise<void>;
-    cancel?: (reason: any) => void | Promise<void>;
-    expectedLength?: number;
-}
-interface StreamPipeOptions {
-    preventAbort?: boolean;
-    preventCancel?: boolean;
-    /**
-     * Pipes this readable stream to a given writable stream destination. The way in which the piping process behaves under various error conditions can be customized with a number of passed options. It returns a promise that fulfills when the piping process completes successfully, or rejects if any errors were encountered.
-     *
-     * Piping a stream will lock it for the duration of the pipe, preventing any other consumer from acquiring a reader.
-     *
-     * Errors and closures of the source and destination streams propagate as follows:
-     *
-     * An error in this source readable stream will abort destination, unless preventAbort is truthy. The returned promise will be rejected with the source's error, or with any error that occurs during aborting the destination.
-     *
-     * An error in destination will cancel this source readable stream, unless preventCancel is truthy. The returned promise will be rejected with the destination's error, or with any error that occurs during canceling the source.
-     *
-     * When this source readable stream closes, destination will be closed, unless preventClose is truthy. The returned promise will be fulfilled once this process completes, unless an error is encountered while closing the destination, in which case it will be rejected with that error.
-     *
-     * If destination starts out closed or closing, this source readable stream will be canceled, unless preventCancel is true. The returned promise will be rejected with an error indicating piping to a closed stream failed, or with any error that occurs during canceling the source.
-     *
-     * The signal option can be set to an AbortSignal to allow aborting an ongoing pipe operation via the corresponding AbortController. In this case, this source readable stream will be canceled, and destination aborted, unless the respective options preventCancel or preventAbort are set.
-     */
-    preventClose?: boolean;
-    signal?: AbortSignal;
-}
-type ReadableStreamReadResult<R = any> = {
-    done: false;
-    value: R;
-} | {
-    done: true;
-    value?: undefined;
-};
-/**
- * The `ReadableStream` interface of the Streams API represents a readable stream of byte data.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream)
- */
-interface ReadableStream<R = any> {
-    /**
-     * The **`locked`** read-only property of the ReadableStream interface returns whether or not the readable stream is locked to a reader.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/locked)
-     */
-    get locked(): boolean;
-    /**
-     * The **`cancel()`** method of the ReadableStream interface returns a Promise that resolves when the stream is canceled.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/cancel)
-     */
-    cancel(reason?: any): Promise<void>;
-    /**
-     * The **`getReader()`** method of the ReadableStream interface creates a reader and locks the stream to it.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/getReader)
-     */
-    getReader(): ReadableStreamDefaultReader<R>;
-    /**
-     * The **`getReader()`** method of the ReadableStream interface creates a reader and locks the stream to it.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/getReader)
-     */
-    getReader(options: ReadableStreamGetReaderOptions): ReadableStreamBYOBReader;
-    /**
-     * The **`pipeThrough()`** method of the ReadableStream interface provides a chainable way of piping the current stream through a transform stream or any other writable/readable pair.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/pipeThrough)
-     */
-    pipeThrough<T>(transform: ReadableWritablePair<T, R>, options?: StreamPipeOptions): ReadableStream<T>;
-    /**
-     * The **`pipeTo()`** method of the ReadableStream interface pipes the current `ReadableStream` to a given WritableStream and returns a Promise that fulfills when the piping process completes successfully, or rejects if any errors were encountered.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/pipeTo)
-     */
-    pipeTo(destination: WritableStream<R>, options?: StreamPipeOptions): Promise<void>;
-    /**
-     * The **`tee()`** method of the two-element array containing the two resulting branches as new ReadableStream instances.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream/tee)
-     */
-    tee(): [
-        ReadableStream<R>,
-        ReadableStream<R>
-    ];
-    values(options?: ReadableStreamValuesOptions): AsyncIterableIterator<R>;
-    [Symbol.asyncIterator](options?: ReadableStreamValuesOptions): AsyncIterableIterator<R>;
-}
-/**
- * The `ReadableStream` interface of the Streams API represents a readable stream of byte data.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStream)
- */
-declare const ReadableStream: {
-    prototype: ReadableStream;
-    new (underlyingSource: UnderlyingByteSource, strategy?: QueuingStrategy<Uint8Array>): ReadableStream<Uint8Array>;
-    new <R = any>(underlyingSource?: UnderlyingSource<R>, strategy?: QueuingStrategy<R>): ReadableStream<R>;
-};
-/**
- * The **`ReadableStreamDefaultReader`** interface of the Streams API represents a default reader that can be used to read stream data supplied from a network (such as a fetch request).
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultReader)
- */
-declare class ReadableStreamDefaultReader<R = any> {
-    constructor(stream: ReadableStream);
-    get closed(): Promise<void>;
-    cancel(reason?: any): Promise<void>;
-    /**
-     * The **`read()`** method of the ReadableStreamDefaultReader interface returns a Promise providing access to the next chunk in the stream's internal queue.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultReader/read)
-     */
-    read(): Promise<ReadableStreamReadResult<R>>;
-    /**
-     * The **`releaseLock()`** method of the ReadableStreamDefaultReader interface releases the reader's lock on the stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultReader/releaseLock)
-     */
-    releaseLock(): void;
-}
-/**
- * The `ReadableStreamBYOBReader` interface of the Streams API defines a reader for a ReadableStream that supports zero-copy reading from an underlying byte source.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBReader)
- */
-declare class ReadableStreamBYOBReader {
-    constructor(stream: ReadableStream);
-    get closed(): Promise<void>;
-    cancel(reason?: any): Promise<void>;
-    /**
-     * The **`read()`** method of the ReadableStreamBYOBReader interface is used to read data into a view on a user-supplied buffer from an associated readable byte stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBReader/read)
-     */
-    read<T extends ArrayBufferView>(view: T): Promise<ReadableStreamReadResult<T>>;
-    /**
-     * The **`releaseLock()`** method of the ReadableStreamBYOBReader interface releases the reader's lock on the stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBReader/releaseLock)
-     */
-    releaseLock(): void;
-    readAtLeast<T extends ArrayBufferView>(minElements: number, view: T): Promise<ReadableStreamReadResult<T>>;
-}
-interface ReadableStreamBYOBReaderReadableStreamBYOBReaderReadOptions {
-    min?: number;
-}
-interface ReadableStreamGetReaderOptions {
-    /**
-     * Creates a ReadableStreamBYOBReader and locks the stream to the new reader.
-     *
-     * This call behaves the same way as the no-argument variant, except that it only works on readable byte streams, i.e. streams which were constructed specifically with the ability to handle "bring your own buffer" reading. The returned BYOB reader provides the ability to directly read individual chunks from the stream via its read() method, into developer-supplied buffers, allowing more precise control over allocation.
-     */
-    mode: "byob";
-}
-/**
- * The **`ReadableStreamBYOBRequest`** interface of the Streams API represents a 'pull request' for data from an underlying source that will made as a zero-copy transfer to a consumer (bypassing the stream's internal queues).
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBRequest)
- */
-declare abstract class ReadableStreamBYOBRequest {
-    /**
-     * The **`view`** getter property of the ReadableStreamBYOBRequest interface returns the current view.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBRequest/view)
-     */
-    get view(): Uint8Array | null;
-    /**
-     * The **`respond()`** method of the ReadableStreamBYOBRequest interface is used to signal to the associated readable byte stream that the specified number of bytes were written into the ReadableStreamBYOBRequest.view.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBRequest/respond)
-     */
-    respond(bytesWritten: number): void;
-    /**
-     * The **`respondWithNewView()`** method of the ReadableStreamBYOBRequest interface specifies a new view that the consumer of the associated readable byte stream should write to instead of ReadableStreamBYOBRequest.view.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBRequest/respondWithNewView)
-     */
-    respondWithNewView(view: ArrayBuffer | ArrayBufferView): void;
-    get atLeast(): number | null;
-}
-/**
- * The **`ReadableStreamDefaultController`** interface of the Streams API represents a controller allowing control of a ReadableStream's state and internal queue.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultController)
- */
-declare abstract class ReadableStreamDefaultController<R = any> {
-    /**
-     * The **`desiredSize`** read-only property of the required to fill the stream's internal queue.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultController/desiredSize)
-     */
-    get desiredSize(): number | null;
-    /**
-     * The **`close()`** method of the ReadableStreamDefaultController interface closes the associated stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultController/close)
-     */
-    close(): void;
-    /**
-     * The **`enqueue()`** method of the ```js-nolint enqueue(chunk) ``` - `chunk` - : The chunk to enqueue.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultController/enqueue)
-     */
-    enqueue(chunk?: R): void;
-    /**
-     * The **`error()`** method of the with the associated stream to error.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultController/error)
-     */
-    error(reason: any): void;
-}
-/**
- * The **`ReadableByteStreamController`** interface of the Streams API represents a controller for a readable byte stream.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController)
- */
-declare abstract class ReadableByteStreamController {
-    /**
-     * The **`byobRequest`** read-only property of the ReadableByteStreamController interface returns the current BYOB request, or `null` if there are no pending requests.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController/byobRequest)
-     */
-    get byobRequest(): ReadableStreamBYOBRequest | null;
-    /**
-     * The **`desiredSize`** read-only property of the ReadableByteStreamController interface returns the number of bytes required to fill the stream's internal queue to its 'desired size'.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController/desiredSize)
-     */
-    get desiredSize(): number | null;
-    /**
-     * The **`close()`** method of the ReadableByteStreamController interface closes the associated stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController/close)
-     */
-    close(): void;
-    /**
-     * The **`enqueue()`** method of the ReadableByteStreamController interface enqueues a given chunk on the associated readable byte stream (the chunk is copied into the stream's internal queues).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController/enqueue)
-     */
-    enqueue(chunk: ArrayBuffer | ArrayBufferView): void;
-    /**
-     * The **`error()`** method of the ReadableByteStreamController interface causes any future interactions with the associated stream to error with the specified reason.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController/error)
-     */
-    error(reason: any): void;
-}
-/**
- * The **`WritableStreamDefaultController`** interface of the Streams API represents a controller allowing control of a WritableStream's state.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultController)
- */
-declare abstract class WritableStreamDefaultController {
-    /**
-     * The read-only **`signal`** property of the WritableStreamDefaultController interface returns the AbortSignal associated with the controller.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultController/signal)
-     */
-    get signal(): AbortSignal;
-    /**
-     * The **`error()`** method of the with the associated stream to error.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultController/error)
-     */
-    error(reason?: any): void;
-}
-/**
- * The **`TransformStreamDefaultController`** interface of the Streams API provides methods to manipulate the associated ReadableStream and WritableStream.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStreamDefaultController)
- */
-declare abstract class TransformStreamDefaultController<O = any> {
-    /**
-     * The **`desiredSize`** read-only property of the TransformStreamDefaultController interface returns the desired size to fill the queue of the associated ReadableStream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStreamDefaultController/desiredSize)
-     */
-    get desiredSize(): number | null;
-    /**
-     * The **`enqueue()`** method of the TransformStreamDefaultController interface enqueues the given chunk in the readable side of the stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStreamDefaultController/enqueue)
-     */
-    enqueue(chunk?: O): void;
-    /**
-     * The **`error()`** method of the TransformStreamDefaultController interface errors both sides of the stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStreamDefaultController/error)
-     */
-    error(reason: any): void;
-    /**
-     * The **`terminate()`** method of the TransformStreamDefaultController interface closes the readable side and errors the writable side of the stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStreamDefaultController/terminate)
-     */
-    terminate(): void;
-}
-interface ReadableWritablePair<R = any, W = any> {
-    readable: ReadableStream<R>;
-    /**
-     * Provides a convenient, chainable way of piping this readable stream through a transform stream (or any other { writable, readable } pair). It simply pipes the stream into the writable side of the supplied pair, and returns the readable side for further use.
-     *
-     * Piping a stream will lock it for the duration of the pipe, preventing any other consumer from acquiring a reader.
-     */
-    writable: WritableStream<W>;
-}
-/**
- * The **`WritableStream`** interface of the Streams API provides a standard abstraction for writing streaming data to a destination, known as a sink.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream)
- */
-declare class WritableStream<W = any> {
-    constructor(underlyingSink?: UnderlyingSink, queuingStrategy?: QueuingStrategy);
-    /**
-     * The **`locked`** read-only property of the WritableStream interface returns a boolean indicating whether the `WritableStream` is locked to a writer.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/locked)
-     */
-    get locked(): boolean;
-    /**
-     * The **`abort()`** method of the WritableStream interface aborts the stream, signaling that the producer can no longer successfully write to the stream and it is to be immediately moved to an error state, with any queued writes discarded.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/abort)
-     */
-    abort(reason?: any): Promise<void>;
-    /**
-     * The **`close()`** method of the WritableStream interface closes the associated stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/close)
-     */
-    close(): Promise<void>;
-    /**
-     * The **`getWriter()`** method of the WritableStream interface returns a new instance of WritableStreamDefaultWriter and locks the stream to that instance.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStream/getWriter)
-     */
-    getWriter(): WritableStreamDefaultWriter<W>;
-}
-/**
- * The **`WritableStreamDefaultWriter`** interface of the Streams API is the object returned by WritableStream.getWriter() and once created locks the writer to the `WritableStream` ensuring that no other streams can write to the underlying sink.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter)
- */
-declare class WritableStreamDefaultWriter<W = any> {
-    constructor(stream: WritableStream);
-    /**
-     * The **`closed`** read-only property of the the stream errors or the writer's lock is released.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/closed)
-     */
-    get closed(): Promise<void>;
-    /**
-     * The **`ready`** read-only property of the that resolves when the desired size of the stream's internal queue transitions from non-positive to positive, signaling that it is no longer applying backpressure.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/ready)
-     */
-    get ready(): Promise<void>;
-    /**
-     * The **`desiredSize`** read-only property of the to fill the stream's internal queue.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/desiredSize)
-     */
-    get desiredSize(): number | null;
-    /**
-     * The **`abort()`** method of the the producer can no longer successfully write to the stream and it is to be immediately moved to an error state, with any queued writes discarded.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/abort)
-     */
-    abort(reason?: any): Promise<void>;
-    /**
-     * The **`close()`** method of the stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/close)
-     */
-    close(): Promise<void>;
-    /**
-     * The **`write()`** method of the operation.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/write)
-     */
-    write(chunk?: W): Promise<void>;
-    /**
-     * The **`releaseLock()`** method of the corresponding stream.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter/releaseLock)
-     */
-    releaseLock(): void;
-}
-/**
- * The **`TransformStream`** interface of the Streams API represents a concrete implementation of the pipe chain _transform stream_ concept.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStream)
- */
-declare class TransformStream<I = any, O = any> {
-    constructor(transformer?: Transformer<I, O>, writableStrategy?: QueuingStrategy<I>, readableStrategy?: QueuingStrategy<O>);
-    /**
-     * The **`readable`** read-only property of the TransformStream interface returns the ReadableStream instance controlled by this `TransformStream`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStream/readable)
-     */
-    get readable(): ReadableStream<O>;
-    /**
-     * The **`writable`** read-only property of the TransformStream interface returns the WritableStream instance controlled by this `TransformStream`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TransformStream/writable)
-     */
-    get writable(): WritableStream<I>;
-}
-declare class FixedLengthStream extends IdentityTransformStream {
-    constructor(expectedLength: number | bigint, queuingStrategy?: IdentityTransformStreamQueuingStrategy);
-}
-declare class IdentityTransformStream extends TransformStream<ArrayBuffer | ArrayBufferView, Uint8Array> {
-    constructor(queuingStrategy?: IdentityTransformStreamQueuingStrategy);
-}
-interface IdentityTransformStreamQueuingStrategy {
-    highWaterMark?: (number | bigint);
-}
-interface ReadableStreamValuesOptions {
-    preventCancel?: boolean;
-}
-/**
- * The **`CompressionStream`** interface of the Compression Streams API is an API for compressing a stream of data.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CompressionStream)
- */
-declare class CompressionStream extends TransformStream<ArrayBuffer | ArrayBufferView, Uint8Array> {
-    constructor(format: "gzip" | "deflate" | "deflate-raw");
-}
-/**
- * The **`DecompressionStream`** interface of the Compression Streams API is an API for decompressing a stream of data.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/DecompressionStream)
- */
-declare class DecompressionStream extends TransformStream<ArrayBuffer | ArrayBufferView, Uint8Array> {
-    constructor(format: "gzip" | "deflate" | "deflate-raw");
-}
-/**
- * The **`TextEncoderStream`** interface of the Encoding API converts a stream of strings into bytes in the UTF-8 encoding.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextEncoderStream)
- */
-declare class TextEncoderStream extends TransformStream<string, Uint8Array> {
-    constructor();
-    get encoding(): string;
-}
-/**
- * The **`TextDecoderStream`** interface of the Encoding API converts a stream of text in a binary encoding, such as UTF-8 etc., to a stream of strings.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/TextDecoderStream)
- */
-declare class TextDecoderStream extends TransformStream<ArrayBuffer | ArrayBufferView, string> {
-    constructor(label?: string, options?: TextDecoderStreamTextDecoderStreamInit);
-    get encoding(): string;
-    get fatal(): boolean;
-    get ignoreBOM(): boolean;
-}
-interface TextDecoderStreamTextDecoderStreamInit {
-    fatal?: boolean;
-    ignoreBOM?: boolean;
-}
-/**
- * The **`ByteLengthQueuingStrategy`** interface of the Streams API provides a built-in byte length queuing strategy that can be used when constructing streams.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ByteLengthQueuingStrategy)
- */
-declare class ByteLengthQueuingStrategy implements QueuingStrategy<ArrayBufferView> {
-    constructor(init: QueuingStrategyInit);
-    /**
-     * The read-only **`ByteLengthQueuingStrategy.highWaterMark`** property returns the total number of bytes that can be contained in the internal queue before backpressure is applied.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/ByteLengthQueuingStrategy/highWaterMark)
-     */
-    get highWaterMark(): number;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/ByteLengthQueuingStrategy/size) */
-    get size(): (chunk?: any) => number;
-}
-/**
- * The **`CountQueuingStrategy`** interface of the Streams API provides a built-in chunk counting queuing strategy that can be used when constructing streams.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CountQueuingStrategy)
- */
-declare class CountQueuingStrategy implements QueuingStrategy {
-    constructor(init: QueuingStrategyInit);
-    /**
-     * The read-only **`CountQueuingStrategy.highWaterMark`** property returns the total number of chunks that can be contained in the internal queue before backpressure is applied.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CountQueuingStrategy/highWaterMark)
-     */
-    get highWaterMark(): number;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/CountQueuingStrategy/size) */
-    get size(): (chunk?: any) => number;
-}
-interface QueuingStrategyInit {
-    /**
-     * Creates a new ByteLengthQueuingStrategy with the provided high water mark.
-     *
-     * Note that the provided high water mark will not be validated ahead of time. Instead, if it is negative, NaN, or not a number, the resulting ByteLengthQueuingStrategy will cause the corresponding stream constructor to throw.
-     */
-    highWaterMark: number;
-}
-interface TracePreviewInfo {
-    id: string;
-    slug: string;
-    name: string;
-}
-interface ScriptVersion {
-    id?: string;
-    tag?: string;
-    message?: string;
-}
-declare abstract class TailEvent extends ExtendableEvent {
-    readonly events: TraceItem[];
-    readonly traces: TraceItem[];
-}
-interface TraceItem {
-    readonly event: (TraceItemFetchEventInfo | TraceItemJsRpcEventInfo | TraceItemConnectEventInfo | TraceItemScheduledEventInfo | TraceItemAlarmEventInfo | TraceItemQueueEventInfo | TraceItemEmailEventInfo | TraceItemTailEventInfo | TraceItemCustomEventInfo | TraceItemHibernatableWebSocketEventInfo) | null;
-    readonly eventTimestamp: number | null;
-    readonly logs: TraceLog[];
-    readonly exceptions: TraceException[];
-    readonly diagnosticsChannelEvents: TraceDiagnosticChannelEvent[];
-    readonly scriptName: string | null;
-    readonly entrypoint?: string;
-    readonly scriptVersion?: ScriptVersion;
-    readonly dispatchNamespace?: string;
-    readonly scriptTags?: string[];
-    readonly tailAttributes?: Record<string, boolean | number | string>;
-    readonly preview?: TracePreviewInfo;
-    readonly durableObjectId?: string;
-    readonly outcome: string;
-    readonly executionModel: string;
-    readonly truncated: boolean;
-    readonly cpuTime: number;
-    readonly wallTime: number;
-}
-interface TraceItemAlarmEventInfo {
-    readonly scheduledTime: Date;
-}
-interface TraceItemConnectEventInfo {
-}
-interface TraceItemCustomEventInfo {
-}
-interface TraceItemScheduledEventInfo {
-    readonly scheduledTime: number;
-    readonly cron: string;
-}
-interface TraceItemQueueEventInfo {
-    readonly queue: string;
-    readonly batchSize: number;
-}
-interface TraceItemEmailEventInfo {
-    readonly mailFrom: string;
-    readonly rcptTo: string;
-    readonly rawSize: number;
-}
-interface TraceItemTailEventInfo {
-    readonly consumedEvents: TraceItemTailEventInfoTailItem[];
-}
-interface TraceItemTailEventInfoTailItem {
-    readonly scriptName: string | null;
-}
-interface TraceItemFetchEventInfo {
-    readonly response?: TraceItemFetchEventInfoResponse;
-    readonly request: TraceItemFetchEventInfoRequest;
-}
-interface TraceItemFetchEventInfoRequest {
-    readonly cf?: any;
-    readonly headers: Record<string, string>;
-    readonly method: string;
-    readonly url: string;
-    getUnredacted(): TraceItemFetchEventInfoRequest;
-}
-interface TraceItemFetchEventInfoResponse {
-    readonly status: number;
-}
-interface TraceItemJsRpcEventInfo {
-    readonly rpcMethod: string;
-}
-interface TraceItemHibernatableWebSocketEventInfo {
-    readonly getWebSocketEvent: TraceItemHibernatableWebSocketEventInfoMessage | TraceItemHibernatableWebSocketEventInfoClose | TraceItemHibernatableWebSocketEventInfoError;
-}
-interface TraceItemHibernatableWebSocketEventInfoMessage {
-    readonly webSocketEventType: string;
-}
-interface TraceItemHibernatableWebSocketEventInfoClose {
-    readonly webSocketEventType: string;
-    readonly code: number;
-    readonly wasClean: boolean;
-}
-interface TraceItemHibernatableWebSocketEventInfoError {
-    readonly webSocketEventType: string;
-}
-interface TraceLog {
-    readonly timestamp: number;
-    readonly level: string;
-    readonly message: any;
-    readonly errorInfo?: (TraceLogErrorInfo | null)[];
-}
-interface TraceLogErrorInfo {
-    name: string;
-    message: string;
-    stack?: string;
-}
-interface TraceException {
-    readonly timestamp: number;
-    readonly message: string;
-    readonly name: string;
-    readonly stack?: string;
-}
-interface TraceDiagnosticChannelEvent {
-    readonly timestamp: number;
-    readonly channel: string;
-    readonly message: any;
-}
-interface TraceMetrics {
-    readonly cpuTime: number;
-    readonly wallTime: number;
-}
-interface UnsafeTraceMetrics {
-    fromTrace(item: TraceItem): TraceMetrics;
-}
-/**
- * The **`URL`** interface is used to parse, construct, normalize, and encode URL.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL)
- */
-declare class URL {
-    constructor(url: string | URL, base?: string | URL);
-    /**
-     * The **`origin`** read-only property of the URL interface returns a string containing the Unicode serialization of the origin of the represented URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/origin)
-     */
-    get origin(): string;
-    /**
-     * The **`href`** property of the URL interface is a string containing the whole URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/href)
-     */
-    get href(): string;
-    /**
-     * The **`href`** property of the URL interface is a string containing the whole URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/href)
-     */
-    set href(value: string);
-    /**
-     * The **`protocol`** property of the URL interface is a string containing the protocol or scheme of the URL, including the final `':'`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/protocol)
-     */
-    get protocol(): string;
-    /**
-     * The **`protocol`** property of the URL interface is a string containing the protocol or scheme of the URL, including the final `':'`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/protocol)
-     */
-    set protocol(value: string);
-    /**
-     * The **`username`** property of the URL interface is a string containing the username component of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/username)
-     */
-    get username(): string;
-    /**
-     * The **`username`** property of the URL interface is a string containing the username component of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/username)
-     */
-    set username(value: string);
-    /**
-     * The **`password`** property of the URL interface is a string containing the password component of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/password)
-     */
-    get password(): string;
-    /**
-     * The **`password`** property of the URL interface is a string containing the password component of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/password)
-     */
-    set password(value: string);
-    /**
-     * The **`host`** property of the URL interface is a string containing the host, which is the URL.hostname, and then, if the port of the URL is nonempty, a `':'`, followed by the URL.port of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/host)
-     */
-    get host(): string;
-    /**
-     * The **`host`** property of the URL interface is a string containing the host, which is the URL.hostname, and then, if the port of the URL is nonempty, a `':'`, followed by the URL.port of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/host)
-     */
-    set host(value: string);
-    /**
-     * The **`hostname`** property of the URL interface is a string containing either the domain name or IP address of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/hostname)
-     */
-    get hostname(): string;
-    /**
-     * The **`hostname`** property of the URL interface is a string containing either the domain name or IP address of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/hostname)
-     */
-    set hostname(value: string);
-    /**
-     * The **`port`** property of the URL interface is a string containing the port number of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/port)
-     */
-    get port(): string;
-    /**
-     * The **`port`** property of the URL interface is a string containing the port number of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/port)
-     */
-    set port(value: string);
-    /**
-     * The **`pathname`** property of the URL interface represents a location in a hierarchical structure.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/pathname)
-     */
-    get pathname(): string;
-    /**
-     * The **`pathname`** property of the URL interface represents a location in a hierarchical structure.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/pathname)
-     */
-    set pathname(value: string);
-    /**
-     * The **`search`** property of the URL interface is a search string, also called a _query string_, that is a string containing a `'?'` followed by the parameters of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/search)
-     */
-    get search(): string;
-    /**
-     * The **`search`** property of the URL interface is a search string, also called a _query string_, that is a string containing a `'?'` followed by the parameters of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/search)
-     */
-    set search(value: string);
-    /**
-     * The **`hash`** property of the URL interface is a string containing a `'#'` followed by the fragment identifier of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/hash)
-     */
-    get hash(): string;
-    /**
-     * The **`hash`** property of the URL interface is a string containing a `'#'` followed by the fragment identifier of the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/hash)
-     */
-    set hash(value: string);
-    /**
-     * The **`searchParams`** read-only property of the access to the [MISSING: httpmethod('GET')] decoded query arguments contained in the URL.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/searchParams)
-     */
-    get searchParams(): URLSearchParams;
-    /**
-     * The **`toJSON()`** method of the URL interface returns a string containing a serialized version of the URL, although in practice it seems to have the same effect as ```js-nolint toJSON() ``` None.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/toJSON)
-     */
-    toJSON(): string;
-    /*function toString() { [native code] }*/
-    toString(): string;
-    /**
-     * The **`URL.canParse()`** static method of the URL interface returns a boolean indicating whether or not an absolute URL, or a relative URL combined with a base URL, are parsable and valid.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/canParse_static)
-     */
-    static canParse(url: string, base?: string): boolean;
-    /**
-     * The **`URL.parse()`** static method of the URL interface returns a newly created URL object representing the URL defined by the parameters.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/parse_static)
-     */
-    static parse(url: string, base?: string): URL | null;
-    /**
-     * The **`createObjectURL()`** static method of the URL interface creates a string containing a URL representing the object given in the parameter.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/createObjectURL_static)
-     */
-    static createObjectURL(object: File | Blob): string;
-    /**
-     * The **`revokeObjectURL()`** static method of the URL interface releases an existing object URL which was previously created by calling Call this method when you've finished using an object URL to let the browser know not to keep the reference to the file any longer.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URL/revokeObjectURL_static)
-     */
-    static revokeObjectURL(object_url: string): void;
-}
-/**
- * The **`URLSearchParams`** interface defines utility methods to work with the query string of a URL.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams)
- */
-declare class URLSearchParams {
-    constructor(init?: (Iterable<Iterable<string>> | Record<string, string> | string));
-    /**
-     * The **`size`** read-only property of the URLSearchParams interface indicates the total number of search parameter entries.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/size)
-     */
-    get size(): number;
-    /**
-     * The **`append()`** method of the URLSearchParams interface appends a specified key/value pair as a new search parameter.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/append)
-     */
-    append(name: string, value: string): void;
-    /**
-     * The **`delete()`** method of the URLSearchParams interface deletes specified parameters and their associated value(s) from the list of all search parameters.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/delete)
-     */
-    delete(name: string, value?: string): void;
-    /**
-     * The **`get()`** method of the URLSearchParams interface returns the first value associated to the given search parameter.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/get)
-     */
-    get(name: string): string | null;
-    /**
-     * The **`getAll()`** method of the URLSearchParams interface returns all the values associated with a given search parameter as an array.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll)
-     */
-    getAll(name: string): string[];
-    /**
-     * The **`has()`** method of the URLSearchParams interface returns a boolean value that indicates whether the specified parameter is in the search parameters.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/has)
-     */
-    has(name: string, value?: string): boolean;
-    /**
-     * The **`set()`** method of the URLSearchParams interface sets the value associated with a given search parameter to the given value.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/set)
-     */
-    set(name: string, value: string): void;
-    /**
-     * The **`URLSearchParams.sort()`** method sorts all key/value pairs contained in this object in place and returns `undefined`.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/URLSearchParams/sort)
-     */
-    sort(): void;
-    /* Returns an array of key, value pairs for every entry in the search params. */
-    entries(): IterableIterator<[
-        key: string,
-        value: string
-    ]>;
-    /* Returns a list of keys in the search params. */
-    keys(): IterableIterator<string>;
-    /* Returns a list of values in the search params. */
-    values(): IterableIterator<string>;
-    forEach<This = unknown>(callback: (this: This, value: string, key: string, parent: URLSearchParams) => void, thisArg?: This): void;
-    /*function toString() { [native code] }*/
-    toString(): string;
-    [Symbol.iterator](): IterableIterator<[
-        key: string,
-        value: string
-    ]>;
-}
-declare class URLPattern {
-    constructor(input?: (string | URLPatternInit), baseURL?: (string | URLPatternOptions), patternOptions?: URLPatternOptions);
-    get protocol(): string;
-    get username(): string;
-    get password(): string;
-    get hostname(): string;
-    get port(): string;
-    get pathname(): string;
-    get search(): string;
-    get hash(): string;
-    get hasRegExpGroups(): boolean;
-    test(input?: (string | URLPatternInit), baseURL?: string): boolean;
-    exec(input?: (string | URLPatternInit), baseURL?: string): URLPatternResult | null;
-}
-interface URLPatternInit {
-    protocol?: string;
-    username?: string;
-    password?: string;
-    hostname?: string;
-    port?: string;
-    pathname?: string;
-    search?: string;
-    hash?: string;
-    baseURL?: string;
-}
-interface URLPatternComponentResult {
-    input: string;
-    groups: Record<string, string>;
-}
-interface URLPatternResult {
-    inputs: (string | URLPatternInit)[];
-    protocol: URLPatternComponentResult;
-    username: URLPatternComponentResult;
-    password: URLPatternComponentResult;
-    hostname: URLPatternComponentResult;
-    port: URLPatternComponentResult;
-    pathname: URLPatternComponentResult;
-    search: URLPatternComponentResult;
-    hash: URLPatternComponentResult;
-}
-interface URLPatternOptions {
-    ignoreCase?: boolean;
-}
-/**
- * A `CloseEvent` is sent to clients using WebSockets when the connection is closed.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CloseEvent)
- */
-declare class CloseEvent extends Event {
-    constructor(type: string, initializer?: CloseEventInit);
-    /**
-     * The **`code`** read-only property of the CloseEvent interface returns a WebSocket connection close code indicating the reason the connection was closed.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CloseEvent/code)
-     */
-    readonly code: number;
-    /**
-     * The **`reason`** read-only property of the CloseEvent interface returns the WebSocket connection close reason the server gave for closing the connection; that is, a concise human-readable prose explanation for the closure.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CloseEvent/reason)
-     */
-    readonly reason: string;
-    /**
-     * The **`wasClean`** read-only property of the CloseEvent interface returns `true` if the connection closed cleanly.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CloseEvent/wasClean)
-     */
-    readonly wasClean: boolean;
-}
-interface CloseEventInit {
-    code?: number;
-    reason?: string;
-    wasClean?: boolean;
-}
-type WebSocketEventMap = {
-    close: CloseEvent;
-    message: MessageEvent;
-    open: Event;
-    error: ErrorEvent;
-};
-/**
- * The `WebSocket` object provides the API for creating and managing a WebSocket connection to a server, as well as for sending and receiving data on the connection.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket)
- */
-declare var WebSocket: {
-    prototype: WebSocket;
-    new (url: string, protocols?: (string[] | string)): WebSocket;
-    readonly READY_STATE_CONNECTING: number;
-    readonly CONNECTING: number;
-    readonly READY_STATE_OPEN: number;
-    readonly OPEN: number;
-    readonly READY_STATE_CLOSING: number;
-    readonly CLOSING: number;
-    readonly READY_STATE_CLOSED: number;
-    readonly CLOSED: number;
-};
-/**
- * The `WebSocket` object provides the API for creating and managing a WebSocket connection to a server, as well as for sending and receiving data on the connection.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket)
- */
-interface WebSocket extends EventTarget<WebSocketEventMap> {
-    accept(options?: WebSocketAcceptOptions): void;
-    /**
-     * The **`WebSocket.send()`** method enqueues the specified data to be transmitted to the server over the WebSocket connection, increasing the value of `bufferedAmount` by the number of bytes needed to contain the data.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/send)
-     */
-    send(message: (ArrayBuffer | ArrayBufferView) | string): void;
-    /**
-     * The **`WebSocket.close()`** method closes the already `CLOSED`, this method does nothing.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/close)
-     */
-    close(code?: number, reason?: string): void;
-    serializeAttachment(attachment: any): void;
-    deserializeAttachment(): any | null;
-    /**
-     * The **`WebSocket.readyState`** read-only property returns the current state of the WebSocket connection.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/readyState)
-     */
-    readyState: number;
-    /**
-     * The **`WebSocket.url`** read-only property returns the absolute URL of the WebSocket as resolved by the constructor.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/url)
-     */
-    url: string | null;
-    /**
-     * The **`WebSocket.protocol`** read-only property returns the name of the sub-protocol the server selected; this will be one of the strings specified in the `protocols` parameter when creating the WebSocket object, or the empty string if no connection is established.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/protocol)
-     */
-    protocol: string | null;
-    /**
-     * The **`WebSocket.extensions`** read-only property returns the extensions selected by the server.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/extensions)
-     */
-    extensions: string | null;
-    /**
-     * The **`WebSocket.binaryType`** property controls the type of binary data being received over the WebSocket connection.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/WebSocket/binaryType)
-     */
-    binaryType: "blob" | "arraybuffer";
-}
-interface WebSocketAcceptOptions {
-    /**
-     * When set to `true`, receiving a server-initiated WebSocket Close frame will not
-     * automatically send a reciprocal Close frame, leaving the connection in a half-open
-     * state. This is useful for proxying scenarios where you need to coordinate closing
-     * both sides independently. Defaults to `false` when the
-     * `no_web_socket_half_open_by_default` compatibility flag is enabled.
-     */
-    allowHalfOpen?: boolean;
-}
-declare const WebSocketPair: {
-    new (): {
-        0: WebSocket;
-        1: WebSocket;
-    };
-};
-interface SqlStorage {
-    exec<T extends Record<string, SqlStorageValue>>(query: string, ...bindings: any[]): SqlStorageCursor<T>;
-    get databaseSize(): number;
-    Cursor: typeof SqlStorageCursor;
-    Statement: typeof SqlStorageStatement;
-}
-declare abstract class SqlStorageStatement {
-}
-type SqlStorageValue = ArrayBuffer | string | number | null;
-declare abstract class SqlStorageCursor<T extends Record<string, SqlStorageValue>> {
-    next(): {
-        done?: false;
-        value: T;
-    } | {
-        done: true;
-        value?: never;
-    };
-    toArray(): T[];
-    one(): T;
-    raw<U extends SqlStorageValue[]>(): IterableIterator<U>;
-    columnNames: string[];
-    get rowsRead(): number;
-    get rowsWritten(): number;
-    [Symbol.iterator](): IterableIterator<T>;
-}
-interface Socket {
-    get readable(): ReadableStream;
-    get writable(): WritableStream;
-    get closed(): Promise<void>;
-    get opened(): Promise<SocketInfo>;
-    get upgraded(): boolean;
-    get secureTransport(): "on" | "off" | "starttls";
-    close(): Promise<void>;
-    startTls(options?: TlsOptions): Socket;
-}
-interface SocketOptions {
-    secureTransport?: string;
-    allowHalfOpen: boolean;
-    highWaterMark?: (number | bigint);
-}
-interface SocketAddress {
-    hostname: string;
-    port: number;
-}
-interface TlsOptions {
-    expectedServerHostname?: string;
-}
-interface SocketInfo {
-    remoteAddress?: string;
-    localAddress?: string;
-}
-/**
- * The **`EventSource`** interface is web content's interface to server-sent events.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource)
- */
-declare class EventSource extends EventTarget {
-    constructor(url: string, init?: EventSourceEventSourceInit);
-    /**
-     * The **`close()`** method of the EventSource interface closes the connection, if one is made, and sets the ```js-nolint close() ``` None.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/close)
-     */
-    close(): void;
-    /**
-     * The **`url`** read-only property of the URL of the source.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/url)
-     */
-    get url(): string;
-    /**
-     * The **`withCredentials`** read-only property of the the `EventSource` object was instantiated with CORS credentials set.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/withCredentials)
-     */
-    get withCredentials(): boolean;
-    /**
-     * The **`readyState`** read-only property of the connection.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/readyState)
-     */
-    get readyState(): number;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/open_event) */
-    get onopen(): any | null;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/open_event) */
-    set onopen(value: any | null);
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/message_event) */
-    get onmessage(): any | null;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/message_event) */
-    set onmessage(value: any | null);
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/error_event) */
-    get onerror(): any | null;
-    /* [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventSource/error_event) */
-    set onerror(value: any | null);
-    static readonly CONNECTING: number;
-    static readonly OPEN: number;
-    static readonly CLOSED: number;
-    static from(stream: ReadableStream): EventSource;
-}
-interface EventSourceEventSourceInit {
-    withCredentials?: boolean;
-    fetcher?: Fetcher;
-}
-interface ExecOutput {
-    readonly stdout: ArrayBuffer;
-    readonly stderr: ArrayBuffer;
-    readonly exitCode: number;
-}
-interface ContainerExecOptions {
-    cwd?: string;
-    env?: Record<string, string>;
-    user?: string;
-    signal?: AbortSignal;
-    pty?: boolean | ContainerExecPtyOptions;
-    stdin?: ReadableStream | "pipe";
-    stdout?: "pipe" | "ignore";
-    stderr?: "pipe" | "ignore" | "combined";
-}
-interface ContainerExecPtyOptions {
-    cols?: number;
-    rows?: number;
-}
-interface ExecProcess {
-    readonly stdin: WritableStream | null;
-    readonly stdout: ReadableStream | null;
-    readonly stderr: ReadableStream | null;
-    readonly pid: number;
-    readonly isPty: boolean;
-    readonly exitCode: Promise<number>;
-    output(): Promise<ExecOutput>;
-    kill(signal?: number): void;
-    resize(cols: number, rows: number): void;
-}
-interface Container {
-    get running(): boolean;
-    start(options?: ContainerStartupOptions): void;
-    monitor(): Promise<void>;
-    destroy(error?: any): Promise<void>;
-    signal(signo: number): void;
-    getTcpPort(port: number): Fetcher;
-    setInactivityTimeout(durationMs: number | bigint): Promise<void>;
-    interceptOutboundHttp(addr: string, binding: Fetcher): Promise<void>;
-    interceptAllOutboundHttp(binding: Fetcher): Promise<void>;
-    snapshotDirectory(options: ContainerDirectorySnapshotOptions): Promise<ContainerDirectorySnapshot>;
-    snapshotContainer(options: ContainerSnapshotOptions): Promise<ContainerSnapshot>;
-    interceptOutboundHttps(addr: string, binding: Fetcher): Promise<void>;
-    exec(cmd: string[], options?: ContainerExecOptions): Promise<ExecProcess>;
-}
-interface ContainerDirectorySnapshot {
-    id: string;
-    size: number;
-    dir: string;
-    name?: string;
-}
-interface ContainerDirectorySnapshotOptions {
-    dir: string;
-    name?: string;
-}
-interface ContainerDirectorySnapshotRestoreParams {
-    snapshot: ContainerDirectorySnapshot;
-    mountPoint?: string;
-}
-interface ContainerSnapshot {
-    id: string;
-    size: number;
-    name?: string;
-}
-interface ContainerSnapshotOptions {
-    name?: string;
-}
-interface ContainerStartupOptions {
-    entrypoint?: string[];
-    enableInternet: boolean;
-    env?: Record<string, string>;
-    labels?: Record<string, string>;
-    directorySnapshots?: ContainerDirectorySnapshotRestoreParams[];
-    containerSnapshot?: ContainerSnapshot;
-}
-interface ContainerStartResources {
-    vcpu: number;
-    memoryMib: number;
-    diskMb: number;
-}
-/**
- * The **`MessagePort`** interface of the Channel Messaging API represents one of the two ports of a MessageChannel, allowing messages to be sent from one port and listening out for them arriving at the other.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessagePort)
- */
-declare abstract class MessagePort extends EventTarget {
-    /**
-     * The **`postMessage()`** method of the transfers ownership of objects to other browsing contexts.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessagePort/postMessage)
-     */
-    postMessage(data?: any, options?: (any[] | MessagePortPostMessageOptions)): void;
-    /**
-     * The **`close()`** method of the MessagePort interface disconnects the port, so it is no longer active.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessagePort/close)
-     */
-    close(): void;
-    /**
-     * The **`start()`** method of the MessagePort interface starts the sending of messages queued on the port.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessagePort/start)
-     */
-    start(): void;
-    get onmessage(): any | null;
-    set onmessage(value: any | null);
-}
-/**
- * The **`MessageChannel`** interface of the Channel Messaging API allows us to create a new message channel and send data through it via its two MessagePort properties.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageChannel)
- */
-declare class MessageChannel {
-    constructor();
-    /**
-     * The **`port1`** read-only property of the the port attached to the context that originated the channel.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageChannel/port1)
-     */
-    readonly port1: MessagePort;
-    /**
-     * The **`port2`** read-only property of the the port attached to the context at the other end of the channel, which the message is initially sent to.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/MessageChannel/port2)
-     */
-    readonly port2: MessagePort;
-}
-interface MessagePortPostMessageOptions {
-    transfer?: any[];
-}
-type LoopbackForExport<T extends (new (...args: any[]) => Rpc.EntrypointBranded) | ExportedHandler<any, any, any> | undefined = undefined> = T extends new (...args: any[]) => Rpc.WorkerEntrypointBranded ? LoopbackServiceStub<InstanceType<T>> : T extends new (...args: any[]) => Rpc.DurableObjectBranded ? LoopbackDurableObjectClass<InstanceType<T>> : T extends ExportedHandler<any, any, any> ? LoopbackServiceStub<undefined> : undefined;
-type LoopbackServiceStub<T extends Rpc.WorkerEntrypointBranded | undefined = undefined> = Fetcher<T> & (T extends CloudflareWorkersModule.WorkerEntrypoint<any, infer Props> ? (opts: {
-    props?: Props;
-}) => Fetcher<T> : (opts: {
-    props?: any;
-}) => Fetcher<T>);
-type LoopbackDurableObjectClass<T extends Rpc.DurableObjectBranded | undefined = undefined> = DurableObjectClass<T> & (T extends CloudflareWorkersModule.DurableObject<any, infer Props> ? (opts: {
-    props?: Props;
-}) => DurableObjectClass<T> : (opts: {
-    props?: any;
-}) => DurableObjectClass<T>);
-interface LoopbackDurableObjectNamespace extends DurableObjectNamespace {
-}
-interface LoopbackColoLocalActorNamespace extends ColoLocalActorNamespace {
-}
-interface SyncKvStorage {
-    get<T = unknown>(key: string): T | undefined;
-    list<T = unknown>(options?: SyncKvListOptions): Iterable<[
-        string,
-        T
-    ]>;
-    put<T>(key: string, value: T): void;
-    delete(key: string): boolean;
-}
-interface SyncKvListOptions {
-    start?: string;
-    startAfter?: string;
-    end?: string;
-    prefix?: string;
-    reverse?: boolean;
-    limit?: number;
-}
-interface WorkerStub {
-    getEntrypoint<T extends Rpc.WorkerEntrypointBranded | undefined>(name?: string, options?: WorkerStubEntrypointOptions): Fetcher<T>;
-    getDurableObjectClass<T extends Rpc.DurableObjectBranded | undefined>(name?: string, options?: WorkerStubEntrypointOptions): DurableObjectClass<T>;
-}
-interface WorkerStubEntrypointOptions {
-    props?: any;
-    limits?: workerdResourceLimits;
-}
-interface WorkerLoader {
-    get(name: string | null, getCode: () => WorkerLoaderWorkerCode | Promise<WorkerLoaderWorkerCode>): WorkerStub;
-    load(code: WorkerLoaderWorkerCode): WorkerStub;
-}
-interface WorkerLoaderModule {
-    js?: string;
-    cjs?: string;
-    text?: string;
-    data?: ArrayBuffer;
-    json?: any;
-    py?: string;
-    wasm?: ArrayBuffer;
-}
-interface WorkerLoaderWorkerCode {
-    compatibilityDate: string;
-    compatibilityFlags?: string[];
-    allowExperimental?: boolean;
-    limits?: workerdResourceLimits;
-    mainModule: string;
-    modules: Record<string, WorkerLoaderModule | string>;
-    env?: any;
-    globalOutbound?: (Fetcher | null);
-    tails?: Fetcher[];
-    streamingTails?: Fetcher[];
-}
-interface workerdResourceLimits {
-    cpuMs?: number;
-    subRequests?: number;
-}
-/**
-* The Workers runtime supports a subset of the Performance API, used to measure timing and performance,
-* as well as timing of subrequests and other operations.
-*
-* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/)
-*/
-declare abstract class Performance extends EventTarget {
-    /* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/#performancetimeorigin) */
-    get timeOrigin(): number;
-    /* [Cloudflare Docs Reference](https://developers.cloudflare.com/workers/runtime-apis/performance/#performancenow) */
-    now(): number;
-    get eventCounts(): EventCounts;
-    /**
-     * The **`clearMarks()`** method removes all or specific PerformanceMark objects from the browser's performance timeline.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/clearMarks)
-     */
-    clearMarks(name?: string): void;
-    /**
-     * The **`clearMeasures()`** method removes all or specific PerformanceMeasure objects from the browser's performance timeline.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/clearMeasures)
-     */
-    clearMeasures(name?: string): void;
-    /**
-     * The **`clearResourceTimings()`** method removes all performance entries with an PerformanceEntry.entryType of `'resource'` from the browser's performance timeline and sets the size of the performance resource data buffer to zero.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/clearResourceTimings)
-     */
-    clearResourceTimings(): void;
-    /**
-     * The **`getEntries()`** method returns an array of all PerformanceEntry objects currently present in the performance timeline.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/getEntries)
-     */
-    getEntries(): PerformanceEntry[];
-    /**
-     * The **`getEntriesByName()`** method returns an array of PerformanceEntry objects currently present in the performance timeline with the given _name_ and _type_.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/getEntriesByName)
-     */
-    getEntriesByName(name: string, type?: string): PerformanceEntry[];
-    /**
-     * The **`getEntriesByType()`** method returns an array of PerformanceEntry objects currently present in the performance timeline for a given _type_.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/getEntriesByType)
-     */
-    getEntriesByType(type: string): PerformanceEntry[];
-    /**
-     * The **`mark()`** method creates a named PerformanceMark object representing a high resolution timestamp marker in the browser's performance timeline.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/mark)
-     */
-    mark(name: string, options?: PerformanceMarkOptions): PerformanceMark;
-    /**
-     * The **`measure()`** method creates a named PerformanceMeasure object representing a time measurement between two marks in the browser's performance timeline.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/measure)
-     */
-    measure(measureName: string, measureOptionsOrStartMark?: (PerformanceMeasureOptions | string), maybeEndMark?: string): PerformanceMeasure;
-    /**
-     * The **`setResourceTimingBufferSize()`** method sets the desired size of the browser's resource timing buffer which stores the `'resource'` performance entries.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/setResourceTimingBufferSize)
-     */
-    setResourceTimingBufferSize(size: number): void;
-    /**
-     * The **`toJSON()`** method of the Performance interface is a Serialization; it returns a JSON representation of the Performance object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/Performance/toJSON)
-     */
-    toJSON(): object;
-    get nodeTiming(): PerformanceNodeTiming;
-    eventLoopUtilization(): PerformanceEventLoopUtilization;
-    markResourceTiming(): void;
-    timerify(fn: () => void): () => void;
-}
-interface PerformanceEventLoopUtilization {
-    idle: number;
-    active: number;
-    utilization: number;
-}
-interface PerformanceNodeTiming extends PerformanceEntry {
-    readonly nodeStart: number;
-    readonly v8Start: number;
-    readonly bootstrapComplete: number;
-    readonly environment: number;
-    readonly loopStart: number;
-    readonly loopExit: number;
-    readonly idleTime: number;
-    readonly uvMetricsInfo: UvMetricsInfo;
-    toJSON(): object;
-}
-interface UvMetricsInfo {
-    loopCount: number;
-    events: number;
-    eventsWaiting: number;
-}
-/**
- * **`PerformanceMark`** is an interface for PerformanceEntry objects with an PerformanceEntry.entryType of `'mark'`.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceMark)
- */
-declare class PerformanceMark extends PerformanceEntry {
-    constructor(name: string, maybeOptions?: PerformanceMarkOptions);
-    /**
-     * The read-only **`detail`** property returns arbitrary metadata that was included in the mark upon construction (either when using Performance.mark or the PerformanceMark.PerformanceMark constructor).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceMark/detail)
-     */
-    get detail(): any;
-    toJSON(): object;
-}
-/**
- * **`PerformanceMeasure`** is an _abstract_ interface for PerformanceEntry objects with an PerformanceEntry.entryType of `'measure'`.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceMeasure)
- */
-declare abstract class PerformanceMeasure extends PerformanceEntry {
-    /**
-     * The read-only **`detail`** property returns arbitrary metadata that was included in the mark upon construction (when using Performance.measure.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceMeasure/detail)
-     */
-    get detail(): any;
-    toJSON(): object;
-}
-interface PerformanceMarkOptions {
-    detail?: any;
-    startTime?: number;
-}
-interface PerformanceMeasureOptions {
-    detail?: any;
-    start?: number;
-    duration?: number;
-    end?: number;
-}
-/**
- * The **`PerformanceObserverEntryList`** interface is a list of PerformanceEntry that were explicitly observed via the PerformanceObserver.observe method.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserverEntryList)
- */
-declare abstract class PerformanceObserverEntryList {
-    /**
-     * The **`getEntries()`** method of the PerformanceObserverEntryList interface returns a list of explicitly observed PerformanceEntry objects.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserverEntryList/getEntries)
-     */
-    getEntries(): PerformanceEntry[];
-    /**
-     * The **`getEntriesByType()`** method of the PerformanceObserverEntryList returns a list of explicitly _observed_ PerformanceEntry objects for a given PerformanceEntry.entryType.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserverEntryList/getEntriesByType)
-     */
-    getEntriesByType(type: string): PerformanceEntry[];
-    /**
-     * The **`getEntriesByName()`** method of the PerformanceObserverEntryList interface returns a list of explicitly observed PerformanceEntry objects for a given PerformanceEntry.name and PerformanceEntry.entryType.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserverEntryList/getEntriesByName)
-     */
-    getEntriesByName(name: string, type?: string): PerformanceEntry[];
-}
-/**
- * The **`PerformanceEntry`** object encapsulates a single performance metric that is part of the browser's performance timeline.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceEntry)
- */
-declare abstract class PerformanceEntry {
-    /**
-     * The read-only **`name`** property of the PerformanceEntry interface is a string representing the name for a performance entry.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceEntry/name)
-     */
-    get name(): string;
-    /**
-     * The read-only **`entryType`** property returns a string representing the type of performance metric that this entry represents.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceEntry/entryType)
-     */
-    get entryType(): string;
-    /**
-     * The read-only **`startTime`** property returns the first DOMHighResTimeStamp recorded for this PerformanceEntry.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceEntry/startTime)
-     */
-    get startTime(): number;
-    /**
-     * The read-only **`duration`** property returns a DOMHighResTimeStamp that is the duration of the PerformanceEntry.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceEntry/duration)
-     */
-    get duration(): number;
-    /**
-     * The **`toJSON()`** method is a Serialization; it returns a JSON representation of the PerformanceEntry object.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceEntry/toJSON)
-     */
-    toJSON(): object;
-}
-/**
- * The **`PerformanceResourceTiming`** interface enables retrieval and analysis of detailed network timing data regarding the loading of an application's resources.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming)
- */
-declare abstract class PerformanceResourceTiming extends PerformanceEntry {
-    /**
-     * The **`connectEnd`** read-only property returns the DOMHighResTimeStamp immediately after the browser finishes establishing the connection to the server to retrieve the resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/connectEnd)
-     */
-    get connectEnd(): number;
-    /**
-     * The **`connectStart`** read-only property returns the DOMHighResTimeStamp immediately before the user agent starts establishing the connection to the server to retrieve the resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/connectStart)
-     */
-    get connectStart(): number;
-    /**
-     * The **`decodedBodySize`** read-only property returns the size (in octets) received from the fetch (HTTP or cache) of the message body after removing any applied content encoding (like gzip or Brotli).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/decodedBodySize)
-     */
-    get decodedBodySize(): number;
-    /**
-     * The **`domainLookupEnd`** read-only property returns the DOMHighResTimeStamp immediately after the browser finishes the domain-name lookup for the resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/domainLookupEnd)
-     */
-    get domainLookupEnd(): number;
-    /**
-     * The **`domainLookupStart`** read-only property returns the DOMHighResTimeStamp immediately before the browser starts the domain name lookup for the resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/domainLookupStart)
-     */
-    get domainLookupStart(): number;
-    /**
-     * The **`encodedBodySize`** read-only property represents the size (in octets) received from the fetch (HTTP or cache) of the payload body before removing any applied content encodings (like gzip or Brotli).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/encodedBodySize)
-     */
-    get encodedBodySize(): number;
-    /**
-     * The **`fetchStart`** read-only property represents a DOMHighResTimeStamp immediately before the browser starts to fetch the resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/fetchStart)
-     */
-    get fetchStart(): number;
-    /**
-     * The **`initiatorType`** read-only property is a string representing web platform feature that initiated the resource load.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/initiatorType)
-     */
-    get initiatorType(): string;
-    /**
-     * The **`nextHopProtocol`** read-only property is a string representing the network protocol used to fetch the resource, as identified by the ALPN Protocol ID (RFC7301).
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/nextHopProtocol)
-     */
-    get nextHopProtocol(): string;
-    /**
-     * The **`redirectEnd`** read-only property returns a DOMHighResTimeStamp immediately after receiving the last byte of the response of the last redirect.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/redirectEnd)
-     */
-    get redirectEnd(): number;
-    /**
-     * The **`redirectStart`** read-only property returns a DOMHighResTimeStamp representing the start time of the fetch which that initiates the redirect.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/redirectStart)
-     */
-    get redirectStart(): number;
-    /**
-     * The **`requestStart`** read-only property returns a DOMHighResTimeStamp of the time immediately before the browser starts requesting the resource from the server, cache, or local resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/requestStart)
-     */
-    get requestStart(): number;
-    /**
-     * The **`responseEnd`** read-only property returns a DOMHighResTimeStamp immediately after the browser receives the last byte of the resource or immediately before the transport connection is closed, whichever comes first.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/responseEnd)
-     */
-    get responseEnd(): number;
-    /**
-     * The **`responseStart`** read-only property returns a DOMHighResTimeStamp immediately after the browser receives the first byte of the response from the server, cache, or local resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/responseStart)
-     */
-    get responseStart(): number;
-    /**
-     * The **`responseStatus`** read-only property represents the HTTP response status code returned when fetching the resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/responseStatus)
-     */
-    get responseStatus(): number;
-    /**
-     * The **`secureConnectionStart`** read-only property returns a DOMHighResTimeStamp immediately before the browser starts the handshake process to secure the current connection.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/secureConnectionStart)
-     */
-    get secureConnectionStart(): number | undefined;
-    /**
-     * The **`transferSize`** read-only property represents the size (in octets) of the fetched resource.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/transferSize)
-     */
-    get transferSize(): number;
-    /**
-     * The **`workerStart`** read-only property of the PerformanceResourceTiming interface returns a The `workerStart` property can have the following values: - A DOMHighResTimeStamp.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming/workerStart)
-     */
-    get workerStart(): number;
-}
-/**
- * The **`PerformanceObserver`** interface is used to observe performance measurement events and be notified of new PerformanceEntry as they are recorded in the browser's _performance timeline_.
- *
- * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserver)
- */
-declare class PerformanceObserver {
-    constructor(callback: any);
-    /**
-     * The **`disconnect()`** method of the PerformanceObserver interface is used to stop the performance observer from receiving any PerformanceEntry events.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserver/disconnect)
-     */
-    disconnect(): void;
-    /**
-     * The **`observe()`** method of the **PerformanceObserver** interface is used to specify the set of performance entry types to observe.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserver/observe)
-     */
-    observe(options?: PerformanceObserverObserveOptions): void;
-    /**
-     * The **`takeRecords()`** method of the PerformanceObserver interface returns the current list of PerformanceEntry objects stored in the performance observer, emptying it out.
-     *
-     * [MDN Reference](https://developer.mozilla.org/docs/Web/API/PerformanceObserver/takeRecords)
-     */
-    takeRecords(): PerformanceEntry[];
-    readonly supportedEntryTypes: string[];
-}
-interface PerformanceObserverObserveOptions {
-    buffered?: boolean;
-    durationThreshold?: number;
-    entryTypes?: string[];
-    type?: string;
-}
-interface EventCounts {
-    get size(): number;
-    get(eventType: string): number | undefined;
-    has(eventType: string): boolean;
-    entries(): IterableIterator<string[]>;
-    keys(): IterableIterator<string>;
-    values(): IterableIterator<number>;
-    forEach(param1: (param0: number, param1: string, param2: EventCounts) => void, param2?: any): void;
-    [Symbol.iterator](): IterableIterator<string[]>;
-}
-interface Tracing {
-    enterSpan<T, A extends unknown[]>(name: string, callback: (span: Span, ...args: A) => T, ...args: A): T;
-    startActiveSpan<T, A extends unknown[]>(name: string, callback: (span: Span, ...args: A) => T, ...args: A): T;
-    startSpan(name: string): Span;
-    Span: typeof Span;
-}
-declare abstract class Span {
-    get isTraced(): boolean;
-    setAttribute(key: string, value: boolean | number | string): this;
-    setAttributes(attributes: Record<string, boolean | number | string | undefined>): this;
-    end(): void;
-}
-/**
- * Represents the identity of a user authenticated via Cloudflare Access.
- * This matches the result of calling /cdn-cgi/access/get-identity.
- *
- * The exact structure of the returned object depends on the identity provider
- * configuration for the Access application. The fields below represent commonly
- * available properties, but additional provider-specific fields may be present.
- */
-interface CloudflareAccessIdentity extends Record<string, unknown> {
-    /** The user's email address, if available from the identity provider. */
-    email?: string;
-    /** The user's display name. */
-    name?: string;
-    /** The user's unique identifier. */
-    user_uuid?: string;
-    /** The Cloudflare account ID. */
-    account_id?: string;
-    /** Login timestamp (Unix epoch seconds). */
-    iat?: number;
-    /** The user's IP address at authentication time. */
-    ip?: string;
-    /** Authentication methods used (e.g., "pwd"). */
-    amr?: string[];
-    /** Identity provider information. */
-    idp?: {
-        id: string;
-        type: string;
-    };
-    /** Geographic information about where the user authenticated. */
-    geo?: {
-        country: string;
-    };
-    /** Group memberships from the identity provider. */
-    groups?: Array<{
-        id: string;
-        name: string;
-        email?: string;
-    }>;
-    /** Device posture check results, keyed by check ID. */
-    devicePosture?: Record<string, unknown>;
-    /** True if the user connected via Cloudflare WARP. */
-    is_warp?: boolean;
-    /** True if the user is authenticated via Cloudflare Gateway. */
-    is_gateway?: boolean;
-}
-// ============================================================================
-// Agent Memory
-//
-// Public type surface for user Workers binding to an Agent Memory namespace.
-// ============================================================================
-/** Memory type ‚Äî every memory is classified into exactly one. */
-type AgentMemoryMemoryType = "fact" | "event" | "instruction" | "task";
-/** Search intensity for recall. */
-type AgentMemoryThinkingLevel = "low" | "medium" | "high";
-/** Response verbosity for recall. */
-type AgentMemoryResponseLength = "short" | "medium" | "long";
-/** A conversation message passed to ingest(). */
-interface AgentMemoryMessage {
-    role: "system" | "user" | "assistant";
-    content: string;
-    /** Optional message timestamp. */
-    timestamp?: Date;
-}
-/** Raw memory content passed to remember(). */
-interface AgentMemoryIncomingMemory {
-    /** Raw memory content. The service classifies and summarizes automatically. */
-    content: string;
-    /** Optional session identifier to associate with this memory. */
-    sessionId?: string | null | undefined;
-}
-/** A stored memory returned from remember(), get(), and delete(). */
-interface AgentMemoryMemory {
-    /** Memory ID. */
-    id: string;
-    /** Memory type. */
-    type: AgentMemoryMemoryType;
-    /** Text summary. */
-    summary: string;
-    /** Memory text. */
-    content: string;
-    /** Session that created this memory. */
-    sessionId: string | null;
-    /** Memory creation time. */
-    createdAt: Date;
-    /** Memory last-update time. */
-    updatedAt: Date;
-}
-/** Single entry in a list() response. Same shape as Memory minus full content. */
-type AgentMemoryMemoryListEntry = Omit<AgentMemoryMemory, "content">;
-/** A scored memory candidate in a recall result. */
-interface AgentMemoryScoredCandidate {
-    /** Candidate ID. */
-    id: string;
-    /** Text summary. */
-    summary: string;
-    /** Session that created this candidate, when known. */
-    sessionId: string | null;
-    /** Relevance score (higher is better). Comparable only within a single query. */
-    score: number;
-}
-/** Options for the ingest() method. */
-interface AgentMemoryIngestOptions {
-    /** Session identifier to associate with memories created during ingestion. */
-    sessionId?: string | null | undefined;
-}
-/** Options for the getSummary() method. */
-interface AgentMemoryGetSummaryOptions {
-    /** Session identifier to retrieve session summary for. */
-    sessionId?: string | null | undefined;
-}
-/** Response from the getSummary() method. */
-interface AgentMemoryGetSummaryResponse {
-    /** Markdown summary. */
-    summary: string;
-}
-/**
- * Options for the recall() method.
- *
- * `referenceDate` accepts a Date object, an ISO-8601 date string
- * (YYYY-MM-DD), or a full ISO-8601 datetime string. When provided, this
- * date is used as "today" for resolving relative time references
- * ("how many days ago", "last week") instead of the server's wall-clock time.
- */
-interface AgentMemoryRecallOptions {
-    /** Recall intensity: "low" (default), "medium", or "high". */
-    thinkingLevel?: AgentMemoryThinkingLevel;
-    /** Response verbosity: "short", "medium" (default), or "long". */
-    responseLength?: AgentMemoryResponseLength;
-    /** Temporal anchor for date arithmetic. */
-    referenceDate?: Date | string;
-}
-/** Response from the recall() method. */
-interface AgentMemoryRecallResult {
-    /** Number of memories retrieved. */
-    count: number;
-    /** LLM-generated answer synthesizing the matching memories. */
-    answer: string;
-    /** Matching memories ranked by relevance. */
-    candidates: AgentMemoryScoredCandidate[];
-}
-/**
- * Options for the list() method.
- *
- * `cursor` is the opaque continuation token returned by the previous page;
- * pass it back unchanged to fetch the next page. `sessionId` and `type`
- * are exact-match filters; combining them is allowed.
- */
-interface AgentMemoryListMemoriesOptions {
-    /** Maximum number of memories to return. Default 20, max 500. */
-    limit?: number;
-    /** Opaque cursor from a previous page. */
-    cursor?: string;
-    /** Exact-match session filter. */
-    sessionId?: string;
-    /** Exact-match memory-type filter. */
-    type?: AgentMemoryMemoryType;
-}
-/** Response from the list() method. */
-interface AgentMemoryListMemoriesResult {
-    memories: AgentMemoryMemoryListEntry[];
-    /** Continuation cursor; absent when this page exhausted the result set. */
-    cursor?: string;
-}
-/**
- * A single Agent Memory profile, scoped to a profile name.
- *
- * Returned by {@link AgentMemoryNamespace.getProfile}.
- */
-declare abstract class AgentMemoryProfile {
-    /**
-     * Retrieve a memory by ID.
-     *
-     * @param memoryId - ULID of the memory to retrieve.
-     * @throws if the memory does not exist.
-     */
-    get(memoryId: string): Promise<AgentMemoryMemory>;
-    /**
-     * Delete a memory by ID.
-     *
-     * Removes the memory and any source messages linked by the memory's
-     * source message IDs.
-     *
-     * @param memoryId - ULID of the memory to delete.
-     * @throws if the memory does not exist.
-     */
-    delete(memoryId: string): Promise<AgentMemoryMemory>;
-    /**
-     * Store a memory in this profile. The content is automatically classified,
-     * summarized, and indexed.
-     *
-     * @param memory - Raw memory content to persist.
-     */
-    remember(memory: AgentMemoryIncomingMemory): Promise<AgentMemoryMemory>;
-    /**
-     * Extract memories from a conversation.
-     *
-     * @param messages - Conversation messages to extract memories from.
-     * @param options  - Optional ingest options.
-     */
-    ingest(messages: Iterable<AgentMemoryMessage>, options?: AgentMemoryIngestOptions): Promise<void>;
-    /**
-     * Get a profile summary.
-     *
-     * @param options - Optional getSummary options.
-     */
-    getSummary(options?: AgentMemoryGetSummaryOptions): Promise<AgentMemoryGetSummaryResponse>;
-    /**
-     * Recall memories in this profile.
-     *
-     * @param query   - Recall query matched against memory content and keywords.
-     * @param options - Optional recall parameters.
-     * @returns Matching memories with relevance scores and a synthesized answer.
-     */
-    recall(query: string, options?: AgentMemoryRecallOptions): Promise<AgentMemoryRecallResult>;
-    /**
-     * List active memories in this profile.
-     *
-     * Returns a paginated, filterable view of stored memories. Superseded
-     * versions are excluded. Use the returned `cursor` (when present) to
-     * fetch the next page.
-     *
-     * @param options - Optional pagination and filter options.
-     */
-    list(options?: AgentMemoryListMemoriesOptions): Promise<AgentMemoryListMemoriesResult>;
-    /**
-     * Soft-delete every memory and message in this profile that is tagged
-     * with `sessionId`.
-     *
-     * Idempotent: deleting a sessionId that has no rows is a no-op.
-     *
-     * @param sessionId - Session to delete.
-     */
-    deleteSession(sessionId: string): Promise<void>;
-}
-/**
- * Namespace-level Agent Memory binding.
- *
- * Used as the type of an `env.MEMORY`-style binding backed by the Agent
- * Memory product.
- *
- * @example
- * ```ts
- * export default {
- *   async fetch(_request: Request, env: Env): Promise<Response> {
- *     const profile = await env.MEMORY.getProfile("wrangler-e2e");
- *     const summary = await profile.getSummary();
- *     return Response.json(summary);
- *   },
- * };
- * ```
- */
-declare abstract class AgentMemoryNamespace {
-    /**
-     * Get a memory profile by name. Profiles are isolated by namespace and
-     * addressed by a compound key (namespaceId:profileName).
-     *
-     * @param profileName - Profile name (validated against naming rules).
-     * @returns RPC target for interacting with the profile.
-     */
-    getProfile(profileName: string): Promise<AgentMemoryProfile>;
-    /**
-     * Soft-delete a profile and schedule deferred purge. Marks all
-     * memories and messages as deleted.
-     *
-     * @param profileName - Name of the profile to delete.
-     */
-    deleteProfile(profileName: string): Promise<void>;
-}
-// ============ AI Search Error Interfaces ============
-interface AiSearchInternalError extends Error {
-}
-interface AiSearchNotFoundError extends Error {
-}
-// ============ AI Search Common Types ============
-/** A single message in a conversation-style search or chat request. */
-type AiSearchMessage = {
-    role: 'system' | 'developer' | 'user' | 'assistant' | 'tool';
-    content: string | null;
-};
-/**
- * Common shape for `ai_search_options` used by both single-instance and multi-instance requests.
- * Contains retrieval, query rewrite, reranking, and cache sub-options.
- */
-type AiSearchOptions = {
-    retrieval?: {
-        /** Which retrieval backend to use. Defaults to the instance's configured index_method. */
-        retrieval_type?: 'vector' | 'keyword' | 'hybrid';
-        /** Fusion method for combining vector + keyword results. */
-        fusion_method?: 'max' | 'rrf';
-        /** How keyword terms are combined: "and" = all terms must match, "or" = any term matches. */
-        keyword_match_mode?: 'and' | 'or';
-        /** Minimum similarity score (0-1) for a result to be included. Default 0.4. */
-        match_threshold?: number;
-        /** Maximum number of results to return (1-50). Default 10. */
-        max_num_results?: number;
-        /** Vectorize metadata filters applied to the search. */
-        filters?: VectorizeVectorMetadataFilter;
-        /** Number of surrounding chunks to include for context (0-3). Default 0. */
-        context_expansion?: number;
-        /** If true, return only item metadata without chunk text. */
-        metadata_only?: boolean;
-        /** If true (default), return empty results on retrieval failure instead of throwing. */
-        return_on_failure?: boolean;
-        /** Boost results by metadata field values. Max 3 entries. */
-        boost_by?: Array<{
-            field: string;
-            direction?: 'asc' | 'desc' | 'exists' | 'not_exists';
-        }>;
-        [key: string]: unknown;
-    };
-    query_rewrite?: {
-        enabled?: boolean;
-        model?: string;
-        rewrite_prompt?: string;
-        [key: string]: unknown;
-    };
-    reranking?: {
-        enabled?: boolean;
-        model?: string;
-        /** Match threshold (0-1, default 0.4) */
-        match_threshold?: number;
-        [key: string]: unknown;
-    };
-    cache?: {
-        enabled?: boolean;
-        cache_threshold?: 'super_strict_match' | 'close_enough' | 'flexible_friend' | 'anything_goes';
-    };
-    [key: string]: unknown;
-};
-// ============ AI Search Request Types ============
-/**
- * Request body for single-instance search.
- * Exactly one of `query` or `messages` must be provided.
- */
-type AiSearchSearchRequest = {
-    /** Simple query string. */
-    query: string;
-    messages?: never;
-    ai_search_options?: AiSearchOptions;
-} | {
-    query?: never;
-    /** Conversation-style input. At least one user message with non-empty content is required. */
-    messages: AiSearchMessage[];
-    ai_search_options?: AiSearchOptions;
-};
-type AiSearchChatCompletionsRequest = {
-    messages: AiSearchMessage[];
-    model?: string;
-    stream?: boolean;
-    ai_search_options?: AiSearchOptions;
-    [key: string]: unknown;
-};
-// ============ AI Search Multi-Instance Types (Namespace-Scoped) ============
-/** `ai_search_options` shape for multi-instance requests ‚Äî requires `instance_ids`. */
-type AiSearchMultiSearchOptions = AiSearchOptions & {
-    /** Instance IDs to search across (1-10). */
-    instance_ids: string[];
-};
-/**
- * Request for searching across multiple instances within a namespace.
- * `ai_search_options` is required and must include `instance_ids`.
- * Exactly one of `query` or `messages` must be provided.
- */
-type AiSearchMultiSearchRequest = {
-    /** Simple query string. */
-    query: string;
-    messages?: never;
-    ai_search_options: AiSearchMultiSearchOptions;
-} | {
-    query?: never;
-    /** Conversation-style input. */
-    messages: AiSearchMessage[];
-    ai_search_options: AiSearchMultiSearchOptions;
-};
-/** A search result chunk tagged with the instance it originated from. */
-type AiSearchMultiSearchChunk = AiSearchSearchResponse['chunks'][number] & {
-    instance_id: string;
-};
-/** Describes a per-instance error during a multi-instance operation. */
-type AiSearchMultiSearchError = {
-    instance_id: string;
-    message: string;
-};
-/** Response from a multi-instance search, with chunks tagged by instance and optional partial-failure errors. */
-type AiSearchMultiSearchResponse = {
-    search_query: string;
-    chunks: AiSearchMultiSearchChunk[];
-    errors?: AiSearchMultiSearchError[];
-};
-/** Request for chat completions across multiple instances within a namespace. `ai_search_options` is required and must include `instance_ids`. */
-type AiSearchMultiChatCompletionsRequest = Omit<AiSearchChatCompletionsRequest, 'ai_search_options'> & {
-    ai_search_options: AiSearchMultiSearchOptions;
-};
-/** Response from multi-instance chat completions, with chunks tagged by instance and optional partial-failure errors. */
-type AiSearchMultiChatCompletionsResponse = Omit<AiSearchChatCompletionsResponse, 'chunks'> & {
-    chunks: AiSearchMultiSearchChunk[];
-    errors?: AiSearchMultiSearchError[];
-};
-// ============ AI Search Response Types ============
-type AiSearchSearchResponse = {
-    search_query: string;
-    chunks: Array<{
-        id: string;
-        type: string;
-        /** Match score (0-1) */
-        score: number;
-        text: string;
-        item: {
-            timestamp?: number;
-            key: string;
-            metadata?: Record<string, unknown>;
-        };
-        scoring_details?: {
-            /** Keyword match score (0-1) */
-            keyword_score?: number;
-            /** Vector similarity score (0-1) */
-            vector_score?: number;
-            /** Keyword rank position */
-            keyword_rank?: number;
-            /** Vector rank position */
-            vector_rank?: number;
-            /** Reranking model score */
-            reranking_score?: number;
-            /** Fusion method used to combine results */
-            fusion_method?: 'rrf' | 'max';
-            [key: string]: unknown;
-        };
-    }>;
-};
-type AiSearchChatCompletionsResponse = {
-    id?: string;
-    object?: string;
-    model?: string;
-    choices: Array<{
-        index?: number;
-        message: {
-            role: 'system' | 'developer' | 'user' | 'assistant' | 'tool';
-            content: string | null;
-            [key: string]: unknown;
-        };
-        [key: string]: unknown;
-    }>;
-    chunks: AiSearchSearchResponse['chunks'];
-    [key: string]: unknown;
-};
-type AiSearchStatsResponse = {
-    queued?: number;
-    running?: number;
-    completed?: number;
-    error?: number;
-    skipped?: number;
-    outdated?: number;
-    last_activity?: string;
-    /** Storage engine statistics. */
-    engine?: {
-        vectorize?: {
-            vectorsCount: number;
-            dimensions: number;
-        };
-        r2?: {
-            payloadSizeBytes: number;
-            metadataSizeBytes: number;
-            objectCount: number;
-        };
-    };
-};
-// ============ AI Search Instance Info Types ============
-type AiSearchInstanceInfo = {
-    id: string;
-    type?: 'r2' | 'web-crawler' | string;
-    source?: string;
-    source_params?: unknown;
-    paused?: boolean;
-    status?: string;
-    namespace?: string;
-    created_at?: string;
-    modified_at?: string;
-    token_id?: string;
-    ai_gateway_id?: string;
-    rewrite_query?: boolean;
-    reranking?: boolean;
-    embedding_model?: string;
-    ai_search_model?: string;
-    rewrite_model?: string;
-    reranking_model?: string;
-    /** @deprecated Use index_method instead. */
-    hybrid_search_enabled?: boolean;
-    /** Controls which storage backends are active. */
-    index_method?: {
-        vector?: boolean;
-        keyword?: boolean;
-    };
-    /** Fusion method for combining vector and keyword results. */
-    fusion_method?: 'max' | 'rrf';
-    indexing_options?: {
-        keyword_tokenizer?: 'porter' | 'trigram';
-    } | null;
-    retrieval_options?: {
-        keyword_match_mode?: 'and' | 'or';
-        boost_by?: Array<{
-            field: string;
-            direction?: 'asc' | 'desc' | 'exists' | 'not_exists';
-        }>;
-    } | null;
-    chunk?: boolean;
-    chunk_size?: number;
-    chunk_overlap?: number;
-    score_threshold?: number;
-    max_num_results?: number;
-    cache?: boolean;
-    cache_threshold?: 'super_strict_match' | 'close_enough' | 'flexible_friend' | 'anything_goes';
-    custom_metadata?: Array<{
-        field_name: string;
-        data_type: 'text' | 'number' | 'boolean' | 'datetime';
-    }>;
-    /** Sync interval in seconds. */
-    sync_interval?: 3600 | 7200 | 14400 | 21600 | 43200 | 86400;
-    metadata?: Record<string, unknown>;
-    [key: string]: unknown;
-};
-/** Pagination, search, and ordering parameters for listing instances within a namespace. */
-type AiSearchListInstancesParams = {
-    page?: number;
-    per_page?: number;
-    /** Search instances by ID. */
-    search?: string;
-    /** Field to sort by. */
-    order_by?: 'created_at';
-    /** Sort direction. */
-    order_by_direction?: 'asc' | 'desc';
-};
-type AiSearchListResponse = {
-    result: AiSearchInstanceInfo[];
-    result_info?: {
-        count: number;
-        page: number;
-        per_page: number;
-        total_count: number;
-    };
-};
-// ============ AI Search Config Types ============
-type AiSearchConfig = {
-    /** Instance ID (1-32 chars, pattern: ^[a-z0-9_]+(?:-[a-z0-9_]+)*$) */
-    id: string;
-    /** Instance type. Omit to create with built-in storage. */
-    type?: 'r2' | 'web-crawler' | string;
-    /** Source URL (required for web-crawler type). */
-    source?: string;
-    source_params?: unknown;
-    /** Token ID (UUID format) */
-    token_id?: string;
-    ai_gateway_id?: string;
-    /** Enable query rewriting (default false) */
-    rewrite_query?: boolean;
-    /** Enable reranking (default false) */
-    reranking?: boolean;
-    embedding_model?: string;
-    ai_search_model?: string;
-    rewrite_model?: string;
-    reranking_model?: string;
-    /** @deprecated Use index_method instead. */
-    hybrid_search_enabled?: boolean;
-    /** Controls which storage backends are used during indexing. Defaults to vector-only. */
-    index_method?: {
-        vector?: boolean;
-        keyword?: boolean;
-    };
-    /** Fusion method for combining vector and keyword results. "rrf" = reciprocal rank fusion (default), "max" = maximum score. */
-    fusion_method?: 'max' | 'rrf';
-    indexing_options?: {
-        keyword_tokenizer?: 'porter' | 'trigram';
-    } | null;
-    retrieval_options?: {
-        keyword_match_mode?: 'and' | 'or';
-        boost_by?: Array<{
-            field: string;
-            direction?: 'asc' | 'desc' | 'exists' | 'not_exists';
-        }>;
-    } | null;
-    chunk?: boolean;
-    chunk_size?: number;
-    chunk_overlap?: number;
-    /** Minimum similarity score (0-1) for a result to be included. */
-    score_threshold?: number;
-    max_num_results?: number;
-    cache?: boolean;
-    /** Similarity threshold for cache hits. Stricter = fewer cache hits but higher relevance. */
-    cache_threshold?: 'super_strict_match' | 'close_enough' | 'flexible_friend' | 'anything_goes';
-    custom_metadata?: Array<{
-        field_name: string;
-        data_type: 'text' | 'number' | 'boolean' | 'datetime';
-    }>;
-    namespace?: string;
-    /** Sync interval in seconds. 3600=1h, 7200=2h, 14400=4h, 21600=6h, 43200=12h, 86400=24h. */
-    sync_interval?: 3600 | 7200 | 14400 | 21600 | 43200 | 86400;
-    metadata?: Record<string, unknown>;
-    [key: string]: unknown;
-};
-// ============ AI Search Item Types ============
-type AiSearchItemInfo = {
-    id: string;
-    key: string;
-    status: 'completed' | 'error' | 'skipped' | 'queued' | 'running' | 'outdated';
-    next_action?: 'INDEX' | 'DELETE' | null;
-    error?: string;
-    checksum?: string;
-    namespace?: string;
-    chunks_count?: number | null;
-    file_size?: number | null;
-    source_id?: string | null;
-    last_seen_at?: string;
-    created_at?: string;
-    metadata?: Record<string, unknown>;
-    [key: string]: unknown;
-};
-type AiSearchItemContentResult = {
-    body: ReadableStream;
-    contentType: string;
-    filename: string;
-    size: number;
-};
-type AiSearchUploadItemOptions = {
-    metadata?: Record<string, unknown>;
-};
-type AiSearchListItemsParams = {
-    page?: number;
-    per_page?: number;
-    /** Search items by key name. */
-    search?: string;
-    /** Sort order for results. */
-    sort_by?: 'status' | 'modified_at';
-    /** Filter items by processing status. */
-    status?: 'queued' | 'running' | 'completed' | 'error' | 'skipped' | 'outdated';
-    /** Filter items by source (e.g. "builtin" or "web-crawler:https://example.com"). */
-    source?: string;
-    /** JSON-encoded Vectorize filter for metadata filtering. */
-    metadata_filter?: string;
-    /** Filter items by their unique ID. Returns at most one item. */
-    item_id?: string;
-    /**
-     * Filter items by their exact key (object key / filename). Keys are unique
-     * per source, so combine with `source` to disambiguate across data sources.
-     */
-    key?: string;
-};
-type AiSearchListItemsResponse = {
-    result: AiSearchItemInfo[];
-    result_info?: {
-        count: number;
-        page: number;
-        per_page: number;
-        total_count: number;
-    };
-};
-// ============ AI Search Item Logs Types ============
-type AiSearchItemLogsParams = {
-    /** Maximum number of log entries to return (1-100, default 50). */
-    limit?: number;
-    /** Opaque cursor for pagination. Pass the `cursor` value from a previous response. */
-    cursor?: string;
-};
-type AiSearchItemLog = {
-    timestamp: string;
-    action: string;
-    message: string;
-    fileKey?: string;
-    chunkCount?: number;
-    processingTimeMs?: number;
-    errorType?: string;
-};
-/** Paginated response for item processing logs (cursor-based). */
-type AiSearchItemLogsResponse = {
-    result: AiSearchItemLog[];
-    result_info: {
-        count: number;
-        per_page: number;
-        cursor: string | null;
-        truncated: boolean;
-    };
-};
-// ============ AI Search Item Chunks Types ============
-type AiSearchItemChunksParams = {
-    /** Maximum number of chunks to return (1-100, default 20). */
-    limit?: number;
-    /** Offset into the chunks list (default 0). */
-    offset?: number;
-};
-/** A single indexed chunk belonging to an item, including its text content and byte range. */
-type AiSearchItemChunk = {
-    id: string;
-    text: string;
-    start_byte: number;
-    end_byte: number;
-    item?: {
-        timestamp?: number;
-        key: string;
-        metadata?: Record<string, unknown>;
-    };
-};
-/** Paginated response for item chunks (offset-based). */
-type AiSearchItemChunksResponse = {
-    result: AiSearchItemChunk[];
-    result_info: {
-        count: number;
-        total: number;
-        limit: number;
-        offset: number;
-    };
-};
-// ============ AI Search Job Types ============
-type AiSearchJobInfo = {
-    id: string;
-    source: 'user' | 'schedule';
-    description?: string;
-    last_seen_at?: string;
-    started_at?: str‚Ä¶43511 tokens truncated‚Ä¶sage statistics for the inference request
-     */
-    usage?: {
-        /**
-         * Total number of tokens in input
-         */
-        prompt_tokens?: number;
-        /**
-         * Total number of tokens in output
-         */
-        completion_tokens?: number;
-        /**
-         * Total number of input and output tokens
-         */
-        total_tokens?: number;
-    };
-    /**
-     * Log probabilities for the prompt (if requested)
-     */
-    prompt_logprobs?: {} | null;
-}
-interface Ai_Cf_Aisingapore_Gemma_Sea_Lion_V4_27B_It_Text_Completion_Response {
-    /**
-     * Unique identifier for the completion
-     */
-    id?: string;
-    /**
-     * Object type identifier
-     */
-    object?: "text_completion";
-    /**
-     * Unix timestamp of when the completion was created
-     */
-    created?: number;
-    /**
-     * Model used for the completion
-     */
-    model?: string;
-    /**
-     * List of completion choices
-     */
-    choices?: {
-        /**
-         * Index of the choice in the list
-         */
-        index: number;
-        /**
-         * The generated text completion
-         */
-        text: string;
-        /**
-         * Reason why the model stopped generating
-         */
-        finish_reason: string;
-        /**
-         * Stop reason (may be null)
-         */
-        stop_reason?: string | null;
-        /**
-         * Log probabilities (if requested)
-         */
-        logprobs?: {} | null;
-        /**
-         * Log probabilities for the prompt (if requested)
-         */
-        prompt_logprobs?: {} | null;
-    }[];
-    /**
-     * Usage statistics for the inference request
-     */
-    usage?: {
-        /**
-         * Total number of tokens in input
-         */
-        prompt_tokens?: number;
-        /**
-         * Total number of tokens in output
-         */
-        completion_tokens?: number;
-        /**
-         * Total number of input and output tokens
-         */
-        total_tokens?: number;
-    };
-}
-interface Ai_Cf_Aisingapore_Gemma_Sea_Lion_V4_27B_It_AsyncResponse {
-    /**
-     * The async request id that can be used to obtain the results.
-     */
-    request_id?: string;
-}
-declare abstract class Base_Ai_Cf_Aisingapore_Gemma_Sea_Lion_V4_27B_It {
-    inputs: Ai_Cf_Aisingapore_Gemma_Sea_Lion_V4_27B_It_Input;
-    postProcessedOutputs: Ai_Cf_Aisingapore_Gemma_Sea_Lion_V4_27B_It_Output;
-}
-interface Ai_Cf_Pfnet_Plamo_Embedding_1B_Input {
-    /**
-     * Input text to embed. Can be a single string or a list of strings.
-     */
-    text: string | string[];
-}
-interface Ai_Cf_Pfnet_Plamo_Embedding_1B_Output {
-    /**
-     * Embedding vectors, where each vector is a list of floats.
-     */
-    data: number[][];
-    /**
-     * Shape of the embedding data as [number_of_embeddings, embedding_dimension].
-     *
-     * @minItems 2
-     * @maxItems 2
-     */
-    shape: [
-        number,
-        number
-    ];
-}
-declare abstract class Base_Ai_Cf_Pfnet_Plamo_Embedding_1B {
-    inputs: Ai_Cf_Pfnet_Plamo_Embedding_1B_Input;
-    postProcessedOutputs: Ai_Cf_Pfnet_Plamo_Embedding_1B_Output;
-}
-interface Ai_Cf_Deepgram_Flux_Input {
-    /**
-     * Encoding of the audio stream. Currently only supports raw signed little-endian 16-bit PCM.
-     */
-    encoding: "linear16";
-    /**
-     * Sample rate of the audio stream in Hz.
-     */
-    sample_rate: string;
-    /**
-     * End-of-turn confidence required to fire an eager end-of-turn event. When set, enables EagerEndOfTurn and TurnResumed events. Valid Values 0.3 - 0.9.
-     */
-    eager_eot_threshold?: string;
-    /**
-     * End-of-turn confidence required to finish a turn. Valid Values 0.5 - 0.9.
-     */
-    eot_threshold?: string;
-    /**
-     * A turn will be finished when this much time has passed after speech, regardless of EOT confidence.
-     */
-    eot_timeout_ms?: string;
-    /**
-     * Keyterm prompting can improve recognition of specialized terminology. Pass multiple keyterm query parameters to boost multiple keyterms.
-     */
-    keyterm?: string;
-    /**
-     * Opts out requests from the Deepgram Model Improvement Program. Refer to Deepgram Docs for pricing impacts before setting this to true. https://dpgr.am/deepgram-mip
-     */
-    mip_opt_out?: "true" | "false";
-    /**
-     * Label your requests for the purpose of identification during usage reporting
-     */
-    tag?: string;
-}
-/**
- * Output will be returned as websocket messages.
- */
-interface Ai_Cf_Deepgram_Flux_Output {
-    /**
-     * The unique identifier of the request (uuid)
-     */
-    request_id?: string;
-    /**
-     * Starts at 0 and increments for each message the server sends to the client.
-     */
-    sequence_id?: number;
-    /**
-     * The type of event being reported.
-     */
-    event?: "Update" | "StartOfTurn" | "EagerEndOfTurn" | "TurnResumed" | "EndOfTurn";
-    /**
-     * The index of the current turn
-     */
-    turn_index?: number;
-    /**
-     * Start time in seconds of the audio range that was transcribed
-     */
-    audio_window_start?: number;
-    /**
-     * End time in seconds of the audio range that was transcribed
-     */
-    audio_window_end?: number;
-    /**
-     * Text that was said over the course of the current turn
-     */
-    transcript?: string;
-    /**
-     * The words in the transcript
-     */
-    words?: {
-        /**
-         * The individual punctuated, properly-cased word from the transcript
-         */
-        word: string;
-        /**
-         * Confidence that this word was transcribed correctly
-         */
-        confidence: number;
-    }[];
-    /**
-     * Confidence that no more speech is coming in this turn
-     */
-    end_of_turn_confidence?: number;
-}
-declare abstract class Base_Ai_Cf_Deepgram_Flux {
-    inputs: Ai_Cf_Deepgram_Flux_Input;
-    postProcessedOutputs: Ai_Cf_Deepgram_Flux_Output;
-}
-interface Ai_Cf_Deepgram_Aura_2_En_Input {
-    /**
-     * Speaker used to produce the audio.
-     */
-    speaker?: "amalthea" | "andromeda" | "apollo" | "arcas" | "aries" | "asteria" | "athena" | "atlas" | "aurora" | "callista" | "cora" | "cordelia" | "delia" | "draco" | "electra" | "harmonia" | "helena" | "hera" | "hermes" | "hyperion" | "iris" | "janus" | "juno" | "jupiter" | "luna" | "mars" | "minerva" | "neptune" | "odysseus" | "ophelia" | "orion" | "orpheus" | "pandora" | "phoebe" | "pluto" | "saturn" | "thalia" | "theia" | "vesta" | "zeus";
-    /**
-     * Encoding of the output audio.
-     */
-    encoding?: "linear16" | "flac" | "mulaw" | "alaw" | "mp3" | "opus" | "aac";
-    /**
-     * Container specifies the file format wrapper for the output audio. The available options depend on the encoding type..
-     */
-    container?: "none" | "wav" | "ogg";
-    /**
-     * The text content to be converted to speech
-     */
-    text: string;
-    /**
-     * Sample Rate specifies the sample rate for the output audio. Based on the encoding, different sample rates are supported. For some encodings, the sample rate is not configurable
-     */
-    sample_rate?: number;
-    /**
-     * The bitrate of the audio in bits per second. Choose from predefined ranges or specific values based on the encoding type.
-     */
-    bit_rate?: number;
-}
-/**
- * The generated audio in MP3 format
- */
-type Ai_Cf_Deepgram_Aura_2_En_Output = string;
-declare abstract class Base_Ai_Cf_Deepgram_Aura_2_En {
-    inputs: Ai_Cf_Deepgram_Aura_2_En_Input;
-    postProcessedOutputs: Ai_Cf_Deepgram_Aura_2_En_Output;
-}
-interface Ai_Cf_Deepgram_Aura_2_Es_Input {
-    /**
-     * Speaker used to produce the audio.
-     */
-    speaker?: "sirio" | "nestor" | "carina" | "celeste" | "alvaro" | "diana" | "aquila" | "selena" | "estrella" | "javier";
-    /**
-     * Encoding of the output audio.
-     */
-    encoding?: "linear16" | "flac" | "mulaw" | "alaw" | "mp3" | "opus" | "aac";
-    /**
-     * Container specifies the file format wrapper for the output audio. The available options depend on the encoding type..
-     */
-    container?: "none" | "wav" | "ogg";
-    /**
-     * The text content to be converted to speech
-     */
-    text: string;
-    /**
-     * Sample Rate specifies the sample rate for the output audio. Based on the encoding, different sample rates are supported. For some encodings, the sample rate is not configurable
-     */
-    sample_rate?: number;
-    /**
-     * The bitrate of the audio in bits per second. Choose from predefined ranges or specific values based on the encoding type.
-     */
-    bit_rate?: number;
-}
-/**
- * The generated audio in MP3 format
- */
-type Ai_Cf_Deepgram_Aura_2_Es_Output = string;
-declare abstract class Base_Ai_Cf_Deepgram_Aura_2_Es {
-    inputs: Ai_Cf_Deepgram_Aura_2_Es_Input;
-    postProcessedOutputs: Ai_Cf_Deepgram_Aura_2_Es_Output;
-}
-interface Ai_Cf_Black_Forest_Labs_Flux_2_Dev_Input {
-    multipart: {
-        body?: object;
-        contentType?: string;
-    };
-}
-interface Ai_Cf_Black_Forest_Labs_Flux_2_Dev_Output {
-    /**
-     * Generated image as Base64 string.
-     */
-    image?: string;
-}
-declare abstract class Base_Ai_Cf_Black_Forest_Labs_Flux_2_Dev {
-    inputs: Ai_Cf_Black_Forest_Labs_Flux_2_Dev_Input;
-    postProcessedOutputs: Ai_Cf_Black_Forest_Labs_Flux_2_Dev_Output;
-}
-interface Ai_Cf_Black_Forest_Labs_Flux_2_Klein_4B_Input {
-    multipart: {
-        body?: object;
-        contentType?: string;
-    };
-}
-interface Ai_Cf_Black_Forest_Labs_Flux_2_Klein_4B_Output {
-    /**
-     * Generated image as Base64 string.
-     */
-    image?: string;
-}
-declare abstract class Base_Ai_Cf_Black_Forest_Labs_Flux_2_Klein_4B {
-    inputs: Ai_Cf_Black_Forest_Labs_Flux_2_Klein_4B_Input;
-    postProcessedOutputs: Ai_Cf_Black_Forest_Labs_Flux_2_Klein_4B_Output;
-}
-interface Ai_Cf_Black_Forest_Labs_Flux_2_Klein_9B_Input {
-    multipart: {
-        body?: object;
-        contentType?: string;
-    };
-}
-interface Ai_Cf_Black_Forest_Labs_Flux_2_Klein_9B_Output {
-    /**
-     * Generated image as Base64 string.
-     */
-    image?: string;
-}
-declare abstract class Base_Ai_Cf_Black_Forest_Labs_Flux_2_Klein_9B {
-    inputs: Ai_Cf_Black_Forest_Labs_Flux_2_Klein_9B_Input;
-    postProcessedOutputs: Ai_Cf_Black_Forest_Labs_Flux_2_Klein_9B_Output;
-}
-declare abstract class Base_Ai_Cf_Zai_Org_Glm_4_7_Flash {
-    inputs: ChatCompletionsInput;
-    postProcessedOutputs: ChatCompletionsOutput;
-}
-declare abstract class Base_Ai_Cf_Moonshotai_Kimi_K2_5 {
-    inputs: ChatCompletionsInput;
-    postProcessedOutputs: ChatCompletionsOutput;
-}
-declare abstract class Base_Ai_Cf_Moonshotai_Kimi_K2_6 {
-    inputs: ChatCompletionsInput;
-    postProcessedOutputs: ChatCompletionsOutput;
-}
-declare abstract class Base_Ai_Cf_Nvidia_Nemotron_3_120B_A12B {
-    inputs: ChatCompletionsInput;
-    postProcessedOutputs: ChatCompletionsOutput;
-}
-declare abstract class Base_Ai_Cf_Google_Gemma_4_26B_A4B_IT {
-    inputs: ChatCompletionsInput;
-    postProcessedOutputs: ChatCompletionsOutput;
-}
-interface AiModels {
-    "@cf/huggingface/distilbert-sst-2-int8": BaseAiTextClassification;
-    "@cf/stabilityai/stable-diffusion-xl-base-1.0": BaseAiTextToImage;
-    "@cf/runwayml/stable-diffusion-v1-5-inpainting": BaseAiTextToImage;
-    "@cf/runwayml/stable-diffusion-v1-5-img2img": BaseAiTextToImage;
-    "@cf/lykon/dreamshaper-8-lcm": BaseAiTextToImage;
-    "@cf/bytedance/stable-diffusion-xl-lightning": BaseAiTextToImage;
-    "@cf/myshell-ai/melotts": BaseAiTextToSpeech;
-    "@cf/google/embeddinggemma-300m": BaseAiTextEmbeddings;
-    "@cf/microsoft/resnet-50": BaseAiImageClassification;
-    "@cf/meta/llama-2-7b-chat-int8": BaseAiTextGeneration;
-    "@cf/mistral/mistral-7b-instruct-v0.1": BaseAiTextGeneration;
-    "@cf/meta/llama-2-7b-chat-fp16": BaseAiTextGeneration;
-    "@hf/thebloke/llama-2-13b-chat-awq": BaseAiTextGeneration;
-    "@hf/thebloke/mistral-7b-instruct-v0.1-awq": BaseAiTextGeneration;
-    "@hf/thebloke/zephyr-7b-beta-awq": BaseAiTextGeneration;
-    "@hf/thebloke/openhermes-2.5-mistral-7b-awq": BaseAiTextGeneration;
-    "@hf/thebloke/neural-chat-7b-v3-1-awq": BaseAiTextGeneration;
-    "@hf/thebloke/deepseek-coder-6.7b-base-awq": BaseAiTextGeneration;
-    "@hf/thebloke/deepseek-coder-6.7b-instruct-awq": BaseAiTextGeneration;
-    "@cf/deepseek-ai/deepseek-math-7b-instruct": BaseAiTextGeneration;
-    "@cf/defog/sqlcoder-7b-2": BaseAiTextGeneration;
-    "@cf/openchat/openchat-3.5-0106": BaseAiTextGeneration;
-    "@cf/tiiuae/falcon-7b-instruct": BaseAiTextGeneration;
-    "@cf/thebloke/discolm-german-7b-v1-awq": BaseAiTextGeneration;
-    "@cf/qwen/qwen1.5-0.5b-chat": BaseAiTextGeneration;
-    "@cf/qwen/qwen1.5-7b-chat-awq": BaseAiTextGeneration;
-    "@cf/qwen/qwen1.5-14b-chat-awq": BaseAiTextGeneration;
-    "@cf/tinyllama/tinyllama-1.1b-chat-v1.0": BaseAiTextGeneration;
-    "@cf/microsoft/phi-2": BaseAiTextGeneration;
-    "@cf/qwen/qwen1.5-1.8b-chat": BaseAiTextGeneration;
-    "@cf/mistral/mistral-7b-instruct-v0.2-lora": BaseAiTextGeneration;
-    "@hf/nousresearch/hermes-2-pro-mistral-7b": BaseAiTextGeneration;
-    "@hf/nexusflow/starling-lm-7b-beta": BaseAiTextGeneration;
-    "@hf/google/gemma-7b-it": BaseAiTextGeneration;
-    "@cf/meta-llama/llama-2-7b-chat-hf-lora": BaseAiTextGeneration;
-    "@cf/google/gemma-2b-it-lora": BaseAiTextGeneration;
-    "@cf/google/gemma-7b-it-lora": BaseAiTextGeneration;
-    "@hf/mistral/mistral-7b-instruct-v0.2": BaseAiTextGeneration;
-    "@cf/meta/llama-3-8b-instruct": BaseAiTextGeneration;
-    "@cf/fblgit/una-cybertron-7b-v2-bf16": BaseAiTextGeneration;
-    "@cf/meta/llama-3-8b-instruct-awq": BaseAiTextGeneration;
-    "@cf/meta/llama-3.1-8b-instruct-fp8": BaseAiTextGeneration;
-    "@cf/meta/llama-3.1-8b-instruct-awq": BaseAiTextGeneration;
-    "@cf/meta/llama-3.2-3b-instruct": BaseAiTextGeneration;
-    "@cf/meta/llama-3.2-1b-instruct": BaseAiTextGeneration;
-    "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": BaseAiTextGeneration;
-    "@cf/ibm-granite/granite-4.0-h-micro": BaseAiTextGeneration;
-    "@cf/facebook/bart-large-cnn": BaseAiSummarization;
-    "@cf/llava-hf/llava-1.5-7b-hf": BaseAiImageToText;
-    "@cf/baai/bge-base-en-v1.5": Base_Ai_Cf_Baai_Bge_Base_En_V1_5;
-    "@cf/openai/whisper": Base_Ai_Cf_Openai_Whisper;
-    "@cf/meta/m2m100-1.2b": Base_Ai_Cf_Meta_M2M100_1_2B;
-    "@cf/baai/bge-small-en-v1.5": Base_Ai_Cf_Baai_Bge_Small_En_V1_5;
-    "@cf/baai/bge-large-en-v1.5": Base_Ai_Cf_Baai_Bge_Large_En_V1_5;
-    "@cf/unum/uform-gen2-qwen-500m": Base_Ai_Cf_Unum_Uform_Gen2_Qwen_500M;
-    "@cf/openai/whisper-tiny-en": Base_Ai_Cf_Openai_Whisper_Tiny_En;
-    "@cf/openai/whisper-large-v3-turbo": Base_Ai_Cf_Openai_Whisper_Large_V3_Turbo;
-    "@cf/baai/bge-m3": Base_Ai_Cf_Baai_Bge_M3;
-    "@cf/black-forest-labs/flux-1-schnell": Base_Ai_Cf_Black_Forest_Labs_Flux_1_Schnell;
-    "@cf/meta/llama-3.2-11b-vision-instruct": Base_Ai_Cf_Meta_Llama_3_2_11B_Vision_Instruct;
-    "@cf/meta/llama-3.3-70b-instruct-fp8-fast": Base_Ai_Cf_Meta_Llama_3_3_70B_Instruct_Fp8_Fast;
-    "@cf/meta/llama-guard-3-8b": Base_Ai_Cf_Meta_Llama_Guard_3_8B;
-    "@cf/baai/bge-reranker-base": Base_Ai_Cf_Baai_Bge_Reranker_Base;
-    "@cf/qwen/qwen2.5-coder-32b-instruct": Base_Ai_Cf_Qwen_Qwen2_5_Coder_32B_Instruct;
-    "@cf/qwen/qwq-32b": Base_Ai_Cf_Qwen_Qwq_32B;
-    "@cf/mistralai/mistral-small-3.1-24b-instruct": Base_Ai_Cf_Mistralai_Mistral_Small_3_1_24B_Instruct;
-    "@cf/google/gemma-3-12b-it": Base_Ai_Cf_Google_Gemma_3_12B_It;
-    "@cf/meta/llama-4-scout-17b-16e-instruct": Base_Ai_Cf_Meta_Llama_4_Scout_17B_16E_Instruct;
-    "@cf/qwen/qwen3-30b-a3b-fp8": Base_Ai_Cf_Qwen_Qwen3_30B_A3B_Fp8;
-    "@cf/deepgram/nova-3": Base_Ai_Cf_Deepgram_Nova_3;
-    "@cf/qwen/qwen3-embedding-0.6b": Base_Ai_Cf_Qwen_Qwen3_Embedding_0_6B;
-    "@cf/pipecat-ai/smart-turn-v2": Base_Ai_Cf_Pipecat_Ai_Smart_Turn_V2;
-    "@cf/openai/gpt-oss-120b": Base_Ai_Cf_Openai_Gpt_Oss_120B;
-    "@cf/openai/gpt-oss-20b": Base_Ai_Cf_Openai_Gpt_Oss_20B;
-    "@cf/leonardo/phoenix-1.0": Base_Ai_Cf_Leonardo_Phoenix_1_0;
-    "@cf/leonardo/lucid-origin": Base_Ai_Cf_Leonardo_Lucid_Origin;
-    "@cf/deepgram/aura-1": Base_Ai_Cf_Deepgram_Aura_1;
-    "@cf/ai4bharat/indictrans2-en-indic-1B": Base_Ai_Cf_Ai4Bharat_Indictrans2_En_Indic_1B;
-    "@cf/aisingapore/gemma-sea-lion-v4-27b-it": Base_Ai_Cf_Aisingapore_Gemma_Sea_Lion_V4_27B_It;
-    "@cf/pfnet/plamo-embedding-1b": Base_Ai_Cf_Pfnet_Plamo_Embedding_1B;
-    "@cf/deepgram/flux": Base_Ai_Cf_Deepgram_Flux;
-    "@cf/deepgram/aura-2-en": Base_Ai_Cf_Deepgram_Aura_2_En;
-    "@cf/deepgram/aura-2-es": Base_Ai_Cf_Deepgram_Aura_2_Es;
-    "@cf/black-forest-labs/flux-2-dev": Base_Ai_Cf_Black_Forest_Labs_Flux_2_Dev;
-    "@cf/black-forest-labs/flux-2-klein-4b": Base_Ai_Cf_Black_Forest_Labs_Flux_2_Klein_4B;
-    "@cf/black-forest-labs/flux-2-klein-9b": Base_Ai_Cf_Black_Forest_Labs_Flux_2_Klein_9B;
-    "@cf/zai-org/glm-4.7-flash": Base_Ai_Cf_Zai_Org_Glm_4_7_Flash;
-    "@cf/moonshotai/kimi-k2.5": Base_Ai_Cf_Moonshotai_Kimi_K2_5;
-    "@cf/moonshotai/kimi-k2.6": Base_Ai_Cf_Moonshotai_Kimi_K2_6;
-    "@cf/nvidia/nemotron-3-120b-a12b": Base_Ai_Cf_Nvidia_Nemotron_3_120B_A12B;
-    "@cf/google/gemma-4-26b-a4b-it": Base_Ai_Cf_Google_Gemma_4_26B_A4B_IT;
-}
-type AiOptions = {
-    /**
-     * Send requests as an asynchronous batch job, only works for supported models
-     * https://developers.cloudflare.com/workers-ai/features/batch-api
-     */
-    queueRequest?: boolean;
-    /**
-     * Establish websocket connections, only works for supported models
-     */
-    websocket?: boolean;
-    /**
-     * Tag your requests to group and view them in Cloudflare dashboard.
-     *
-     * Rules:
-     * Tags must only contain letters, numbers, and the symbols: : - . / @
-     * Each tag can have maximum 50 characters.
-     * Maximum 5 tags are allowed each request.
-     * Duplicate tags will removed.
-     */
-    tags?: string[];
-    gateway?: GatewayOptions;
-    returnRawResponse?: boolean;
-    prefix?: string;
-    extraHeaders?: object;
-    signal?: AbortSignal;
-};
-type AiModelsSearchParams = {
-    author?: string;
-    hide_experimental?: boolean;
-    page?: number;
-    per_page?: number;
-    search?: string;
-    source?: number;
-    task?: string;
-};
-type AiModelsSearchObject = {
-    id: string;
-    source: number;
-    name: string;
-    description: string;
-    task: {
-        id: string;
-        name: string;
-        description: string;
-    };
-    tags: string[];
-    properties: {
-        property_id: string;
-        value: string;
-    }[];
-};
-type ChatCompletionsBase = ChatCompletionsMessagesInput;
-type ChatCompletionsInput = ChatCompletionsMessagesInput;
-interface InferenceUpstreamError extends Error {
-}
-interface AiInternalError extends Error {
-}
-type AiModelListType = Record<string, any>;
-type AiAsyncBatchResponse = {
-    request_id: string;
-};
-declare abstract class Ai<AiModelList extends AiModelListType = AiModels> {
-    aiGatewayLogId: string | null;
-    gateway(gatewayId: string): AiGateway;
-    /**
-     * @deprecated Use the standalone `ai_search_namespaces` or `ai_search` Workers bindings instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     */
-    aiSearch(): AiSearchNamespace;
-    /**
-     * @deprecated AutoRAG has been replaced by AI Search.
-     * Use the standalone `ai_search_namespaces` or `ai_search` Workers bindings instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     *
-     * @param autoragId Instance ID
-     */
-    autorag(autoragId: string): AutoRAG;
-    // Batch request
-    run<Name extends keyof AiModelList>(model: Name, inputs: {
-        requests: AiModelList[Name]['inputs'][];
-    }, options: AiOptions & {
-        queueRequest: true;
-    }): Promise<AiAsyncBatchResponse>;
-    // Raw response
-    run<Name extends keyof AiModelList>(model: Name, inputs: AiModelList[Name]['inputs'], options: AiOptions & {
-        returnRawResponse: true;
-    }): Promise<Response>;
-    // WebSocket
-    run<Name extends keyof AiModelList>(model: Name, inputs: AiModelList[Name]['inputs'], options: AiOptions & {
-        websocket: true;
-    }): Promise<Response>;
-    // Streaming
-    run<Name extends keyof AiModelList>(model: Name, inputs: AiModelList[Name]['inputs'] & {
-        stream: true;
-    }, options?: AiOptions): Promise<ReadableStream>;
-    // Normal (default) - known model
-    run<Name extends keyof AiModelList>(model: Name, inputs: AiModelList[Name]['inputs'], options?: AiOptions): Promise<AiModelList[Name]['postProcessedOutputs']>;
-    // Unknown model (fallback).
-    //
-    // The `Exclude<..., keyof AiModelList>` constraint forces TypeScript to
-    // route any model name that is a literal key of `AiModelList` to one of
-    // the known-model overloads above (so input/output mismatches surface as
-    // type errors rather than silently falling back to `Record<string, unknown>`).
-    // Names that aren't in `AiModelList` ‚Äî e.g. third-party gateway models
-    // like `"google/nano-banana"` ‚Äî still hit this overload.
-    run<Model extends string>(model: Model extends keyof AiModelList ? never : Model, inputs: Record<string, unknown>, options?: AiOptions): Promise<Record<string, unknown>>;
-    models(params?: AiModelsSearchParams): Promise<AiModelsSearchObject[]>;
-    toMarkdown(): ToMarkdownService;
-    toMarkdown(files: MarkdownDocument[], options?: ConversionRequestOptions): Promise<ConversionResponse[]>;
-    toMarkdown(files: MarkdownDocument, options?: ConversionRequestOptions): Promise<ConversionResponse>;
-}
-type GatewayRetries = {
-    maxAttempts?: 1 | 2 | 3 | 4 | 5;
-    retryDelayMs?: number;
-    backoff?: 'constant' | 'linear' | 'exponential';
-};
-type GatewayOptions = {
-    id: string;
-    cacheKey?: string;
-    cacheTtl?: number;
-    skipCache?: boolean;
-    metadata?: Record<string, number | string | boolean | null | bigint>;
-    collectLog?: boolean;
-    eventId?: string;
-    requestTimeoutMs?: number;
-    retries?: GatewayRetries;
-};
-type UniversalGatewayOptions = Exclude<GatewayOptions, 'id'> & {
-    /**
-     ** @deprecated
-     */
-    id?: string;
-};
-type AiGatewayPatchLog = {
-    score?: number | null;
-    feedback?: -1 | 1 | null;
-    metadata?: Record<string, number | string | boolean | null | bigint> | null;
-};
-type AiGatewayLog = {
-    id: string;
-    provider: string;
-    model: string;
-    model_type?: string;
-    path: string;
-    duration: number;
-    request_type?: string;
-    request_content_type?: string;
-    status_code: number;
-    response_content_type?: string;
-    success: boolean;
-    cached: boolean;
-    tokens_in?: number;
-    tokens_out?: number;
-    metadata?: Record<string, number | string | boolean | null | bigint>;
-    step?: number;
-    cost?: number;
-    custom_cost?: boolean;
-    request_size: number;
-    request_head?: string;
-    request_head_complete: boolean;
-    response_size: number;
-    response_head?: string;
-    response_head_complete: boolean;
-    created_at: Date;
-};
-type AIGatewayProviders = 'workers-ai' | 'anthropic' | 'aws-bedrock' | 'azure-openai' | 'google-vertex-ai' | 'huggingface' | 'openai' | 'perplexity-ai' | 'replicate' | 'groq' | 'cohere' | 'google-ai-studio' | 'mistral' | 'grok' | 'openrouter' | 'deepseek' | 'cerebras' | 'cartesia' | 'elevenlabs' | 'adobe-firefly';
-type AIGatewayHeaders = {
-    'cf-aig-metadata': Record<string, number | string | boolean | null | bigint> | string;
-    'cf-aig-custom-cost': {
-        per_token_in?: number;
-        per_token_out?: number;
-    } | {
-        total_cost?: number;
-    } | string;
-    'cf-aig-cache-ttl': number | string;
-    'cf-aig-skip-cache': boolean | string;
-    'cf-aig-cache-key': string;
-    'cf-aig-event-id': string;
-    'cf-aig-request-timeout': number | string;
-    'cf-aig-max-attempts': number | string;
-    'cf-aig-retry-delay': number | string;
-    'cf-aig-backoff': string;
-    'cf-aig-collect-log': boolean | string;
-    Authorization: string;
-    'Content-Type': string;
-    [key: string]: string | number | boolean | object;
-};
-type AIGatewayUniversalRequest = {
-    provider: AIGatewayProviders | string; // eslint-disable-line
-    endpoint: string;
-    headers: Partial<AIGatewayHeaders>;
-    query: unknown;
-};
-interface AiGatewayInternalError extends Error {
-}
-interface AiGatewayLogNotFound extends Error {
-}
-declare abstract class AiGateway {
-    patchLog(logId: string, data: AiGatewayPatchLog): Promise<void>;
-    getLog(logId: string): Promise<AiGatewayLog>;
-    run(data: AIGatewayUniversalRequest | AIGatewayUniversalRequest[], options?: {
-        gateway?: UniversalGatewayOptions;
-        extraHeaders?: object;
-        signal?: AbortSignal;
-    }): Promise<Response>;
-    getUrl(provider?: AIGatewayProviders | string): Promise<string>; // eslint-disable-line
-}
-// Copyright (c) 2022-2025 Cloudflare, Inc.
-// Licensed under the Apache 2.0 license found in the LICENSE file or at:
-//     https://opensource.org/licenses/Apache-2.0
-/**
- * Artifacts ‚Äî Git-compatible file storage on Cloudflare Workers.
- *
- * Provides programmatic access to create, manage, and fork repositories,
- * and to issue and revoke scoped access tokens.
- */
-/** Information about a repository. */
-interface ArtifactsRepoInfo {
-    /** Unique repository ID. */
-    id: string;
-    /** Repository name. */
-    name: string;
-    /** Repository description, or null if not set. */
-    description: string | null;
-    /** Default branch name (e.g. "main"). */
-    defaultBranch: string;
-    /** ISO 8601 creation timestamp. */
-    createdAt: string;
-    /** ISO 8601 last-updated timestamp. */
-    updatedAt: string;
-    /** ISO 8601 timestamp of the last push, or null if never pushed. */
-    lastPushAt: string | null;
-    /** Fork source (e.g. "github:owner/repo", "artifacts:namespace/repo"), or null if not a fork. */
-    source: string | null;
-    /** Whether the repository is read-only. */
-    readOnly: boolean;
-    /** HTTPS git remote URL. */
-    remote: string;
-}
-/** Result of creating a repository ‚Äî includes the initial access token. */
-interface ArtifactsCreateRepoResult {
-    /** Unique repository ID. */
-    id: string;
-    /** Repository name. */
-    name: string;
-    /** Repository description, or null if not set. */
-    description: string | null;
-    /** Default branch name. */
-    defaultBranch: string;
-    /** HTTPS git remote URL. */
-    remote: string;
-    /** Plaintext access token (only returned at creation time). */
-    token: string;
-    /** ISO 8601 token expiry timestamp. */
-    tokenExpiresAt: string;
-}
-/** Paginated list of repositories. */
-interface ArtifactsRepoListResult {
-    /** Repositories in this page (without the `remote` field). */
-    repos: Omit<ArtifactsRepoInfo, 'remote'>[];
-    /** Total number of repositories in the namespace. */
-    total: number;
-    /** Cursor for the next page, if there are more results. */
-    cursor?: string;
-}
-/** Result of creating an access token. */
-interface ArtifactsCreateTokenResult {
-    /** Unique token ID. */
-    id: string;
-    /** Plaintext token (only returned at creation time). */
-    plaintext: string;
-    /** Token scope: "read" or "write". */
-    scope: 'read' | 'write';
-    /** ISO 8601 token expiry timestamp. */
-    expiresAt: string;
-}
-/** Token metadata (no plaintext). */
-interface ArtifactsTokenInfo {
-    /** Unique token ID. */
-    id: string;
-    /** Token scope: "read" or "write". */
-    scope: 'read' | 'write';
-    /** Token state: "active", "expired", or "revoked". */
-    state: 'active' | 'expired' | 'revoked';
-    /** ISO 8601 creation timestamp. */
-    createdAt: string;
-    /** ISO 8601 expiry timestamp. */
-    expiresAt: string;
-}
-/** Paginated list of tokens for a repository. */
-interface ArtifactsTokenListResult {
-    /** Tokens in this page. */
-    tokens: ArtifactsTokenInfo[];
-    /** Total number of tokens for the repository. */
-    total: number;
-}
-/**
- * Handle for a single repository. Returned by Artifacts.get().
- *
- * Methods may throw `ArtifactsError` with code `INTERNAL_ERROR` if an unexpected service error occurs.
- */
-interface ArtifactsRepo extends ArtifactsRepoInfo {
-    /**
-     * Create an access token for this repo.
-     * @param scope Token scope: "write" (default) or "read".
-     * @param ttl Time-to-live in seconds (default 86400, min 60, max 31536000).
-     * @throws {ArtifactsError} with code `INVALID_TTL` if ttl is out of range.
-     */
-    createToken(scope?: 'write' | 'read', ttl?: number): Promise<ArtifactsCreateTokenResult>;
-    /** List tokens for this repo (metadata only, no plaintext). */
-    listTokens(): Promise<ArtifactsTokenListResult>;
-    /**
-     * Revoke a token by plaintext or ID.
-     * @param tokenOrId Plaintext token or token ID.
-     * @returns true if revoked, false if not found.
-     * @throws {ArtifactsError} with code `INVALID_INPUT` if tokenOrId is empty.
-     */
-    revokeToken(tokenOrId: string): Promise<boolean>;
-    // ‚îÄ‚îÄ Fork ‚îÄ‚îÄ
-    /**
-     * Fork this repo to a new repo.
-     * @param name Target repository name.
-     * @param opts Optional: description, readOnly flag, defaultBranchOnly (default true).
-     * @throws {ArtifactsError} with code `INVALID_REPO_NAME` if name is invalid.
-     * @throws {ArtifactsError} with code `ALREADY_EXISTS` if the target repo already exists.
-     * @throws {ArtifactsError} with code `FORK_IN_PROGRESS` if a fork is already running.
-     */
-    fork(name: string, opts?: {
-        description?: string;
-        readOnly?: boolean;
-        defaultBranchOnly?: boolean;
-    }): Promise<ArtifactsCreateRepoResult>;
-}
-// ‚îÄ‚îÄ Error types ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
-/**
- * Error codes returned by Artifacts binding operations.
- *
- * Each code maps to a numeric code available on `ArtifactsError.numericCode`.
- */
-type ArtifactsErrorCode = 'ALREADY_EXISTS' | 'NOT_FOUND' | 'IMPORT_IN_PROGRESS' | 'FORK_IN_PROGRESS' | 'INVALID_INPUT' | 'INVALID_REPO_NAME' | 'INVALID_TTL' | 'INVALID_URL' | 'REMOTE_AUTH_REQUIRED' | 'UPSTREAM_UNAVAILABLE' | 'MEMORY_LIMIT' | 'INTERNAL_ERROR';
-/**
- * Error thrown by Artifacts binding operations.
- *
- * Uses a string `.code` discriminator following the Cloudflare platform
- * convention (StreamError, ImagesError, etc.). The `.numericCode` matches
- * the REST API `errors[].code` values.
- */
-interface ArtifactsError extends Error {
-    readonly name: 'ArtifactsError';
-    /** String error code for programmatic matching. */
-    readonly code: ArtifactsErrorCode;
-    /** Numeric error code matching the REST API. */
-    readonly numericCode: number;
-}
-// ‚îÄ‚îÄ Binding ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
-/**
- * Artifacts binding ‚Äî namespace-level operations.
- *
- * Methods may throw `ArtifactsError` with code `INTERNAL_ERROR` if an unexpected service error occurs.
- */
-interface Artifacts {
-    /**
-     * Create a new repository with an initial access token.
-     * @param name Repository name (alphanumeric, dots, hyphens, underscores).
-     * @param opts Optional: readOnly flag, description, default branch name.
-     * @returns Repo metadata with initial token.
-     * @throws {ArtifactsError} with code `INVALID_REPO_NAME` if name is invalid.
-     * @throws {ArtifactsError} with code `ALREADY_EXISTS` if the repo already exists.
-     */
-    create(name: string, opts?: {
-        readOnly?: boolean;
-        description?: string;
-        setDefaultBranch?: string;
-    }): Promise<ArtifactsCreateRepoResult>;
-    /**
-     * Get a handle to an existing repository.
-     * @param name Repository name.
-     * @returns Repo handle.
-     * @throws {ArtifactsError} with code `NOT_FOUND` if the repo does not exist.
-     * @throws {ArtifactsError} with code `IMPORT_IN_PROGRESS` if the repo is still importing.
-     * @throws {ArtifactsError} with code `FORK_IN_PROGRESS` if the repo is still forking.
-     */
-    get(name: string): Promise<ArtifactsRepo>;
-    /**
-     * Import a repository from an external git remote.
-     * @param params Source URL and optional branch/depth, plus target name and options.
-     * @returns Repo metadata with initial token.
-     * @throws {ArtifactsError} with code `INVALID_REPO_NAME` if the target name is invalid.
-     * @throws {ArtifactsError} with code `INVALID_INPUT` if the source URL is not valid HTTPS.
-     * @throws {ArtifactsError} with code `INVALID_URL` if the source URL does not point to a git repository.
-     * @throws {ArtifactsError} with code `REMOTE_AUTH_REQUIRED` if the remote requires authentication.
-     * @throws {ArtifactsError} with code `NOT_FOUND` if the remote repository does not exist.
-     * @throws {ArtifactsError} with code `UPSTREAM_UNAVAILABLE` if the remote cannot be reached.
-     * @throws {ArtifactsError} with code `MEMORY_LIMIT` if the import exceeds service memory limits.
-     * @throws {ArtifactsError} with code `ALREADY_EXISTS` if the target repo already exists.
-     */
-    import(params: {
-        source: {
-            url: string;
-            branch?: string;
-            depth?: number;
-        };
-        target: {
-            name: string;
-            opts?: {
-                description?: string;
-                readOnly?: boolean;
-            };
-        };
-    }): Promise<ArtifactsCreateRepoResult>;
-    /**
-     * List repositories with cursor-based pagination.
-     * @param opts Optional: limit (1‚Äì200, default 50), cursor for next page.
-     */
-    list(opts?: {
-        limit?: number;
-        cursor?: string;
-    }): Promise<ArtifactsRepoListResult>;
-    /**
-     * Delete a repository and all associated tokens.
-     * @param name Repository name.
-     * @returns true if deleted, false if not found.
-     * @throws {ArtifactsError} with code `INVALID_REPO_NAME` if name is invalid.
-     */
-    delete(name: string): Promise<boolean>;
-}
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-interface AutoRAGInternalError extends Error {
-}
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-interface AutoRAGNotFoundError extends Error {
-}
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-interface AutoRAGUnauthorizedError extends Error {
-}
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-interface AutoRAGNameNotSetError extends Error {
-}
-type ComparisonFilter = {
-    key: string;
-    type: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
-    value: string | number | boolean;
-};
-type CompoundFilter = {
-    type: 'and' | 'or';
-    filters: ComparisonFilter[];
-};
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-type AutoRagSearchRequest = {
-    query: string;
-    filters?: CompoundFilter | ComparisonFilter;
-    max_num_results?: number;
-    ranking_options?: {
-        ranker?: string;
-        score_threshold?: number;
-    };
-    reranking?: {
-        enabled?: boolean;
-        model?: string;
-    };
-    rewrite_query?: boolean;
-};
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-type AutoRagAiSearchRequest = AutoRagSearchRequest & {
-    stream?: boolean;
-    system_prompt?: string;
-};
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-type AutoRagAiSearchRequestStreaming = Omit<AutoRagAiSearchRequest, 'stream'> & {
-    stream: true;
-};
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-type AutoRagSearchResponse = {
-    object: 'vector_store.search_results.page';
-    search_query: string;
-    data: {
-        file_id: string;
-        filename: string;
-        score: number;
-        attributes: Record<string, string | number | boolean | null>;
-        content: {
-            type: 'text';
-            text: string;
-        }[];
-    }[];
-    has_more: boolean;
-    next_page: string | null;
-};
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-type AutoRagListResponse = {
-    id: string;
-    enable: boolean;
-    type: string;
-    source: string;
-    vectorize_name: string;
-    paused: boolean;
-    status: string;
-}[];
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-type AutoRagAiSearchResponse = AutoRagSearchResponse & {
-    response: string;
-};
-/**
- * @deprecated Use the standalone AI Search Workers binding instead.
- * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
- */
-declare abstract class AutoRAG {
-    /**
-     * @deprecated Use the standalone AI Search Workers binding instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     */
-    list(): Promise<AutoRagListResponse>;
-    /**
-     * @deprecated Use the standalone AI Search Workers binding instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     */
-    search(params: AutoRagSearchRequest): Promise<AutoRagSearchResponse>;
-    /**
-     * @deprecated Use the standalone AI Search Workers binding instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     */
-    aiSearch(params: AutoRagAiSearchRequestStreaming): Promise<Response>;
-    /**
-     * @deprecated Use the standalone AI Search Workers binding instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     */
-    aiSearch(params: AutoRagAiSearchRequest): Promise<AutoRagAiSearchResponse>;
-    /**
-     * @deprecated Use the standalone AI Search Workers binding instead.
-     * See https://developers.cloudflare.com/ai-search/usage/workers-binding/
-     */
-    aiSearch(params: AutoRagAiSearchRequest): Promise<AutoRagAiSearchResponse | Response>;
-}
-type BrowserRunLifecycleEvent = 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2';
-type BrowserRunResourceType = 'document' | 'stylesheet' | 'image' | 'media' | 'font' | 'script' | 'texttrack' | 'xhr' | 'fetch' | 'prefetch' | 'eventsource' | 'websocket' | 'manifest' | 'signedexchange' | 'ping' | 'cspviolationreport' | 'preflight' | 'other';
-/** Options fields shared by all quick actions. */
-interface BrowserRunBaseOptions {
-    /** Adds `<script>` tags into the page with the desired URL or content.
-     * @see https://pptr.dev/api/puppeteer.frameaddscripttagoptions
-     */
-    addScriptTag?: Array<{
-        content?: string;
-        url?: string;
-        type?: string;
-        id?: string;
-    }>;
-    /** Adds `<link rel="stylesheet">` or `<style>` tags into the page.
-     * @see https://pptr.dev/api/puppeteer.frameaddstyletagoptions
-     */
-    addStyleTag?: Array<{
-        content?: string;
-        url?: string;
-    }>;
-    /** Provide credentials for HTTP authentication. @see https://pptr.dev/api/puppeteer.credentials */
-    authenticate?: {
-        username: string;
-        password: string;
-    };
-    /** Set cookies before navigating. @see https://pptr.dev/api/puppeteer.cookieparam */
-    cookies?: Array<{
-        name: string;
-        value: string;
-        url?: string;
-        domain?: string;
-        path?: string;
-        secure?: boolean;
-        httpOnly?: boolean;
-        sameSite?: 'Strict' | 'Lax' | 'None';
-        expires?: number;
-        priority?: 'Low' | 'Medium' | 'High';
-        sameParty?: boolean;
-        sourceScheme?: 'Unset' | 'NonSecure' | 'Secure';
-        sourcePort?: number;
-        partitionKey?: string;
-    }>;
-    /** Emulate a specific CSS media type (e.g. `"screen"`, `"print"`). */
-    emulateMediaType?: string;
-    /** Navigation options. @see https://pptr.dev/api/puppeteer.gotooptions */
-    gotoOptions?: {
-        /** Navigation timeout in milliseconds (max 60 000). @default 30000 */
-        timeout?: number;
-        /** When to consider navigation complete. @default "domcontentloaded" */
-        waitUntil?: BrowserRunLifecycleEvent | BrowserRunLifecycleEvent[];
-        referer?: string;
-        referrerPolicy?: string;
-    };
-    /** Block requests matching these regex patterns. Mutually exclusive with `allowRequestPattern`. */
-    rejectRequestPattern?: string[];
-    /** Only allow requests matching these regex patterns. Mutually exclusive with `rejectRequestPattern`. */
-    allowRequestPattern?: string[];
-    /** Block requests of these resource types. Mutually exclusive with `allowResourceTypes`. */
-    rejectResourceTypes?: BrowserRunResourceType[];
-    /** Only allow requests of these resource types. Mutually exclusive with `rejectResourceTypes`. */
-    allowResourceTypes?: BrowserRunResourceType[];
-    /** Additional HTTP headers sent with every request. */
-    setExtraHTTPHeaders?: Record<string, string>;
-    /** Whether JavaScript is enabled on the page. */
-    setJavaScriptEnabled?: boolean;
-    /** Override the default user agent string.
-     * @default "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-     * */
-    userAgent?: string;
-    /** Set the browser viewport size.
-     * @see https://pptr.dev/api/puppeteer.viewport
-     * @default {width:1920,height:1080}
-     * */
-    viewport?: {
-        width: number;
-        height: number;
-        deviceScaleFactor?: number;
-        isMobile?: boolean;
-        isLandscape?: boolean;
-        hasTouch?: boolean;
-    };
-    /** Wait for a CSS selector to appear in the page before proceeding.
-     * @see https://pptr.dev/api/puppeteer.waitforselectoroptions
-     */
-    waitForSelector?: {
-        selector: string;
-        hidden?: true;
-        visible?: true;
-        /** Timeout in milliseconds. Max 120000 */
-        timeout?: number;
-    };
-    /** Wait for a fixed delay in milliseconds before proceeding. Max 120000 */
-    waitForTimeout?: number;
-    /** When true, continue on best-effort when awaited events fail or timeout. */
-    bestAttempt?: boolean;
-    /** Maximum duration in milliseconds for the browser action after page load. Max 120000 */
-    actionTimeout?: number;
-    /** Cache time to live in seconds (0-86400). Set to 0 to disable.
-     * @default 5
-     */
-    cacheTTL?: number;
-}
-/** Common options shared by all quick actions. Exactly one of `url` or `html` must be provided.*/
-type BrowserRunCommonOptions = (BrowserRunBaseOptions & {
-    /** URL to navigate to, e.g. `"https://example.com"`. */
-    url: string;
-}) | (BrowserRunBaseOptions & {
-    /** Set the HTML content of the page directly. */
-    html: string;
-});
-type BrowserRunPuppeteerScreenshotOptions = {
-    /** @default "png" */
-    type?: 'png' | 'jpeg' | 'webp';
-    /** @default "binary" */
-    encoding?: 'binary' | 'base64';
-    quality?: number;
-    fullPage?: boolean;
-    clip?: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        scale?: number;
-    };
-    omitBackground?: boolean;
-    optimizeForSpeed?: boolean;
-    captureBeyondViewport?: boolean;
-    fromSurface?: boolean;
-};
-type BrowserRunScreenshotOptions = BrowserRunCommonOptions & {
-    /** CSS selector of the element to screenshot. */
-    selector?: string;
-    /** When true, scroll the entire page before taking the screenshot. */
-    scrollPage?: boolean;
-    /** @see https://pptr.dev/api/puppeteer.screenshotoptions */
-    screenshotOptions?: BrowserRunPuppeteerScreenshotOptions;
-};
-type BrowserRunPDFOptions = BrowserRunCommonOptions & {
-    /** @see https://pptr.dev/api/puppeteer.pdfoptions */
-    pdfOptions?: {
-        /** @default 1 */
-        scale?: number;
-        /** @default false */
-        displayHeaderFooter?: boolean;
-        headerTemplate?: string;
-        footerTemplate?: string;
-        /** @default false */
-        printBackground?: boolean;
-        /** @default false */
-        landscape?: boolean;
-        pageRanges?: string;
-        /** @default "letter" */
-        format?: 'letter' | 'legal' | 'tabloid' | 'ledger' | 'a0' | 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
-        width?: string | number;
-        height?: string | number;
-        /** @default false */
-        preferCSSPageSize?: boolean;
-        margin?: {
-            top?: string | number;
-            right?: string | number;
-            bottom?: string | number;
-            left?: string | number;
-        };
-        /** @default false */
-        omitBackground?: boolean;
-        /** @default true */
-        tagged?: boolean;
-        /** @default false */
-        outline?: boolean;
-        /** @default 30000 */
-        timeout?: number;
-    };
-};
-type BrowserRunScrapeOptions = BrowserRunCommonOptions & {
-    /** CSS selectors to scrape. At least one element is required. */
-    elements: Array<{
-        selector: string;
-    }>;
-};
-type BrowserRunLinksOptions = BrowserRunCommonOptions & {
-    /** When true, only return links that are visible on the page. @default false */
-    visibleLinksOnly?: boolean;
-    /** When true, exclude links pointing to external domains. @default false */
-    excludeExternalLinks?: boolean;
-};
-type BrowserRunSnapshotOptions = BrowserRunCommonOptions & {
-    /** @see https://pptr.dev/api/puppeteer.screenshotoptions */
-    screenshotOptions?: Omit<BrowserRunPuppeteerScreenshotOptions, 'encoding'>;
-};
-interface BrowserRunJsonBaseOptions {
-    /** Custom AI models to try in order. Max 3. Falls back to next on error. */
-    custom_ai?: Array<{
-        /** Model ID in `<provider>/<model_name>` format, e.g. `"workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast"`. */
-        model: string;
-        /** Bearer token. Not needed for workers-ai models. */
-        authorization?: string;
-    }>;
-}
-/**
- * Options for the `json` quick action.
- * At least one of `prompt` or `response_format` must be provided.
- */
-type BrowserRunJsonOptions = BrowserRunCommonOptions & BrowserRunJsonBaseOptions & ({
-    /** Natural-language prompt describing what data to extract. */
-    prompt: string;
-    /** Structured output schema for the AI model. @see https://developers.cloudflare.com/workers-ai/json-mode/ */
-    response_format?: AiTextGenerationResponseFormat;
-} | {
-    /** Natural-language prompt describing what data to extract. */
-    prompt?: string;
-    /** Structured output schema for the AI model. @see https://developers.cloudflare.com/workers-ai/json-mode/ */
-    response_format: AiTextGenerationResponseFormat;
-});
-type BrowserRunContentOptions = BrowserRunCommonOptions;
-type BrowserRunMarkdownOptions = BrowserRunCommonOptions;
-type BrowserRunResponseMeta = {
-    /** HTTP status code of the rendered page */
-    status: number;
-    /** Page title */
-    title: string;
-};
-/** Success response for `content` action. */
-type BrowserRunContentSuccessResponse = {
-    success: true;
-    /** Extracted HTML content */
-    result: string;
-    meta: BrowserRunResponseMeta;
-};
-/** Success response for `links` action. */
-type BrowserRunLinksSuccessResponse = {
-    success: true;
-    /** Extracted links */
-    result: string[];
-};
-/** Success response for `scrape` action. */
-type BrowserRunScrapeSuccessResponse = {
-    success: true;
-    result: Array<{
-        /** The CSS selector used to find elements. */
-        selector: string;
-        /** Array of elements matching the selector. */
-        results: Array<{
-            /** Outer HTML of the element. */
-            html: string;
-            /** Text content of the element. */
-            text: string;
-            /** Width of the element in pixels. */
-            width: number;
-            /** Height of the element in pixels. */
-            height: number;
-            /** Top position of the element relative to the viewport in pixels. */
-            top: number;
-            /** Left position of the element relative to the viewport in pixels. */
-            left: number;
-            /** Array of HTML attributes on the element. */
-            attributes: Array<{
-                /** Attribute name. */
-                name: string;
-                /** Attribute value. */
-                value: string;
-            }>;
-        }>;
-    }>;
-};
-/** Success response for `snapshot` action. */
-type BrowserRunSnapshotSuccessResponse = {
-    success: true;
-    result: {
-        /** HTML content of the page. */
-        content: string;
-        /** Base64-encoded screenshot image. */
-        screenshot: string;
-    };
-    meta: BrowserRunResponseMeta;
-};
-/** Success response for `json` action. */
-type BrowserRunJsonSuccessResponse = {
-    success: true;
-    /** JSON data extracted from the page using an AI model */
-    result: Record<string, unknown>;
-};
-/** Success response for `markdown` action. */
-type BrowserRunMarkdownSuccessResponse = {
-    success: true;
-    /** Extracted markdown content */
-    result: string;
-};
-/** Error response for BrowserRun actions. */
-type BrowserRunErrorResponse = {
-    success: false;
-    errors: {
-        message: string;
-        code?: number;
-        detail?: string;
-        path?: string;
-    }[];
-};
-/** Error response for BrowserRun `json` action. */
-type BrowserRunJsonErrorResponse = BrowserRunErrorResponse & {
-    /** Raw AI response text for debugging */
-    rawAiResponse?: string;
-};
-/**
- * Browser Run API binding for automating headless browsers.
- * @see https://developers.cloudflare.com/browser-run/
- */
-declare abstract class BrowserRun {
-    /**
-     * Send a raw HTTP request to the Browser Run API.
-     * Used by libraries like `@cloudflare/puppeteer` to acquire and connect to a browser instance.
-     * @see https://developers.cloudflare.com/browser-run/
-     */
-    fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
-    /**
-     * Take a screenshot of a web page.
-     * @param action - Must be `'screenshot'`.
-     * @param options - Screenshot options including viewport, selectors, and image format.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - Binary image data with `Content-Type: image/png`, `image/jpeg`, or `image/webp` (when `encoding: 'binary'`, the default)
-     * - Data URI string with `Content-Type: text/plain` (when `encoding: 'base64'`)
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'screenshot', options: BrowserRunScreenshotOptions): Promise<Response>;
-    /**
-     * Generate a PDF of a web page.
-     * @param action - Must be `'pdf'`.
-     * @param options - PDF generation options including page size, margins, and headers/footers.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - Binary PDF data with `Content-Type: application/pdf`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'pdf', options: BrowserRunPDFOptions): Promise<Response>;
-    /**
-     * Get the HTML content of a web page.
-     * @param action - Must be `'content'`.
-     * @param options - Navigation and page interaction options.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - `BrowserRunContentSuccessResponse` JSON with `Content-Type: application/json`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'content', options: BrowserRunContentOptions): Promise<Response>;
-    /**
-     * Scrape elements from a web page by CSS selector.
-     * @param action - Must be `'scrape'`.
-     * @param options - Scrape options with CSS selectors for elements to extract.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - `BrowserRunScrapeSuccessResponse` JSON with `Content-Type: application/json`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'scrape', options: BrowserRunScrapeOptions): Promise<Response>;
-    /**
-     * Extract all links from a web page.
-     * @param action - Must be `'links'`.
-     * @param options - Options to filter visible or internal links only.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - `BrowserRunLinksSuccessResponse` JSON with `Content-Type: application/json`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'links', options: BrowserRunLinksOptions): Promise<Response>;
-    /**
-     * Get both the HTML content and a base64-encoded screenshot of a web page.
-     * @param action - Must be `'snapshot'`.
-     * @param options - Snapshot options including screenshot settings (encoding is always base64).
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - `BrowserRunSnapshotSuccessResponse` JSON with `Content-Type: application/json`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'snapshot', options: BrowserRunSnapshotOptions): Promise<Response>;
-    /**
-     * Extract structured JSON data from a web page using AI.
-     * @param action - Must be `'json'`.
-     * @param options - JSON extraction options with prompt or response_format schema.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - `BrowserRunJsonSuccessResponse` JSON with `Content-Type: application/json`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     * - HTTP 422 with code `2012` for HTML-to-markdown conversion failures
-     * - HTTP 422/500 for AI extraction failures (may include `rawAiResponse` field)
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'json', options: BrowserRunJsonOptions): Promise<Response>;
-    /**
-     * Convert a web page to Markdown.
-     * @param action - Must be `'markdown'`.
-     * @param options - Navigation and page interaction options.
-     * @returns A `Response` containing one of:
-     *
-     * **Success (HTTP 200):**
-     * - `BrowserRunMarkdownSuccessResponse` JSON with `Content-Type: application/json`
-     *
-     * **Error:**
-     * - `BrowserRunErrorResponse` JSON with appropriate HTTP status code (400, 422, 429, 500, 503)
-     * - HTTP 422 with code `2012` for HTML-to-markdown conversion failures
-     *
-     * **Headers:**
-     * - `X-Browser-Ms-Used`: Browser time consumed in milliseconds (set when status < 500)
-     */
-    quickAction(action: 'markdown', options: BrowserRunMarkdownOptions): Promise<Response>;
-}
-/**
- * In addition to the properties you can set in the RequestInit dict
- * that you pass as an argument to the Request constructor, you can
- * set certain properties of a `cf` object to control how Cloudflare
- * features are applied to that new Request.
- *
- * Note: Currently, these properties cannot be tested in the
- * playground.
- */
-interface RequestInitCfProperties extends Record<string, unknown> {
-    cacheEverything?: boolean;
-    /**
-     * A request's cache key is what determines if two requests are
-     * "the same" for caching purposes. If a request has the same cache key
-     * as some previous request, then we can serve the same cached response for
-     * both. (e.g. 'some-key')
-     *
-     * Only available for Enterprise customers.
-     */
-    cacheKey?: string;
-    /**
-     * This allows you to append additional Cache-Tag response headers
-     * to the origin response without modifications to the origin server.
-     * This will allow for greater control over the Purge by Cache Tag feature
-     * utilizing changes only in the Workers process.
-     *
-     * Only available for Enterprise customers.
-     */
-    cacheTags?: string[];
-    /**
-     * Force response to be cached for a given number of seconds. (e.g. 300)
-     */
-    cacheTtl?: number;
-    /**
-     * Force response to be cached for a given number of seconds based on the Origin status code.
-     * (e.g. { '200-299': 86400, '404': 1, '500-599': 0 })
-     */
-    cacheTtlByStatus?: Record<string, number>;
-    /** Controls how responses with a `Vary` header are cached for this request. */
-    vary?: RequestInitCfPropertiesVary;
-    /**
-     * Explicit Cache-Control header value to set on the response stored in cache.
-     * This gives full control over cache directives (e.g. 'public, max-age=3600, s-maxage=86400').
-     *
-     * Cannot be used together with `cacheTtl` or the `cache` request option (`no-store`/`no-cache`),
-     * as these are mutually exclusive cache control mechanisms. Setting both will throw a TypeError.
-     *
-     * Can be used together with `cacheTtlByStatus`.
-     */
-    cacheControl?: string;
-    /**
-     * Whether the response should be eligible for Cache Reserve storage.
-     */
-    cacheReserveEligible?: boolean;
-    /**
-     * Whether to respect strong ETags (as opposed to weak ETags) from the origin.
-     */
-    respectStrongEtag?: boolean;
-    /**
-     * Whether to strip ETag headers from the origin response before caching.
-     */
-    stripEtags?: boolean;
-    /**
-     * Whether to strip Last-Modified headers from the origin response before caching.
-     */
-    stripLastModified?: boolean;
-    /**
-     * Whether to enable Cache Deception Armor, which protects against web cache
-     * deception attacks by verifying the Content-Type matches the URL extension.
-     */
-    cacheDeceptionArmor?: boolean;
-    /**
-     * Minimum file size in bytes for a response to be eligible for Cache Reserve storage.
-     */
-    cacheReserveMinimumFileSize?: number;
-    scrapeShield?: boolean;
-    apps?: boolean;
-    /**
-     * Controls whether an outbound gRPC-web subrequest from this Worker is
-     * converted to gRPC at the Cloudflare edge.
-     *
-     * - `"passthrough"`: forward the subrequest unchanged as gRPC-web (default).
-     * - `"convert"`: convert the gRPC-web subrequest to gRPC at the edge.
-     *
-     * Provides per-request control over the same edge conversion behavior
-     * gated by the `auto_grpc_convert` compatibility flag.
-     */
-    grpcWeb?: "passthrough" | "convert";
-    image?: RequestInitCfPropertiesImage;
-    minify?: RequestInitCfPropertiesImageMinify;
-    mirage?: boolean;
-    polish?: "lossy" | "lossless" | "off";
-    r2?: RequestInitCfPropertiesR2;
-    /**
-     * Redirects the request to an alternate origin server. You can use this,
-     * for example, to implement load balancing across several origins.
-     * (e.g.us-east.example.com)
-     *
-     * Note - For security reasons, the hostname set in resolveOverride must
-     * be proxied on the same Cloudflare zone of the incoming request.
-     * Otherwise, the setting is ignored. CNAME hosts are allowed, so to
-     * resolve to a host under a different domain or a DNS only domain first
-     * declare a CNAME record within your own zone‚Äôs DNS mapping to the
-     * external hostname, set proxy on Cloudflare, then set resolveOverride
-     * to point to that CNAME record.
-     */
-    resolveOverride?: string;
-}
-/**
- * Controls how Workers Standard Vary handles a request header listed by an
- * origin `Vary` response header:
- *
- * - `"normalize"`: normalize the request header value before it is used in the
- *   cache variance key.
- * - `"passthrough"`: use the raw request header value in the cache variance
- *   key.
- * - `"bypass"`: bypass cache when the header appears in the origin `Vary`
- *   response header.
- */
-type RequestInitCfPropertiesVaryAction = "normalize" | "passthrough" | "bypass";
-/** Configuration for Workers Standard Vary support. */
-interface RequestInitCfPropertiesVary {
-    /** The fallback action for varied request headers not listed in `headers`. */
-    default: RequestInitCfPropertiesVaryHeader;
-    /**
-     * Lowercase request header names and their Vary configuration.
-     *
-     * The `accept` header can include `media_types`, the `accept-language`
-     * header can include `languages`, and other headers support only `action`.
-     */
-    headers?: RequestInitCfPropertiesVaryHeaders;
-}
-/** Common Vary behavior for a single request header. */
-interface RequestInitCfPropertiesVaryHeader {
-    /** How this request header contributes to cache variance. */
-    action: RequestInitCfPropertiesVaryAction;
-}
-/** Vary behavior for the `accept` request header. */
-interface RequestInitCfPropertiesVaryAcceptHeader extends RequestInitCfPropertiesVaryHeader {
-    /**
-     * Media types to keep when normalizing the `Accept` request header.
-     *
-     * Named `media_types` to match the serialized `cf.vary` configuration.
-     */
-    media_types?: string[];
-}
-/** Vary behavior for the `accept-language` request header. */
-interface RequestInitCfPropertiesVaryAcceptLanguageHeader extends RequestInitCfPropertiesVaryHeader {
-    /**
-     * Language tags to keep when normalizing the `Accept-Language` request
-     * header.
-     */
-    languages?: string[];
-}
-/**
- * Lowercase request header names and their Vary behavior.
- *
- * The index signature allows arbitrary custom request headers beyond the
- * well-known `accept` and `accept-language` specializations.
- */
-interface RequestInitCfPropertiesVaryHeaders {
-    accept?: RequestInitCfPropertiesVaryAcceptHeader;
-    "accept-language"?: RequestInitCfPropertiesVaryAcceptLanguageHeader;
-    [header: string]: RequestInitCfPropertiesVaryHeader | RequestInitCfPropertiesVaryAcceptHeader | RequestInitCfPropertiesVaryAcceptLanguageHeader | undefined;
-}
-interface BasicImageTransformations {
-    /**
-     * Maximum width in image pixels. The value must be an integer.
-     */
-    width?: number;
-    /**
-     * Maximum height in image pixels. The value must be an integer.
-     */
-    height?: number;
-    /**
-     * When cropping with fit: "cover", this defines the side or point that should
-     * be left uncropped. The value is either a string
-     * "left", "right", "top", "bottom", "auto", or "center" (the default),
-     * or an object {x, y} containing focal point coordinates in the original
-     * image expressed as fractions ranging from 0.0 (top or left) to 1.0
-     * (bottom or right), 0.5 being the center. {fit: "cover", gravity: "top"} will
-     * crop bottom or left and right sides as necessary, but won‚Äôt crop anything
-     * from the top. {fit: "cover", gravity: {x:0.5, y:0.2}} will crop each side to
-     * preserve as much as possible around a point at 20% of the height of the
-     * source image.
-     */
-    gravity?: 'face' | 'left' | 'right' | 'top' | 'bottom' | 'center' | 'auto' | 'entropy' | BasicImageTransformationsGravityCoordinates;
-    /**
-     * Specifies how closely the image is cropped toward detected faces when combined
-     * with the gravity=face option. Accepts a valid range between 0.0 (includes as much
-     * of the background as possible) and 1.0 (crops the image as closely to the face as
-     * possible). The default is 0.
-     */
-    zoom?: number;
-    /**
-     * Resizing mode as a string. It affects interpretation of width and height
-     * options:
-     *  - scale-down: Similar to contain, but the image is never enlarged. If
-     *    the image is larger than given width or height, it will be resized.
-     *    Otherwise its original size will be kept.
-     *  - scale-up: Similar to contain, but the image is never shrunk. If the
-     *    image is smaller than the given width or height, it will be resized.
-     *    Otherwise its original size will be kept.
-     *  - contain: Resizes to maximum size that fits within the given width and
-     *    height. If only a single dimension is given (e.g. only width), the
-     *    image will be shrunk or enlarged to exactly match that dimension.
-     *    Aspect ratio is always preserved.
-     *  - cover: Resizes (shrinks or enlarges) to fill the entire area of width
-     *    and height. If the image has an aspect ratio different from the ratio
-     *    of width and height, it will be cropped to fit.
-     *  - crop: The image will be shrunk and cropped to fit within the area
-     *    specified by width and height. The image will not be enlarged. For images
-     *    smaller than the given dimensions it's the same as scale-down. For
-     *    images larger than the given dimensions, it's the same as cover.
-     *    See also trim.
-     *  - pad: Resizes to the maximum size that fits within the given width and
-     *    height, and then fills the remaining area with a background color
-     *    (white by default). Use of this mode is not recommended, as the same
-     *    effect can be more efficiently achieved with the contain mode and the
-     *    CSS object-fit: contain property.
-     *  - squeeze: Stretches and deforms to the width and height given, even if it
-     *    breaks aspect ratio
-     */
-    fit?: "scale-down" | "scale-up" | "contain" | "cover" | "crop" | "pad" | "squeeze";
-    /**
-     * Allows you to trim your image. Takes dpr into account and is performed before
-     * resizing or rotation.
-     *
-     * It can be used as:
-     * - left, top, right, bottom - it will specify the number of pixels to cut
-     *   off each side
-     * - width, height - the width/height you'd like to end up with - can be used
-     *   in combination with the properties above
-     * - border - this will automatically trim the surroundings of an image based on
-     *   it's color. It consists of three properties:
-     *    - color: rgb or hex representation of the color you wish to trim (todo: verify the rgba bit)
-     *    - tolerance: difference from color to treat as color
-     *    - keep: the number of pixels of border to keep
-     */
-    trim?: "border" | {
-        top?: number;
-        bottom?: number;
-        left?: number;
-        right?: number;
-        width?: number;
-        height?: number;
-        border?: boolean | {
-            color?: string;
-            tolerance?: number;
-            keep?: number;
-        };
-    };
-    /**
-     * Background color to add underneath the image. Applies only to images with
-     * transparency (such as PNG). Accepts any CSS color (#RRGGBB, rgba(‚Ä¶),
-     * hsl(‚Ä¶), etc.)
-     */
-    background?: string;
-    /**
-     * Flips the images horizontally, vertically, or both. Flipping is applied before
-     * rotation, so if you apply flip=h,rotate=90 then the image will be flipped
-     * horizontally, then rotated by 90 degrees.
-     */
-    flip?: 'h' | 'v' | 'hv';
-    /**
-     * Number of degrees (90, 180, 270) to rotate the image by. width and height
-     * options refer to axes after rotation.
-     */
-    rotate?: 0 | 90 | 180 | 270 | 360;
-    /**
-     * Strength of sharpening filter to apply to the image. Floating-point
-     * number between 0 (no sharpening, default) and 10 (maximum). 1.0 is a
-     * recommended value for downscaled images.
-     */
-    sharpen?: number;
-    /**
-     * Radius of a blur filter (approximate gaussian). Maximum supported radius
-     * is 250.
-     */
-    blur?: number;
-    /**
-     * Increase contrast by a factor. A value of 1.0 equals no change, a value of
-     * 0.5 equals low contrast, and a value of 2.0 equals high contrast. 0 is
-     * ignored.
-     */
-    contrast?: number;
-    /**
-     * Increase brightness by a factor. A value of 1.0 equals no change, a value
-     * of 0.5 equals half brightness, and a value of 2.0 equals twice as bright.
-     * 0 is ignored.
-     */
-    brightness?: number;
-    /**
-     * Increase exposure by a factor. A value of 1.0 equals no change, a value of
-     * 0.5 darkens the image, and a value of 2.0 lightens the image. 0 is ignored.
-     */
-    gamma?: number;
-    /**
-     * Increase contrast by a factor. A value of 1.0 equals no change, a value of
-     * 0.5 equals low contrast, and a value of 2.0 equals high contrast. 0 is
-     * ignored.
-     */
-    saturation?: number;
-    /**
-     * Device Pixel Ratio. Default 1. Multiplier for width/height that makes it
-     * easier to specify higher-DPI sizes in <img srcset>.
-     */
-    dpr?: number;
-    /**
-     * Adds a border around the image. The border is added after resizing. Border
-     * width takes dpr into account, and can be specified either using a single
-     * width property, or individually for each side.
-     */
-    border?: {
-        color: string;
-        width: number;
-    } | {
-        color: string;
-        top: number;
-        right: number;
-        bottom: number;
-        left: number;
-    };
-    /**
-     * Image segmentation using artificial intelligence models. Sets pixels not
-     * within selected segment area to transparent e.g "foreground" sets every
-     * background pixel as transparent.
-     */
-    segment?: "foreground";
-    /**
-     * Controls the algorithm used when an image needs to be enlarged. This
-     * parameter works with any fit mode that upscales, such as `contain`,
-     * `cover`, and `scale-up`. It has no effect when `fit=scale-down` or when
-     * the target dimensions are smaller than the source.
-     * - interpolate: Uses bicubic interpolation, which may reduce image quality.
-     *   This is the default behavior when `upscale` is not specified.
-     * - generate: Uses AI upscaling to produce sharper, more detailed results
-     *   when enlarging images.
-     */
-    upscale?: "interpolate" | "generate";
-}
-interface BasicImageTransformationsGravityCoordinates {
-    x?: number;
-    y?: number;
-    mode?: 'remainder' | 'box-center';
-}
-interface RequestInitCfPropertiesImageDraw extends BasicImageTransformations {
-    /**
-     * Absolute URL of the image file to use for the drawing. It can be any of
-     * the supported file formats. For drawing of watermarks or non-rectangular
-     * overlays we recommend using PNG or WebP images.
-     */
-    url: string;
-    /**
-     * Floating-point number between 0 (transparent) and 1 (opaque).
-     * For example, opacity: 0.5 makes overlay semitransparent.
-     */
-    opacity?: number;
-    /**
-     * - If set to true, the overlay image will be tiled to cover the entire
-     *   area. This is useful for stock-photo-like watermarks.
-     * - If set to "x", the overlay image will be tiled horizontally only
-     *   (form a line).
-     * - If set to "y", the overlay image will be tiled vertically only
-     *   (form a line).
-     */
-    repeat?: true | "x" | "y";
-    /**
-     * How to combine the foreground and backdrop pixels to create the result
-     */
-    composite?: 
-    /** Foreground drawn on top of backdrop (default) */
-    'over'
-    /** Foreground shown only where backdrop is opaque */
-     | 'in'
-    /** Foreground drawn on top, but clipped to the backdrop's shape */
-     | 'atop'
-    /** Foreground shown only where backdrop is transparent */
-     | 'out'
-    /** Foreground and backdrop visible only where the other is not */
-     | 'xor'
-    /** Foreground and backdrop channels added (brightening) */
-     | 'lighter';
-    /**
-     * Position of the overlay image relative to a given edge. Each property is
-     * an offset in pixels. 0 aligns exactly to the edge. For example, left: 10
-     * positions left side of the overlay 10 pixels from the left edge of the
-     * image it's drawn over. bottom: 0 aligns bottom of the overlay with bottom
-     * of the background image.
-     *
-     * Setting both left & right, or both top & bottom is an error.
-     *
-     * If no position is specified, the image will be centered.
-     */
-    top?: number;
-    left?: number;
-    bottom?: number;
-    right?: number;
-}
-interface RequestInitCfPropertiesImage extends BasicImageTransformations {
-    /**
-     * Quality setting from 1-100 (useful values are in 60-90 range). Lower values
-     * make images look worse, but load faster. The default is 85. It applies only
-     * to JPEG and WebP images. It doesn‚Äôt have any effect on PNG.
-     */
-    quality?: number | "low" | "medium-low" | "medium-high" | "high";
-    /**
-     * Output format to generate. It can be:
-     *  - avif: generate images in AVIF format.
-     *  - webp: generate images in Google WebP format. Set quality to 100 to get
-     *    the WebP-lossless format.
-     *  - json: instead of generating an image, outputs information about the
-     *    image, in JSON format. The JSON object will contain image size
-     *    (before and after resizing), source image‚Äôs MIME type, file size, etc.
-     * - jpeg: generate images in JPEG format.
-     * - png: generate images in PNG format.
-     */
-    format?: "avif" | "webp" | "json" | "jpeg" | "png" | "baseline-jpeg" | "png-force" | "svg";
-    /**
-     * Whether to preserve animation frames from input files. Default is true.
-     * Setting it to false reduces animations to still images. This setting is
-     * recommended when enlarging images or processing arbitrary user content,
-     * because large GIF animations can weigh tens or even hundreds of megabytes.
-     * It is also useful to set anim:false when using format:"json" to get the
-     * response quicker without the number of frames.
-     */
-    anim?: boolean;
-    /**
-     * What EXIF data should be preserved in the output image. Note that EXIF
-     * rotation and embedded color profiles are always applied ("baked in" into
-     * the image), and aren't affected by this option. Note that if the Polish
-     * feature is enabled, all metadata may have been removed already and this
-     * option may have no effect.
-     *  - keep: Preserve most of EXIF metadata, including GPS location if there's
-     *    any.
-     *  - copyright: Only keep the copyright tag, and discard everything else.
-     *    This is the default behavior for JPEG files.
-     *  - none: Discard all invisible EXIF metadata. Currently WebP and PNG
-     *    output formats always discard metadata.
-     */
-    metadata?: "keep" | "copyright" | "none";
-    /**
-     * Overlays are drawn in the order they appear in the array (last array
-     * entry is the topmost layer).
-     */
-    draw?: RequestInitCfPropertiesImageDraw[];
-    /**
-     * Fetching image from authenticated origin. Setting this property will
-     * pass authentication headers (Authorization, Cookie, etc.) through to
-     * the origin.
-     */
-    "origin-auth"?: "share-publicly";
-    /**
-     * Slightly reduces latency on a cache miss by selecting a
-     * quickest-to-compress file format, at a cost of increased file size and
-     * lower image quality. It will usually override the format option and choose
-     * JPEG over WebP or AVIF. We do not recommend using this option, except in
-     * unusual circumstances like resizing uncacheable dynamically-generated
-     * images.
-     */
-    compression?: "fast";
-}
-interface RequestInitCfPropertiesImageMinify {
-    javascript?: boolean;
-    css?: boolean;
-    html?: boolean;
-}
-interface RequestInitCfPropertiesR2 {
-    /**
-     * Colo id of bucket that an object is stored in
-     */
-    bucketColoId?: number;
-}
-/**
- * Request metadata provided by Cloudflare's edge.
- */
-type IncomingRequestCfProperties<HostMetadata = unknown> = IncomingRequestCfPropertiesBase & IncomingRequestCfPropertiesBotManagementEnterprise & IncomingRequestCfPropertiesCloudflareForSaaSEnterprise<HostMetadata> & IncomingRequestCfPropertiesGeographicInformation & IncomingRequestCfPropertiesCloudflareAccessOrApiShield;
-interface IncomingRequestCfPropertiesBase extends Record<string, unknown> {
-    /**
-     * [ASN](https://www.iana.org/assignments/as-numbers/as-numbers.xhtml) of the incoming request.
-     *
-     * @example 395747
-     */
-    asn?: number;
-    /**
-     * The organization which owns the ASN of the incoming request.
-     *
-     * @example "Google Cloud"
-     */
-    asOrganization?: string;
-    /**
-     * The original value of the `Accept-Encoding` header if Cloudflare modified it.
-     *
-     * @example "gzip, deflate, br"
-     */
-    clientAcceptEncoding?: string;
-    /**
-     * The number of milliseconds it took for the request to reach your worker.
-     *
-     * @example 22
-     */
-    clientTcpRtt?: number;
-    /**
-     * The three-letter [IATA](https://en.wikipedia.org/wiki/IATA_airport_code)
-     * airport code of the data center that the request hit.
-     *
-     * @example "DFW"
-     */
-    colo: string;
-    /**
-     * Represents the upstream's response to a
-     * [TCP `keepalive` message](https://tldp.org/HOWTO/TCP-Keepalive-HOWTO/overview.html)
-     * from cloudflare.
-     *
-     * For workers with no upstream, this will always be `1`.
-     *
-     * @example 3
-     */
-    edgeRequestKeepAliveStatus: IncomingRequestCfPropertiesEdgeRequestKeepAliveStatus;
-    /**
-     * The HTTP Protocol the request used.
-     *
-     * @example "HTTP/2"
-     */
-    httpProtocol: string;
-    /**
-     * The browser-requested prioritization information in the request object.
-     *
-     * If no information was set, defaults to the empty string `""`
-     *
-     * @example "weight=192;exclusive=0;group=3;group-weight=127"
-     * @default ""
-     */
-    requestPriority: string;
-    /**
-     * The TLS version of the connection to Cloudflare.
-     * In requests served over plaintext (without TLS), this property is the empty string `""`.
-     *
-     * @example "TLSv1.3"
-     */
-    tlsVersion: string;
-    /**
-     * The cipher for the connection to Cloudflare.
-     * In requests served over plaintext (without TLS), this property is the empty string `""`.
-     *
-     * @example "AEAD-AES128-GCM-SHA256"
-     */
-    tlsCipher: string;
-    /**
-     * Metadata containing the [`HELLO`](https://www.rfc-editor.org/rfc/rfc5246#section-7.4.1.2) and [`FINISHED`](https://www.rfc-editor.org/rfc/rfc5246#section-7.4.9) messages from this request's TLS handshake.
-     *
-     * If the incoming request was served over plaintext (without TLS) this field is undefined.
-     */
-    tlsExportedAuthenticator?: IncomingRequestCfPropertiesExportedAuthenticatorMetadata;
-}
-interface IncomingRequestCfPropertiesBotManagementBase {
-    /**
-     * Cloudflare‚Äôs [level of certainty](https://developers.cloudflare.com/bots/concepts/bot-score/) that a request comes from a bot,
-     * represented as an integer percentage between `1` (almost certainly a bot) and `99` (almost certainly human).
-     *
-     * @example 54
-     */
-    score: number;
-    /**
-     * A boolean value that is true if the request comes from a good bot, like Google or Bing.
-     * Most customers choose to allow this traffic. For more details, see [Traffic from known bots](https://developers.cloudflare.com/firewall/known-issues-and-faq/#how-does-firewall-rules-handle-traffic-from-known-bots).
-     */
-    verifiedBot: boolean;
-    /**
-     * A boolean value that is true if the request originates from a
-     * Cloudflare-verified proxy service.
-     */
-    corporateProxy: boolean;
-    /**
-     * A boolean value that's true if the request matches [file extensions](https://developers.cloudflare.com/bots/reference/static-resources/) for many types of static resources.
-     */
-    staticResource: boolean;
-    /**
-     * List of IDs that correlate to the Bot Management heuristic detections made on a request (you can have multiple heuristic detections on the same request).
-     */
-    detectionIds: number[];
-}
-interface IncomingRequestCfPropertiesBotManagement {
-    /**
-     * Results of Cloudflare's Bot Management analysis
-     */
-    botManagement: IncomingRequestCfPropertiesBotManagementBase;
-    /**
-     * Duplicate of `botManagement.score`.
-     *
-     * @deprecated
-     */
-    clientTrustScore: number;
-}
-interface IncomingRequestCfPropertiesBotManagementEnterprise extends IncomingRequestCfPropertiesBotManagement {
-    /**
-     * Results of Cloudflare's Bot Management analysis
-     */
-    botManagement: IncomingRequestCfPropertiesBotManagementBase & {
-        /**
-         * A [JA3 Fingerprint](https://developers.cloudflare.com/bots/concepts/ja3-fingerprint/) to help profile specific SSL/TLS clients
-         * across different destination IPs, Ports, and X509 certificates.
-         */
-        ja3Hash: string;
-    };
-}
-interface IncomingRequestCfPropertiesCloudflareForSaaSEnterprise<HostMetadata> {
-    /**
-     * Custom metadata set per-host in [Cloudflare for SaaS](https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/).
-     *
-     * This field is only present if you have Cloudflare for SaaS enabled on your account
-     * and you have followed the [required steps to enable it]((https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/domain-support/custom-metadata/)).
-     */
-    hostMetadata?: HostMetadata;
-}
-interface IncomingRequestCfPropertiesCloudflareAccessOrApiShield {
-    /**
-     * Information about the client certificate presented to Cloudflare.
-     *
-     * This is populated when the incoming request is served over TLS using
-     * either Cloudflare Access or API Shield (mTLS)
-     * and the presented SSL certificate has a valid
-     * [Certificate Serial Number](https://ldapwiki.com/wiki/Certificate%20Serial%20Number)
-     * (i.e., not `null` or `""`).
-     *
-     * Otherwise, a set of placeholder values are used.
-     *
-     * The property `certPresented` will be set to `"1"` when
-     * the object is populated (i.e. the above conditions were met).
-     */
-    tlsClientAuth: IncomingRequestCfPropertiesTLSClientAuth | IncomingRequestCfPropertiesTLSClientAuthPlaceholder;
-}
-/**
- * Metadata about the request's TLS handshake
- */
-interface IncomingRequestCfPropertiesExportedAuthenticatorMetadata {
-    /**
-     * The client's [`HELLO` message](https://www.rfc-editor.org/rfc/rfc5246#section-7.4.1.2), encoded in hexadecimal
-     *
-     * @example "44372ba35fa1270921d318f34c12f155dc87b682cf36a790cfaa3ba8737a1b5d"
-     */
-    clientHandshake: string;
-    /**
-     * The server's [`HELLO` message](https://www.rfc-editor.org/rfc/rfc5246#section-7.4.1.2), encoded in hexadecimal
-     *
-     * @example "44372ba35fa1270921d318f34c12f155dc87b682cf36a790cfaa3ba8737a1b5d"
-     */
-    serverHandshake: string;
-    /**
-     * The client's [`FINISHED` message](https://www.rfc-editor.org/rfc/rfc5246#section-7.4.9), encoded in hexadecimal
-     *
-     * @example "084ee802fe1348f688220e2a6040a05b2199a761f33cf753abb1b006792d3f8b"
-     */
-    clientFinished: string;
-    /**
-     * The server's [`FINISHED` message](https://www.rfc-editor.org/rfc/rfc5246#section-7.4.9), encoded in hexadecimal
-     *
-     * @example "084ee802fe1348f688220e2a6040a05b2199a761f33cf753abb1b006792d3f8b"
-     */
-    serverFinished: string;
-}
-/**
- * Geographic data about the request's origin.
- */
-interface IncomingRequestCfPropertiesGeographicInformation {
-    /**
-     * The [ISO 3166-1 Alpha 2](https://www.iso.org/iso-3166-country-codes.html) country code the request originated from.
-     *
-     * If your worker is [configured to accept TOR connections](https://support.cloudflare.com/hc/en-us/articles/203306930-Understanding-Cloudflare-Tor-support-and-Onion-Routing), this may also be `"T1"`, indicating a request that originated over TOR.
-     *
-     * If Cloudflare is unable to determine where the request originated this property is omitted.
-     *
-     * The country code `"T1"` is used for requests originating on TOR.
-     *
-     * @example "GB"
-     */
-    country?: Iso3166Alpha2Code | "T1";
-    /**
-     * If present, this property indicates that the request originated in the EU
-     *
-     * @example "1"
-     */
-    isEUCountry?: "1";
-    /**
-     * A two-letter code indicating the continent the request originated from.
-     *
-     * @example "AN"
-     */
-    continent?: ContinentCode;
-    /**
-     * The city the request originated from
-     *
-     * @example "Austin"
-     */
-    city?: string;
-    /**
-     * Postal code of the incoming request
-     *
-     * @example "78701"
-     */
-    postalCode?: string;
-    /**
-     * Latitude of the incoming request
-     *
-     * @example "30.27130"
-     */
-    latitude?: string;
-    /**
-     * Longitude of the incoming request
-     *
-     * @example "-97.74260"
-     */
-    longitude?: string;
-    /**
-     * Timezone of the incoming request
-     *
-     * @example "America/Chicago"
-     */
-    timezone?: string;
-    /**
-     * If known, the ISO 3166-2 name for the first level region associated with
-     * the IP address of the incoming request
-     *
-     * @example "Texas"
-     */
-    region?: string;
-    /**
-     * If known, the ISO 3166-2 code for the first-level region associated with
-     * the IP address of the incoming request
-     *
-     * @example "TX"
-     */
-    regionCode?: string;
-    /**
-     * Metro code (DMA) of the incoming request
-     *
-     * @example "635"
-     */
-    metroCode?: string;
-}
-/** Data about the incoming request's TLS certificate */
-interface IncomingRequestCfPropertiesTLSClientAuth {
-    /** Always `"1"`, indicating that the certificate was presented */
-    certPresented: "1";
-    /**
-     * Result of certificate verification.
-     *
-     * @example "FAILED:self signed certificate"
-     */
-    certVerified: Exclude<CertVerificationStatus, "NONE">;
-    /** The presented certificate's revokation status.
-     *
-     * - A value of `"1"` indicates the certificate has been revoked
-     * - A value of `"0"` indicates the certificate has not been revoked
-     */
-    certRevoked: "1" | "0";
-    /**
-     * The certificate issuer's [distinguished name](https://knowledge.digicert.com/generalinformation/INFO1745.html)
-     *
-     * @example "CN=cloudflareaccess.com, C=US, ST=Texas, L=Austin, O=Cloudflare"
-     */
-    certIssuerDN: string;
-    /**
-     * The certificate subject's [distinguished name](https://knowledge.digicert.com/generalinformation/INFO1745.html)
-     *
-     * @example "CN=*.cloudflareaccess.com, C=US, ST=Texas, L=Austin, O=Cloudflare"
-     */
-    certSubjectDN: string;
-    /**
-     * The certificate issuer's [distinguished name](https://knowledge.digicert.com/generalinformation/INFO1745.html) ([RFC 2253](https://www.rfc-editor.org/rfc/rfc2253.html) formatted)
-     *
-     * @example "CN=cloudflareaccess.com, C=US, ST=Texas, L=Austin, O=Cloudflare"
-     */
-    certIssuerDNRFC2253: string;
-    /**
-     * The certificate subject's [distinguished name](https://knowledge.digicert.com/generalinformation/INFO1745.html) ([RFC 2253](https://www.rfc-editor.org/rfc/rfc2253.html) formatted)
-     *
-     * @example "CN=*.cloudflareaccess.com, C=US, ST=Texas, L=Austin, O=Cloudflare"
-     */
-    certSubjectDNRFC2253: string;
-    /** The certificate issuer's distinguished name (legacy policies) */
-    certIssuerDNLegacy: string;
-    /** The certificate subject's distinguished name (legacy policies) */
-    certSubjectDNLegacy: string;
-    /**
-     * The certificate's serial number
-     *
-     * @example "00936EACBE07F201DF"
-     */
-    certSerial: string;
-    /**
-     * The certificate issuer's serial number
-     *
-     * @example "2489002934BDFEA34"
-     */
-    certIssuerSerial: string;
-    /**
-     * The certificate's Subject Key Identifier
-     *
-     * @example "BB:AF:7E:02:3D:FA:A6:F1:3C:84:8E:AD:EE:38:98:EC:D9:32:32:D4"
-     */
-    certSKI: string;
-    /**
-     * The certificate issuer's Subject Key Identifier
-     *
-     * @example "BB:AF:7E:02:3D:FA:A6:F1:3C:84:8E:AD:EE:38:98:EC:D9:32:32:D4"
-     */
-    certIssuerSKI: string;
-    /**
-     * The certificate's SHA-1 fingerprint
-     *
-     * @example "6b9109f323999e52259cda7373ff0b4d26bd232e"
-     */
-    certFingerprintSHA1: string;
-    /**
-     * The certificate's SHA-256 fingerprint
-     *
-     * @example "acf77cf37b4156a2708e34c4eb755f9b5dbbe5ebb55adfec8f11493438d19e6ad3f157f81fa3b98278453d5652b0c1fd1d71e5695ae4d709803a4d3f39de9dea"
-     */
-    certFingerprintSHA256: string;
-    /**
-     * The effective starting date of the certificate
-     *
-     * @example "Dec 22 19:39:00 2018 GMT"
-     */
-    certNotBefore: string;
-    /**
-     * The effective expiration date of the certificate
-     *
-     * @example "Dec 22 19:39:00 2018 GMT"
-     */
-    certNotAfter: string;
-    /**
-     * The client leaf certificate in [RFC 9440](https://www.rfc-editor.org/rfc/rfc9440)
-     * format (`:base64-DER:`). Empty if no client certificate was presented or if
-     * the leaf certificate exceeded 10 KB (see {@link certRFC9440TooLarge}).
-     *
-     * Suitable for forwarding to an origin via the `Client-Cert` HTTP header.
-     */
-    certRFC9440: string;
-    /**
-     * `true` if the leaf certificate exceeded 10 KB and was omitted from
-     * {@link certRFC9440}.
-     */
-    certRFC9440TooLarge: boolean;
-    /**
-     * The intermediate certificate chain in [RFC 9440](https://www.rfc-editor.org/rfc/rfc9440)
-     * format as a comma-separated list. Empty if no intermediates were sent or
-     * if the chain exceeded 16 KB (see {@link certChainRFC9440TooLarge}).
-     *
-     * Suitable for forwarding to an origin via the `Client-Cert-Chain` HTTP header.
-     */
-    certChainRFC9440: string;
-    /**
-     * `true` if the intermediate chain exceeded 16 KB and was omitted from
-     * {@link certChainRFC9440}.
-     */
-    certChainRFC9440TooLarge: boolean;
-}
-/** Placeholder values for TLS Client Authorization */
-interface IncomingRequestCfPropertiesTLSClientAuthPlaceholder {
-    certPresented: "0";
-    certVerified: "NONE";
-    certRevoked: "0";
-    certIssuerDN: "";
-    certSubjectDN: "";
-    certIssuerDNRFC2253: "";
-    certSubjectDNRFC2253: "";
-    certIssuerDNLegacy: "";
-    certSubjectDNLegacy: "";
-    certSerial: "";
-    certIssuerSerial: "";
-    certSKI: "";
-    certIssuerSKI: "";
-    certFingerprintSHA1: "";
-    certFingerprintSHA256: "";
-    certNotBefore: "";
-    certNotAfter: "";
-    certRFC9440: "";
-    certRFC9440TooLarge: false;
-    certChainRFC9440: "";
-    certChainRFC9440TooLarge: false;
-}
-/** Possible outcomes of TLS verification */
-declare type CertVerificationStatus = 
-/** Authentication succeeded */
-"SUCCESS"
-/** No certificate was presented */
- | "NONE"
-/** Failed because the certificate was self-signed */
- | "FAILED:self signed certificate"
-/** Failed because the certificate failed a trust chain check */
- | "FAILED:unable to verify the first certificate"
-/** Failed because the certificate not yet valid */
- | "FAILED:certificate is not yet valid"
-/** Failed because the certificate is expired */
- | "FAILED:certificate has expired"
-/** Failed for another unspecified reason */
- | "FAILED";
-/**
- * An upstream endpoint's response to a TCP `keepalive` message from Cloudflare.
- */
-declare type IncomingRequestCfPropertiesEdgeRequestKeepAliveStatus = 0 /** Unknown */ | 1 /** no keepalives (not found) */ | 2 /** no connection re-use, opening keepalive connection failed */ | 3 /** no connection re-use, keepalive accepted and saved */ | 4 /** connection re-use, refused by the origin server (`TCP FIN`) */ | 5; /** connection re-use, accepted by the origin server */
-/** ISO 3166-1 Alpha-2 codes */
-declare type Iso3166Alpha2Code = "AD" | "AE" | "AF" | "AG" | "AI" | "AL" | "AM" | "AO" | "AQ" | "AR" | "AS" | "AT" | "AU" | "AW" | "AX" | "AZ" | "BA" | "BB" | "BD" | "BE" | "BF" | "BG" | "BH" | "BI" | "BJ" | "BL" | "BM" | "BN" | "BO" | "BQ" | "BR" | "BS" | "BT" | "BV" | "BW" | "BY" | "BZ" | "CA" | "CC" | "CD" | "CF" | "CG" | "CH" | "CI" | "CK" | "CL" | "CM" | "CN" | "CO" | "CR" | "CU" | "CV" | "CW" | "CX" | "CY" | "CZ" | "DE" | "DJ" | "DK" | "DM" | "DO" | "DZ" | "EC" | "EE" | "EG" | "EH" | "ER" | "ES" | "ET" | "FI" | "FJ" | "FK" | "FM" | "FO" | "FR" | "GA" | "GB" | "GD" | "GE" | "GF" | "GG" | "GH" | "GI" | "GL" | "GM" | "GN" | "GP" | "GQ" | "GR" | "GS" | "GT" | "GU" | "GW" | "GY" | "HK" | "HM" | "HN" | "HR" | "HT" | "HU" | "ID" | "IE" | "IL" | "IM" | "IN" | "IO" | "IQ" | "IR" | "IS" | "IT" | "JE" | "JM" | "JO" | "JP" | "KE" | "KG" | "KH" | "KI" | "KM" | "KN" | "KP" | "KR" | "KW" | "KY" | "KZ" | "LA" | "LB" | "LC" | "LI" | "LK" | "LR" | "LS" | "LT" | "LU" | "LV" | "LY" | "MA" | "MC" | "MD" | "ME" | "MF" | "MG" | "MH" | "MK" | "ML" | "MM" | "MN" | "MO" | "MP" | "MQ" | "MR" | "MS" | "MT" | "MU" | "MV" | "MW" | "MX" | "MY" | "MZ" | "NA" | "NC" | "NE" | "NF" | "NG" | "NI" | "NL" | "NO" | "NP" | "NR" | "NU" | "NZ" | "OM" | "PA" | "PE" | "PF" | "PG" | "PH" | "PK" | "PL" | "PM" | "PN" | "PR" | "PS" | "PT" | "PW" | "PY" | "QA" | "RE" | "RO" | "RS" | "RU" | "RW" | "SA" | "SB" | "SC" | "SD" | "SE" | "SG" | "SH" | "SI" | "SJ" | "SK" | "SL" | "SM" | "SN" | "SO" | "SR" | "SS" | "ST" | "SV" | "SX" | "SY" | "SZ" | "TC" | "TD" | "TF" | "TG" | "TH" | "TJ" | "TK" | "TL" | "TM" | "TN" | "TO" | "TR" | "TT" | "TV" | "TW" | "TZ" | "UA" | "UG" | "UM" | "US" | "UY" | "UZ" | "VA" | "VC" | "VE" | "VG" | "VI" | "VN" | "VU" | "WF" | "WS" | "YE" | "YT" | "ZA" | "ZM" | "ZW";
-/** The 2-letter continent codes Cloudflare uses */
-declare type ContinentCode = "AF" | "AN" | "AS" | "EU" | "NA" | "OC" | "SA";
-type CfProperties<HostMetadata = unknown> = IncomingRequestCfProperties<HostMetadata> | RequestInitCfProperties;
-interface D1Meta {
-    duration: number;
-    size_after: number;
-    rows_read: number;
-    rows_written: number;
-    last_row_id: number;
-    changed_db: boolean;
-    changes: number;
-    /**
-     * The region of the database instance that executed the query.
-     */
-    served_by_region?: string;
-    /**
-     * The three letters airport code of the colo that executed the query.
-     */
-    served_by_colo?: string;
-    /**
-     * True if-and-only-if the database instance that executed the query was the primary.
-     */
-    served_by_primary?: boolean;
-    timings?: {
-        /**
-         * The duration of the SQL query execution by the database instance. It doesn't include any network time.
-         */
-        sql_duration_ms: number;
-    };
-    /**
-     * Number of total attempts to execute the query, due to automatic retries.
-     * Note: All other fields in the response like `timings` only apply to the last attempt.
-     */
-    total_attempts?: number;
-}
-interface D1Response {
-    success: true;
-    meta: D1Meta & Record<string, unknown>;
-    error?: never;
-}
-type D1Result<T = unknown> = D1Response & {
-    results: T[];
-};
-interface D1ExecResult {
-    count: number;
-    duration: number;
-}
-type D1SessionConstraint = 
-// Indicates that the first query should go to the primary, and the rest queries
-// using the same D1DatabaseSession will go to any replica that is consistent with
-// the bookmark maintained by the session (returned by the first query).
-'first-primary'
-// Indicates that the first query can go anywhere (primary or replica), and the rest queries
-// using the same D1DatabaseSession will go to any replica that is consistent with
-// the bookmark maintained by the session (returned by the first query).
- | 'first-unconstrained';
-type D1SessionBookmark = string;
-declare abstract class D1Database {
-    prepare(query: string): D1PreparedStatement;
-    batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
-    exec(query: string): Promise<D1ExecResult>;
-    /**
-     * Creates a new D1 Session anchored at the given constraint or the bookmark.
-     * All queries executed using the created session will have sequential consistency,
-     * meaning that all writes done through the session will be visible in subsequent reads.
-     *
-     * @param constraintOrBookmark Either the session constraint or the explicit bookmark to anchor the created session.
-     */
-    withSession(constraintOrBookmark?: D1SessionBookmark | D1SessionConstraint): D1DatabaseSession;
-    /**
-     * @deprecated dump() will be removed soon, only applies to deprecated alpha v1 databases.
-     */
-    dump(): Promise<ArrayBuffer>;
-}
-declare abstract class D1DatabaseSession {
-    prepare(query: string): D1PreparedStatement;
-    batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
-    /**
-     * @returns The latest session bookmark across all executed queries on the session.
-     *          If no query has been executed yet, `null` is returned.
-     */
-    getBookmark(): D1SessionBookmark | null;
-}
-declare abstract class D1PreparedStatement {
-    bind(...values: unknown[]): D1PreparedStatement;
-    first<T = unknown>(colName: string): Promise<T | null>;
-    first<T = Record<string, unknown>>(): Promise<T | null>;
-    run<T = Record<string, unknown>>(): Promise<D1Result<T>>;
-    all<T = Record<string, unknown>>(): Promise<D1Result<T>>;
-    raw<T = unknown[]>(options: {
-        columnNames: true;
-    }): Promise<[
-        string[],
-        ...T[]
-    ]>;
-    raw<T = unknown[]>(options?: {
-        columnNames?: false;
-    }): Promise<T[]>;
-}
-// `Disposable` was added to TypeScript's standard lib types in version 5.2.
-// To support older TypeScript versions, define an empty `Disposable` interface.
-// Users won't be able to use `using`/`Symbol.dispose` without upgrading to 5.2,
-// but this will ensure type checking on older versions still passes.
-// TypeScript's interface merging will ensure our empty interface is effectively
-// ignored when `Disposable` is included in the standard lib.
-interface Disposable {
-}
-/**
- * The returned data after sending an email
- */
-interface EmailSendResult {
-    /**
-     * The Email Message ID
-     */
-    messageId: string;
-}
-/**
- * An email message that can be sent from a Worker.
- */
-interface EmailMessage {
-    /**
-     * Envelope From attribute of the email message.
-     */
-    readonly from: string;
-    /**
-     * Envelope To attribute of the email message.
-     */
-    readonly to: string;
-}
-/**
- * An email message that is sent to a consumer Worker and can be rejected/forwarded.
- */
-interface ForwardableEmailMessage extends EmailMessage {
-    /**
-     * Stream of the email message content.
-     */
-    readonly raw: ReadableStream<Uint8Array>;
-    /**
-     * An [Headers object](https://developer.mozilla.org/en-US/docs/Web/API/Headers).
-     */
-    readonly headers: Headers;
-    /**
-     * Size of the email message content.
-     */
-    readonly rawSize: number;
-    /**
-     * Reject this email message by returning a permanent SMTP error back to the connecting client including the given reason.
-     * @param reason The reject reason.
-     * @returns void
-     */
-    setReject(reason: string): void;
-    /**
-     * Forward this email message to a verified destination address of the account.
-     * @param rcptTo Verified destination address.
-     * @param headers A [Headers object](https://developer.mozilla.org/en-US/docs/Web/API/Headers).
-     * @returns A promise that resolves when the email message is forwarded.
-     */
-    forward(rcptTo: string, headers?: Headers): Promise<EmailSendResult>;
-    /**
-     * Reply to the sender of this email message with a new EmailMessage object.
-     * @param message The reply message.
-     * @returns A promise that resolves when the email message is replied.
-     */
-    reply(message: EmailMessage): Promise<EmailSendResult>;
-    /**
-     * Reply to the sender of this email message with a message built from the given
-     * fields. Threading headers (In-Reply-To/References) are set automatically.
-     * @param builder The reply message contents.
-     * @returns A promise that resolves when the email message is replied.
-     */
-    reply(builder: EmailReplyMessageBuilder): Promise<EmailSendResult>;
-}
-/** A file attachment for an email message */
-type EmailAttachment = {
-    disposition: 'inline';
-    contentId: string;
-    filename: string;
-    type: string;
-    content: string | ArrayBuffer | ArrayBufferView;
-} | {
-    disposition: 'attachment';
-    contentId?: undefined;
-    filename: string;
-    type: string;
-    content: string | ArrayBuffer | ArrayBufferView;
-};
-/** An Email Address */
-interface EmailAddress {
-    name: string;
-    email: string;
-}
-/**
- * Recipient fields for `SendEmail.send()`. At least one of `to`, `cc`, or
- * `bcc` must be provided.
- */
-type EmailDestinations = {
-    to?: string | EmailAddress | (string | EmailAddress)[];
-    cc?: string | EmailAddress | (string | EmailAddress)[];
-    bcc?: string | EmailAddress | (string | EmailAddress)[];
-} & ({
-    to: string | EmailAddress | (string | EmailAddress)[];
-} | {
-    cc: string | EmailAddress | (string | EmailAddress)[];
-} | {
-    bcc: string | EmailAddress | (string | EmailAddress)[];
-});
-/**
- * Fields shared by all composed emails (no recipients). Used directly by
- * `ForwardableEmailMessage.reply()`, which always replies to the original
- * sender, and extended by `EmailMessageBuilder` for `SendEmail.send()`.
- */
-interface EmailReplyMessageBuilder {
-    from: string | EmailAddress;
-    subject: string;
-    replyTo?: string | EmailAddress;
-    headers?: Record<string, string>;
-    text?: string;
-    html?: string;
-    attachments?: EmailAttachment[];
-}
-/**
- * Fields for composing an email without constructing raw MIME, for
- * `SendEmail.send()`. Requires at least one of `to`, `cc`, or `bcc`.
- */
-type EmailMessageBuilder = EmailReplyMessageBuilder & EmailDestinations;
-/**
- * A binding that allows a Worker to send email messages.
- */
-interface SendEmail {
-    send(message: EmailMessage): Promise<EmailSendResult>;
-    send(builder: EmailMessageBuilder): Promise<EmailSendResult>;
-}
-declare abstract class EmailEvent extends ExtendableEvent {
-    readonly message: ForwardableEmailMessage;
-}
-declare type EmailExportedHandler<Env = unknown, Props = unknown> = (message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext<Props>) => void | Promise<void>;
-declare module "cloudflare:email" {
-    let _EmailMessage: {
-        prototype: EmailMessage;
-        new (from: string, to: string, raw: ReadableStream | string): EmailMessage;
-    };
-    export { _EmailMessage as EmailMessage };
-}
-/**
- * Evaluation context for targeting rules.
- * Keys are attribute names (e.g. "userId", "country"), values are the attribute values.
- */
-type FlagshipEvaluationContext = Record<string, string | number | boolean>;
-interface FlagshipEvaluationDetails<T> {
-    flagKey: string;
-    value: T;
-    variant?: string | undefined;
-    reason?: string | undefined;
-    errorCode?: string | undefined;
-    errorMessage?: string | undefined;
-}
-interface FlagshipEvaluationError extends Error {
-}
-/**
- * Feature flags binding for evaluating feature flags from a Cloudflare Workers script.
- *
- * @example
- * ```typescript
- * // Get a boolean flag value with a default
- * const enabled = await env.FLAGS.getBooleanValue('my-feature', false);
- *
- * // Get a flag value with evaluation context for targeting
- * const variant = await env.FLAGS.getStringValue('experiment', 'control', {
- *   userId: 'user-123',
- *   country: 'US',
- * });
- *
- * // Get full evaluation details including variant and reason
- * const details = await env.FLAGS.getBooleanDetails('my-feature', false);
- * console.log(details.variant, details.reason);
- * ```
- */
-declare abstract class Flagship {
-    /**
-     * Get a flag value without type checking.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Optional default value returned when evaluation fails.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    get(flagKey: string, defaultValue?: unknown, context?: FlagshipEvaluationContext): Promise<unknown>;
-    /**
-     * Get a boolean flag value.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getBooleanValue(flagKey: string, defaultValue: boolean, context?: FlagshipEvaluationContext): Promise<boolean>;
-    /**
-     * Get a string flag value.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getStringValue(flagKey: string, defaultValue: string, context?: FlagshipEvaluationContext): Promise<string>;
-    /**
-     * Get a number flag value.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getNumberValue(flagKey: string, defaultValue: number, context?: FlagshipEvaluationContext): Promise<number>;
-    /**
-     * Get an object flag value.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getObjectValue<T extends object>(flagKey: string, defaultValue: T, context?: FlagshipEvaluationContext): Promise<T>;
-    /**
-     * Get a boolean flag value with full evaluation details.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getBooleanDetails(flagKey: string, defaultValue: boolean, context?: FlagshipEvaluationContext): Promise<FlagshipEvaluationDetails<boolean>>;
-    /**
-     * Get a string flag value with full evaluation details.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getStringDetails(flagKey: string, defaultValue: string, context?: FlagshipEvaluationContext): Promise<FlagshipEvaluationDetails<string>>;
-    /**
-     * Get a number flag value with full evaluation details.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getNumberDetails(flagKey: string, defaultValue: number, context?: FlagshipEvaluationContext): Promise<FlagshipEvaluationDetails<number>>;
-    /**
-     * Get an object flag value with full evaluation details.
-     * @param flagKey The key of the flag to evaluate.
-     * @param defaultValue Default value returned when evaluation fails or the flag type does not match.
-     * @param context Optional evaluation context for targeting rules.
-     */
-    getObjectDetails<T extends object>(flagKey: string, defaultValue: T, context?: FlagshipEvaluationContext): Promise<FlagshipEvaluationDetails<T>>;
-}
-/**
- * Hello World binding to serve as an explanatory example. DO NOT USE
- */
-interface HelloWorldBinding {
-    /**
-     * Retrieve the current stored value
-     */
-    get(): Promise<{
-        value: string;
-        ms?: number;
-    }>;
-    /**
-     * Set a new stored value
-     */
-    set(value: string): Promise<void>;
-}
-interface Hyperdrive {
-    /**
-     * Connect directly to Hyperdrive as if it's your database, returning a TCP socket.
-     *
-     * Calling this method returns an identical socket to if you call
-     * `connect("host:port")` using the `host` and `port` fields from this object.
-     * Pick whichever approach works better with your preferred DB client library.
-     *
-     * Note that this socket is not yet authenticated -- it's expected that your
-     * code (or preferably, the client library of your choice) will authenticate
-     * using the information in this class's readonly fields.
-     */
-    connect(): Socket;
-    /**
-     * A valid DB connection string that can be passed straight into the typical
-     * client library/driver/ORM. This will typically be the easiest way to use
-     * Hyperdrive.
-     */
-    readonly connectionString: string;
-    /*
-     * A randomly generated hostname that is only valid within the context of the
-     * currently running Worker which, when passed into `connect()` function from
-     * the "cloudflare:sockets" module, will connect to the Hyperdrive instance
-     * for your database.
-     */
-    readonly host: string;
-    /*
-     * A synthetic IPv4 address (in the reserved 240.0.0.0/4 range) that, like the
-     * host field, is only valid within the context of the currently running
-     * Worker and, when passed into the `connect()` function from the
-     * "cloudflare:sockets" module, will connect to the Hyperdrive instance for
-     * your database. This is provided for database drivers that require the host
-     * to be an IP literal rather than a hostname.
-     */
-    readonly ip: string;
-    /*
-     * The port that must be paired the the host field when connecting.
-     */
-    readonly port: number;
-    /*
-     * The username to use when authenticating to your database via Hyperdrive.
-     * Unlike the host and password, this will be the same every time
-     */
-    readonly user: string;
-    /*
-     * The randomly generated password to use when authenticating to your
-     * database via Hyperdrive. Like the host field, this password is only valid
-     * within the context of the currently running Worker instance from which
-     * it's read.
-     */
-    readonly password: string;
-    /*
-     * The name of the database to connect to.
-     */
-    readonly database: string;
-}
-// Copyright (c) 2024 Cloudflare, Inc.
-// Licensed under the Apache 2.0 license found in the LICENSE file or at:
-//     https://opensource.org/licenses/Apache-2.0
-type ImageInfoResponse = {
-    format: 'image/svg+xml';
-} | {
-    format: string;
-    fileSize: number;
-    width: number;
-    height: number;
-};
-type ImageTransform = {
-    width?: number;
-    height?: number;
-    background?: string;
-    blur?: number;
-    border?: {
-        color?: string;
-        width?: number;
-    } | {
-        top?: number;
-        bottom?: number;
-        left?: number;
-        right?: number;
-    };
-    brightness?: number;
-    contrast?: number;
-    fit?: 'scale-down' | 'contain' | 'pad' | 'squeeze' | 'cover' | 'crop';
-    flip?: 'h' | 'v' | 'hv';
-    gamma?: number;
-    segment?: 'foreground';
-    gravity?: 'face' | 'left' | 'right' | 'top' | 'bottom' | 'center' | 'auto' | 'entropy' | {
-        x?: number;
-        y?: number;
-        mode: 'remainder' | 'box-center';
-    };
-    rotate?: 0 | 90 | 180 | 270;
-    saturation?: number;
-    sharpen?: number;
-    trim?: 'border' | {
-        top?: number;
-        bottom?: number;
-        left?: number;
-        right?: number;
-        width?: number;
-        height?: number;
-        border?: boolean | {
-            color?: string;
-            tolerance?: number;
-            keep?: number;
-        };
-    };
-};
-type ImageDrawOptions = {
-    opacity?: number;
-    repeat?: boolean | string;
-    composite?: ImageCompositeMode;
-    top?: number;
-    left?: number;
-    bottom?: number;
-    right?: number;
-};
-type ImageCompositeMode = 
-/** Foreground drawn on top of backdrop (default) */
-'over'
-/** Foreground shown only where backdrop is opaque */
- | 'in'
-/** Foreground drawn on top, but clipped to the backdrop's shape */
- | 'atop'
-/** Foreground shown only where backdrop is transparent */
- | 'out'
-/** Foreground and backdrop visible only where the other is not */
- | 'xor'
-/** Foreground and backdrop channels added (brightening) */
- | 'lighter';
-type ImageInputOptions = {
-    encoding?: 'base64';
-};
-type ImageOutputOptions = {
-    format: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/avif' | 'rgb' | 'rgba';
-    quality?: number;
-    background?: string;
-    anim?: boolean;
-};
-interface ImageMetadata {
-    id: string;
-    filename?: string;
-    uploaded?: string;
-    requireSignedURLs: boolean;
-    meta?: Record<string, unknown>;
-    variants: string[];
-    draft?: boolean;
-    creator?: string;
-}
-interface ImageUploadOptions {
-    id?: string;
-    filename?: string;
-    requireSignedURLs?: boolean;
-    metadata?: Record<string, unknown>;
-    creator?: string;
-    encoding?: 'base64';
-}
-interface ImageUpdateOptions {
-    requireSignedURLs?: boolean;
-    metadata?: Record<string, unknown>;
-    creator?: string;
-}
-interface ImageListOptions {
-    limit?: number;
-    cursor?: string;
-    sortOrder?: 'asc' | 'desc';
-    creator?: string;
-}
-interface ImageList {
-    images: ImageMetadata[];
-    cursor?: string;
-    listComplete: boolean;
-}
-interface ImageHandle {
-    /**
-     * Get metadata for a hosted image
-     * @returns Image metadata, or null if not found
-     */
-    details(): Promise<ImageMetadata | null>;
-    /**
-     * Get the raw image data for a hosted image
-     * @returns ReadableStream of image bytes, or null if not found
-     */
-    bytes(): Promise<ReadableStream<Uint8Array> | null>;
-    /**
-     * Update hosted image metadata
-     * @param options Properties to update
-     * @returns Updated image metadata
-     * @throws {@link ImagesError} if update fails
-     */
-    update(options: ImageUpdateOptions): Promise<ImageMetadata>;
-    /**
-     * Delete a hosted image
-     * @returns True if deleted, false if not found
-     */
-    delete(): Promise<boolean>;
-}
-interface HostedImagesBinding {
-    /**
-     * Get a handle for a hosted image
-     * @param imageId The ID of the image (UUID or custom ID)
-     * @returns A handle for per-image operations
-     */
-    image(imageId: string): ImageHandle;
-    /**
-     * Upload a new hosted image
-     * @param image The image file to upload
-     * @param options Upload configuration
-     * @returns Metadata for the uploaded image
-     * @throws {@link ImagesError} if upload fails
-     */
-    upload(image: ReadableStream<Uint8Array> | ArrayBuffer, options?: ImageUploadOptions): Promise<ImageMetadata>;
-    /**
-     * List hosted images with pagination
-     * @param options List configuration
-     * @returns List of images with pagination info
-     * @throws {@link ImagesError} if list fails
-     */
-    list(options?: ImageListOptions): Promise<ImageList>;
-}
-interface ImagesBinding {
-    /**
-     * Get image metadata (type, width and height)
-     * @throws {@link ImagesError} with code 9412 if input is not an image
-     * @param stream The image bytes
-     */
-    info(stream: ReadableStream<Uint8Array>, options?: ImageInputOptions): Promise<ImageInfoResponse>;
-    /**
-     * Begin applying a series of transformations to an image
-     * @param stream The image bytes
-     * @returns A transform handle
-     */
-    input(stream: ReadableStream<Uint8Array>, options?: ImageInputOptions): ImageTransformer;
-    /**
-     * Access hosted images CRUD operations
-     */
-    readonly hosted: HostedImagesBinding;
-}
-interface ImageTransformer {
-    /**
-     * Apply transform next, returning a transform handle.
-     * You can then apply more transformations, draw, or retrieve the output.
-     * @param transform
-     */
-    transform(transform: ImageTransform): ImageTransformer;
-    /**
-     * Draw an image on this transformer, returning a transform handle.
-     * You can then apply more transformations, draw, or retrieve the output.
-     * @param image The image (or transformer that will give the image) to draw
-     * @param options The options configuring how to draw the image
-     */
-    draw(image: ReadableStream<Uint8Array> | ImageTransformer, options?: ImageDrawOptions): ImageTransformer;
-    /**
-     * Retrieve the image that results from applying the transforms to the
-     * provided input
-     * @param options Options that apply to the output e.g. output format
-     */
-    output(options: ImageOutputOptions): Promise<ImageTransformationResult>;
-}
-type ImageTransformationOutputOptions = {
-    encoding?: 'base64';
-};
-interface ImageTransformationResult {
-    /**
-     * The image as a response, ready to store in cache or return to users
-     */
-    response(): Response;
-    /**
-     * The content type of the returned image
-     */
-    contentType(): string;
-    /**
-     * The bytes of the response
-     */
-    image(options?: ImageTransformationOutputOptions): ReadableStream<Uint8Array>;
-}
-interface ImagesError extends Error {
-    readonly code: number;
-    readonly message: string;
-    readonly stack?: string;
-}
-/**
- * Media binding for transforming media streams.
- * Provides the entry point for media transformation operations.
- */
-interface MediaBinding {
-    /**
-     * Creates a media transformer from an input stream.
-     * @param media - The input media bytes
-     * @returns A MediaTransformer instance for applying transformations
-     */
-    input(media: ReadableStream<Uint8Array>): MediaTransformer;
-}
-/**
- * Media transformer for applying transformation operations to media content.
- * Handles sizing, fitting, and other input transformation parameters.
- */
-interface MediaTransformer {
-    /**
-     * Applies transformation options to the media content.
-     * @param transform - Configuration for how the media should be transformed
-     * @returns A generator for producing the transformed media output
-     */
-    transform(transform?: MediaTransformationInputOptions): MediaTransformationGenerator;
-    /**
-     * Generates the final media output with specified options.
-     * @param output - Configuration for the output format and parameters
-     * @returns The final transformation result containing the transformed media
-     */
-    output(output?: MediaTransformationOutputOptions): MediaTransformationResult;
-}
-/**
- * Generator for producing media transformation results.
- * Configures the output format and parameters for the transformed media.
- */
-interface MediaTransformationGenerator {
-    /**
-     * Generates the final media output with specified options.
-     * @param output - Configuration for the output format and parameters
-     * @returns The final transformation result containing the transformed media
-     */
-    output(output?: MediaTransformationOutputOptions): MediaTransformationResult;
-}
-/**
- * Result of a media transformation operation.
- * Provides multiple ways to access the transformed media content.
- */
-interface MediaTransformationResult {
-    /**
-     * Returns the transformed media as a readable stream of bytes.
-     * @returns A promise containing a readable stream with the transformed media
-     */
-    media(): Promise<ReadableStream<Uint8Array>>;
-    /**
-     * Returns the transformed media as an HTTP response object.
-     * @returns The transformed media as a Promise<Response>, ready to store in cache or return to users
-     */
-    response(): Promise<Response>;
-    /**
-     * Returns the MIME type of the transformed media.
-     * @returns A promise containing the content type string (e.g., 'image/jpeg', 'video/mp4')
-     */
-    contentType(): Promise<string>;
-}
-/**
- * Configuration options for transforming media input.
- * Controls how the media should be resized and fitted.
- */
-type MediaTransformationInputOptions = {
-    /** How the media should be resized to fit the specified dimensions */
-    fit?: 'contain' | 'cover' | 'scale-down';
-    /** Target width in pixels */
-    width?: number;
-    /** Target height in pixels */
-    height?: number;
-};
-/**
- * Configuration options for Media Transformations output.
- * Controls the format, timing, and type of the generated output.
- */
-type MediaTransformationOutputOptions = {
-    /**
-     * Output mode determining the type of media to generate
-     */
-    mode?: 'video' | 'spritesheet' | 'frame' | 'audio';
-    /** Whether to include audio in the output */
-    audio?: boolean;
-    /**
-     * Starting timestamp for frame extraction or start time for clips. (e.g. '2s').
-     */
-    time?: string;
-    /**
-     * Duration for video clips, audio extraction, and spritesheet generation (e.g. '5s').
-     */
-    duration?: string;
-    /**
-     * Number of frames in the spritesheet.
-     */
-    imageCount?: number;
-    /**
-     * Output format for the generated media.
-     */
-    format?: 'jpg' | 'png' | 'm4a';
-};
-/**
- * Error object for media transformation operations.
- * Extends the standard Error interface with additional media-specific information.
- */
-interface MediaError extends Error {
-    readonly code: number;
-    readonly message: string;
-    readonly stack?: string;
-}
-declare module 'cloudflare:node' {
-    interface NodeStyleServer {
-        listen(...args: unknown[]): this;
-        address(): {
-            port?: number | null | undefined;
-        };
-    }
-    export function httpServerHandler(port: number): ExportedHandler;
-    export function httpServerHandler(options: {
-        port: number;
-    }): ExportedHandler;
-    export function httpServerHandler(server: NodeStyleServer): ExportedHandler;
-}
-type Params<P extends string = any> = Record<P, string | string[]>;
-type EventContext<Env, P extends string, Data> = {
-    request: Request<unknown, IncomingRequestCfProperties<unknown>>;
-    functionPath: string;
-    waitUntil: (promise: Promise<any>) => void;
-    passThroughOnException: () => void;
-    next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
-    env: Env & {
-        ASSETS: {
-            fetch: typeof fetch;
-        };
-    };
-    params: Params<P>;
-    data: Data;
-};
-type PagesFunction<Env = unknown, Params extends string = any, Data extends Record<string, unknown> = Record<string, unknown>> = (context: EventContext<Env, Params, Data>) => Response | Promise<Response>;
-type EventPluginContext<Env, P extends string, Data, PluginArgs> = {
-    request: Request<unknown, IncomingRequestCfProperties<unknown>>;
-    functionPath: string;
-    waitUntil: (promise: Promise<any>) => void;
-    passThroughOnException: () => void;
-    next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
-    env: Env & {
-        ASSETS: {
-            fetch: typeof fetch;
-        };
-    };
-    params: Params<P>;
-    data: Data;
-    pluginArgs: PluginArgs;
-};
-type PagesPluginFunction<Env = unknown, Params extends string = any, Data extends Record<string, unknown> = Record<string, unknown>, PluginArgs = unknown> = (context: EventPluginContext<Env, Params, Data, PluginArgs>) => Response | Promise<Response>;
-declare module "assets:*" {
-    export const onRequest: PagesFunction;
-}
-// Copyright (c) 2022-2023 Cloudflare, Inc.
-// Licensed under the Apache 2.0 license found in the LICENSE file or at:
-//     https://opensource.org/licenses/Apache-2.0
-declare module "cloudflare:pipelines" {
-    export abstract class PipelineTransformationEntrypoint<Env = unknown, I extends PipelineRecord = PipelineRecord, O extends PipelineRecord = PipelineRecord> {
-        protected env: Env;
-        protected ctx: ExecutionContext;
-        constructor(ctx: ExecutionContext, env: Env);
-        /**
-         * run receives an array of PipelineRecord which can be
-         * transformed and returned to the pipeline
-         * @param records Incoming records from the pipeline to be transformed
-         * @param metadata Information about the specific pipeline calling the transformation entrypoint
-         * @returns A promise containing the transformed PipelineRecord array
-         */
-        public run(records: I[], metadata: PipelineBatchMetadata): Promise<O[]>;
-    }
-    export type PipelineRecord = Record<string, unknown>;
-    export type PipelineBatchMetadata = {
-        pipelineId: string;
-        pipelineName: string;
-    };
-    export interface Pipeline<T extends PipelineRecord = PipelineRecord> {
-        /**
-         * The Pipeline interface represents the type of a binding to a Pipeline
-         *
-         * @param records The records to send to the pipeline
-         */
-        send(records: T[]): Promise<void>;
-    }
-}
-// PubSubMessage represents an incoming PubSub message.
-// The message includes metadata about the broker, the client, and the payload
-// itself.
-// https://developers.cloudflare.com/pub-sub/
-interface PubSubMessage {
-    // Message ID
-    readonly mid: number;
-    // MQTT broker FQDN in the form mqtts://BROKER.NAMESPACE.cloudflarepubsub.com:PORT
-    readonly broker: string;
-    // The MQTT topic the message was sent on.
+X
+äà›]X»Y]Ÿô\Ÿ]»€›[ù\à\ŸY⁄]€€ú€€Kÿ€›[ù‹›]XÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€Kÿ€›[ùô\Ÿ]‹›]X Bà
+ã¬à€›[ùô\Ÿ]
+Xô[Œà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€KôXùY 
+X
+äà›]X»Y]Ÿ›]]»HY\‹ÿYŸH»H€€ú€€H]H	ŸXùY…»Ÿ»]ô[Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸXùY◊‹›]X Bà
+ã¬àXùY ããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kô\ä
+X
+äà›]X»Y]Ÿ\‹^\»H\›ŸàHõ‹\ùY\»ŸàH‹X⁄YöYYò]òTÿ‹ö\ÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸ\ó‹›]X Bà
+ã¬à\ä][OŒà[ûK‹[€úœŒà[ûJNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kô\û[
+
+X
+äà›]X»Y]Ÿ\‹^\»[à[ù\òX›]ôHôYHŸàH\ÿŸ[ô[ù[[Y[ù»ŸàH‹X⁄YöYYS“S[[Y[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸ\û[‹›]X Bà
+ã¬à\û[
+ããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kô\úõ‹ä
+X
+äà›]X»Y]Ÿ›]]»HY\‹ÿYŸH»H€€ú€€H]H	Ÿ\úõ‹â»Ÿ»]ô[Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸ\úõ‹ó‹›]X Bà
+ã¬à\úõ‹äããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kô‹õ›\
+
+X
+äà›]X»Y]Ÿ‹ôX]\»Hô]»[õ[ôH‹õ›\[àHŸXà€€ú€€HŸÀÿ]\⁄[ô»[ûH›XúŸ\]Y[ù€€ú€€HY\‹ÿYŸ\»»ôH[ô[ùYûH[àY][€ò[]ô[[ù[€€ú€€KŸ‹õ›\[ô‹›]X»\»ÿ[YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸ‹õ›\‹›]X Bà
+ã¬à‹õ›\
+ããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kô‹õ›\€€\ŸY
+
+X
+äà›]X»Y]Ÿ‹ôX]\»Hô]»[õ[ôH‹õ›\[àH€€ú€€KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸ‹õ›\€€\ŸY‹›]X Bà
+ã¬à‹õ›\€€\ŸY
+ããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kô‹õ›\[ô
+
+X
+äà›]X»Y]Ÿ^]»H›\úô[ù[õ[ôH‹õ›\[àH€€ú€€KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€KŸ‹õ›\[ô‹›]X Bà
+ã¬à‹õ›\[ô
+
+Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kö[ôõ 
+X
+äà›]X»Y]Ÿ›]]»HY\‹ÿYŸH»H€€ú€€H]H	⁄[ôõ…»Ÿ»]ô[Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K⁄[ôõ◊‹›]X Bà
+ã¬à[ôõ ããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€KõŸ 
+X
+äà›]X»Y]Ÿ›]]»HY\‹ÿYŸH»H€€ú€€KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K€Ÿ◊‹›]X Bà
+ã¬àŸ ããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€KùXõJ
+X
+äà›]X»Y]Ÿ\‹^\»Xù[\à]H\»HXõKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K›XõW‹›]X Bà
+ã¬àXõJXù[\ë]OŒà[ûKõ‹\ùY\œŒà›ö[ô÷◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kù[YJ
+X
+äà›]X»Y]Ÿ›\ù»H[Y\à[›Hÿ[à\ŸH»òX⁄»›»€ô»[à‹\ò][€àZŸ\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K›[YW‹›]X Bà
+ã¬à[YJXô[Œà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kù[YQ[ô
+
+X
+äà›]X»Y]Ÿ›‹»H[Y\à]ÿ\»ô]ö[›\€H›\ùYûHÿ[[ô»€€ú€€K›[YW‹›]XÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K›[YQ[ô‹›]X Bà
+ã¬à[YQ[ô
+Xô[Œà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kù[YSŸ 
+X
+äà›]X»Y]ŸŸ‹»H›\úô[ùò[YHŸàH[Y\à]ÿ\»ô]ö[›\€H›\ùYûHÿ[[ô»€€ú€€K›[YW‹›]XÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K›[YSŸ◊‹›]X Bà
+ã¬à[YSŸ Xô[Œà›ö[ôÀããô]Nà[ûV◊JNàõ⁄Y¬à[YT›[\
+Xô[Œà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò€€ú€€KùòXŸJ
+X
+äà›]X»Y]Ÿ›]]»H›X⁄»òXŸH»H€€ú€€KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K›òXŸW‹›]X Bà
+ã¬àòXŸJããô]Nà[ûV◊JNàõ⁄Y¬à äÇà
+àH
+äò€€ú€€Kùÿ\õä
+X
+äà›]X»Y]Ÿ›]]»Hÿ\õö[ô»Y\‹ÿYŸH»H€€ú€€H]H	›ÿ\õö[ô…»Ÿ»]ô[Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TKÿ€€ú€€K›ÿ\õó‹›]X Bà
+ã¬àÿ\õäããô]Nà[ûV◊JNàõ⁄Y¬üBôX€\ôH€€ú›€€ú€€Nà€€ú€€N¬ù\HùYôô\î€›\òŸHH\úò^PùYôô\ïöY]»\úò^PùYôô\é¬ù\H\Y\úò^HH[ù\úò^HZ[ù\úò^HZ[ù€[\Y\úò^H[ùMê\úò^HZ[ùMê\úò^H[ùÃê\úò^HZ[ùÃê\úò^Hõÿ]Ãê\úò^Hõÿ]ç\úò^HöY“[ùç\úò^HöY’Z[ùç\úò^N¬ôX€\ôHò[Y\‹XŸHŸXê\‹Ÿ[XõH¬à€\‹»€€\[Q\úõ‹à^[ô»\úõ‹à¬à€€ú›ùX›‹äY\‹ÿYŸOŒà›ö[ô N¬àBà€\‹»ù[ù[YQ\úõ‹à^[ô»\úõ‹à¬à€€ú›ùX›‹äY\‹ÿYŸOŒà›ö[ô N¬àBà\Hò[YU\HHò[ûYù[ò»àô^\õúôYààôåÃààôççàöLÃààöMçàùåLéé¬à[ù\ôòXŸH€ÿò[\ÿ‹ö\‹à¬àò[YNàò[YU\N¬à]]XõOŒàõ€€X[é¬àBà€\‹»€ÿò[¬à€€ú›ùX›‹ä\ÿ‹ö\‹éà€ÿò[\ÿ‹ö\‹ãò[YOŒà[ûJN¬àò[YNà[ûN¬àò[YSŸä
+Nà[ûN¬àBà\H[\‹ùò[YHH^‹ùò[YHù[Xô\é¬à\H[Ÿ[R[\‹ù»HôX€‹ô›ö[ôÀ[\‹ùò[YOé¬à\H[\‹ù»HôX€‹ô›ö[ôÀ[Ÿ[R[\‹ùœé¬à\H^‹ùò[YHHù[ò›[€à€ÿò[Y[[‹ûHXõN¬à\H^‹ù»HôX€‹ô›ö[ôÀ^‹ùò[YOé¬à€\‹»[ú›[òŸH¬à€€ú›ùX›‹ä[Ÿ[Nà[Ÿ[K[\‹ùœŒà[\‹ù N¬àôXY€õH^‹ùŒà^‹ùŒ¬àBà[ù\ôòXŸHY[[‹ûQ\ÿ‹ö\‹à¬à[ö]X[àù[Xô\é¬àX^[][OŒàù[Xô\é¬à⁄\ôYŒàõ€€X[é¬àBà€\‹»Y[[‹ûH¬à€€ú›ùX›‹ä\ÿ‹ö\‹éàY[[‹ûQ\ÿ‹ö\‹äN¬àôXY€õHùYôô\éà\úò^PùYôô\é¬à‹õ› [Nàù[Xô\äNàù[Xô\é¬àBà\H[\‹ù^‹ù⁄[ôHôù[ò›[€ààô€ÿò[àõY[[‹ûHàùXõHé¬à[ù\ôòXŸH[Ÿ[Q^‹ù\ÿ‹ö\‹à¬à⁄[ôà[\‹ù^‹ù⁄[ô¬àò[YNà›ö[ôŒ¬àBà[ù\ôòXŸH[Ÿ[R[\‹ù\ÿ‹ö\‹à¬à⁄[ôà[\‹ù^‹ù⁄[ô¬à[Ÿ[Nà›ö[ôŒ¬àò[YNà›ö[ôŒ¬àBàXú›òX›€\‹»[Ÿ[H¬à›]X»›\›€TŸX›[€ú [Ÿ[Nà[Ÿ[KŸX›[€ìò[YNà›ö[ô Nà\úò^PùYôô\ñ◊N¬à›]X»^‹ù [Ÿ[Nà[Ÿ[JNà[Ÿ[Q^‹ù\ÿ‹ö\‹ñ◊N¬à›]X»[\‹ù [Ÿ[Nà[Ÿ[JNà[Ÿ[R[\‹ù\ÿ‹ö\‹ñ◊N¬àBà\HXõR⁄[ôHò[ûYù[ò»àô^\õúôYàé¬à[ù\ôòXŸHXõQ\ÿ‹ö\‹à¬à[[Y[ùàXõR⁄[ô¬à[ö]X[àù[Xô\é¬àX^[][OŒàù[Xô\é¬àBà€\‹»XõH¬à€€ú›ùX›‹ä\ÿ‹ö\‹éàXõQ\ÿ‹ö\‹ãò[YOŒà[ûJN¬àôXY€õH[ô›àù[Xô\é¬àŸ]
+[ô^àù[Xô\äNà[ûN¬à‹õ› [Nàù[Xô\ãò[YOŒà[ûJNàù[Xô\é¬àŸ]
+[ô^àù[Xô\ãò[YOŒà[ûJNàõ⁄Y¬àBàù[ò›[€à[ú›[ùX]J[Ÿ[Nà[Ÿ[K[\‹ùœŒà[\‹ù Nàõ€Z\ŸO[ú›[òŸOé¬àù[ò›[€àò[Y]Jû]\ŒàùYôô\î€›\òŸJNàõ€€X[é¬üBã äÇà
+àH
+äòŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹X
+äà[ù\ôòXŸHŸàHŸ\ùöXŸH€‹öŸ\àTHô\ô\Ÿ[ù»H€ÿò[^X›][€à€€ù^ŸàHŸ\ùöXŸH€‹öŸ\ãÇà
+à]òZ[XõH€õH[àŸX›\ôH€€ù^ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘Ÿ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹JBà
+ã¬ö[ù\ôòXŸHŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹H^[ô»€‹öŸ\ë€ÿò[ÿ€‹H¬à”Q^Ÿ\[€éà\[Ÿà”Q^Ÿ\[€é¬à€‹öŸ\ë€ÿò[ÿ€‹Nà\[Ÿà€‹öŸ\ë€ÿò[ÿ€‹N¬àùÿJ]Nà›ö[ô Nà›ö[ôŒ¬à]ÿä]Nà›ö[ô Nà›ö[ôŒ¬àŸ][Y[›]
+ÿ[òX⁄Œà
+ããò\ô‹Œà[ûV◊JHOàõ⁄Y\—[^OŒàù[Xô\äNàù[Xô\é¬àŸ][Y[›]\ô‹»^[ô»[ûV◊Oäÿ[òX⁄Œà
+ããò\ô‹Œà\ô‹ HOàõ⁄Y\—[^OŒàù[Xô\ãããò\ô‹Œà\ô‹ Nàù[Xô\é¬à€X\ï[Y[›]
+[Y[›]Yàù[Xô\àù[
+Nàõ⁄Y¬àŸ][ù\ùò[
+ÿ[òX⁄Œà
+ããò\ô‹Œà[ûV◊JHOàõ⁄Y\—[^OŒàù[Xô\äNàù[Xô\é¬àŸ][ù\ùò[\ô‹»^[ô»[ûV◊Oäÿ[òX⁄Œà
+ããò\ô‹Œà\ô‹ HOàõ⁄Y\—[^OŒàù[Xô\ãããò\ô‹Œà\ô‹ Nàù[Xô\é¬à€X\í[ù\ùò[
+[Y[›]Yàù[Xô\àù[
+Nàõ⁄Y¬à]Y]YSZX‹õ›\⁄ \⁄Œàù[ò›[€äNàõ⁄Y¬à›ùX›\ôY€€ôOäò[YNà‹[€úœŒà›ùX›\ôYŸ\öX[^ôS‹[€ú Nà¬àô\‹ù\úõ‹ä\úõ‹éà[ûJNàõ⁄Y¬àô]⁄
+[ú]àô\]Y\›[ôõ»Tì[ö]Œàô\]Y\›[ö]ô\]Y\›[ö]Ÿîõ‹\ùY\œäNàõ€Z\ŸOô\‹€úŸOé¬àŸ[éàŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹N¬à‹û\Œà‹û\Œ¬àÿX⁄\ŒàÿX⁄T›‹òYŸN¬àÿ⁄Y[\éàÿ⁄Y[\é¬à\ôõ‹õX[òŸNà\ôõ‹õX[òŸN¬à€›Yõ\ôNà€›Yõ\ôN¬àôXY€õH‹öY⁄[éà›ö[ôŒ¬à]ô[ùà\[Ÿà]ô[ù¬à^[ôXõQ]ô[ùà\[Ÿà^[ôXõQ]ô[ù¬à›\›€Q]ô[ùà\[Ÿà›\›€Q]ô[ù¬àõ€Z\ŸTôZôX›[€ë]ô[ùà\[Ÿàõ€Z\ŸTôZôX›[€ë]ô[ù¬àô]⁄]ô[ùà\[Ÿàô]⁄]ô[ù¬àZ[]ô[ùà\[ŸàZ[]ô[ù¬àòXŸQ]ô[ùà\[ŸàZ[]ô[ù¬àÿ⁄Y[Y]ô[ùà\[Ÿàÿ⁄Y[Y]ô[ù¬àY\‹ÿYŸQ]ô[ùà\[ŸàY\‹ÿYŸQ]ô[ù¬à€‹ŸQ]ô[ùà\[Ÿà€‹ŸQ]ô[ù¬àôXYXõT›ôX[QYò][ôXY\éà\[ŸàôXYXõT›ôX[QYò][ôXY\é¬àôXYXõT›ôX[PñS–îôXY\éà\[ŸàôXYXõT›ôX[PñS–îôXY\é¬àôXYXõT›ôX[Nà\[ŸàôXYXõT›ôX[N¬à‹ö]XõT›ôX[Nà\[Ÿà‹ö]XõT›ôX[N¬à‹ö]XõT›ôX[QYò][‹ö]\éà\[Ÿà‹ö]XõT›ôX[QYò][‹ö]\é¬àò[úŸõ‹õT›ôX[Nà\[Ÿàò[úŸõ‹õT›ôX[N¬àû]S[ô›]Y]Z[ô‘›ò]YﬁNà\[Ÿàû]S[ô›]Y]Z[ô‘›ò]YﬁN¬à€›[ù]Y]Z[ô‘›ò]YﬁNà\[Ÿà€›[ù]Y]Z[ô‘›ò]YﬁN¬à\úõ‹ë]ô[ùà\[Ÿà\úõ‹ë]ô[ù¬àY\‹ÿYŸP⁄[õô[à\[ŸàY\‹ÿYŸP⁄[õô[¬àY\‹ÿYŸT‹ùà\[ŸàY\‹ÿYŸT‹ù¬à]ô[ù€›\òŸNà\[Ÿà]ô[ù€›\òŸN¬àôXYXõT›ôX[PñS–îô\]Y\›à\[ŸàôXYXõT›ôX[PñS–îô\]Y\›¬àôXYXõT›ôX[QYò][€€ùõ€\éà\[ŸàôXYXõT›ôX[QYò][€€ùõ€\é¬àôXYXõPû]T›ôX[P€€ùõ€\éà\[ŸàôXYXõPû]T›ôX[P€€ùõ€\é¬à‹ö]XõT›ôX[QYò][€€ùõ€\éà\[Ÿà‹ö]XõT›ôX[QYò][€€ùõ€\é¬àò[úŸõ‹õT›ôX[QYò][€€ùõ€\éà\[Ÿàò[úŸõ‹õT›ôX[QYò][€€ùõ€\é¬àùYôô\éà[ûN¬àõÿŸ\‹Œà[ûN¬à€ÿò[àŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹N¬àŸ][[YYX]J	ù[ò›[€éà
+ããú\ò[Là[ûV◊JHOàõ⁄Yããò\ô‹Œà[ûV◊JNà[[YYX]N¬à€X\í[[YYX]J[[YYX]Nà[[YYX]Hù[
+Nàõ⁄Y¬à€€\ô\‹⁄[€î›ôX[Nà\[Ÿà€€\ô\‹⁄[€î›ôX[N¬àX€€\ô\‹⁄[€î›ôX[Nà\[ŸàX€€\ô\‹⁄[€î›ôX[N¬à^[ò€Ÿ\î›ôX[Nà\[Ÿà^[ò€Ÿ\î›ôX[N¬à^X€Ÿ\î›ôX[Nà\[Ÿà^X€Ÿ\î›ôX[N¬àXY\úŒà\[ŸàXY\úŒ¬àõŸNà\[ŸàõŸN¬àô\]Y\›à\[Ÿàô\]Y\›¬àô\‹€úŸNà\[Ÿàô\‹€úŸN¬àŸXî€ÿ⁄Ÿ]à\[ŸàŸXî€ÿ⁄Ÿ]¬àŸXî€ÿ⁄Ÿ]Z\éà\[ŸàŸXî€ÿ⁄Ÿ]Z\é¬àŸXî€ÿ⁄Ÿ]ô\]Y\›ô\‹€úŸTZ\éà\[ŸàŸXî€ÿ⁄Ÿ]ô\]Y\›ô\‹€úŸTZ\é¬àXõ‹ù€€ùõ€\éà\[ŸàXõ‹ù€€ùõ€\é¬àXõ‹ù⁄Y€ò[à\[ŸàXõ‹ù⁄Y€ò[¬à^X€Ÿ\éà\[Ÿà^X€Ÿ\é¬à^[ò€Ÿ\éà\[Ÿà^[ò€Ÿ\é¬àò]öYÿ]‹éàò]öYÿ]‹é¬àò]öYÿ]‹éà\[Ÿàò]öYÿ]‹é¬àTìà\[ŸàTì¬àTìŸX\ò⁄\ò[\Œà\[ŸàTìŸX\ò⁄\ò[\Œ¬àTì]\õéà\[ŸàTì]\õé¬àõÿéà\[Ÿàõÿé¬àö[Nà\[Ÿàö[N¬àõ‹õQ]Nà\[Ÿàõ‹õQ]N¬à‹û\Œà\[Ÿà‹û\Œ¬à›XùP‹û\Œà\[Ÿà›XùP‹û\Œ¬à‹û\“Ÿ^Nà\[Ÿà‹û\“Ÿ^N¬àÿX⁄T›‹òYŸNà\[ŸàÿX⁄T›‹òYŸN¬àÿX⁄Nà\[ŸàÿX⁄N¬àö^Y[ô››ôX[Nà\[Ÿàö^Y[ô››ôX[N¬àY[ù]Uò[úŸõ‹õT›ôX[Nà\[ŸàY[ù]Uò[úŸõ‹õT›ôX[N¬àSô]‹ö]\éà\[ŸàSô]‹ö]\é¬à\ôõ‹õX[òŸNà\[Ÿà\ôõ‹õX[òŸN¬à\ôõ‹õX[òŸQ[ùûNà\[Ÿà\ôõ‹õX[òŸQ[ùûN¬à\ôõ‹õX[òŸSX\öŒà\[Ÿà\ôõ‹õX[òŸSX\öŒ¬à\ôõ‹õX[òŸSYX\›\ôNà\[Ÿà\ôõ‹õX[òŸSYX\›\ôN¬à\ôõ‹õX[òŸTô\€›\òŸU[Z[ôŒà\[Ÿà\ôõ‹õX[òŸTô\€›\òŸU[Z[ôŒ¬à\ôõ‹õX[òŸSÿúŸ\ùô\éà\[Ÿà\ôõ‹õX[òŸSÿúŸ\ùô\é¬à\ôõ‹õX[òŸSÿúŸ\ùô\ë[ùûS\›à\[Ÿà\ôõ‹õX[òŸSÿúŸ\ùô\ë[ùûS\›¬üBôX€\ôHù[ò›[€àY]ô[ù\›[ô\è\H^[ô»Ÿ^[Ÿà€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\ä\Nà\K[ô\éà]ô[ù\›[ô\ì‹ë]ô[ù\›[ô\ìÿöôX›€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\’\WOã‹[€úœŒà]ô[ù\ôŸ]Y]ô[ù\›[ô\ì‹[€ú»õ€€X[äNàõ⁄Y¬ôX€\ôHù[ò›[€àô[[›ôQ]ô[ù\›[ô\è\H^[ô»Ÿ^[Ÿà€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\ä\Nà\K[ô\éà]ô[ù\›[ô\ì‹ë]ô[ù\›[ô\ìÿöôX›€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\’\WOã‹[€úœŒà]ô[ù\ôŸ]]ô[ù\›[ô\ì‹[€ú»õ€€X[äNàõ⁄Y¬ã äÇà
+àH
+äò\‹]⁄]ô[ù
+
+X
+äàY]ŸŸàH]ô[ù\ôŸ]Ÿ[ô»[à]ô[ù»HÿöôX›
+ﬁ[ò⁄õ€õ›\€JH[ùõ⁄⁄[ô»HYôôX›Y]ô[ù\›[ô\ú»[àH\õ‹öX]H‹ô\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù\ôŸ]Ÿ\‹]⁄]ô[ù
+Bà
+ã¬ôX€\ôHù[ò›[€à\‹]⁄]ô[ù
+]ô[ùà€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\⁄Ÿ^[Ÿà€‹öŸ\ë€ÿò[ÿ€‹Q]ô[ùX\JNàõ€€X[é¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›ÀÿùÿJH
+ã¬ôX€\ôHù[ò›[€àùÿJ]Nà›ö[ô Nà›ö[ôŒ¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›Àÿ]ÿäH
+ã¬ôX€\ôHù[ò›[€à]ÿä]Nà›ö[ô Nà›ö[ôŒ¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹Ÿ][Y[›]
+H
+ã¬ôX€\ôHù[ò›[€àŸ][Y[›]
+ÿ[òX⁄Œà
+ããò\ô‹Œà[ûV◊JHOàõ⁄Y\—[^OŒàù[Xô\äNàù[Xô\é¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹Ÿ][Y[›]
+H
+ã¬ôX€\ôHù[ò›[€àŸ][Y[›]\ô‹»^[ô»[ûV◊Oäÿ[òX⁄Œà
+ããò\ô‹Œà\ô‹ HOàõ⁄Y\—[^OŒàù[Xô\ãããò\ô‹Œà\ô‹ Nàù[Xô\é¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›Àÿ€X\ï[Y[›]
+H
+ã¬ôX€\ôHù[ò›[€à€X\ï[Y[›]
+[Y[›]Yàù[Xô\àù[
+Nàõ⁄Y¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹Ÿ][ù\ùò[
+H
+ã¬ôX€\ôHù[ò›[€àŸ][ù\ùò[
+ÿ[òX⁄Œà
+ããò\ô‹Œà[ûV◊JHOàõ⁄Y\—[^OŒàù[Xô\äNàù[Xô\é¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹Ÿ][ù\ùò[
+H
+ã¬ôX€\ôHù[ò›[€àŸ][ù\ùò[\ô‹»^[ô»[ûV◊Oäÿ[òX⁄Œà
+ããò\ô‹Œà\ô‹ HOàõ⁄Y\—[^OŒàù[Xô\ãããò\ô‹Œà\ô‹ Nàù[Xô\é¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›Àÿ€X\í[ù\ùò[
+H
+ã¬ôX€\ôHù[ò›[€à€X\í[ù\ùò[
+[Y[›]Yàù[Xô\àù[
+Nàõ⁄Y¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹]Y]YSZX‹õ›\⁄ H
+ã¬ôX€\ôHù[ò›[€à]Y]YSZX‹õ›\⁄ \⁄Œàù[ò›[€äNàõ⁄Y¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹›ùX›\ôY€€ôJH
+ã¬ôX€\ôHù[ò›[€à›ùX›\ôY€€ôOäò[YNà‹[€úœŒà›ùX›\ôYŸ\öX[^ôS‹[€ú Nà¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›À‹ô\‹ù\úõ‹äH
+ã¬ôX€\ôHù[ò›[€àô\‹ù\úõ‹ä\úõ‹éà[ûJNàõ⁄Y¬ã à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’⁄[ô›ÀŸô]⁄
+H
+ã¬ôX€\ôHù[ò›[€àô]⁄
+[ú]àô\]Y\›[ôõ»Tì[ö]Œàô\]Y\›[ö]ô\]Y\›[ö]Ÿîõ‹\ùY\œäNàõ€Z\ŸOô\‹€úŸOé¬ôX€\ôH€€ú›Ÿ[éàŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹N¬ã äÇäàHŸXà‹û\»THõ›öY\»HŸ]Ÿà›À[]ô[ù[ò›[€ú»õ‹à€€[[€à‹û\Ÿ‹ò\X»\⁄‹ÀÇäàH€‹öŸ\ú»ù[ù[YH[\[Y[ù»Hù[›\ôòXŸHŸà\»TKù]⁄]€€YHYôô\ô[òŸ\»[ÇäàH‹›\‹ùY[€‹ö]\◊JŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\À›ŸXãX‹û\À»‹›\‹ùYX[€‹ö]\ Bäà€€\\ôY»‹ŸH[\[Y[ùY[à[‹›úõ›‹Ÿ\úÀÇäÇäà–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\À›ŸXãX‹û\À Bäã¬ôX€\ôH€€ú›‹û\Œà‹û\Œ¬ã äÇäàHÿX⁄HTH[›‹»ö[ôH‹òZ[ôY€€ùõ€ŸàôXY[ô»[ô‹ö][ô»úõ€HH€›Yõ\ôH€ÿò[ô]€‹ö»ÿX⁄KÇäÇäà–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\ÀÿÿX⁄K Bäã¬ôX€\ôH€€ú›ÿX⁄\ŒàÿX⁄T›‹òYŸN¬ôX€\ôH€€ú›ÿ⁄Y[\éàÿ⁄Y[\é¬ã äÇäàH€‹öŸ\ú»ù[ù[YH›\‹ù»H›XúŸ]ŸàH\ôõ‹õX[òŸHTK\ŸY»YX\›\ôH[Z[ô»[ô\ôõ‹õX[òŸKäà\»Ÿ[\»[Z[ô»Ÿà›Xúô\]Y\›»[ô›\à‹\ò][€úÀÇäÇäà–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\À‹\ôõ‹õX[òŸK Bäã¬ôX€\ôH€€ú›\ôõ‹õX[òŸNà\ôõ‹õX[òŸN¬ôX€\ôH€€ú›€›Yõ\ôNà€›Yõ\ôN¬ôX€\ôH€€ú›‹öY⁄[éà›ö[ôŒ¬ôX€\ôH€€ú›ùYôô\éà[ûN¬ôX€\ôH€€ú›õÿŸ\‹Œà[ûN¬ôX€\ôH€€ú›€ÿò[àŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹N¬ôX€\ôHù[ò›[€àŸ][[YYX]J	ù[ò›[€éà
+ããú\ò[Là[ûV◊JHOàõ⁄Yããò\ô‹Œà[ûV◊JNà[[YYX]N¬ôX€\ôHù[ò›[€à€X\í[[YYX]J[[YYX]Nà[[YYX]Hù[
+Nàõ⁄Y¬ôX€\ôH€€ú›ò]öYÿ]‹éàò]öYÿ]‹é¬ö[ù\ôòXŸH\›€€ùõ€\à¬üBö[ù\ôòXŸH^X›][€ê€€ù^õ‹»H[ö€õ›€èà¬àÿZ][ù[
+õ€Z\ŸNàõ€Z\ŸO[ûOäNàõ⁄Y¬à\‹’õ›Y⁄€ë^Ÿ\[€ä
+Nàõ⁄Y¬àôXY€õH^‹ùŒà€›Yõ\ôKë^‹ùŒ¬àôXY€õHõ‹Œàõ‹Œ¬àÿX⁄OŒàÿX⁄P€€ù^¬àôXY€õHXÿŸ\‹œŒà€›Yõ\ôPXÿŸ\‹–€€ù^¬àòX⁄[ôŒàòX⁄[ôŒ¬àXõ‹ù
+ôX\€€èŒà[ûJNàõ⁄Y¬üBù\H^‹ùY[ô\ëô]⁄[ô\è[ùàH[ö€õ›€ãŸí‹›Y]Y]HH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+ô\]Y\›àô\]Y\›Ÿí‹›Y]Y]K[ò€€Z[ô‘ô\]Y\›Ÿîõ‹\ùY\œŸí‹›Y]Y]Oèã[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàô\‹€úŸHõ€Z\ŸOô\‹€úŸOé¬ù\H^‹ùY[ô\ê€€õôX›[ô\è[ùàH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+€ÿ⁄Ÿ]à€ÿ⁄Ÿ][ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàõ⁄Yõ€Z\ŸOõ⁄Yé¬ù\H^‹ùY[ô\ïZ[[ô\è[ùàH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+]ô[ùŒàòXŸR][V◊K[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàõ⁄Yõ€Z\ŸOõ⁄Yé¬ù\H^‹ùY[ô\ïòXŸR[ô\è[ùàH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+òXŸ\ŒàòXŸR][V◊K[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàõ⁄Yõ€Z\ŸOõ⁄Yé¬ù\H^‹ùY[ô\ïZ[›ôX[R[ô\è[ùàH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+]ô[ùàZ[›ôX[KïZ[]ô[ùZ[›ôX[Kì€úŸ]ã[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàZ[›ôX[KïZ[]ô[ù[ô\ï\Hõ€Z\ŸOZ[›ôX[KïZ[]ô[ù[ô\ï\Oé¬ù\H^‹ùY[ô\îÿ⁄Y[Y[ô\è[ùàH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+€€ùõ€\éàÿ⁄Y[Y€€ùõ€\ã[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàõ⁄Yõ€Z\ŸOõ⁄Yé¬ù\H^‹ùY[ô\î]Y]YR[ô\è[ùàH[ö€õ›€ãY\‹ÿYŸHH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+ò]⁄àY\‹ÿYŸPò]⁄Y\‹ÿYŸOã[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàõ⁄Yõ€Z\ŸOõ⁄Yé¬ù\H^‹ùY[ô\ï\›[ô\è[ùàH[ö€õ›€ãõ‹»H[ö€õ›€èàH
+€€ùõ€\éà\›€€ùõ€\ã[ùéà[ùã›à^X›][€ê€€ù^õ‹œäHOàõ⁄Yõ€Z\ŸOõ⁄Yé¬ö[ù\ôòXŸH^‹ùY[ô\è[ùàH[ö€õ›€ã]Y]YR[ô\ìY\‹ÿYŸHH[ö€õ›€ãŸí‹›Y]Y]HH[ö€õ›€ãõ‹»H[ö€õ›€èà¬àô]⁄Œà^‹ùY[ô\ëô]⁄[ô\è[ùãŸí‹›Y]Y]Kõ‹œé¬à€€õôX›Œà^‹ùY[ô\ê€€õôX›[ô\è[ùãõ‹œé¬àZ[Œà^‹ùY[ô\ïZ[[ô\è[ùãõ‹œé¬àòXŸOŒà^‹ùY[ô\ïòXŸR[ô\è[ùãõ‹œé¬àZ[›ôX[OŒà^‹ùY[ô\ïZ[›ôX[R[ô\è[ùãõ‹œé¬àÿ⁄Y[YŒà^‹ùY[ô\îÿ⁄Y[Y[ô\è[ùãõ‹œé¬à\›Œà^‹ùY[ô\ï\›[ô\è[ùãõ‹œé¬à[XZ[Œà[XZ[^‹ùY[ô\è[ùãõ‹œé¬à]Y]YOŒà^‹ùY[ô\î]Y]YR[ô\è[ùã]Y]YR[ô\ìY\‹ÿYŸKõ‹œé¬üBö[ù\ôòXŸH›ùX›\ôYŸ\öX[^ôS‹[€ú»¬àò[úŸô\èŒà[ûV◊N¬üBôX€\ôHXú›òX›€\‹»ò]öYÿ]‹à¬àŸ[ôôXX€€ä\õà›ö[ôÀõŸOŒàõŸR[ö]
+Nàõ€€X[é¬àôXY€õH\Ÿ\êYŸ[ùà›ö[ôŒ¬àôXY€õH\ôÿ\ôP€€ò›\úô[òﬁNàù[Xô\é¬àôXY€õH]õ‹õNà›ö[ôŒ¬àôXY€õH[ô›XYŸNà›ö[ôŒ¬àôXY€õH[ô›XYŸ\Œà›ö[ô÷◊N¬üBö[ù\ôòXŸH[\õR[ùõÿÿ][€í[ôõ»¬àôXY€õH\‘ô]ûNàõ€€X[é¬àôXY€õHô]ûP€›[ùàù[Xô\é¬àôXY€õHÿ⁄Y[Y[YNàù[Xô\é¬üBö[ù\ôòXŸH[[YYX]H¬àôYä
+Nàõ⁄Y¬à[úôYä
+Nàõ⁄Y¬à\‘ôYä
+Nàõ€€X[é¬üBö[ù\ôòXŸH€›Yõ\ôH¬àôXY€õH€€\]Xö[]QõY‹ŒàôX€‹ô›ö[ôÀõ€€X[èé¬üBö[ù\ôòXŸHÿX⁄T\ôŸQ\úõ‹à¬à€ŸNàù[Xô\é¬àY\‹ÿYŸNà›ö[ôŒ¬üBö[ù\ôòXŸHÿX⁄T\ôŸTô\›[¬à›XÿŸ\‹Œàõ€€X[é¬à\úõ‹úŒàÿX⁄T\ôŸQ\úõ‹ñ◊N¬üBö[ù\ôòXŸHÿX⁄T\ôŸS‹[€ú»¬àY‹œŒà›ö[ô÷◊N¬à]ôYö^\œŒà›ö[ô÷◊N¬à\ôŸQ]ô\û][ôœŒàõ€€X[é¬üBö[ù\ôòXŸHÿX⁄P€€ù^¬à\ôŸJ‹[€úŒàÿX⁄T\ôŸS‹[€ú Nàõ€Z\ŸOÿX⁄T\ôŸTô\›[é¬üBö[ù\ôòXŸH€›Yõ\ôPXÿŸ\‹–€€ù^¬àôXY€õH]Yà›ö[ôŒ¬àŸ]Y[ù]J
+Nàõ€Z\ŸO€›Yõ\ôPXÿŸ\‹“Y[ù]H[ôYö[ôYé¬üBôX€\ôHXú›òX›€\‹»€€”ÿÿ[X›‹ìò[Y\‹XŸH¬àŸ]
+X›‹íYà›ö[ô Nàô]⁄\é¬üBö[ù\ôòXŸH\òXõSÿöôX›¬àô]⁄
+ô\]Y\›àô\]Y\›
+Nàô\‹€úŸHõ€Z\ŸOô\‹€úŸOé¬à€€õôX› €ÿ⁄Ÿ]à€ÿ⁄Ÿ]
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬à[\õO [\õR[ôõœŒà[\õR[ùõÿÿ][€í[ôõ Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬àŸXî€ÿ⁄Ÿ]Y\‹ÿYŸO ‹ŒàŸXî€ÿ⁄Ÿ]Y\‹ÿYŸNà›ö[ô»\úò^PùYôô\äNàõ⁄Yõ€Z\ŸOõ⁄Yé¬àŸXî€ÿ⁄Ÿ]€‹ŸO ‹ŒàŸXî€ÿ⁄Ÿ]€ŸNàù[Xô\ãôX\€€éà›ö[ôÀÿ\–€X[éàõ€€X[äNàõ⁄Yõ€Z\ŸOõ⁄Yé¬àŸXî€ÿ⁄Ÿ]\úõ‹è ‹ŒàŸXî€ÿ⁄Ÿ]\úõ‹éà[ö€õ›€äNàõ⁄Yõ€Z\ŸOõ⁄Yé¬üBù\H\òXõSÿöôX››Xè^[ô»úÀë\òXõSÿöôX›úò[ôY[ôYö[ôYH[ôYö[ôYàHô]⁄\èò[\õHàò€€õôX›àùŸXî€ÿ⁄Ÿ]Y\‹ÿYŸHàùŸXî€ÿ⁄Ÿ]€‹ŸHàùŸXî€ÿ⁄Ÿ]\úõ‹àèà	à¬àôXY€õHYà\òXõSÿöôX›Y¬àôXY€õHò[YOŒà›ö[ôŒ¬üN¬ö[ù\ôòXŸH\òXõSÿöôX›Y¬à‘›ö[ô 
+Nà›ö[ôŒ¬à\]X[ ›\éà\òXõSÿöôX›Y
+Nàõ€€X[é¬àôXY€õHò[YOŒà›ö[ôŒ¬àôXY€õHù\ö\ŸX›[€èŒà›ö[ôŒ¬üBôX€\ôHXú›òX›€\‹»\òXõSÿöôX›ò[Y\‹XŸO^[ô»úÀë\òXõSÿöôX›úò[ôY[ôYö[ôYH[ôYö[ôYà¬àô]’[ö\]YRY
+‹[€úœŒà\òXõSÿöôX›ò[Y\‹XŸSô]’[ö\]YRY‹[€ú Nà\òXõSÿöôX›Y¬àYúõ€Sò[YJò[YNà›ö[ô Nà\òXõSÿöôX›Y¬àYúõ€T›ö[ô Yà›ö[ô Nà\òXõSÿöôX›Y¬àŸ]
+Yà\òXõSÿöôX›Y‹[€úœŒà\òXõSÿöôX›ò[Y\‹XŸQŸ]\òXõSÿöôX›‹[€ú Nà\òXõSÿöôX››Xèé¬àŸ]ûSò[YJò[YNà›ö[ôÀ‹[€úœŒà\òXõSÿöôX›ò[Y\‹XŸQŸ]\òXõSÿöôX›‹[€ú Nà\òXõSÿöôX››Xèé¬àù\ö\ŸX›[€äù\ö\ŸX›[€éà\òXõSÿöôX›ù\ö\ŸX›[€äNà\òXõSÿöôX›ò[Y\‹XŸOé¬üBù\H\òXõSÿöôX›ù\ö\ŸX›[€àHô]HàôôYò[\àôôYò[\ZY⁄àù\»é¬ö[ù\ôòXŸH\òXõSÿöôX›ò[Y\‹XŸSô]’[ö\]YRY‹[€ú»¬àù\ö\ŸX›[€èŒà\òXõSÿöôX›ù\ö\ŸX›[€é¬üBù\H\òXõSÿöôX›ÿÿ][€í[ùHù€ò[Hàô[ò[Hàúÿ[HàùŸ]\ààôY]\ààò\X»àò\XÀ[ôHàò\XÀ\ŸHàõÿ»àòYúààõYHé¬ù\H\òXõSÿöôX›õ›][ô”[ŸHHúö[X\ûK[€õHé¬ö[ù\ôòXŸH\òXõSÿöôX›ò[Y\‹XŸQŸ]\òXõSÿöôX›‹[€ú»¬àÿÿ][€í[ùŒà\òXõSÿöôX›ÿÿ][€í[ù¬àõ›][ô”[ŸOŒà\òXõSÿöôX›õ›][ô”[ŸN¬üBö[ù\ôòXŸH\òXõSÿöôX›€\‹œ’^[ô»úÀë\òXõSÿöôX›úò[ôY[ôYö[ôYH[ôYö[ôYà¬üBö[ù\ôòXŸH\òXõSÿöôX››]Oõ‹»H[ö€õ›€èà¬àÿZ][ù[
+õ€Z\ŸNàõ€Z\ŸO[ûOäNàõ⁄Y¬àôXY€õH^‹ùŒà€›Yõ\ôKë^‹ùŒ¬àôXY€õHõ‹Œàõ‹Œ¬àôXY€õHYà\òXõSÿöôX›Y¬àôXY€õH›‹òYŸNà\òXõSÿöôX››‹òYŸN¬à€€ùZ[ô\èŒà€€ùZ[ô\é¬àòXŸ]Œà\òXõSÿöôX›òXŸ]Œ¬àõÿ⁄–€€ò›\úô[òﬁU⁄[Oäÿ[òX⁄Œà
+
+HOàõ€Z\ŸOäNàõ€Z\ŸOé¬àXÿŸ\ŸXî€ÿ⁄Ÿ]
+‹ŒàŸXî€ÿ⁄Ÿ]Y‹œŒà›ö[ô÷◊JNàõ⁄Y¬àŸ]ŸXî€ÿ⁄Ÿ] YœŒà›ö[ô NàŸXî€ÿ⁄Ÿ]◊N¬àŸ]ŸXî€ÿ⁄Ÿ]]]‘ô\‹€úŸJX^XôTô\Tô\‹ŒàŸXî€ÿ⁄Ÿ]ô\]Y\›ô\‹€úŸTZ\äNàõ⁄Y¬àŸ]ŸXî€ÿ⁄Ÿ]]]‘ô\‹€úŸJ
+NàŸXî€ÿ⁄Ÿ]ô\]Y\›ô\‹€úŸTZ\àù[¬àŸ]ŸXî€ÿ⁄Ÿ]]]‘ô\‹€úŸU[Y\›[\
+‹ŒàŸXî€ÿ⁄Ÿ]
+Nà]Hù[¬àŸ]Xô\õò]XõUŸXî€ÿ⁄Ÿ]]ô[ù[Y[›]
+[Y[›]\œŒàù[Xô\äNàõ⁄Y¬àŸ]Xô\õò]XõUŸXî€ÿ⁄Ÿ]]ô[ù[Y[›]
+
+Nàù[Xô\àù[¬àŸ]Y‹ ‹ŒàŸXî€ÿ⁄Ÿ]
+Nà›ö[ô÷◊N¬àXõ‹ù
+ôX\€€èŒà›ö[ô Nàõ⁄Y¬üBö[ù\ôòXŸH\òXõSÿöôX›ò[úÿX›[€à¬àŸ]H[ö€õ›€èäŸ^Nà›ö[ôÀ‹[€úœŒà\òXõSÿöôX›Ÿ]‹[€ú Nàõ€Z\ŸO[ôYö[ôYé¬àŸ]H[ö€õ›€èäŸ^\Œà›ö[ô÷◊K‹[€úœŒà\òXõSÿöôX›Ÿ]‹[€ú Nàõ€Z\ŸOX\›ö[ôÀèé¬à\›H[ö€õ›€èä‹[€úœŒà\òXõSÿöôX›\›‹[€ú Nàõ€Z\ŸOX\›ö[ôÀèé¬à]äŸ^Nà›ö[ôÀò[YNà‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ⁄Yé¬à]ä[ùöY\ŒàôX€‹ô›ö[ôÀã‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ⁄Yé¬à[]JŸ^Nà›ö[ôÀ‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ€€X[èé¬à[]JŸ^\Œà›ö[ô÷◊K‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOù[Xô\èé¬àõ€òX⁄ 
+Nàõ⁄Y¬àŸ][\õJ‹[€úœŒà\òXõSÿöôX›Ÿ][\õS‹[€ú Nàõ€Z\ŸOù[Xô\àù[é¬àŸ][\õJÿ⁄Y[Y[YNàù[Xô\à]K‹[€úœŒà\òXõSÿöôX›Ÿ][\õS‹[€ú Nàõ€Z\ŸOõ⁄Yé¬à[]P[\õJ‹[€úœŒà\òXõSÿöôX›Ÿ][\õS‹[€ú Nàõ€Z\ŸOõ⁄Yé¬üBö[ù\ôòXŸH\òXõSÿöôX››‹òYŸH¬àŸ]H[ö€õ›€èäŸ^Nà›ö[ôÀ‹[€úœŒà\òXõSÿöôX›Ÿ]‹[€ú Nàõ€Z\ŸO[ôYö[ôYé¬àŸ]H[ö€õ›€èäŸ^\Œà›ö[ô÷◊K‹[€úœŒà\òXõSÿöôX›Ÿ]‹[€ú Nàõ€Z\ŸOX\›ö[ôÀèé¬à\›H[ö€õ›€èä‹[€úœŒà\òXõSÿöôX›\›‹[€ú Nàõ€Z\ŸOX\›ö[ôÀèé¬à]äŸ^Nà›ö[ôÀò[YNà‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ⁄Yé¬à]ä[ùöY\ŒàôX€‹ô›ö[ôÀã‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ⁄Yé¬à[]JŸ^Nà›ö[ôÀ‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ€€X[èé¬à[]JŸ^\Œà›ö[ô÷◊K‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOù[Xô\èé¬à[]P[
+‹[€úœŒà\òXõSÿöôX›]‹[€ú Nàõ€Z\ŸOõ⁄Yé¬àò[úÿX›[€èä€‹›\ôNà
+éà\òXõSÿöôX›ò[úÿX›[€äHOàõ€Z\ŸOäNàõ€Z\ŸOé¬àŸ][\õJ‹[€úœŒà\òXõSÿöôX›Ÿ][\õS‹[€ú Nàõ€Z\ŸOù[Xô\àù[é¬àŸ][\õJÿ⁄Y[Y[YNàù[Xô\à]K‹[€úœŒà\òXõSÿöôX›Ÿ][\õS‹[€ú Nàõ€Z\ŸOõ⁄Yé¬à[]P[\õJ‹[€úœŒà\òXõSÿöôX›Ÿ][\õS‹[€ú Nàõ€Z\ŸOõ⁄Yé¬àﬁ[ò 
+Nàõ€Z\ŸOõ⁄Yé¬à‹[à‹[›‹òYŸN¬à›éàﬁ[ò“›î›‹òYŸN¬àò[úÿX›[€îﬁ[òœä€‹›\ôNà
+
+HOà
+Nà¬àŸ]›\úô[ùõ€⁄€X\ö 
+Nàõ€Z\ŸO›ö[ôœé¬àŸ]õ€⁄€X\ö—õ‹ï[YJ[Y\›[\àù[Xô\à]JNàõ€Z\ŸO›ö[ôœé¬à€ìô^Ÿ\‹⁄[€îô\›‹ôPõ€⁄€X\ö õ€⁄€X\öŒà›ö[ô Nàõ€Z\ŸO›ö[ôœé¬üBö[ù\ôòXŸH\òXõSÿöôX›\›‹[€ú»¬à›\ùŒà›ö[ôŒ¬à›\ùYù\èŒà›ö[ôŒ¬à[ôŒà›ö[ôŒ¬àôYö^Œà›ö[ôŒ¬àô]ô\úŸOŒàõ€€X[é¬à[Z]Œàù[Xô\é¬à[›–€€ò›\úô[òﬁOŒàõ€€X[é¬àõ–ÿX⁄OŒàõ€€X[é¬üBö[ù\ôòXŸH\òXõSÿöôX›Ÿ]‹[€ú»¬à[›–€€ò›\úô[òﬁOŒàõ€€X[é¬àõ–ÿX⁄OŒàõ€€X[é¬üBö[ù\ôòXŸH\òXõSÿöôX›Ÿ][\õS‹[€ú»¬à[›–€€ò›\úô[òﬁOŒàõ€€X[é¬üBö[ù\ôòXŸH\òXõSÿöôX›]‹[€ú»¬à[›–€€ò›\úô[òﬁOŒàõ€€X[é¬à[›’[ò€€ôö\õYYŒàõ€€X[é¬àõ–ÿX⁄OŒàõ€€X[é¬üBö[ù\ôòXŸH\òXõSÿöôX›Ÿ][\õS‹[€ú»¬à[›–€€ò›\úô[òﬁOŒàõ€€X[é¬à[›’[ò€€ôö\õYYŒàõ€€X[é¬üBôX€\ôH€\‹»ŸXî€ÿ⁄Ÿ]ô\]Y\›ô\‹€úŸTZ\à¬à€€ú›ùX›‹äô\]Y\›à›ö[ôÀô\‹€úŸNà›ö[ô N¬àŸ]ô\]Y\›
+
+Nà›ö[ôŒ¬àŸ]ô\‹€úŸJ
+Nà›ö[ôŒ¬üBö[ù\ôòXŸH\òXõSÿöôX›òXŸ]»¬àŸ]^[ô»úÀë\òXõSÿöôX›úò[ôY[ôYö[ôYH[ôYö[ôYäò[YNà›ö[ôÀŸ]›\ù\‹[€úŒà
+
+HOàòXŸ]›\ù\‹[€úœàõ€Z\ŸOòXŸ]›\ù\‹[€úœèäNàô]⁄\èé¬àXõ‹ù
+ò[YNà›ö[ôÀôX\€€éà[ûJNàõ⁄Y¬à[]Jò[YNà›ö[ô Nàõ⁄Y¬à€€ôJ‹òŒà›ö[ôÀ›à›ö[ô Nàõ⁄Y¬üBö[ù\ôòXŸHòXŸ]›\ù\‹[€úœ^[ô»úÀë\òXõSÿöôX›úò[ôY[ôYö[ôYH[ôYö[ôYà¬àYŒà\òXõSÿöôX›Y›ö[ôŒ¬à€\‹Œà\òXõSÿöôX›€\‹œé¬üBö[ù\ôòXŸH[ò[]X‹—[ô⁄[ôQ]\Ÿ]¬à‹ö]Q]T⁄[ù
+]ô[ùŒà[ò[]X‹—[ô⁄[ôQ]T⁄[ù
+Nàõ⁄Y¬üBö[ù\ôòXŸH[ò[]X‹—[ô⁄[ôQ]T⁄[ù¬à[ô^\œŒà
+
+\úò^PùYôô\à›ö[ô Hù[
+V◊N¬à›Xõ\œŒàù[Xô\ñ◊N¬àõÿúœŒà
+
+\úò^PùYôô\à›ö[ô Hù[
+V◊N¬üBã äÇà
+àH
+äò]ô[ù
+äà[ù\ôòXŸHô\ô\Ÿ[ù»[à]ô[ù⁄X⁄ZŸ\»XŸH€à[à]ô[ù\ôŸ]Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù
+Bà
+ã¬ôX€\ôH€\‹»]ô[ù¬à€€ú›ùX›‹ä\Nà›ö[ôÀ[ö]Œà]ô[ù[ö]
+N¬à äÇà
+àH
+äò\X
+äàôXY[€õHõ‹\ùHŸàH]ô[ù[ù\ôòXŸHô]\õú»H›ö[ô»€€ùZ[ö[ô»H]ô[ù	‹»\KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù›\JBà
+ã¬àŸ]\J
+Nà›ö[ôŒ¬à äÇà
+àH
+äò]ô[ù\ŸX
+äàôXY[€õHõ‹\ùHŸàHôZ[ô»]ò[X]YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùŸ]ô[ù\ŸJBà
+ã¬àŸ]]ô[ù\ŸJ
+Nàù[Xô\é¬à äÇà
+àHôXY[€õH
+äò€€\‹ŸY
+äàõ‹\ùHŸàH‹àõ›H]ô[ù⁄[õ‹Yÿ]HX‹õ‹‹»H⁄Y›»”Hõ›[ô\ûH[ù»H›[ô\ô”KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿ€€\‹ŸY
+Bà
+ã¬àŸ]€€\‹ŸY
+
+Nàõ€€X[é¬à äÇà
+àH
+äòùXòõ\ÿ
+äàôXY[€õHõ‹\ùHŸàH]ô[ù[ù\ôòXŸH[ôXÿ]\»⁄]\àH]ô[ùùXòõ\»\õ›Y⁄H”HôYH‹àõ›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿùXòõ\ Bà
+ã¬àŸ]ùXòõ\ 
+Nàõ€€X[é¬à äÇà
+àH
+äòÿ[òŸ[XõX
+äàôXY[€õHõ‹\ùHŸàH]ô[ù[ù\ôòXŸH[ôXÿ]\»⁄]\àH]ô[ùÿ[àôHÿ[òŸ[Y[ô\ôYõ‹ôHô]ô[ùY\»YàH]ô[ùô]ô\à\[ôYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿÿ[òŸ[XõJBà
+ã¬àŸ]ÿ[òŸ[XõJ
+Nàõ€€X[é¬à äÇà
+àH
+äòYò][ô]ô[ùY
+äàôXY[€õHõ‹\ùHŸàH]ô[ù[ù\ôòXŸHô]\õú»Hõ€€X[àò[YH[ôXÿ][ô»⁄]\à‹àõ›Hÿ[»]ô[ùúô]ô[ùYò][
+
+Hÿ[òŸ[YH]ô[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùŸYò][ô]ô[ùY
+Bà
+ã¬àŸ]Yò][ô]ô[ùY
+
+Nàõ€€X[é¬à äÇà
+àH]ô[ùõ‹\ùH
+äòô]\õïò[YX
+äà[ôXÿ]\»⁄]\àHYò][X›[€àõ‹à\»]ô[ù\»ôY[àô]ô[ùY‹àõ›Çà
+à\ôXÿ]Yà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù‹ô]\õïò[YJBà
+ã¬àŸ]ô]\õïò[YJ
+Nàõ€€X[é¬à äÇà
+àH
+äò›\úô[ù\ôŸ]
+äàôXY[€õHõ‹\ùHŸàH]ô[ù[ù\ôòXŸHY[ùYöY\»H[[Y[ù»⁄X⁄H]ô[ù[ô\à\»ôY[à]X⁄YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿ›\úô[ù\ôŸ]
+Bà
+ã¬àŸ]›\úô[ù\ôŸ]
+
+Nà]ô[ù\ôŸ][ôYö[ôY¬à äÇà
+àHôXY[€õH
+äò\ôŸ]
+äàõ‹\ùHŸàH\‹]⁄YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù›\ôŸ]
+Bà
+ã¬àŸ]\ôŸ]
+
+Nà]ô[ù\ôŸ][ôYö[ôY¬à äÇà
+àH\ôXÿ]Y
+äò]ô[ùú‹ò—[[Y[ù
+äà\»[à[X\»õ‹àH]ô[ùù\ôŸ]õ‹\ùKÇà
+à\ôXÿ]Yà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù‹‹ò—[[Y[ù
+Bà
+ã¬àŸ]‹ò—[[Y[ù
+
+Nà]ô[ù\ôŸ][ôYö[ôY¬à äÇà
+àH
+äò[YT›[\
+äàôXY[€õHõ‹\ùHŸàH]ô[ù[ù\ôòXŸHô]\õú»H[YH
+[àZ[\ŸX€€ô H]⁄X⁄H]ô[ùÿ\»‹ôX]YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù›[YT›[\
+Bà
+ã¬àŸ][YT›[\
+
+Nàù[Xô\é¬à äÇà
+àH
+äò\’ù\›Y
+äàôXY[€õHõ‹\ùHŸàH⁄[àH]ô[ùÿ\»Ÿ[ô\ò]YûHH\Ÿ\àYŸ[ù
+[ò€Y[ô»öXH\Ÿ\àX›[€ú»[ôõŸ‹ò[[X]X»Y]Ÿ»›X⁄\»S[[Y[ùôõÿ›\ 
+JK[ôò[ŸX⁄[àH]ô[ùÿ\»\‹]⁄YöXHH€õH^Ÿ\[€à\»H€X⁄ÿ]ô[ù⁄X⁄[ö]X[^ô\»H\’ù\›Yõ‹\ùH»ò[ŸX[à\Ÿ\àYŸ[ùÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù⁄\’ù\›Y
+Bà
+ã¬àŸ]\’ù\›Y
+
+Nàõ€€X[é¬à äÇà
+àH
+äòÿ[òŸ[ùXòõX
+äàõ‹\ùHŸàH]ô[ù[ù\ôòXŸH\»\ôXÿ]YÇà
+à\ôXÿ]Yà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿÿ[òŸ[ùXòõJBà
+ã¬àŸ]ÿ[òŸ[ùXòõJ
+Nàõ€€X[é¬à äÇà
+àH
+äòÿ[òŸ[ùXòõX
+äàõ‹\ùHŸàH]ô[ù[ù\ôòXŸH\»\ôXÿ]YÇà
+à\ôXÿ]Yà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿÿ[òŸ[ùXòõJBà
+ã¬àŸ]ÿ[òŸ[ùXòõJò[YNàõ€€X[äN¬à äÇà
+àH
+äò›‹[[YYX]Tõ‹Yÿ][€ä
+X
+äàY]ŸŸàHYàŸ]ô\ò[\›[ô\ú»\ôH]X⁄Y»Hÿ[YH[[Y[ùõ‹àHÿ[YH]ô[ù\K^H\ôHÿ[Y[àH‹ô\à[à⁄X⁄^HŸ\ôHYYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù‹›‹[[YYX]Tõ‹Yÿ][€äBà
+ã¬à›‹[[YYX]Tõ‹Yÿ][€ä
+Nàõ⁄Y¬à äÇà
+àH
+äòô]ô[ùYò][
+
+X
+äàY]ŸŸàH]ô[ù[ù\ôòXŸH[»H\Ÿ\àYŸ[ù]YàH]ô[ùŸ\»õ›Ÿ]^X⁄]H[ôY]»Yò][X›[€à⁄›[õ›ôHZŸ[à\»]õ‹õX[H€›[ôKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù‹ô]ô[ùYò][
+Bà
+ã¬àô]ô[ùYò][
+
+Nàõ⁄Y¬à äÇà
+àH
+äò›‹õ‹Yÿ][€ä
+X
+äàY]ŸŸàH]ô[ù[ù\ôòXŸHô]ô[ù»ù\ù\àõ‹Yÿ][€àŸàH›\úô[ù]ô[ù[àHÿ\\ö[ô»[ôùXòõ[ô»\Ÿ\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù‹›‹õ‹Yÿ][€äBà
+ã¬à›‹õ‹Yÿ][€ä
+Nàõ⁄Y¬à äÇà
+àH
+äò€€\‹ŸY]
+
+X
+äàY]ŸŸàH]ô[ù[ù\ôòXŸHô]\õú»H]ô[ù	‹»]⁄X⁄\»[à\úò^HŸàHÿöôX›»€à⁄X⁄\›[ô\ú»⁄[ôH[ùõ⁄ŸYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ùÿ€€\‹ŸY]
+Bà
+ã¬à€€\‹ŸY]
+
+Nà]ô[ù\ôŸ]◊N¬à›]X»ôXY€õHì”ëNàù[Xô\é¬à›]X»ôXY€õH–TTíSë◊‘T—Nàù[Xô\é¬à›]X»ôXY€õHU’Të—Uàù[Xô\é¬à›]X»ôXY€õHïPêìSë◊‘T—Nàù[Xô\é¬üBö[ù\ôòXŸH]ô[ù[ö]¬àùXòõ\œŒàõ€€X[é¬àÿ[òŸ[XõOŒàõ€€X[é¬à€€\‹ŸYŒàõ€€X[é¬üBù\H]ô[ù\›[ô\è]ô[ù\H^[ô»]ô[ùH]ô[ùàH
+]ô[ùà]ô[ù\JHOàõ⁄Y¬ö[ù\ôòXŸH]ô[ù\›[ô\ìÿöôX›]ô[ù\H^[ô»]ô[ùH]ô[ùà¬à[ôQ]ô[ù
+]ô[ùà]ô[ù\JNàõ⁄Y¬üBù\H]ô[ù\›[ô\ì‹ë]ô[ù\›[ô\ìÿöôX›]ô[ù\H^[ô»]ô[ùH]ô[ùàH]ô[ù\›[ô\è]ô[ù\Oà]ô[ù\›[ô\ìÿöôX›]ô[ù\Oé¬ã äÇà
+àH
+äò]ô[ù\ôŸ]
+äà[ù\ôòXŸH\»[\[Y[ùYûHÿöôX›»]ÿ[àôXŸZ]ôH]ô[ù»[ôX^H]ôH\›[ô\ú»õ‹à[KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù\ôŸ]
+Bà
+ã¬ôX€\ôH€\‹»]ô[ù\ôŸ]]ô[ùX\^[ô»ôX€‹ô›ö[ôÀ]ô[ùàHôX€‹ô›ö[ôÀ]ô[ùèà¬à€€ú›ùX›‹ä
+N¬à äÇà
+àH
+äòY]ô[ù\›[ô\ä
+X
+äàY]ŸŸàH]ô[ù\ôŸ][ù\ôòXŸHŸ]»\Hù[ò›[€à]⁄[ôHÿ[Y⁄[ô]ô\àH‹X⁄YöYY]ô[ù\»[]ô\ôY»H\ôŸ]Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù\ôŸ]ÿY]ô[ù\›[ô\äBà
+ã¬àY]ô[ù\›[ô\è\H^[ô»Ÿ^[Ÿà]ô[ùX\ä\Nà\K[ô\éà]ô[ù\›[ô\ì‹ë]ô[ù\›[ô\ìÿöôX›]ô[ùX\’\WOã‹[€úœŒà]ô[ù\ôŸ]Y]ô[ù\›[ô\ì‹[€ú»õ€€X[äNàõ⁄Y¬à äÇà
+àH
+äòô[[›ôQ]ô[ù\›[ô\ä
+X
+äàY]ŸŸàH]ô[ù\ôŸ][ù\ôòXŸHô[[›ô\»[à]ô[ù\›[ô\àô]ö[›\€HôY⁄\›\ôY⁄]]ô[ù\ôŸ]òY]ô[ù\›[ô\ä
+Húõ€HH\ôŸ]Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù\ôŸ]‹ô[[›ôQ]ô[ù\›[ô\äBà
+ã¬àô[[›ôQ]ô[ù\›[ô\è\H^[ô»Ÿ^[Ÿà]ô[ùX\ä\Nà\K[ô\éà]ô[ù\›[ô\ì‹ë]ô[ù\›[ô\ìÿöôX›]ô[ùX\’\WOã‹[€úœŒà]ô[ù\ôŸ]]ô[ù\›[ô\ì‹[€ú»õ€€X[äNàõ⁄Y¬à äÇà
+àH
+äò\‹]⁄]ô[ù
+
+X
+äàY]ŸŸàH]ô[ù\ôŸ]Ÿ[ô»[à]ô[ù»HÿöôX›
+ﬁ[ò⁄õ€õ›\€JH[ùõ⁄⁄[ô»HYôôX›Y]ô[ù\›[ô\ú»[àH\õ‹öX]H‹ô\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—]ô[ù\ôŸ]Ÿ\‹]⁄]ô[ù
+Bà
+ã¬à\‹]⁄]ô[ù
+]ô[ùà]ô[ùX\⁄Ÿ^[Ÿà]ô[ùX\JNàõ€€X[é¬üBö[ù\ôòXŸH]ô[ù\ôŸ]]ô[ù\›[ô\ì‹[€ú»¬àÿ\\ôOŒàõ€€X[é¬üBö[ù\ôòXŸH]ô[ù\ôŸ]Y]ô[ù\›[ô\ì‹[€ú»¬àÿ\\ôOŒàõ€€X[é¬à\‹⁄]ôOŒàõ€€X[é¬à€òŸOŒàõ€€X[é¬à⁄Y€ò[ŒàXõ‹ù⁄Y€ò[¬üBö[ù\ôòXŸH]ô[ù\ôŸ][ô\ìÿöôX›¬à[ôQ]ô[ùà
+]ô[ùà]ô[ù
+HOà[ûH[ôYö[ôY¬üBã äÇà
+àH
+äòXõ‹ù€€ùõ€\ò
+äà[ù\ôòXŸHô\ô\Ÿ[ù»H€€ùõ€\àÿöôX›][›‹»[›H»Xõ‹ù€ôH‹à[‹ôHŸXàô\]Y\›»\»[ô⁄[à\⁄\ôYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù€€ùõ€\äBà
+ã¬ôX€\ôH€\‹»Xõ‹ù€€ùõ€\à¬à€€ú›ùX›‹ä
+N¬à äÇà
+àH
+äò⁄Y€ò[
+äàôXY[€õHõ‹\ùHŸàHXõ‹ù€€ùõ€\à[ù\ôòXŸHô]\õú»[àXõ‹ù⁄Y€ò[ÿöôX›[ú›[òŸK⁄X⁄ÿ[àôH\ŸY»€€[][öXÿ]H⁄]ÿXõ‹ù[à\ﬁ[ò⁄õ€õ›\»‹\ò][€à\»\⁄\ôYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù€€ùõ€\ã‹⁄Y€ò[
+Bà
+ã¬àŸ]⁄Y€ò[
+
+NàXõ‹ù⁄Y€ò[¬à äÇà
+àH
+äòXõ‹ù
+
+X
+äàY]ŸŸàHXõ‹ù€€ùõ€\à[ù\ôòXŸHXõ‹ù»[à\ﬁ[ò⁄õ€õ›\»‹\ò][€àôYõ‹ôH]\»€€\]YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù€€ùõ€\ãÿXõ‹ù
+Bà
+ã¬àXõ‹ù
+ôX\€€èŒà[ûJNàõ⁄Y¬üBã äÇà
+àH
+äòXõ‹ù⁄Y€ò[
+äà[ù\ôòXŸHô\ô\Ÿ[ù»H⁄Y€ò[ÿöôX›][›‹»[›H»€€[][öXÿ]H⁄][à\ﬁ[ò⁄õ€õ›\»‹\ò][€à
+›X⁄\»Hô]⁄ô\]Y\›
+H[ôXõ‹ù]Yàô\]Z\ôYöXH[àXõ‹ù€€ùõ€\àÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[
+Bà
+ã¬ôX€\ôHXú›òX›€\‹»Xõ‹ù⁄Y€ò[^[ô»]ô[ù\ôŸ]¬à äÇà
+àH
+äòXõ‹ù⁄Y€ò[òXõ‹ù
+
+X
+äà›]X»Y]Ÿô]\õú»[àXõ‹ù⁄Y€ò[]\»[ôXYHŸ]\»Xõ‹ùY
+[ô⁄X⁄Ÿ\»õ›öYŸŸ\à[àXõ‹ù⁄Y€ò[ÿXõ‹ùŸ]ô[ù]ô[ù
+KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[ÿXõ‹ù‹›]X Bà
+ã¬à›]X»Xõ‹ù
+ôX\€€èŒà[ûJNàXõ‹ù⁄Y€ò[¬à äÇà
+àH
+äòXõ‹ù⁄Y€ò[ù[Y[›]
+
+X
+äà›]X»Y]Ÿô]\õú»[àXõ‹ù⁄Y€ò[]⁄[]]€X]Xÿ[HXõ‹ùYù\àH‹X⁄YöYY[YKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[›[Y[›]‹›]X Bà
+ã¬à›]X»[Y[›]
+[^Nàù[Xô\äNàXõ‹ù⁄Y€ò[¬à äÇà
+àH
+äòXõ‹ù⁄Y€ò[ò[ûJ
+X
+äà›]X»Y]ŸZŸ\»[à]\òXõHŸàXõ‹ù⁄Y€ò[»[ôô]\õú»[àXõ‹ù⁄Y€ò[Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[ÿ[ûW‹›]X Bà
+ã¬à›]X»[ûJ⁄Y€ò[ŒàXõ‹ù⁄Y€ò[◊JNàXõ‹ù⁄Y€ò[¬à äÇà
+àH
+äòXõ‹ùY
+äàôXY[€õHõ‹\ùHô]\õú»Hò[YH][ôXÿ]\»⁄]\àH\ﬁ[ò⁄õ€õ›\»‹\ò][€ú»H⁄Y€ò[\»€€[][öXÿ][ô»⁄]\ôHXõ‹ùY
+ùYX
+H‹àõ›
+ò[ŸX
+KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[ÿXõ‹ùY
+Bà
+ã¬àŸ]Xõ‹ùY
+
+Nàõ€€X[é¬à äÇà
+àH
+äòôX\€€ò
+äàôXY[€õHõ‹\ùHô]\õú»Hò]òTÿ‹ö\ò[YH][ôXÿ]\»HXõ‹ùôX\€€ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[‹ôX\€€äBà
+ã¬àŸ]ôX\€€ä
+Nà[ûN¬à à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[ÿXõ‹ùŸ]ô[ù
+H
+ã¬àŸ]€òXõ‹ù
+
+Nà[ûHù[¬à à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[ÿXõ‹ùŸ]ô[ù
+H
+ã¬àŸ]€òXõ‹ù
+ò[YNà[ûHù[
+N¬à äÇà
+àH
+äòõ›“YêXõ‹ùY
+
+X
+äàY]Ÿõ›‹»H⁄Y€ò[	‹»Xõ‹ùXõ‹ù⁄Y€ò[úôX\€€àYàH⁄Y€ò[\»ôY[àXõ‹ùY»›\ù⁄\ŸH]Ÿ\»õ›[ôÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–Xõ‹ù⁄Y€ò[›õ›“YêXõ‹ùY
+Bà
+ã¬àõ›“YêXõ‹ùY
+
+Nàõ⁄Y¬üBö[ù\ôòXŸHÿ⁄Y[\à¬àÿZ]
+[^Nàù[Xô\ãX^XôS‹[€úœŒàÿ⁄Y[\ïÿZ]‹[€ú Nàõ€Z\ŸOõ⁄Yé¬üBö[ù\ôòXŸHÿ⁄Y[\ïÿZ]‹[€ú»¬à⁄Y€ò[ŒàXõ‹ù⁄Y€ò[¬üBã äÇà
+àH
+äò^[ôXõQ]ô[ù
+äà[ù\ôòXŸH^[ô»HYô][YHŸàH[ú›[[ôX›]ò]X]ô[ù»\‹]⁄Y€àH€ÿò[ÿ€‹H\»\ùŸàHŸ\ùöXŸH€‹öŸ\àYôXﬁX€KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—^[ôXõQ]ô[ù
+Bà
+ã¬ôX€\ôHXú›òX›€\‹»^[ôXõQ]ô[ù^[ô»]ô[ù¬à äÇà
+àH
+äò^[ôXõQ]ô[ùùÿZ][ù[
+
+X
+äàY]Ÿ[»H]ô[ù\‹]⁄\à]€‹ö»\»€ô€⁄[ôÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—^[ôXõQ]ô[ù›ÿZ][ù[
+Bà
+ã¬àÿZ][ù[
+õ€Z\ŸNàõ€Z\ŸO[ûOäNàõ⁄Y¬üBã äÇà
+àH
+äò›\›€Q]ô[ù
+äà[ù\ôòXŸHô\ô\Ÿ[ù»]ô[ù»[ö]X[^ôYûH[à\Xÿ][€àõ‹à[ûH\ú‹ŸKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–›\›€Q]ô[ù
+Bà
+ã¬ôX€\ôH€\‹»›\›€Q]ô[ùH[ûOà^[ô»]ô[ù¬à€€ú›ùX›‹ä\Nà›ö[ôÀ[ö]Œà›\›€Q]ô[ù›\›€Q]ô[ù[ö]
+N¬à äÇà
+àHôXY[€õH
+äò]Z[
+äàõ‹\ùHŸàH›\›€Q]ô[ù[ù\ôòXŸHô]\õú»[ûH]H\‹ŸY⁄[à[ö]X[^ö[ô»H]ô[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–›\›€Q]ô[ùŸ]Z[
+Bà
+ã¬àŸ]]Z[
+
+Nà¬üBö[ù\ôòXŸH›\›€Q]ô[ù›\›€Q]ô[ù[ö]¬àùXòõ\œŒàõ€€X[é¬àÿ[òŸ[XõOŒàõ€€X[é¬à€€\‹ŸYŒàõ€€X[é¬à]Z[Œà[ûN¬üBã äÇà
+àH
+äòõÿò
+äà[ù\ôòXŸHô\ô\Ÿ[ù»Hõÿã⁄X⁄\»Hö[K[ZŸHÿöôX›Ÿà[[]]XõKò]»]N»^Hÿ[àôHôXY\»^‹àö[ò\ûH]K‹à€€ùô\ùY[ù»HôXYXõT›ôX[H€»]»Y]Ÿ»ÿ[àôH\ŸYõ‹àõÿŸ\‹⁄[ô»H]KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿäBà
+ã¬ôX€\ôH€\‹»õÿà¬à€€ú›ùX›‹äö]œŒà
+
+\úò^PùYôô\à\úò^PùYôô\ïöY] H›ö[ô»õÿäV◊K‹[€úœŒàõÿì‹[€ú N¬à äÇà
+àH
+äò⁄^ôX
+äàôXY[€õHõ‹\ùHŸàHõÿà[ù\ôòXŸHô]\õú»H⁄^ôHŸàHõÿà‹àö[H[àû]\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿã‹⁄^ôJBà
+ã¬àŸ]⁄^ôJ
+Nàù[Xô\é¬à äÇà
+àH
+äò\X
+äàôXY[€õHõ‹\ùHŸàHõÿà[ù\ôòXŸHô]\õú»HRSQH\HŸàHö[KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿã›\JBà
+ã¬àŸ]\J
+Nà›ö[ôŒ¬à äÇà
+àH
+äò€XŸJ
+X
+äàY]ŸŸàHõÿà[ù\ôòXŸH‹ôX]\»[ôô]\õú»Hô]»õÿòÿöôX›⁄X⁄€€ùZ[ú»]Húõ€HH›XúŸ]ŸàHõÿà€à⁄X⁄]	‹»ÿ[YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿã‹€XŸJBà
+ã¬à€XŸJ›\ùŒàù[Xô\ã[ôŒàù[Xô\ã\OŒà›ö[ô Nàõÿé¬à äÇà
+àH
+äò\úò^PùYôô\ä
+X
+äàY]ŸŸàHõÿà[ù\ôòXŸHô]\õú»Hõ€Z\ŸH]ô\€€ô\»⁄]H€€ù[ù»ŸàHõÿà\»ö[ò\ûH]H€€ùZ[ôY[à[à\úò^PùYôô\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿãÿ\úò^PùYôô\äBà
+ã¬à\úò^PùYôô\ä
+Nàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äòû]\ 
+X
+äàY]ŸŸàHõÿà[ù\ôòXŸHô]\õú»Hõ€Z\ŸH]ô\€€ô\»⁄]HZ[ù\úò^H€€ùZ[ö[ô»H€€ù[ù»ŸàHõÿà\»[à\úò^HŸàû]\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿãÿû]\ Bà
+ã¬àû]\ 
+Nàõ€Z\ŸOZ[ù\úò^Oé¬à äÇà
+àH
+äò^
+
+X
+äàY]ŸŸàH›ö[ô»€€ùZ[ö[ô»H€€ù[ù»ŸàHõÿã[ù\úô]Y\»UãNÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿã›^
+Bà
+ã¬à^
+
+Nàõ€Z\ŸO›ö[ôœé¬à äÇà
+àH
+äò›ôX[J
+X
+äàY]ŸŸàHõÿà[ù\ôòXŸHô]\õú»HôXYXõT›ôX[H⁄X⁄\€àôXY[ô»ô]\õú»H]H€€ùZ[ôY⁄][àHõÿòÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–õÿã‹›ôX[JBà
+ã¬à›ôX[J
+NàôXYXõT›ôX[N¬üBö[ù\ôòXŸHõÿì‹[€ú»¬à\OŒà›ö[ôŒ¬üBã äÇà
+àH
+äòö[X
+äà[ù\ôòXŸHõ›öY\»[ôõ‹õX][€àXõ›]ö[\»[ô[›‹»ò]òTÿ‹ö\[àHŸXàYŸH»XÿŸ\‹»Z\à€€ù[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—ö[JBà
+ã¬ôX€\ôH€\‹»ö[H^[ô»õÿà¬à€€ú›ùX›‹äö]Œà
+
+\úò^PùYôô\à\úò^PùYôô\ïöY] H›ö[ô»õÿäV◊H[ôYö[ôYò[YNà›ö[ôÀ‹[€úœŒàö[S‹[€ú N¬à äÇà
+àH
+äòò[YX
+äàôXY[€õHõ‹\ùHŸàHö[H[ù\ôòXŸHô]\õú»Hò[YHŸàHö[Hô\ô\Ÿ[ùYûHHö[HÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—ö[K€ò[YJBà
+ã¬àŸ]ò[YJ
+Nà›ö[ôŒ¬à äÇà
+àH
+äò\›[ŸYöYY
+äàôXY[€õHõ‹\ùHŸàHö[H[ù\ôòXŸHõ›öY\»H\›[ŸYöYY]HŸàHö[H\»Hù[Xô\àŸàZ[\ŸX€€ô»⁄[òŸHH[ö^\ÿ⁄
+ò[ùX\ûHKNMÃ]ZYöY⁄
+KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—ö[K€\›[ŸYöYY
+Bà
+ã¬àŸ]\›[ŸYöYY
+
+Nàù[Xô\é¬üBö[ù\ôòXŸHö[S‹[€ú»¬à\OŒà›ö[ôŒ¬à\›[ŸYöYYŒàù[Xô\é¬üBã äÇäàHÿX⁄HTH[›‹»ö[ôH‹òZ[ôY€€ùõ€ŸàôXY[ô»[ô‹ö][ô»úõ€HH€›Yõ\ôH€ÿò[ô]€‹ö»ÿX⁄KÇäÇäà–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\ÀÿÿX⁄K Bäã¬ôX€\ôHXú›òX›€\‹»ÿX⁄T›‹òYŸH¬à äÇà
+àH
+äò‹[ä
+X
+äàY]ŸŸàHHÿX⁄HÿöôX›X]⁄[ô»HÿX⁄Sò[YXÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–ÿX⁄T›‹òYŸK€‹[äBà
+ã¬à‹[äÿX⁄Sò[YNà›ö[ô Nàõ€Z\ŸOÿX⁄Oé¬àôXY€õHYò][àÿX⁄N¬üBã äÇäàHÿX⁄HTH[›‹»ö[ôH‹òZ[ôY€€ùõ€ŸàôXY[ô»[ô‹ö][ô»úõ€HH€›Yõ\ôH€ÿò[ô]€‹ö»ÿX⁄KÇäÇäà–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\ÀÿÿX⁄K Bäã¬ôX€\ôHXú›òX›€\‹»ÿX⁄H¬à à–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\ÀÿÿX⁄K»Ÿ[]JH
+ã¬à[]Jô\]Y\›àô\]Y\›[ôõ»Tì‹[€úœŒàÿX⁄T]Y\ûS‹[€ú Nàõ€Z\ŸOõ€€X[èé¬à à–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\ÀÿÿX⁄K»€X]⁄
+H
+ã¬àX]⁄
+ô\]Y\›àô\]Y\›[ôõ»Tì‹[€úœŒàÿX⁄T]Y\ûS‹[€ú Nàõ€Z\ŸOô\‹€úŸH[ôYö[ôYé¬à à–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\ÀÿÿX⁄K»‹]
+H
+ã¬à]
+ô\]Y\›àô\]Y\›[ôõ»Tìô\‹€úŸNàô\‹€úŸJNàõ€Z\ŸOõ⁄Yé¬üBö[ù\ôòXŸHÿX⁄T]Y\ûS‹[€ú»¬àY€õ‹ôSY]ŸŒàõ€€X[é¬üBã äÇäàHŸXà‹û\»THõ›öY\»HŸ]Ÿà›À[]ô[ù[ò›[€ú»õ‹à€€[[€à‹û\Ÿ‹ò\X»\⁄‹ÀÇäàH€‹öŸ\ú»ù[ù[YH[\[Y[ù»Hù[›\ôòXŸHŸà\»TKù]⁄]€€YHYôô\ô[òŸ\»[ÇäàH‹›\‹ùY[€‹ö]\◊JŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\À›ŸXãX‹û\À»‹›\‹ùYX[€‹ö]\ Bäà€€\\ôY»‹ŸH[\[Y[ùY[à[‹›úõ›‹Ÿ\úÀÇäÇäà–€›Yõ\ôHÿ‹»ôYô\ô[òŸWJŒãÀŸ]ô[‹\úÀò€›Yõ\ôKò€€K›€‹öŸ\úÀ‹ù[ù[YKX\\À›ŸXãX‹û\À Bäã¬ôX€\ôHXú›òX›€\‹»‹û\»¬à äÇà
+àH
+äò‹û\Àú›XùX
+äàôXY[€õHõ‹\ùHô]\õú»H‹û\Ÿ‹ò\X»‹\ò][€úÀÇà
+à]òZ[XõH€õH[àŸX›\ôH€€ù^ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\À‹›XùJBà
+ã¬àŸ]›XùJ
+Nà›XùP‹û\Œ¬à äÇà
+àH
+äò‹û\ÀôŸ]ò[ô€Uò[Y\ 
+X
+äàY]Ÿ]»[›HŸ]‹û\Ÿ‹ò\Xÿ[H›õ€ô»ò[ô€Hò[Y\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\ÀŸŸ]ò[ô€Uò[Y\ Bà
+ã¬àŸ]ò[ô€Uò[Y\œ^[ô»[ù\úò^HZ[ù\úò^H[ùMê\úò^HZ[ùMê\úò^H[ùÃê\úò^HZ[ùÃê\úò^HöY“[ùç\úò^HöY’Z[ùç\úò^OäùYôô\éà
+Nà¬à äÇà
+àH
+äòò[ô€UURQ
+
+X
+äàY]ŸŸàH‹û\»[ù\ôòXŸH\»\ŸY»Ÿ[ô\ò]HHçURQ\⁄[ô»H‹û\Ÿ‹ò\Xÿ[HŸX›\ôHò[ô€Hù[Xô\àŸ[ô\ò]‹ãÇà
+à]òZ[XõH€õH[àŸX›\ôH€€ù^ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\À‹ò[ô€UURQ
+Bà
+ã¬àò[ô€UURQ
+
+Nà›ö[ôŒ¬àYŸ\››ôX[Nà\[ŸàYŸ\››ôX[N¬üBã äÇà
+àH
+äò›XùP‹û\ÿ
+äà[ù\ôòXŸHŸàHŸXà‹û\»THõ›öY\»Hù[Xô\àŸà›À[]ô[‹û\Ÿ‹ò\X»ù[ò›[€úÀÇà
+à]òZ[XõH€õH[àŸX›\ôH€€ù^ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ Bà
+ã¬ôX€\ôHXú›òX›€\‹»›XùP‹û\»¬à äÇà
+àH
+äò[ò‹û\
+
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸH[ò‹û\»]KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸ[ò‹û\
+Bà
+ã¬à[ò‹û\
+[€‹ö]Nà›ö[ô»›XùP‹û\—[ò‹û\[€‹ö]KŸ^Nà‹û\“Ÿ^KZ[ï^à\úò^PùYôô\à\úò^PùYôô\ïöY] Nàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äòX‹û\
+
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸHX‹û\»€€YH[ò‹û\Y]KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸX‹û\
+Bà
+ã¬àX‹û\
+[€‹ö]Nà›ö[ô»›XùP‹û\—[ò‹û\[€‹ö]KŸ^Nà‹û\“Ÿ^K⁄\\ï^à\úò^PùYôô\à\úò^PùYôô\ïöY] Nàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äò⁄Y€ä
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸHŸ[ô\ò]\»HY⁄][⁄Y€ò]\ôKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\À‹⁄Y€äBà
+ã¬à⁄Y€ä[€‹ö]Nà›ö[ô»›XùP‹û\‘⁄Y€ê[€‹ö]KŸ^Nà‹û\“Ÿ^K]Nà\úò^PùYôô\à\úò^PùYôô\ïöY] Nàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äòô\öYûJ
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸHô\öYöY\»HY⁄][⁄Y€ò]\ôKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\À›ô\öYûJBà
+ã¬àô\öYûJ[€‹ö]Nà›ö[ô»›XùP‹û\‘⁄Y€ê[€‹ö]KŸ^Nà‹û\“Ÿ^K⁄Y€ò]\ôNà\úò^PùYôô\à\úò^PùYôô\ïöY]À]Nà\úò^PùYôô\à\úò^PùYôô\ïöY] Nàõ€Z\ŸOõ€€X[èé¬à äÇà
+àH
+äòYŸ\›
+
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸHŸ[ô\ò]\»HŸYŸ\›»ŸàH⁄]ô[à]K\⁄[ô»H‹X⁄YöYY\⁄ù[ò›[€ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸYŸ\›
+Bà
+ã¬àYŸ\›
+[€‹ö]Nà›ö[ô»›XùP‹û\“\⁄[€‹ö]K]Nà\úò^PùYôô\à\úò^PùYôô\ïöY] Nàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äòŸ[ô\ò]RŸ^J
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸH\»\ŸY»Ÿ[ô\ò]HHô]»Ÿ^H
+õ‹àﬁ[[Y]öX»[€‹ö]\ H‹àŸ^HZ\à
+õ‹àXõXÀZŸ^H[€‹ö]\ KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸŸ[ô\ò]RŸ^JBà
+ã¬àŸ[ô\ò]RŸ^J[€‹ö]Nà›ö[ô»›XùP‹û\—Ÿ[ô\ò]RŸ^P[€‹ö]K^òX›XõNàõ€€X[ãŸ^U\ÿYŸ\Œà›ö[ô÷◊JNàõ€Z\ŸO‹û\“Ÿ^H‹û\“Ÿ^TZ\èé¬à äÇà
+àH
+äò\ö]ôRŸ^J
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸHÿ[àôH\ŸY»\ö]ôHHŸX‹ô]Ÿ^Húõ€HHX\›\àŸ^KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸ\ö]ôRŸ^JBà
+ã¬à\ö]ôRŸ^J[€‹ö]Nà›ö[ô»›XùP‹û\—\ö]ôRŸ^P[€‹ö]Kò\ŸRŸ^Nà‹û\“Ÿ^K\ö]ôYŸ^P[€‹ö]Nà›ö[ô»›XùP‹û\“[\‹ùŸ^P[€‹ö]K^òX›XõNàõ€€X[ãŸ^U\ÿYŸ\Œà›ö[ô÷◊JNàõ€Z\ŸO‹û\“Ÿ^Oé¬à äÇà
+àH
+äò\ö]ôPö] 
+X
+äàY]ŸŸàHŸ^KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸ\ö]ôPö] Bà
+ã¬à\ö]ôPö] [€‹ö]Nà›ö[ô»›XùP‹û\—\ö]ôRŸ^P[€‹ö]Kò\ŸRŸ^Nà‹û\“Ÿ^K[ô›Œàù[Xô\àù[
+Nàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äò[\‹ùŸ^J
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸH[\‹ù»HŸ^Nà]\À]ZŸ\»\»[ú]HŸ^H[à[à^\õò[‹ùXõHõ‹õX][ô⁄]ô\»[›HH‹û\“Ÿ^HÿöôX›][›Hÿ[à\ŸH[àHŸXà‹û\»TKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\À⁄[\‹ùŸ^JBà
+ã¬à[\‹ùŸ^Jõ‹õX]à›ö[ôÀŸ^Q]Nà
+\úò^PùYôô\à\úò^PùYôô\ïöY] Hú€€ïŸXíŸ^K[€‹ö]Nà›ö[ô»›XùP‹û\“[\‹ùŸ^P[€‹ö]K^òX›XõNàõ€€X[ãŸ^U\ÿYŸ\Œà›ö[ô÷◊JNàõ€Z\ŸO‹û\“Ÿ^Oé¬à äÇà
+àH
+äò^‹ùŸ^J
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸH^‹ù»HŸ^Nà]\À]ZŸ\»\»[ú]H‹û\“Ÿ^HÿöôX›[ô⁄]ô\»[›HHŸ^H[à[à^\õò[‹ùXõHõ‹õX]Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\ÀŸ^‹ùŸ^JBà
+ã¬à^‹ùŸ^Jõ‹õX]à›ö[ôÀŸ^Nà‹û\“Ÿ^JNàõ€Z\ŸO\úò^PùYôô\àú€€ïŸXíŸ^Oé¬à äÇà
+àH
+äò‹ò\Ÿ^J
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸH	›‹ò\…»HŸ^KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\À›‹ò\Ÿ^JBà
+ã¬à‹ò\Ÿ^Jõ‹õX]à›ö[ôÀŸ^Nà‹û\“Ÿ^K‹ò\[ô“Ÿ^Nà‹û\“Ÿ^K‹ò\[€‹ö]Nà›ö[ô»›XùP‹û\—[ò‹û\[€‹ö]JNàõ€Z\ŸO\úò^PùYôô\èé¬à äÇà
+àH
+äò[ù‹ò\Ÿ^J
+X
+äàY]ŸŸàH›XùP‹û\»[ù\ôòXŸH	›[ù‹ò\…»HŸ^KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘›XùP‹û\À›[ù‹ò\Ÿ^JBà
+ã¬à[ù‹ò\Ÿ^Jõ‹õX]à›ö[ôÀ‹ò\YŸ^Nà\úò^PùYôô\à\úò^PùYôô\ïöY]À[ù‹ò\[ô“Ÿ^Nà‹û\“Ÿ^K[ù‹ò\[€‹ö]Nà›ö[ô»›XùP‹û\—[ò‹û\[€‹ö]K[ù‹ò\YŸ^P[€‹ö]Nà›ö[ô»›XùP‹û\“[\‹ùŸ^P[€‹ö]K^òX›XõNàõ€€X[ãŸ^U\ÿYŸ\Œà›ö[ô÷◊JNàõ€Z\ŸO‹û\“Ÿ^Oé¬à[Z[ô‘ÿYôQ\]X[
+Nà\úò^PùYôô\à\úò^PùYôô\ïöY]Àéà\úò^PùYôô\à\úò^PùYôô\ïöY] Nàõ€€X[é¬üBã äÇà
+àH
+äò‹û\“Ÿ^X
+äà[ù\ôòXŸHŸàHŸXà‹û\»THô\ô\Ÿ[ù»H‹û\Ÿ‹ò\X»Ÿ^HÿùZ[ôYúõ€H€ôHŸàH›XùP‹û\»Y]Ÿ»›XùP‹û\ÀôŸ[ô\ò]RŸ^K›XùP‹û\Àô\ö]ôRŸ^K›XùP‹û\Àö[\‹ùŸ^K‹à›XùP‹û\Àù[ù‹ò\Ÿ^KÇà
+à]òZ[XõH€õH[àŸX›\ôH€€ù^ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\“Ÿ^JBà
+ã¬ôX€\ôHXú›òX›€\‹»‹û\“Ÿ^H¬à äÇà
+àHôXY[€õH
+äò\X
+äàõ‹\ùHŸàH‹û\“Ÿ^H[ù\ôòXŸH[ôXÿ]\»⁄X⁄⁄[ôŸàŸ^H\»ô\ô\Ÿ[ùYûHHÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\“Ÿ^K›\JBà
+ã¬àôXY€õH\Nà›ö[ôŒ¬à äÇà
+àHôXY[€õH
+äò^òX›XõX
+äàõ‹\ùHŸàH‹û\“Ÿ^H[ù\ôòXŸH[ôXÿ]\»⁄]\à‹àõ›HŸ^HX^HôH^òX›Y\⁄[ô»›XùP‹û\Àô^‹ùŸ^J
+X‹à›XùP‹û\Àù‹ò\Ÿ^J
+XÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\“Ÿ^KŸ^òX›XõJBà
+ã¬àôXY€õH^òX›XõNàõ€€X[é¬à äÇà
+àHôXY[€õH
+äò[€‹ö]X
+äàõ‹\ùHŸàH‹û\“Ÿ^H[ù\ôòXŸHô]\õú»[àÿöôX›\ÿ‹öXö[ô»H[€‹ö]Hõ‹à⁄X⁄\»Ÿ^Hÿ[àôH\ŸY[ô[ûH\‹€ÿ⁄X]Y^òH\ò[Y]\úÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\“Ÿ^Kÿ[€‹ö]JBà
+ã¬àôXY€õH[€‹ö]Nà‹û\“Ÿ^RŸ^P[€‹ö]H‹û\“Ÿ^PY\“Ÿ^P[€‹ö]H‹û\“Ÿ^RXX“Ÿ^P[€‹ö]H‹û\“Ÿ^TúÿRŸ^P[€‹ö]H‹û\“Ÿ^Q[\X“Ÿ^P[€‹ö]H‹û\“Ÿ^P\òö]ò\ûRŸ^P[€‹ö]N¬à äÇà
+àHôXY[€õH
+äò\ÿYŸ\ÿ
+äàõ‹\ùHŸàH‹û\“Ÿ^H[ù\ôòXŸH[ôXÿ]\»⁄]ÿ[àôH€ôH⁄]HŸ^KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK–‹û\“Ÿ^K›\ÿYŸ\ Bà
+ã¬àôXY€õH\ÿYŸ\Œà›ö[ô÷◊N¬üBö[ù\ôòXŸH‹û\“Ÿ^TZ\à¬àXõX“Ÿ^Nà‹û\“Ÿ^N¬àö]ò]RŸ^Nà‹û\“Ÿ^N¬üBö[ù\ôòXŸHú€€ïŸXíŸ^H¬à›Nà›ö[ôŒ¬à\ŸOŒà›ö[ôŒ¬àŸ^W€‹œŒà›ö[ô÷◊N¬à[œŒà›ö[ôŒ¬à^Œàõ€€X[é¬à‹ùèŒà›ö[ôŒ¬àŒà›ö[ôŒ¬àOŒà›ö[ôŒ¬àŒà›ö[ôŒ¬àèŒà›ö[ôŒ¬àOŒà›ö[ôŒ¬àŒà›ö[ôŒ¬àOŒà›ö[ôŒ¬àŒà›ö[ôŒ¬àOŒà›ö[ôŒ¬àZOŒà›ö[ôŒ¬à›ŒàúÿS›\îö[Y\“[ôõ÷◊N¬àœŒà›ö[ôŒ¬üBö[ù\ôòXŸHúÿS›\îö[Y\“[ôõ»¬àèŒà›ö[ôŒ¬àŒà›ö[ôŒ¬àŒà›ö[ôŒ¬üBö[ù\ôòXŸH›XùP‹û\—\ö]ôRŸ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬àÿ[Œà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬à]\ò][€úœŒàù[Xô\é¬à\⁄Œà
+›ö[ô»›XùP‹û\“\⁄[€‹ö]JN¬à	XõXœŒà‹û\“Ÿ^N¬à[ôõœŒà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬üBö[ù\ôòXŸH›XùP‹û\—[ò‹û\[€‹ö]H¬àò[YNà›ö[ôŒ¬à]èŒà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬àY][€ò[]OŒà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬àY”[ô›Œàù[Xô\é¬à€›[ù\èŒà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬à[ô›Œàù[Xô\é¬àXô[Œà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬üBö[ù\ôòXŸH›XùP‹û\—Ÿ[ô\ò]RŸ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬à\⁄Œà
+›ö[ô»›XùP‹û\“\⁄[€‹ö]JN¬à[Ÿ[\”[ô›Œàù[Xô\é¬àXõX—^€ô[ùŒà
+\úò^PùYôô\à\úò^PùYôô\ïöY] N¬à[ô›Œàù[Xô\é¬àò[YY›\ùôOŒà›ö[ôŒ¬üBö[ù\ôòXŸH›XùP‹û\“\⁄[€‹ö]H¬àò[YNà›ö[ôŒ¬üBö[ù\ôòXŸH›XùP‹û\“[\‹ùŸ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬à\⁄Œà
+›ö[ô»›XùP‹û\“\⁄[€‹ö]JN¬à[ô›Œàù[Xô\é¬àò[YY›\ùôOŒà›ö[ôŒ¬à€€\ô\‹ŸYŒàõ€€X[é¬üBö[ù\ôòXŸH›XùP‹û\‘⁄Y€ê[€‹ö]H¬àò[YNà›ö[ôŒ¬à\⁄Œà
+›ö[ô»›XùP‹û\“\⁄[€‹ö]JN¬à]S[ô›Œàù[Xô\é¬àÿ[[ô›Œàù[Xô\é¬üBö[ù\ôòXŸH‹û\“Ÿ^RŸ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬üBö[ù\ôòXŸH‹û\“Ÿ^PY\“Ÿ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬à[ô›àù[Xô\é¬üBö[ù\ôòXŸH‹û\“Ÿ^RXX“Ÿ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬à\⁄à‹û\“Ÿ^RŸ^P[€‹ö]N¬à[ô›àù[Xô\é¬üBö[ù\ôòXŸH‹û\“Ÿ^TúÿRŸ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬à[Ÿ[\”[ô›àù[Xô\é¬àXõX—^€ô[ùà\úò^PùYôô\à\úò^PùYôô\ïöY]Œ¬à\⁄Œà‹û\“Ÿ^RŸ^P[€‹ö]N¬üBö[ù\ôòXŸH‹û\“Ÿ^Q[\X“Ÿ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬àò[YY›\ùôNà›ö[ôŒ¬üBö[ù\ôòXŸH‹û\“Ÿ^P\òö]ò\ûRŸ^P[€‹ö]H¬àò[YNà›ö[ôŒ¬à\⁄Œà‹û\“Ÿ^RŸ^P[€‹ö]N¬àò[YY›\ùôOŒà›ö[ôŒ¬à[ô›Œàù[Xô\é¬üBôX€\ôH€\‹»YŸ\››ôX[H^[ô»‹ö]XõT›ôX[O\úò^PùYôô\à\úò^PùYôô\ïöY]œà¬à€€ú›ùX›‹ä[€‹ö]Nà›ö[ô»›XùP‹û\“\⁄[€‹ö]JN¬àôXY€õHYŸ\›àõ€Z\ŸO\úò^PùYôô\èé¬àŸ]û]\’‹ö][ä
+Nàù[Xô\àöY⁄[ù¬üBã äÇà
+àH
+äò^X€Ÿ\ò
+äà[ù\ôòXŸHô\ô\Ÿ[ù»HX€Ÿ\àõ‹àH‹X⁄YöX»^[ò€Ÿ[ôÀ›X⁄\»UãNT”ÀNNKLò”“NTò–íÿ]ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’^X€Ÿ\äBà
+ã¬ôX€\ôH€\‹»^X€Ÿ\à¬à€€ú›ùX›‹äXô[Œà›ö[ôÀ‹[€úœŒà^X€Ÿ\ê€€ú›ùX›‹ì‹[€ú N¬à äÇà
+àH
+äò^X€Ÿ\ãôX€ŸJ
+X
+äàY]Ÿô]\õú»H›ö[ô»€€ùZ[ö[ô»^X€ŸYúõ€HHùYôô\à\‹ŸY\»H\ò[Y]\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’^X€Ÿ\ãŸX€ŸJBà
+ã¬àX€ŸJ[ú]Œà
+\úò^PùYôô\à\úò^PùYôô\ïöY] K‹[€úœŒà^X€Ÿ\ëX€ŸS‹[€ú Nà›ö[ôŒ¬àŸ][ò€Ÿ[ô 
+Nà›ö[ôŒ¬àŸ]ò][
+
+Nàõ€€X[é¬àŸ]Y€õ‹ôPì”J
+Nàõ€€X[é¬üBã äÇà
+àH
+äò^[ò€Ÿ\ò
+äà[ù\ôòXŸHZŸ\»H›ôX[HŸà€ŸH⁄[ù»\»[ú][ô[Z]»H›ôX[HŸàUãNû]\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’^[ò€Ÿ\äBà
+ã¬ôX€\ôH€\‹»^[ò€Ÿ\à¬à€€ú›ùX›‹ä
+N¬à äÇà
+àH
+äò^[ò€Ÿ\ãô[ò€ŸJ
+X
+äàY]ŸZŸ\»H›ö[ô»\»[ú][ôô]\õú»H€ÿò[”ÿöôX›À’Z[ù\úò^H€€ùZ[ö[ô»H^⁄]ô[à[à\ò[Y]\ú»[ò€ŸY⁄]H‹X⁄YöX»Y]Ÿõ‹à]^[ò€Ÿ\àÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’^[ò€Ÿ\ãŸ[ò€ŸJBà
+ã¬à[ò€ŸJ[ú]Œà›ö[ô NàZ[ù\úò^N¬à äÇà
+àH
+äò^[ò€Ÿ\ãô[ò€ŸR[ù 
+X
+äàY]ŸZŸ\»H›ö[ô»»[ò€ŸH[ôH\›[ò][€àZ[ù\úò^H»]ô\›[[ô»UãN[ò€ŸY^[ùÀ[ôô]\õú»HX›[€ò\ûHÿöôX›[ôXÿ][ô»HõŸ‹ô\‹»ŸàH[ò€Ÿ[ôÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK’^[ò€Ÿ\ãŸ[ò€ŸR[ù Bà
+ã¬à[ò€ŸR[ù [ú]à›ö[ôÀùYôô\éàZ[ù\úò^JNà^[ò€Ÿ\ë[ò€ŸR[ù‘ô\›[¬àŸ][ò€Ÿ[ô 
+Nà›ö[ôŒ¬üBö[ù\ôòXŸH^X€Ÿ\ê€€ú›ùX›‹ì‹[€ú»¬àò][àõ€€X[é¬àY€õ‹ôPì”Nàõ€€X[é¬üBö[ù\ôòXŸH^X€Ÿ\ëX€ŸS‹[€ú»¬à›ôX[Nàõ€€X[é¬üBö[ù\ôòXŸH^[ò€Ÿ\ë[ò€ŸR[ù‘ô\›[¬àôXYàù[Xô\é¬à‹ö][éàù[Xô\é¬üBã äÇà
+àH
+äò\úõ‹ë]ô[ù
+äà[ù\ôòXŸHô\ô\Ÿ[ù»]ô[ù»õ›öY[ô»[ôõ‹õX][€àô[]Y»\úõ‹ú»[àÿ‹ö\»‹à[àö[\ÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—\úõ‹ë]ô[ù
+Bà
+ã¬ôX€\ôH€\‹»\úõ‹ë]ô[ù^[ô»]ô[ù¬à€€ú›ùX›‹ä\Nà›ö[ôÀ[ö]Œà\úõ‹ë]ô[ù\úõ‹ë]ô[ù[ö]
+N¬à äÇà
+àH
+äòö[[ò[YX
+äàôXY[€õHõ‹\ùHŸàH\úõ‹ë]ô[ù[ù\ôòXŸHô]\õú»H›ö[ô»€€ùZ[ö[ô»Hò[YHŸàHÿ‹ö\ö[H[à⁄X⁄H\úõ‹àÿÿ›\úôYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—\úõ‹ë]ô[ùŸö[[ò[YJBà
+ã¬àŸ]ö[[ò[YJ
+Nà›ö[ôŒ¬à äÇà
+àH
+äòY\‹ÿYŸX
+äàôXY[€õHõ‹\ùHŸàH\úõ‹ë]ô[ù[ù\ôòXŸHô]\õú»H›ö[ô»€€ùZ[ö[ô»H[X[ã\ôXYXõH\úõ‹àY\‹ÿYŸH\ÿ‹öXö[ô»Hõÿõ[KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—\úõ‹ë]ô[ù€Y\‹ÿYŸJBà
+ã¬àŸ]Y\‹ÿYŸJ
+Nà›ö[ôŒ¬à äÇà
+àH
+äò[ô[õÿ
+äàôXY[€õHõ‹\ùHŸàH\úõ‹ë]ô[ù[ù\ôòXŸHô]\õú»[à[ùYŸ\à€€ùZ[ö[ô»H[ôHù[Xô\àŸàHÿ‹ö\ö[H€à⁄X⁄H\úõ‹àÿÿ›\úôYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—\úõ‹ë]ô[ù€[ô[õ Bà
+ã¬àŸ][ô[õ 
+Nàù[Xô\é¬à äÇà
+àH
+äò€€õÿ
+äàôXY[€õHõ‹\ùHŸàH\úõ‹ë]ô[ù[ù\ôòXŸHô]\õú»[à[ùYŸ\à€€ùZ[ö[ô»H€€[[àù[Xô\àŸàHÿ‹ö\ö[H€à⁄X⁄H\úõ‹àÿÿ›\úôYÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—\úõ‹ë]ô[ùÿ€€õ Bà
+ã¬àŸ]€€õ 
+Nàù[Xô\é¬à äÇà
+àH
+äò\úõ‹ò
+äàôXY[€õHõ‹\ùHŸàH\úõ‹ë]ô[ù[ù\ôòXŸHô]\õú»Hò]òTÿ‹ö\ò[YK›X⁄\»[à\úõ‹à‹à”Q^Ÿ\[€ãô\ô\Ÿ[ù[ô»H\úõ‹à\‹€ÿ⁄X]Y⁄]\»]ô[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—\úõ‹ë]ô[ùŸ\úõ‹äBà
+ã¬àŸ]\úõ‹ä
+Nà[ûN¬üBö[ù\ôòXŸH\úõ‹ë]ô[ù\úõ‹ë]ô[ù[ö]¬àY\‹ÿYŸOŒà›ö[ôŒ¬àö[[ò[YOŒà›ö[ôŒ¬à[ô[õœŒàù[Xô\é¬à€€õœŒàù[Xô\é¬à\úõ‹èŒà[ûN¬üBã äÇà
+àH
+äòY\‹ÿYŸQ]ô[ù
+äà[ù\ôòXŸHô\ô\Ÿ[ù»HY\‹ÿYŸHôXŸZ]ôYûHH\ôŸ]ÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK”Y\‹ÿYŸQ]ô[ù
+Bà
+ã¬ôX€\ôH€\‹»Y\‹ÿYŸQ]ô[ù^[ô»]ô[ù¬à€€ú›ùX›‹ä\Nà›ö[ôÀ[ö]X[^ô\éàY\‹ÿYŸQ]ô[ù[ö]
+N¬à äÇà
+àH
+äò]X
+äàôXY[€õHõ‹\ùHŸàHH]HŸ[ùûHHY\‹ÿYŸH[Z]\é»\»ÿ[àôH[ûH]H\K\[ô[ô»€à⁄]‹öY⁄[ò]Y\»]ô[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK”Y\‹ÿYŸQ]ô[ùŸ]JBà
+ã¬àôXY€õH]Nà[ûN¬à äÇà
+àH
+äò‹öY⁄[ò
+äàôXY[€õHõ‹\ùHŸàH‹öY⁄[àŸàHY\‹ÿYŸH[Z]\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK”Y\‹ÿYŸQ]ô[ù€‹öY⁄[äBà
+ã¬àôXY€õH‹öY⁄[éà›ö[ô»ù[¬à äÇà
+àH
+äò\›]ô[ùY
+äàôXY[€õHõ‹\ùHŸàH[ö\]YHQõ‹àH]ô[ùÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK”Y\‹ÿYŸQ]ô[ù€\›]ô[ùY
+Bà
+ã¬àôXY€õH\›]ô[ùYà›ö[ôŒ¬à äÇà
+àH
+äò€›\òŸX
+äàôXY[€õHõ‹\ùHŸàHH⁄[ô›‘õﬁKY\‹ÿYŸT‹ù‹àHY\‹ÿYŸQ]ô[ù€›\òŸX
+⁄X⁄ÿ[àôHH⁄[ô›‘õﬁKY\‹ÿYŸH[Z]\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK”Y\‹ÿYŸQ]ô[ù‹€›\òŸJBà
+ã¬àôXY€õH€›\òŸNàY\‹ÿYŸT‹ùù[¬à äÇà
+àH
+äò‹ùÿ
+äàôXY[€õHõ‹\ùHŸàH€€ùZ[ö[ô»[Y\‹ÿYŸT‹ùÿöôX›»Ÿ[ù⁄]HY\‹ÿYŸK[à‹ô\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK”Y\‹ÿYŸQ]ô[ù‹‹ù Bà
+ã¬àôXY€õH‹ùŒàY\‹ÿYŸT‹ù◊N¬üBö[ù\ôòXŸHY\‹ÿYŸQ]ô[ù[ö]¬à]Nà\úò^PùYôô\à›ö[ôŒ¬üBã äÇà
+àH
+äòõ€Z\ŸTôZôX›[€ë]ô[ù
+äà[ù\ôòXŸHô\ô\Ÿ[ù»]ô[ù»⁄X⁄\ôHŸ[ù»H€ÿò[ÿ‹ö\€€ù^⁄[àò]òTÿ‹ö\õ€Z\Ÿ\»\ôHôZôX›YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘õ€Z\ŸTôZôX›[€ë]ô[ù
+Bà
+ã¬ôX€\ôHXú›òX›€\‹»õ€Z\ŸTôZôX›[€ë]ô[ù^[ô»]ô[ù¬à äÇà
+àHõ€Z\ŸTôZôX›[€ë]ô[ù[ù\ôòXŸI‹»
+äòõ€Z\ŸX
+äàôXY[€õHõ‹\ùH[ôXÿ]\»Hò]òTÿ‹ö\ôZôX›YÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘õ€Z\ŸTôZôX›[€ë]ô[ù‹õ€Z\ŸJBà
+ã¬àôXY€õHõ€Z\ŸNàõ€Z\ŸO[ûOé¬à äÇà
+àHõ€Z\ŸTôZôX›[€ë]ô[ù
+äòôX\€€ò
+äàôXY[€õHõ‹\ùH\»[ûHò]òTÿ‹ö\ò[YH‹àÿöôX›⁄X⁄õ›öY\»HôX\€€à\‹ŸY[ù»õ€Z\ŸKúôZôX›
+
+KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK‘õ€Z\ŸTôZôX›[€ë]ô[ù‹ôX\€€äBà
+ã¬àôXY€õHôX\€€éà[ûN¬üBã äÇà
+àH
+äòõ‹õQ]X
+äà[ù\ôòXŸHõ›öY\»Hÿ^H»€€ú›ùX›HŸ]ŸàŸ^K›ò[YHZ\ú»ô\ô\Ÿ[ù[ô»õ‹õHöY[»[ôZ\àò[Y\À⁄X⁄ÿ[àôHŸ[ù\⁄[ô»H⁄[ô›ÀŸô]⁄Sô\]Y\›úŸ[ô
+
+H‹àò]öYÿ]‹ãúŸ[ôôXX€€ä
+HY]ŸÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]JBà
+ã¬ôX€\ôH€\‹»õ‹õQ]H¬à€€ú›ùX›‹ä
+N¬à äÇà
+àH
+äò\[ô
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸH\[ô»Hô]»ò[YH€ù»[à^\›[ô»Ÿ^H[ú⁄YHHõ‹õQ]XÿöôX›‹àY»HŸ^HYà]Ÿ\»õ›[ôXYH^\›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]Kÿ\[ô
+Bà
+ã¬à\[ô
+ò[YNà›ö[ôÀò[YNà›ö[ô»õÿäNàõ⁄Y¬à äÇà
+àH
+äò\[ô
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸH\[ô»Hô]»ò[YH€ù»[à^\›[ô»Ÿ^H[ú⁄YHHõ‹õQ]XÿöôX›‹àY»HŸ^HYà]Ÿ\»õ›[ôXYH^\›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]Kÿ\[ô
+Bà
+ã¬à\[ô
+ò[YNà›ö[ôÀò[YNà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò\[ô
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸH\[ô»Hô]»ò[YH€ù»[à^\›[ô»Ÿ^H[ú⁄YHHõ‹õQ]XÿöôX›‹àY»HŸ^HYà]Ÿ\»õ›[ôXYH^\›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]Kÿ\[ô
+Bà
+ã¬à\[ô
+ò[YNà›ö[ôÀò[YNàõÿãö[[ò[YOŒà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äò[]J
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸH[]\»HŸ^H[ô]»ò[YJ Húõ€HHõ‹õQ]XÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]KŸ[]JBà
+ã¬à[]Jò[YNà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äòŸ]
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸHô]\õú»Hö\ú›ò[YH\‹€ÿ⁄X]Y⁄]H⁄]ô[àŸ^Húõ€H⁄][àHõ‹õQ]XÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]KŸŸ]
+Bà
+ã¬àŸ]
+ò[YNà›ö[ô Nà
+ö[H›ö[ô Hù[¬à äÇà
+àH
+äòŸ][
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸHô]\õú»[Hò[Y\»\‹€ÿ⁄X]Y⁄]H⁄]ô[àŸ^Húõ€H⁄][àHõ‹õQ]XÿöôX›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]KŸŸ][
+Bà
+ã¬àŸ][
+ò[YNà›ö[ô Nà
+ö[H›ö[ô V◊N¬à äÇà
+àH
+äò\ 
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸHô]\õú»⁄]\àHõ‹õQ]XÿöôX›€€ùZ[ú»HŸ\ùZ[àŸ^KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]K⁄\ Bà
+ã¬à\ ò[YNà›ö[ô Nàõ€€X[é¬à äÇà
+àH
+äòŸ]
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸHŸ]»Hô]»ò[YHõ‹à[à^\›[ô»Ÿ^H[ú⁄YHHõ‹õQ]XÿöôX›‹àY»HŸ^K›ò[YHYà]Ÿ\»õ›[ôXYH^\›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]K‹Ÿ]
+Bà
+ã¬àŸ]
+ò[YNà›ö[ôÀò[YNà›ö[ô»õÿäNàõ⁄Y¬à äÇà
+àH
+äòŸ]
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸHŸ]»Hô]»ò[YHõ‹à[à^\›[ô»Ÿ^H[ú⁄YHHõ‹õQ]XÿöôX›‹àY»HŸ^K›ò[YHYà]Ÿ\»õ›[ôXYH^\›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]K‹Ÿ]
+Bà
+ã¬àŸ]
+ò[YNà›ö[ôÀò[YNà›ö[ô Nàõ⁄Y¬à äÇà
+àH
+äòŸ]
+
+X
+äàY]ŸŸàHõ‹õQ]H[ù\ôòXŸHŸ]»Hô]»ò[YHõ‹à[à^\›[ô»Ÿ^H[ú⁄YHHõ‹õQ]XÿöôX›‹àY»HŸ^K›ò[YHYà]Ÿ\»õ›[ôXYH^\›Çà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—õ‹õQ]K‹Ÿ]
+Bà
+ã¬àŸ]
+ò[YNà›ö[ôÀò[YNàõÿãö[[ò[YOŒà›ö[ô Nàõ⁄Y¬à àô]\õú»[à\úò^HŸàŸ^Kò[YHZ\ú»õ‹à]ô\ûH[ùûH[àH\›à
+ã¬à[ùöY\ 
+Nà]\òXõR]\ò]‹è¬àŸ^Nà›ö[ôÀàò[YNàö[H›ö[ô¬àOé¬à àô]\õú»H\›ŸàŸ^\»[àH\›à
+ã¬àŸ^\ 
+Nà]\òXõR]\ò]‹è›ö[ôœé¬à àô]\õú»H\›Ÿàò[Y\»[àH\›à
+ã¬àò[Y\ 
+Nà]\òXõR]\ò]‹è
+ö[H›ö[ô Oé¬àõ‹ëXX⁄\»H[ö€õ›€èäÿ[òX⁄Œà
+\Œà\Àò[YNàö[H›ö[ôÀŸ^Nà›ö[ôÀ\ô[ùàõ‹õQ]JHOàõ⁄Y\–\ôœŒà\ Nàõ⁄Y¬à‘ﬁ[Xõ€ö]\ò]‹óJ
+Nà]\òXõR]\ò]‹è¬àŸ^Nà›ö[ôÀàò[YNàö[H›ö[ô¬àOé¬üBö[ù\ôòXŸH€€ù[ù‹[€ú»¬à[Œàõ€€X[é¬üBôX€\ôH€\‹»Sô]‹ö]\à¬à€€ú›ùX›‹ä
+N¬à€äŸ[X›‹éà›ö[ôÀ[ô\úŒàSô]‹ö]\ë[[Y[ù€€ù[ù[ô\ú NàSô]‹ö]\é¬à€ëÿ›[Y[ù
+[ô\úŒàSô]‹ö]\ëÿ›[Y[ù€€ù[ù[ô\ú NàSô]‹ö]\é¬àò[úŸõ‹õJô\‹€úŸNàô\‹€úŸJNàô\‹€úŸN¬üBö[ù\ôòXŸHSô]‹ö]\ë[[Y[ù€€ù[ù[ô\ú»¬à[[Y[ù [[Y[ùà[[Y[ù
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬à€€[Y[ùœ €€[Y[ùà€€[Y[ù
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬à^ [[Y[ùà^
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬üBö[ù\ôòXŸHSô]‹ö]\ëÿ›[Y[ù€€ù[ù[ô\ú»¬àÿ›\O ÿ›\Nàÿ›\JNàõ⁄Yõ€Z\ŸOõ⁄Yé¬à€€[Y[ùœ €€[Y[ùà€€[Y[ù
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬à^ ^à^
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬à[ô [ôàÿ›[Y[ù[ô
+Nàõ⁄Yõ€Z\ŸOõ⁄Yé¬üBö[ù\ôòXŸHÿ›\H¬àôXY€õHò[YNà›ö[ô»ù[¬àôXY€õHXõX“Yà›ö[ô»ù[¬àôXY€õHﬁ\›[RYà›ö[ô»ù[¬üBö[ù\ôòXŸH[[Y[ù¬àY”ò[YNà›ö[ôŒ¬àôXY€õH]öXù]\Œà]\òXõR]\ò]‹è›ö[ô÷◊Oé¬àôXY€õHô[[›ôYàõ€€X[é¬àôXY€õHò[Y\‹XŸUTíNà›ö[ôŒ¬àŸ]]öXù]Jò[YNà›ö[ô Nà›ö[ô»ù[¬à\–]öXù]Jò[YNà›ö[ô Nàõ€€X[é¬àŸ]]öXù]Jò[YNà›ö[ôÀò[YNà›ö[ô Nà[[Y[ù¬àô[[›ôP]öXù]Jò[YNà›ö[ô Nà[[Y[ù¬àôYõ‹ôJ€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[[Y[ù¬àYù\ä€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[[Y[ù¬àô\[ô
+€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[[Y[ù¬à\[ô
+€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[[Y[ù¬àô\XŸJ€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[[Y[ù¬àô[[›ôJ
+Nà[[Y[ù¬àô[[›ôP[ôŸY\€€ù[ù
+
+Nà[[Y[ù¬àŸ][õô\ê€€ù[ù
+€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[[Y[ù¬à€ë[ôY [ô\éà
+YŒà[ôY HOàõ⁄Yõ€Z\ŸOõ⁄YäNàõ⁄Y¬üBö[ù\ôòXŸH[ôY»¬àò[YNà›ö[ôŒ¬àôYõ‹ôJ€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[ôYŒ¬àYù\ä€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà[ôYŒ¬àô[[›ôJ
+Nà[ôYŒ¬üBö[ù\ôòXŸH€€[Y[ù¬à^à›ö[ôŒ¬àôXY€õHô[[›ôYàõ€€X[é¬àôYõ‹ôJ€€ù[ùà›ö[ôÀ‹[€úœŒà€€ù[ù‹[€ú Nà€€[Y[ù¬àYù\ä€€ù[ùà›ö[ôÀ‹[€úœŒà€€ù[ù‹[€ú Nà€€[Y[ù¬àô\XŸJ€€ù[ùà›ö[ôÀ‹[€úœŒà€€ù[ù‹[€ú Nà€€[Y[ù¬àô[[›ôJ
+Nà€€[Y[ù¬üBö[ù\ôòXŸH^¬àôXY€õH^à›ö[ôŒ¬àôXY€õH\›[ï^õŸNàõ€€X[é¬àôXY€õHô[[›ôYàõ€€X[é¬àôYõ‹ôJ€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà^¬àYù\ä€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà^¬àô\XŸJ€€ù[ùà›ö[ô»ôXYXõT›ôX[Hô\‹€úŸK‹[€úœŒà€€ù[ù‹[€ú Nà^¬àô[[›ôJ
+Nà^¬üBö[ù\ôòXŸHÿ›[Y[ù[ô¬à\[ô
+€€ù[ùà›ö[ôÀ‹[€úœŒà€€ù[ù‹[€ú Nàÿ›[Y[ù[ô¬üBã äÇà
+à\»\»H]ô[ù\Hõ‹àô]⁄]ô[ù»\‹]⁄Y€àHŸ\ùöXŸU€‹öŸ\ë€ÿò[ÿ€‹KÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—ô]⁄]ô[ù
+Bà
+ã¬ôX€\ôHXú›òX›€\‹»ô]⁄]ô[ù^[ô»^[ôXõQ]ô[ù¬à äÇà
+àH
+äòô\]Y\›
+äàôXY[€õHõ‹\ùHŸàHH]ô[ù[ô\ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—ô]⁄]ô[ù‹ô\]Y\›
+Bà
+ã¬àôXY€õHô\]Y\›àô\]Y\›¬à äÇà
+àH
+äòô\‹€ô⁄]
+
+X
+äàY]ŸŸà[›‹»[›H»õ›öYHHõ€Z\ŸHõ‹àHô\‹€úŸH[›\úŸ[ãÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK—ô]⁄]ô[ù‹ô\‹€ô⁄]
+Bà
+ã¬àô\‹€ô⁄]
+õ€Z\ŸNàô\‹€úŸHõ€Z\ŸOô\‹€úŸOäNàõ⁄Y¬à\‹’õ›Y⁄€ë^Ÿ\[€ä
+Nàõ⁄Y¬üBù\HXY\ú“[ö]HXY\ú»]\òXõO]\òXõO›ö[ôœèàôX€‹ô›ö[ôÀ›ö[ôœé¬ã äÇà
+àH
+äòXY\úÿ
+äà[ù\ôòXŸHŸàHô]⁄TH[›‹»[›H»\ôõ‹õHò\ö[›\»X›[€ú»€àô\]Y\›[ôô\‹€úŸHXY\úÀÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK“XY\ú Bà
+ã¬ôX€\ôH€\‹»XY\ú»¬à€€ú›ùX›‹ä[ö]ŒàXY\ú“[ö]
+N¬à äÇà
+àH
+äòŸ]
+
+X
+äàY]ŸŸàHXY\ú»[ù\ôòXŸHô]\õú»Hû]H›ö[ô»Ÿà[Hò[Y\»ŸàHXY\à⁄][àHXY\úÿÿöôX›⁄]H⁄]ô[àò[YKÇà
+Çà
+à”QàôYô\ô[òŸWJŒãÀŸ]ô[‹\ãõ[ﬁö[Kõ‹ôÀŸÿ‹À’ŸXã–TK“XY\úÀŸŸ]
+Bà
+ã¬àŸ]
+ò[YNà›ö[ô Nà›ö[ô»ù[¬àŸ][
+ò[YNà›ö[ô Nà›ö[ô÷◊N¬à äÇà
+àH
+äòŸ]Ÿ]5„^=“⁄$z{-ÆÈ‹j◊ù// The MQTT topic the message was sent on.
     readonly topic: string;
     // The client ID of the client that published this message.
     readonly clientId: string;

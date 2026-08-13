@@ -2,7 +2,7 @@
 
 Status: DEVELOPMENT FOUNDATION ONLY — NOT DEPLOYED
 
-This Worker exposes the existing policy gateway behind service-to-service HMAC-SHA256 authentication and the SQLite Durable Object replay store. It has no OAuth or bearer-token fallback. It is deliberately unable to execute actions or perform external writes.
+This Worker exposes the existing policy gateway behind service-to-service HMAC-SHA256 authentication and SQLite Durable Objects for replay defense, idempotency, owner-decision consumption, and append-only audit chains. It has no OAuth or bearer-token fallback. It is deliberately unable to execute actions or perform external writes.
 
 ## Runtime boundary
 
@@ -10,7 +10,7 @@ This Worker exposes the existing policy gateway behind service-to-service HMAC-S
 - `ALLOW_EXTERNAL_WRITES` must equal the string `false`.
 - `workers_dev` and preview URLs are disabled in `wrangler.jsonc`.
 - No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration.
-- Every unresolved authoritative runtime adapter throws. Evaluation therefore fails closed at authoritative resource resolution.
+- The idempotency, owner-decision, and audit adapters are durable development implementations. Every other unresolved authoritative runtime adapter throws, so evaluation still fails closed at authoritative resource resolution.
 - `/v1/actions/execute` always returns `execution_disabled`.
 
 ## Authentication
@@ -44,6 +44,6 @@ npm run cf:types:check
 npm run cf:dry-run
 ```
 
-The Worker tests run inside Cloudflare's Vitest Workers pool and exercise the actual SQLite Durable Object replay path. The dry run bundles and validates configuration but does not deploy.
+The Worker tests run inside Cloudflare's Vitest Workers pool and exercise the actual SQLite Durable Object replay, lease, single-use decision, and concurrent audit-chain paths. The dry run bundles and validates configuration but does not deploy.
 
 Before any deployment, replace every unavailable adapter with a verified durable implementation, add an explicit development account/route decision, provision the secret through Wrangler, obtain independent checker acceptance, and obtain owner authorization.

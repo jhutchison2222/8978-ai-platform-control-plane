@@ -1,10 +1,11 @@
 import policies from "../policies/development-standing-policies.json" with { type: "json" };
 import { CloudflareDurableReplayStore } from "./cloudflare-replay-store.js";
 import { parseJsonStrict } from "./canonical-digest.js";
+import { AuditStateDurableObject, IdempotencyStateDurableObject, OwnerDecisionStateDurableObject } from "./control-plane-state-durable-objects.js";
+import { createDevelopmentRuntime, DEVELOPMENT_UNAVAILABLE_RUNTIME_DEPENDENCIES } from "./development-runtime.js";
 import { PolicyGateway } from "./policy-gateway.js";
 import { authenticateServiceRequest } from "./service-auth-adapter.js";
 import { ServiceAuthReplayDurableObject } from "./service-auth-replay-durable-object.js";
-import { createUnavailableRuntime, UNAVAILABLE_RUNTIME_DEPENDENCIES } from "./unavailable-runtime.js";
 
 const JSON_HEADERS = Object.freeze({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
 const MAX_BODY_BYTES = 1_048_576;
@@ -22,7 +23,9 @@ function requireDevelopmentEnvironment(env) {
   if (env?.CONTROL_PLANE_MODE !== "development" || env?.ALLOW_EXTERNAL_WRITES !== "false") {
     throw new Error("Development-only runtime boundary unavailable");
   }
-  if (!env.SERVICE_AUTH_REPLAY) throw new Error("Service-auth replay binding unavailable");
+  for (const binding of ["SERVICE_AUTH_REPLAY", "IDEMPOTENCY_STORE", "OWNER_DECISION_STORE", "AUDIT_STORE"]) {
+    if (!env[binding]) throw new Error(`${binding} unavailable`);
+  }
 }
 
 function secretResolver(env) {
@@ -68,13 +71,13 @@ async function authenticate(request, env) {
   });
 }
 
-async function evaluateAction(bodyBytes) {
+async function evaluateAction(bodyBytes, env) {
   let action;
   try { action = parseJsonStrict(new TextDecoder().decode(bodyBytes)); }
   catch { return response(400, { outcome: "denied", reason: "invalid_json" }); }
   const errors = actionErrors(action);
   if (errors.length) return response(400, { outcome: "denied", reason: "invalid_requested_action", details: errors });
-  const gateway = await PolicyGateway.create(policies, createUnavailableRuntime());
+  const gateway = await PolicyGateway.create(policies, createDevelopmentRuntime(env));
   return response(200, await gateway.evaluate(action));
 }
 
@@ -93,7 +96,8 @@ export default {
         ready: false,
         mode: "development",
         externalWritesEnabled: false,
-        missingAuthoritativeDependencies: UNAVAILABLE_RUNTIME_DEPENDENCIES,
+        missingAuthoritativeDependencies: DEVELOPMENT_UNAVAILABLE_RUNTIME_DEPENDENCIES,
+        durableDependencies: ["idempotencyStore", "ownerDecisionStore", "auditStore"],
         serviceIdentity: {
           mechanism: authenticated.identity.mechanism,
           principalId: authenticated.identity.principalId,
@@ -101,10 +105,10 @@ export default {
         },
       });
     }
-    if (path === "/v1/actions/evaluate" && request.method === "POST") return evaluateAction(authenticated.bodyBytes);
+    if (path === "/v1/actions/evaluate" && request.method === "POST") return evaluateAction(authenticated.bodyBytes, env);
     if (path === "/v1/actions/execute") return response(503, { outcome: "denied", reason: "execution_disabled" });
     return response(404, { outcome: "denied", reason: "route_not_found" });
   },
 };
 
-export { ServiceAuthReplayDurableObject };
+export { AuditStateDurableObject, IdempotencyStateDurableObject, OwnerDecisionStateDurableObject, ServiceAuthReplayDurableObject };
