@@ -283,6 +283,13 @@ for (const required of [
   "message.queueName !== this.queueName", "const instance = await this.binding.create({ id: message.messageId, params: message })",
   "instance.id !== message.messageId", 'await this.binding.send(message, { contentType: "json" })',
 ]) if (!orchestratorAdapterSource.includes(required)) throw new Error(`Orchestrator adapter invariant missing: ${required}`);
+const orchestratorConstructorGuards = [
+  ["Workflow", /export class CloudflareWorkflowDispatcher \{[\s\S]*?constructor\(binding, \{ workflowName \} = \{\}\) \{\s*if \(!binding \|\| typeof binding\.create !== "function"\) throw new TypeError\("Workflow binding is unavailable"\);/u],
+  ["Queue", /export class CloudflareQueuePublisher \{[\s\S]*?constructor\(binding, \{ queueName \} = \{\}\) \{\s*if \(!binding \|\| typeof binding\.send !== "function"\) throw new TypeError\("Queue binding is unavailable"\);/u],
+];
+for (const [label, pattern] of orchestratorConstructorGuards) {
+  if (!pattern.test(orchestratorAdapterSource)) throw new Error(`${label} adapter constructor must reject an unavailable binding method`);
+}
 if (/\bfetch\s*\(/u.test(orchestratorAdapterSource) || writeSqlPattern.test(orchestratorAdapterSource)) {
   throw new Error("Orchestrator adapters must use bindings only and remain authority-read-only");
 }

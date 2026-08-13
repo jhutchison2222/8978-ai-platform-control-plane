@@ -19,6 +19,15 @@ function envelope(overrides = {}) {
 }
 
 describe("Cloudflare orchestrator adapters", () => {
+  it("rejects missing or malformed bindings at construction", () => {
+    for (const binding of [undefined, null, {}, { create: true }]) {
+      expect(() => new CloudflareWorkflowDispatcher(binding, { workflowName: "8978-ai-orchestrator-dev" })).toThrow(/Workflow binding is unavailable/);
+    }
+    for (const binding of [undefined, null, {}, { send: true }]) {
+      expect(() => new CloudflareQueuePublisher(binding, { queueName: "8978-ai-orchestrator-dev" })).toThrow(/Queue binding is unavailable/);
+    }
+  });
+
   it("creates one real local Workflow instance with the exact message ID", async () => {
     const dispatcher = new CloudflareWorkflowDispatcher(env.ORCHESTRATOR_WORKFLOW, { workflowName: "8978-ai-orchestrator-dev" });
     const message = envelope();
