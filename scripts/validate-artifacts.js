@@ -46,8 +46,10 @@ const activationEvidenceMigration = await readFile("migrations/authority/0005_de
 const activationEvidenceWriterSource = await readFile("src/authenticated-development-activation-evidence-writer.js", "utf8");
 const activationEvidenceWriteMigration = await readFile("migrations/authority/0006_development_activation_evidence_writes.sql", "utf8");
 const activationEvidenceWriteVerifierSource = await readFile("src/d1-development-activation-evidence-write-verifier.js", "utf8");
+const activationEvidenceChainVerifierSource = await readFile("src/development-activation-evidence-chain-verifier.js", "utf8");
 const activationEvidenceWriterTestSource = await readFile("test/worker/authenticated-development-activation-evidence-writer.test.js", "utf8");
 const activationEvidenceWriteVerifierTestSource = await readFile("test/worker/d1-development-activation-evidence-write-verifier.test.js", "utf8");
+const activationEvidenceChainVerifierTestSource = await readFile("test/development-activation-evidence-chain-verifier.test.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -373,6 +375,67 @@ for (const required of [
 ]) if (!activationEvidenceWriteVerifierTestSource.includes(required)) {
   throw new Error(`Development activation evidence write verifier negative coverage missing: ${required}`);
 }
+for (const required of [
+  "AuthenticatedDevelopmentActivationEvidenceChainVerifier",
+  'assertVerifier(evidenceVerifier, "verify", "evidence verifier")',
+  'assertVerifier(writeReceiptVerifier, "verify", "write receipt verifier")',
+  'typeof now !== "function"', "assertEvidence(evidence)",
+  "Development activation evidence digests must be unique", "const requestedEvidence = Object.freeze({ ...evidence })",
+  "this.evidenceVerifier.verify(requestedEvidence)", "this.writeReceiptVerifier.verify(requestedEvidence, { now })",
+  "structuredClone(result)", "assertEvidenceResult(evidenceResult, requestedEvidence)",
+  "assertWriteResult(writeResult, requestedEvidence)", "result.valid !== true",
+  "result[field] !== evidence[field]", "result.reviewedCommit !== evidence.reviewedCommit",
+  "Development activation maker, checker, and owner must be distinct principals",
+  ".includes(writeResult.servicePrincipalId)",
+  "Development activation writer must be independent of maker, checker, and owner",
+  "evidenceVerificationDigest: evidenceResult.verificationDigest",
+  "writeReceiptVerificationDigest: writeResult.verificationDigest",
+  "authenticatedAt: writeResult.authenticatedAt", "insertedAt: writeResult.insertedAt",
+  "recordDigest: writeResult.recordDigest", "recordId: writeResult.recordId",
+  "requestBodyDigest: writeResult.requestBodyDigest", "writeDigest: writeResult.writeDigest",
+  "writerKeyId: writeResult.serviceKeyId", "writerPrincipalId: writeResult.servicePrincipalId",
+  'schemaVersion: "1.0.0"',
+  "return Object.freeze({", "verificationDigest,",
+]) if (!activationEvidenceChainVerifierSource.includes(required)) {
+  throw new Error(`Development activation evidence chain verifier invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["dual verification", /Promise\.all\(\[\s*this\.evidenceVerifier\.verify\(requestedEvidence\),\s*this\.writeReceiptVerifier\.verify\(requestedEvidence, \{ now \}\),\s*\]\)/u],
+  ["clock validation", /if \(!\(now instanceof Date\) \|\| !Number\.isSafeInteger\(now\.valueOf\(\)\)\)/u],
+  ["evidence result validity", /function assertEvidenceResult\(result, evidence\) \{[\s\S]*?if \(result\.valid !== true\) throw new Error\("Development activation evidence verification failed"\);/u],
+  ["write result validity", /function assertWriteResult\(result, evidence\) \{[\s\S]*?if \(result\.valid !== true \|\| result\.reviewedCommit !== evidence\.reviewedCommit\)/u],
+  ["evidence binding", /for \(const field of EVIDENCE_FIELDS\) \{\s*if \(result\[field\] !== evidence\[field\]\)/u],
+  ["role independence", /new Set\(\[result\.makerPrincipalId, result\.checkerPrincipalId, result\.ownerPrincipalId\]\)\.size !== 3/u],
+  ["writer independence", /\[evidenceResult\.makerPrincipalId, evidenceResult\.checkerPrincipalId, evidenceResult\.ownerPrincipalId\]\s*\.includes\(writeResult\.servicePrincipalId\)/u],
+  ["chain digest", /digestCanonicalValue\(\{\s*authenticatedAt: writeResult\.authenticatedAt,\s*evidence: requestedEvidence,\s*evidenceVerificationDigest: evidenceResult\.verificationDigest,\s*insertedAt: writeResult\.insertedAt,[\s\S]*?recordDigest: writeResult\.recordDigest,\s*recordId: writeResult\.recordId,\s*requestBodyDigest: writeResult\.requestBodyDigest,\s*schemaVersion: "1\.0\.0",\s*writeDigest: writeResult\.writeDigest,\s*writeReceiptVerificationDigest: writeResult\.verificationDigest,\s*writerKeyId: writeResult\.serviceKeyId,\s*\}\)/u],
+]) if (!pattern.test(activationEvidenceChainVerifierSource)) {
+  throw new Error(`Development activation evidence chain verifier ${label} invariant missing`);
+}
+if (activationDangerousPattern.test(activationEvidenceChainVerifierSource) ||
+    /\bSELECT\b|privateKey|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.|\bwrangler\b/iu.test(activationEvidenceChainVerifierSource)) {
+  throw new Error("Development activation evidence chain verifier must remain composition-only, validation-only, and secret-independent");
+}
+if (workerSource.includes("development-activation-evidence-chain-verifier") ||
+    developmentRuntimeSource.includes("development-activation-evidence-chain-verifier") ||
+    activationPreflightSource.includes("development-activation-evidence-chain-verifier")) {
+  throw new Error("Development activation evidence chain verifier cannot be imported by runtime or preflight");
+}
+for (const required of [
+  "new AuthenticatedDevelopmentActivationEvidenceChainVerifier({", "evidenceVerifier,",
+  "writeReceiptVerifier,", "makerPrincipalId: \"activation-maker\"",
+  "checkerPrincipalId: \"activation-checker\"", "ownerPrincipalId: \"activation-owner\"",
+]) if (!activationEvidenceWriterTestSource.includes(required)) {
+  throw new Error(`Actual activation evidence chain interoperability test missing: ${required}`);
+}
+for (const required of [
+  "binds both independent verification receipts", "constructors, requests, and clocks fail closed",
+  "rejects malformed or mismatched dependency receipts", "re-enforces all four principal independence boundaries",
+  "assert.equal(evidenceRequest, writeRequest)", "Object.isFrozen(evidenceRequest)",
+  'evidenceValue: evidenceResult({ valid: false })', 'writeValue: writeResult({ valid: false })',
+  'servicePrincipalId of ["maker-principal", "checker-principal", "owner-principal"]',
+]) if (!activationEvidenceChainVerifierTestSource.includes(required)) {
+  throw new Error(`Development activation evidence chain verifier behavioral coverage missing: ${required}`);
+}
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
 }
@@ -691,4 +754,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired dual evidence-chain verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
