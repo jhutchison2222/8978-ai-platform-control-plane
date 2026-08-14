@@ -43,6 +43,8 @@ const activationPreflightSource = await readFile("src/development-activation-pre
 const activationEvidenceVerifierSource = await readFile("src/development-activation-evidence-verifier.js", "utf8");
 const activationEvidenceProviderSource = await readFile("src/d1-development-activation-evidence-provider.js", "utf8");
 const activationEvidenceMigration = await readFile("migrations/authority/0005_development_activation_evidence.sql", "utf8");
+const activationEvidenceWriterSource = await readFile("src/authenticated-development-activation-evidence-writer.js", "utf8");
+const activationEvidenceWriteMigration = await readFile("migrations/authority/0006_development_activation_evidence_writes.sql", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -261,6 +263,50 @@ if (workerSource.includes("d1-development-activation-evidence-provider") ||
     developmentRuntimeSource.includes("d1-development-activation-evidence-provider")) {
   throw new Error("Development activation evidence provider cannot be imported by the Worker runtime");
 }
+for (const required of [
+  "AuthenticatedDevelopmentActivationEvidenceWriter", "authenticateServiceRequest",
+  "const MAX_BODY_BYTES = 65_536", "const MAX_VALIDITY_MS = 86_400_000",
+  'typeof secretResolver.resolve !== "function"', "replayStore.atomic !== true",
+  'replayStore.durability !== "durable"', 'typeof replayStore.consume !== "function"',
+  'typeof identityVerifier.verify !== "function"', 'typeof ownerVerifier.verify !== "function"',
+  "!COMMIT.test(reviewedCommit)",
+  'request.method !== "POST"', 'target.pathname !== "/v1/development-activation/evidence"', 'target.search !== ""',
+  'request.headers.has("authorization")', 'request.headers.has("proxy-authorization")',
+  'request.headers.get("content-type") !== "application/json"', "maxBodyBytes: MAX_BODY_BYTES",
+  "identity.principalId !== this.authorizedWriter.principalId", "identity.keyId !== this.authorizedWriter.keyId",
+  "allowedClockSkewMs > 300_000", "Object.freeze(this)",
+  'new TextDecoder("utf-8", { fatal: true })', "parseJsonStrict(text)", "canonicalize(value) !== text",
+  'request.status !== "CURRENT"', "request.version !== 1",
+  "request.evidence?.reviewedCommit !== expectedCommit", "expiresAtMs - issuedAtMs > MAX_VALIDITY_MS",
+  "AuthenticatedDevelopmentActivationEvidenceVerifier", "canonicalize(evidence) !== canonicalize(value.evidence)",
+  "structuredClone(value.bundle)", "verified.makerPrincipalId",
+  "verified.checkerPrincipalId", "verified.ownerPrincipalId", "includes(identity.principalId)",
+  "digestCanonicalValue(value.bundle)", "digestCanonicalValue(record)", "digestCanonicalValue(writeRecord)",
+  "this.database.batch([", "INSERT INTO authority_development_activation_evidence_bundles",
+  "WHERE NOT EXISTS (", "WHERE reviewed_commit = ?2 AND enabled = 1 AND status IN ('CURRENT', 'FINAL')",
+  "INSERT INTO authority_development_activation_evidence_writes", "identity.bodyDigest",
+  "identity.principalId", "identity.keyId", "identity.nonce", "Date.parse(identity.issuedAt)",
+  "return freeze({", "inserted: true", 'status: "CURRENT"',
+]) if (!activationEvidenceWriterSource.includes(required)) {
+  throw new Error(`Development activation evidence writer invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["HMAC authentication call", /\bconst authenticated = await authenticateServiceRequest\(\{/u],
+  ["authorized principal and key", /identity\.principalId !== this\.authorizedWriter\.principalId \|\| identity\.keyId !== this\.authorizedWriter\.keyId/u],
+  ["maker/checker/owner independence", /\[verified\.makerPrincipalId, verified\.checkerPrincipalId, verified\.ownerPrincipalId\]\s*\.includes\(identity\.principalId\)/u],
+  ["atomic D1 batch", /await this\.database\.batch\(\[\s*this\.database\.prepare\(`/u],
+]) if (!pattern.test(activationEvidenceWriterSource)) {
+  throw new Error(`Development activation evidence writer ${label} invariant missing`);
+}
+const writerInsertions = activationEvidenceWriterSource.match(/\bINSERT\s+INTO\s+authority_development_activation_evidence_(?:bundles|writes)\b/gu) ?? [];
+if (writerInsertions.length !== 2 || /\b(?:UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM|REINDEX)\b/iu.test(activationEvidenceWriterSource) ||
+    /\bfetch\s*\(|privateKey|SERVICE_AUTH_KEYS_JSON|\bwrangler\b/iu.test(activationEvidenceWriterSource)) {
+  throw new Error("Development activation evidence writer must remain two-insert-only, fetch-free, and secret-binding-independent");
+}
+if (workerSource.includes("authenticated-development-activation-evidence-writer") ||
+    developmentRuntimeSource.includes("authenticated-development-activation-evidence-writer")) {
+  throw new Error("Development activation evidence writer cannot be imported by the Worker runtime");
+}
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
 }
@@ -294,6 +340,22 @@ assertTableConstraints(activationEvidenceMigration, "authority_development_activ
 ]);
 if (/\b(?:INSERT|UPDATE|DELETE|REPLACE)\b/iu.test(activationEvidenceMigration)) {
   throw new Error("Development activation evidence migration cannot seed or mutate authority data");
+}
+for (const required of [
+  "CREATE TABLE authority_development_activation_evidence_writes",
+  "request_body_digest TEXT NOT NULL UNIQUE", "write_digest TEXT NOT NULL UNIQUE",
+  "FOREIGN KEY (record_id)", "ON UPDATE RESTRICT ON DELETE RESTRICT",
+  "inserted_at_ms >= authenticated_at_ms", "CREATE UNIQUE INDEX authority_activation_evidence_write_nonce",
+]) if (!activationEvidenceWriteMigration.includes(required)) {
+  throw new Error(`Development activation evidence write migration invariant missing: ${required}`);
+}
+assertTableConstraints(activationEvidenceWriteMigration, "authority_development_activation_evidence_writes", [
+  "write_id TEXT PRIMARY KEY", "record_id TEXT NOT NULL UNIQUE", "version > 0",
+  "FOREIGN KEY (record_id)", "ON UPDATE RESTRICT ON DELETE RESTRICT",
+  "inserted_at_ms >= authenticated_at_ms",
+]);
+if (/\b(?:INSERT\s+INTO|UPDATE\s+[A-Za-z_]|DELETE\s+FROM|REPLACE\s+INTO)\b/iu.test(activationEvidenceWriteMigration)) {
+  throw new Error("Development activation evidence write migration cannot seed or mutate authority data");
 }
 if (!vitestSource.includes('d1Databases: ["AUTHORITY_DB"]') || !vitestSource.includes("readD1Migrations(\"migrations/authority\")") ||
     !vitestSource.includes("AUTHORITY_TEST_MIGRATIONS")) throw new Error("Authority D1 must be migration-backed in the Workers test runtime");
@@ -563,4 +625,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, five read-only authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
