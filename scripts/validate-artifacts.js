@@ -45,6 +45,9 @@ const activationEvidenceProviderSource = await readFile("src/d1-development-acti
 const activationEvidenceMigration = await readFile("migrations/authority/0005_development_activation_evidence.sql", "utf8");
 const activationEvidenceWriterSource = await readFile("src/authenticated-development-activation-evidence-writer.js", "utf8");
 const activationEvidenceWriteMigration = await readFile("migrations/authority/0006_development_activation_evidence_writes.sql", "utf8");
+const activationEvidenceWriteVerifierSource = await readFile("src/d1-development-activation-evidence-write-verifier.js", "utf8");
+const activationEvidenceWriterTestSource = await readFile("test/worker/authenticated-development-activation-evidence-writer.test.js", "utf8");
+const activationEvidenceWriteVerifierTestSource = await readFile("test/worker/d1-development-activation-evidence-write-verifier.test.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -306,6 +309,69 @@ if (writerInsertions.length !== 2 || /\b(?:UPDATE|DELETE|REPLACE|CREATE|DROP|ALT
 if (workerSource.includes("authenticated-development-activation-evidence-writer") ||
     developmentRuntimeSource.includes("authenticated-development-activation-evidence-writer")) {
   throw new Error("Development activation evidence writer cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "D1DevelopmentActivationEvidenceWriteVerifier", 'typeof database.prepare !== "function"',
+  "assertAuthorizedWriter(authorizedWriter)", "!COMMIT.test(reviewedCommit)",
+  "assertEvidence(evidence, this.reviewedCommit)", "Development activation evidence digests must be unique",
+  "FROM authority_development_activation_evidence_bundles AS bundles",
+  "INNER JOIN authority_development_activation_evidence_writes AS writes",
+  "ON writes.record_id = bundles.record_id", "bundles.reviewed_commit = ?1",
+  "bundles.maker_validation_digest = ?2", "bundles.checker_validation_digest = ?3",
+  "bundles.resource_activation_authorization_digest = ?4",
+  "bundles.worker_deployment_authorization_digest = ?5", "bundles.rollback_evidence_digest = ?6",
+  "bundles.backup_digest = ?7", "bundles.enabled = 1 AND bundles.status = 'CURRENT'",
+  "bundles.issued_at_ms <= ?8 AND bundles.expires_at_ms > ?8", ").all()",
+  "Development activation evidence write receipt unavailable",
+  "Development activation evidence write receipt is ambiguous",
+  "row.write_id !== row.record_id", "row.write_record_digest !== row.record_digest",
+  "row.service_principal_id !== this.authorizedWriter.principalId",
+  "row.service_key_id !== this.authorizedWriter.keyId", 'row.status !== "CURRENT"',
+  "row.record_version !== 1", "row.write_version !== 1", "row.authenticated_at_ms > row.inserted_at_ms",
+  "row.inserted_at_ms < row.issued_at_ms", "row.inserted_at_ms >= row.expires_at_ms",
+  "digestCanonicalValue(record) !== row.record_digest",
+  "digestCanonicalValue(writeRecord) !== row.write_digest", "verificationDigest = await digestCanonicalValue",
+  "evidence,", "recordDigest: row.record_digest", "writeDigest: row.write_digest", "return freeze({",
+]) if (!activationEvidenceWriteVerifierSource.includes(required)) {
+  throw new Error(`Development activation evidence write verifier invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["exact join", /FROM authority_development_activation_evidence_bundles AS bundles\s+INNER JOIN authority_development_activation_evidence_writes AS writes\s+ON writes\.record_id = bundles\.record_id/u],
+  ["exact cardinality", /if \(response\.results\.length !== 1\) \{\s*throw new Error\("Development activation evidence write receipt is ambiguous"\);\s*\}/u],
+  ["current validity", /bundles\.enabled = 1 AND bundles\.status = 'CURRENT'\s+AND bundles\.issued_at_ms <= \?8 AND bundles\.expires_at_ms > \?8/u],
+  ["authorized writer binding", /row\.service_principal_id !== this\.authorizedWriter\.principalId \|\|\s*row\.service_key_id !== this\.authorizedWriter\.keyId/u],
+  ["record and write binding", /row\.write_id !== row\.record_id \|\| row\.write_record_digest !== row\.record_digest/u],
+  ["exact versions", /row\.status !== "CURRENT" \|\| row\.record_version !== 1 \|\| row\.write_version !== 1/u],
+  ["temporal ordering", /row\.expires_at_ms <= row\.issued_at_ms \|\| row\.inserted_at_ms < row\.issued_at_ms \|\|\s*row\.inserted_at_ms >= row\.expires_at_ms \|\| row\.authenticated_at_ms > row\.inserted_at_ms/u],
+  ["record integrity", /if \(await digestCanonicalValue\(record\) !== row\.record_digest\)/u],
+  ["write integrity", /if \(await digestCanonicalValue\(writeRecord\) !== row\.write_digest\)/u],
+  ["verification digest", /digestCanonicalValue\(\{\s*evidence,\s*recordDigest: row\.record_digest,\s*writeDigest: row\.write_digest,\s*schemaVersion: "1\.0\.0",\s*\}\)/u],
+]) if (!pattern.test(activationEvidenceWriteVerifierSource)) {
+  throw new Error(`Development activation evidence write verifier ${label} invariant missing`);
+}
+if ((activationEvidenceWriteVerifierSource.match(/this\.database\.prepare\(/gu) ?? []).length !== 1 ||
+    writeSqlPattern.test(activationEvidenceWriteVerifierSource) || /\.(?:run|batch)\s*\(/u.test(activationEvidenceWriteVerifierSource) ||
+    /\bfetch\s*\(|privateKey|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.has|\bwrangler\b/iu.test(activationEvidenceWriteVerifierSource)) {
+  throw new Error("Development activation evidence write verifier must remain one-query, read-only, fetch-free, and secret-independent");
+}
+if (workerSource.includes("d1-development-activation-evidence-write-verifier") ||
+    developmentRuntimeSource.includes("d1-development-activation-evidence-write-verifier")) {
+  throw new Error("Development activation evidence write verifier cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "new D1DevelopmentActivationEvidenceWriteVerifier(env.AUTHORITY_DB", "authorizedWriter:",
+  "recordDigest: receipt.recordDigest", "requestBodyDigest: receipt.requestBodyDigest",
+  "writeDigest: receipt.writeDigest", "servicePrincipalId: WRITER.principalId",
+]) if (!activationEvidenceWriterTestSource.includes(required)) {
+  throw new Error(`Actual activation evidence writer interoperability test missing: ${required}`);
+}
+for (const required of [
+  'status: "FINAL"', 'principalId: "wrong-writer"', "rejects.toThrow(/ambiguous/)",
+  "rejects.toThrow(/record integrity/)", "rejects.toThrow(/receipt integrity/)",
+  'SET request_body_digest = \'invalid\'', 'SET service_nonce = \'invalid nonce\'',
+  'SET service_key_id = \'wrong-key\'', "rejects.toThrow(/receipt is invalid/)",
+]) if (!activationEvidenceWriteVerifierTestSource.includes(required)) {
+  throw new Error(`Development activation evidence write verifier negative coverage missing: ${required}`);
 }
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
@@ -625,4 +691,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
