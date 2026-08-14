@@ -55,10 +55,15 @@ function verifier({ evidenceValue = evidenceResult(), writeValue = writeResult()
 
 test("activation evidence chain binds both independent verification receipts", async () => {
   let evidenceRequest;
+  let evidenceNow;
   let writeRequest;
   let writeNow;
   const subject = new AuthenticatedDevelopmentActivationEvidenceChainVerifier({
-    evidenceVerifier: { async verify(value) { evidenceRequest = value; return evidenceResult(); } },
+    evidenceVerifier: { async verify(value, options) {
+      evidenceRequest = value;
+      evidenceNow = options.now;
+      return evidenceResult();
+    } },
     writeReceiptVerifier: { async verify(value, options) {
       writeRequest = value;
       writeNow = options.now;
@@ -69,6 +74,7 @@ test("activation evidence chain binds both independent verification receipts", a
   const result = await subject.verify(evidence);
   assert.equal(evidenceRequest, writeRequest);
   assert.equal(Object.isFrozen(evidenceRequest), true);
+  assert.equal(evidenceNow, NOW);
   assert.equal(writeNow, NOW);
   assert.deepEqual(Object.keys(result).sort(), [
     "backupDigest", "checkerPrincipalId", "checkerValidationDigest", "makerPrincipalId",

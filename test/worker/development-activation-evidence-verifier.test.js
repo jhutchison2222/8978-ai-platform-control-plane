@@ -225,6 +225,35 @@ describe("authenticated development activation evidence verifier", () => {
     expect(report).toEqual({ ready: true, environment: "development", blockers: [] });
   });
 
+  it("propagates one exact validated verification instant through every evidence dependency", async () => {
+    const { evidence, bundle } = await fixture();
+    const identityNows = [];
+    const ownerNows = [];
+    let providerNow;
+    const identityVerifier = new D1Ed25519IdentityVerifier(env.AUTHORITY_DB);
+    const ownerVerifier = new D1Ed25519OwnerDecisionVerifier(env.AUTHORITY_DB);
+    const subject = verifier(bundle, {
+      bundleProvider: { async read(_evidence, { now }) { providerNow = now; return bundle; } },
+      identityVerifier: { async verify(token, context) {
+        identityNows.push(context.now);
+        return identityVerifier.verify(token, context);
+      } },
+      ownerVerifier: { async verify(decision, context) {
+        ownerNows.push(context.now);
+        return ownerVerifier.verify(decision, context);
+      } },
+    });
+    await expect(subject.verify(evidence, { now: NOW })).resolves.toMatchObject({ valid: true });
+    expect(providerNow).toBe(NOW);
+    expect(identityNows).toHaveLength(4);
+    expect(ownerNows).toHaveLength(2);
+    expect([...identityNows, ...ownerNows].every((value) => value === NOW)).toBe(true);
+    await expect(subject.verify(evidence, { now: new Date("invalid") })).rejects.toThrow(/verification time/);
+    await expect(subject.verify(evidence, {
+      now: { valueOf: () => NOW.valueOf() },
+    })).rejects.toThrow(/verification time/);
+  });
+
   it("rejects digest, purpose, signature, decision-reuse, and bundle-shape tampering", async () => {
     const { evidence, bundle } = await fixture();
     await expect(verifier(bundle).verify({ ...evidence, makerValidationDigest: evidence.checkerValidationDigest }))

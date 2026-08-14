@@ -47,6 +47,7 @@ const activationEvidenceWriterSource = await readFile("src/authenticated-develop
 const activationEvidenceWriteMigration = await readFile("migrations/authority/0006_development_activation_evidence_writes.sql", "utf8");
 const activationEvidenceWriteVerifierSource = await readFile("src/d1-development-activation-evidence-write-verifier.js", "utf8");
 const activationEvidenceChainVerifierSource = await readFile("src/development-activation-evidence-chain-verifier.js", "utf8");
+const activationEvidenceVerifierTestSource = await readFile("test/worker/development-activation-evidence-verifier.test.js", "utf8");
 const activationEvidenceWriterTestSource = await readFile("test/worker/authenticated-development-activation-evidence-writer.test.js", "utf8");
 const activationEvidenceWriteVerifierTestSource = await readFile("test/worker/d1-development-activation-evidence-write-verifier.test.js", "utf8");
 const activationEvidenceChainVerifierTestSource = await readFile("test/development-activation-evidence-chain-verifier.test.js", "utf8");
@@ -163,7 +164,9 @@ if (workerSource.includes("development-activation-preflight") || developmentRunt
 }
 for (const required of [
   "AuthenticatedDevelopmentActivationEvidenceVerifier", "developmentActivationPurposeDigest",
-  "digestDevelopmentActivationOwnerDecision", 'structuredClone(await this.bundleProvider.read(requestedEvidence))',
+  "digestDevelopmentActivationOwnerDecision", 'structuredClone(await this.bundleProvider.read(requestedEvidence, { now }))',
+  "function verificationTime(value)", 'now: requestedNow = this.now()',
+  "const now = verificationTime(requestedNow)",
   '"maker_validation"', '"checker_validation"', '"resource_activation_authorization"',
   '"worker_deployment_authorization"', '"rollback_evidence"', '"backup_evidence"',
   "Development activation evidence digests must be unique",
@@ -184,6 +187,12 @@ for (const required of [
   "new Set(principals).size !== principals.length", "verificationDigest = await digestCanonicalValue",
 ]) if (!activationEvidenceVerifierSource.includes(required)) {
   throw new Error(`Development activation evidence verifier invariant missing: ${required}`);
+}
+if ((activationEvidenceVerifierSource.match(/this\.now\(\)/gu) ?? []).length !== 1 ||
+    !/function verificationTime\(value\) \{\s*if \(!\(value instanceof Date\) \|\| !Number\.isSafeInteger\(value\.valueOf\(\)\)\)/u.test(activationEvidenceVerifierSource) ||
+    !/async verify\(evidence, \{ now: requestedNow = this\.now\(\) \} = \{\}\) \{\s*assertEvidence\(evidence\);\s*const now = verificationTime\(requestedNow\);/u.test(activationEvidenceVerifierSource) ||
+    !/this\.bundleProvider\.read\(requestedEvidence, \{ now \}\)/u.test(activationEvidenceVerifierSource)) {
+  throw new Error("Development activation evidence verifier must capture and propagate exactly one verification time");
 }
 const activationIdentityPurposePatterns = [
   ["maker validation", /identityVerifier\.verify\(bundle\.makerValidationAttestation, \{\s*role: "maker", actionDigest: purposes\.maker_validation, now,/u],
@@ -381,7 +390,7 @@ for (const required of [
   'assertVerifier(writeReceiptVerifier, "verify", "write receipt verifier")',
   'typeof now !== "function"', "assertEvidence(evidence)",
   "Development activation evidence digests must be unique", "const requestedEvidence = Object.freeze({ ...evidence })",
-  "this.evidenceVerifier.verify(requestedEvidence)", "this.writeReceiptVerifier.verify(requestedEvidence, { now })",
+  "this.evidenceVerifier.verify(requestedEvidence, { now })", "this.writeReceiptVerifier.verify(requestedEvidence, { now })",
   "structuredClone(result)", "assertEvidenceResult(evidenceResult, requestedEvidence)",
   "assertWriteResult(writeResult, requestedEvidence)", "result.valid !== true",
   "result[field] !== evidence[field]", "result.reviewedCommit !== evidence.reviewedCommit",
@@ -400,7 +409,7 @@ for (const required of [
   throw new Error(`Development activation evidence chain verifier invariant missing: ${required}`);
 }
 for (const [label, pattern] of [
-  ["dual verification", /Promise\.all\(\[\s*this\.evidenceVerifier\.verify\(requestedEvidence\),\s*this\.writeReceiptVerifier\.verify\(requestedEvidence, \{ now \}\),\s*\]\)/u],
+  ["dual verification", /Promise\.all\(\[\s*this\.evidenceVerifier\.verify\(requestedEvidence, \{ now \}\),\s*this\.writeReceiptVerifier\.verify\(requestedEvidence, \{ now \}\),\s*\]\)/u],
   ["clock validation", /if \(!\(now instanceof Date\) \|\| !Number\.isSafeInteger\(now\.valueOf\(\)\)\)/u],
   ["evidence result validity", /function assertEvidenceResult\(result, evidence\) \{[\s\S]*?if \(result\.valid !== true\) throw new Error\("Development activation evidence verification failed"\);/u],
   ["write result validity", /function assertWriteResult\(result, evidence\) \{[\s\S]*?if \(result\.valid !== true \|\| result\.reviewedCommit !== evidence\.reviewedCommit\)/u],
@@ -433,8 +442,22 @@ for (const required of [
   "assert.equal(evidenceRequest, writeRequest)", "Object.isFrozen(evidenceRequest)",
   'evidenceValue: evidenceResult({ valid: false })', 'writeValue: writeResult({ valid: false })',
   'servicePrincipalId of ["maker-principal", "checker-principal", "owner-principal"]',
+  "assert.equal(evidenceNow, NOW)", "assert.equal(writeNow, NOW)",
 ]) if (!activationEvidenceChainVerifierTestSource.includes(required)) {
   throw new Error(`Development activation evidence chain verifier behavioral coverage missing: ${required}`);
+}
+for (const required of [
+  "propagates one exact validated verification instant through every evidence dependency",
+  "expect(providerNow).toBe(NOW)", "expect(identityNows).toHaveLength(4)",
+  "expect(ownerNows).toHaveLength(2)", "value === NOW", 'now: new Date("invalid")',
+  "now: { valueOf: () => NOW.valueOf() }",
+]) if (!activationEvidenceVerifierTestSource.includes(required)) {
+  throw new Error(`Development activation single-clock behavioral coverage missing: ${required}`);
+}
+for (const required of [
+  "evidenceVerifier.verify(value.evidence, { now })", "now: () => now",
+]) if (!activationEvidenceWriterTestSource.includes(required)) {
+  throw new Error(`Actual activation evidence single-clock interoperability missing: ${required}`);
 }
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
@@ -754,4 +777,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired dual evidence-chain verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
