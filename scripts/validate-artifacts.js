@@ -19,6 +19,7 @@ const runtimeSchema = await load("schemas/runtime-readiness.schema.json");
 const isolationSchema = await load("schemas/customer-isolation.schema.json");
 const customerBindingsSchema = await load("schemas/customer-runtime-bindings.schema.json");
 const activationPlanSchema = await load("schemas/development-activation-plan.schema.json");
+const activationEvidenceSchema = await load("schemas/development-activation-evidence-bundle.schema.json");
 const activationPlan = await load("deployment/development-activation-plan.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
@@ -39,6 +40,7 @@ const developmentRuntimeSource = await readFile("src/development-runtime.js", "u
 const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
 const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
 const activationPreflightSource = await readFile("src/development-activation-preflight.js", "utf8");
+const activationEvidenceVerifierSource = await readFile("src/development-activation-evidence-verifier.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -98,6 +100,11 @@ assertValid("orchestrator envelope", envelopeSchema, { messageId:"m",actionDiges
 assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceResolver","identityVerifier","evidenceProvider","rollbackVerifier","limitProvider","ownerVerifier","ownerDecisionStore","idempotencyStore","auditStore","projectKnowledge","workflowDispatcher","queuePublisher"].map((key) => [key, {}]).concat([["revalidateStandingState", "injected-function"]])));
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
 assertValid("development activation plan", activationPlanSchema, activationPlan);
+if (activationEvidenceSchema.additionalProperties !== false || activationEvidenceSchema.properties?.schemaVersion?.const !== "1.0.0" ||
+    activationEvidenceSchema.properties?.resourceActivationDecision?.properties?.decision?.const !== "approved" ||
+    activationEvidenceSchema.properties?.workerDeploymentDecision?.properties?.signatureAlgorithm?.const !== "Ed25519") {
+  throw new Error("Development activation evidence bundle schema boundary changed");
+}
 if (validateSchema(customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker",dedicatedD1DatabaseId:"d1",sharedProductionD1:true }).length === 0) throw new Error("Shared production D1 negative fixture unexpectedly passed");
 if (validateSchema(resourceSchema, { kind:"github_repository",provider:"cloudflare",repository:"x",environment:"development",isolation:{} }).length === 0) throw new Error("Resource discriminator negative fixture unexpectedly passed");
 
@@ -144,6 +151,49 @@ const activationDangerousPattern = /\bfetch\s*\(|\b(?:exec|spawn)\s*\(|\bwrangle
 if (activationDangerousPattern.test(activationPreflightSource)) throw new Error("Development activation preflight must remain validation-only");
 if (workerSource.includes("development-activation-preflight") || developmentRuntimeSource.includes("development-activation-preflight")) {
   throw new Error("Development activation preflight cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "AuthenticatedDevelopmentActivationEvidenceVerifier", "developmentActivationPurposeDigest",
+  "digestDevelopmentActivationOwnerDecision", 'structuredClone(await this.bundleProvider.read(requestedEvidence))',
+  '"maker_validation"', '"checker_validation"', '"resource_activation_authorization"',
+  '"worker_deployment_authorization"', '"rollback_evidence"', '"backup_evidence"',
+  "Development activation evidence digests must be unique",
+  "Development activation evidence bundle provider is unavailable",
+  "Development activation identity verifier is unavailable", "Development activation owner verifier is unavailable",
+  'role: "maker", actionDigest: purposes.maker_validation',
+  'role: "checker", actionDigest: purposes.checker_validation',
+  'role: "checker", actionDigest: purposes.rollback_evidence',
+  'role: "maker", actionDigest: purposes.backup_evidence',
+  "purposes.resource_activation_authorization", "purposes.worker_deployment_authorization",
+  "this.ownerVerifier.verify(bundle.resourceActivationDecision",
+  "this.ownerVerifier.verify(bundle.workerDeploymentDecision",
+  "resourcePayload.decisionId === workerPayload.decisionId", "resourceApproved !== true || workerApproved !== true",
+  "resourceDigest !== evidence.resourceActivationAuthorizationDigest",
+  "workerDigest !== evidence.workerDeploymentAuthorizationDigest",
+  "maker.principalId !== backup.principalId", "checker.principalId !== rollback.principalId",
+  "resourcePayload.decidedBy !== workerPayload.decidedBy",
+  "new Set(principals).size !== principals.length", "verificationDigest = await digestCanonicalValue",
+]) if (!activationEvidenceVerifierSource.includes(required)) {
+  throw new Error(`Development activation evidence verifier invariant missing: ${required}`);
+}
+const activationIdentityPurposePatterns = [
+  ["maker validation", /identityVerifier\.verify\(bundle\.makerValidationAttestation, \{\s*role: "maker", actionDigest: purposes\.maker_validation, now,/u],
+  ["checker validation", /identityVerifier\.verify\(bundle\.checkerValidationAttestation, \{\s*role: "checker", actionDigest: purposes\.checker_validation, now,/u],
+  ["rollback evidence", /identityVerifier\.verify\(bundle\.rollbackAttestation, \{\s*role: "checker", actionDigest: purposes\.rollback_evidence, now,/u],
+  ["backup evidence", /identityVerifier\.verify\(bundle\.backupAttestation, \{\s*role: "maker", actionDigest: purposes\.backup_evidence, now,/u],
+];
+for (const [label, pattern] of activationIdentityPurposePatterns) {
+  if (!pattern.test(activationEvidenceVerifierSource)) {
+    throw new Error(`Development activation identity purpose binding missing: ${label}`);
+  }
+}
+if (activationDangerousPattern.test(activationEvidenceVerifierSource) ||
+    /privateKey|SERVICE_AUTH_KEYS_JSON|Proxy-Authorization/u.test(activationEvidenceVerifierSource)) {
+  throw new Error("Development activation evidence verifier must remain validation-only and public-key-only");
+}
+if (workerSource.includes("development-activation-evidence-verifier") ||
+    developmentRuntimeSource.includes("development-activation-evidence-verifier")) {
+  throw new Error("Development activation evidence verifier cannot be imported by the Worker runtime");
 }
 if (!secretScanSource.includes('"deployment"')) throw new Error("Deployment manifests must remain inside the default secret-scan roots");
 
@@ -471,4 +521,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
