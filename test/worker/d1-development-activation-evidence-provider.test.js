@@ -302,6 +302,12 @@ describe("read-only development activation evidence bundle provider", () => {
     await expect(provider.read({ ...evidence, backupDigest: evidence.makerValidationDigest }, { now: NOW })).rejects.toThrow(/must be unique/);
   });
 
+  it("rejects a digest-consistent record with a malformed record ID", async () => {
+    await insertBundle({ recordId: "invalid record id" });
+    await expect(new D1DevelopmentActivationEvidenceBundleProvider(env.AUTHORITY_DB)
+      .read(evidence, { now: NOW })).rejects.toThrow(/evidence bundle record ID/);
+  });
+
   it("requires a D1 binding and rejects invalid lookup times", async () => {
     expect(() => new D1DevelopmentActivationEvidenceBundleProvider()).toThrow(/D1 binding is unavailable/);
     await insertBundle();

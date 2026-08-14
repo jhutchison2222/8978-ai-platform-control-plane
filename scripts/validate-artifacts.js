@@ -246,6 +246,8 @@ for (const required of [
   "evidence.rollbackEvidenceDigest", "evidence.backupDigest", ").all()",
   "Development activation evidence bundle unavailable", "Development activation evidence bundle is ambiguous",
   "parseJsonStrict(row.bundle_json)", "canonicalize(bundle) !== row.bundle_json",
+  "const MAX_BUNDLE_BYTES = 65_536", "encoder.encode(row.bundle_json).byteLength > MAX_BUNDLE_BYTES",
+  'component(row.record_id, "evidence bundle record ID")',
   "digestCanonicalValue(bundle) !== row.bundle_digest", "digestCanonicalValue(record) !== row.record_digest",
   "Development activation evidence digests must be unique", "return freeze(bundle)",
 ]) if (!activationEvidenceProviderSource.includes(required)) {
