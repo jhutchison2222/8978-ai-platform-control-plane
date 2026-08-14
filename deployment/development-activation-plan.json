@@ -40,6 +40,10 @@
       {
         "path": "migrations/authority/0005_development_activation_evidence.sql",
         "sha256": "4f75b03549ab1df797fb73a87768291caf921a22f796939c7b466eea3eb528c3"
+      },
+      {
+        "path": "migrations/authority/0006_development_activation_evidence_writes.sql",
+        "sha256": "0bf3e2dbdd935fe6c2ecbd310d8c465e2bca845569a0d10e52e0ac563a181eb4"
       }
     ]
   },

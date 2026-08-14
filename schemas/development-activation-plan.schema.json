@@ -22,7 +22,7 @@
       "properties":{
         "binding":{"const":"AUTHORITY_DB"},"databaseName":{"const":"8978-ai-authority-dev"},"databaseId":{"type":["string","null"],"pattern":"^[0-9a-f-]{36}$"},
         "resourceCreated":{"type":"boolean"},"bindingInstalled":{"type":"boolean"},"migrationsApplied":{"type":"boolean"},"remoteSchemaVerified":{"type":"boolean"},
-        "migrations":{"type":"array","minItems":5,"maxItems":5,"items":{"type":"object","additionalProperties":false,"required":["path","sha256"],"properties":{"path":{"type":"string","minLength":1},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}}}
+        "migrations":{"type":"array","minItems":6,"maxItems":6,"items":{"type":"object","additionalProperties":false,"required":["path","sha256"],"properties":{"path":{"type":"string","minLength":1},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}}}
       }
     },
     "workflow": {

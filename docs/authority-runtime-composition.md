@@ -29,7 +29,7 @@ The Workers test environment injects a real local D1 binding plus local Workflow
 
 - `wrangler.jsonc` contains no `d1_databases` entry, database name, database ID, preview database ID, account ID, or route.
 - The existing `pk-d1-dev` database is not reused as runtime authority storage.
-- The five authority migrations remain unapplied outside the local Workers test runtime.
+- The six authority migrations remain unapplied outside the local Workers test runtime.
 - No authority writer, promotion path, seed data, private key, secret, Workflow, Queue, or provider binding is added.
 - `ALLOW_EXTERNAL_WRITES` remains `false`, and `/v1/actions/execute` remains an unconditional `execution_disabled` response.
 

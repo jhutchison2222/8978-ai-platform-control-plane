@@ -19,7 +19,7 @@ The plan reserves these development-only identities:
 - Workflow binding/name/class: `ORCHESTRATOR_WORKFLOW` / `8978-ai-orchestrator-dev` / `OrchestratorWorkflow`;
 - Queue binding/name: `ORCHESTRATOR_QUEUE` / `8978-ai-orchestrator-dev`.
 
-The existing `pk-d1-dev` Project Knowledge database and its known identifier are explicitly prohibited as authority runtime storage. The plan pins the byte-level SHA-256 digest and order of all five reviewed authority migrations.
+The existing `pk-d1-dev` Project Knowledge database and its known identifier are explicitly prohibited as authority runtime storage. The plan pins the byte-level SHA-256 digest and order of all six reviewed authority migrations.
 
 ## Required gates
 
@@ -28,7 +28,7 @@ The preflight cannot report ready until every condition is present:
 - plan status is `READY`;
 - resource activation and Worker deployment are covered by distinct owner-authorization evidence;
 - a dedicated authority database exists and has a valid, non-prohibited UUID;
-- its binding is installed, all five exact migrations are applied, and the remote schema is verified;
+- its binding is installed, all six exact migrations are applied, and the remote schema is verified;
 - the Workflow and Queue exist and both bindings are installed;
 - the reviewed commit and independent maker/checker validation digests are available;
 - distinct resource-activation authorization, Worker-deployment authorization, and rollback-evidence digests are available;
