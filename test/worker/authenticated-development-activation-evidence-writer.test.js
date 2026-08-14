@@ -291,7 +291,9 @@ describe("authenticated development activation evidence writer", () => {
       ownerVerifier: new D1Ed25519OwnerDecisionVerifier(env.AUTHORITY_DB),
       now: () => now,
     });
-    await expect(evidenceVerifier.verify(value.evidence)).resolves.toMatchObject({ valid: true, reviewedCommit: COMMIT });
+    await expect(evidenceVerifier.verify(value.evidence, { now })).resolves.toMatchObject({
+      valid: true, reviewedCommit: COMMIT,
+    });
     await expect(new AuthenticatedDevelopmentActivationEvidenceChainVerifier({
       evidenceVerifier,
       writeReceiptVerifier,

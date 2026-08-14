@@ -4,6 +4,8 @@ Status: DEVELOPMENT FOUNDATION ONLY — UNWIRED, UNBOUND, AND NOT DEPLOYED
 
 PR #16 adds the independent evidence-verifier implementation required by the PR #15 development activation preflight. It composes the already-reviewed D1-backed Ed25519 identity and owner-decision verifiers. It does not create evidence, install keys, write to D1, add bindings, change Wrangler, authorize activation, or deploy the Worker.
 
+PR #21 hardens the temporal boundary without changing that scope: one validated verification instant is now shared by the bundle lookup, all four identity checks, and both owner-decision checks. When composed through the PR #20 chain, the same instant also governs write-receipt verification.
+
 ## Evidence bundle
 
 The injected bundle provider must return exactly six authenticated artifacts:

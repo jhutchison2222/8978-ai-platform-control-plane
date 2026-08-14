@@ -123,7 +123,7 @@ export class AuthenticatedDevelopmentActivationEvidenceChainVerifier {
       throw new TypeError("Invalid development activation evidence chain verification time");
     }
     const [evidenceResult, writeResult] = await Promise.all([
-      this.evidenceVerifier.verify(requestedEvidence),
+      this.evidenceVerifier.verify(requestedEvidence, { now }),
       this.writeReceiptVerifier.verify(requestedEvidence, { now }),
     ]).then((results) => results.map((result) => structuredClone(result)));
     assertEvidenceResult(evidenceResult, requestedEvidence);

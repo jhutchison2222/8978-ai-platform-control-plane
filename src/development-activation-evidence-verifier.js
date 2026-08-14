@@ -56,6 +56,13 @@ function token(value, label) {
   return value;
 }
 
+function verificationTime(value) {
+  if (!(value instanceof Date) || !Number.isSafeInteger(value.valueOf())) {
+    throw new TypeError("Invalid development activation evidence verification time");
+  }
+  return value;
+}
+
 function assertEvidence(evidence) {
   exactFields(evidence, EVIDENCE_FIELDS, "evidence");
   if (typeof evidence.reviewedCommit !== "string" || !COMMIT.test(evidence.reviewedCommit)) {
@@ -122,10 +129,11 @@ export class AuthenticatedDevelopmentActivationEvidenceVerifier {
     Object.freeze(this);
   }
 
-  async verify(evidence) {
+  async verify(evidence, { now: requestedNow = this.now() } = {}) {
     assertEvidence(evidence);
+    const now = verificationTime(requestedNow);
     const requestedEvidence = Object.freeze({ ...evidence });
-    const bundle = structuredClone(await this.bundleProvider.read(requestedEvidence));
+    const bundle = structuredClone(await this.bundleProvider.read(requestedEvidence, { now }));
     exactFields(bundle, BUNDLE_FIELDS, "evidence bundle");
     if (bundle.schemaVersion !== "1.0.0") throw new Error("Development activation evidence bundle version mismatch");
     token(bundle.makerValidationAttestation, "maker validation attestation");
@@ -153,7 +161,6 @@ export class AuthenticatedDevelopmentActivationEvidenceVerifier {
     Object.freeze(bundle.workerDeploymentDecision);
     Object.freeze(bundle);
 
-    const now = this.now();
     const [maker, checker, rollback, backup, resourceApproved, workerApproved] = await Promise.all([
       this.identityVerifier.verify(bundle.makerValidationAttestation, {
         role: "maker", actionDigest: purposes.maker_validation, now,
