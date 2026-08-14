@@ -4,6 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { AuthenticatedDevelopmentActivationEvidenceWriter } from "../../src/authenticated-development-activation-evidence-writer.js";
 import { canonicalize, digestCanonicalValue } from "../../src/canonical-digest.js";
 import { CloudflareDurableReplayStore } from "../../src/cloudflare-replay-store.js";
+import { AuthenticatedDevelopmentActivationEvidenceChainVerifier } from "../../src/development-activation-evidence-chain-verifier.js";
 import {
   AuthenticatedDevelopmentActivationEvidenceVerifier,
   developmentActivationPurposeDigest,
@@ -269,10 +270,11 @@ describe("authenticated development activation evidence writer", () => {
       version: 1,
     })).resolves.toBe(receipt.writeDigest);
 
-    await expect(new D1DevelopmentActivationEvidenceWriteVerifier(env.AUTHORITY_DB, {
+    const writeReceiptVerifier = new D1DevelopmentActivationEvidenceWriteVerifier(env.AUTHORITY_DB, {
       authorizedWriter: { principalId: WRITER.principalId, keyId: WRITER.keyId },
       reviewedCommit: COMMIT,
-    }).verify(value.evidence, { now })).resolves.toMatchObject({
+    });
+    await expect(writeReceiptVerifier.verify(value.evidence, { now })).resolves.toMatchObject({
       valid: true,
       recordId: value.recordId,
       recordDigest: receipt.recordDigest,
@@ -283,12 +285,25 @@ describe("authenticated development activation evidence writer", () => {
     });
 
     const provider = new D1DevelopmentActivationEvidenceBundleProvider(env.AUTHORITY_DB);
-    await expect(new AuthenticatedDevelopmentActivationEvidenceVerifier({
+    const evidenceVerifier = new AuthenticatedDevelopmentActivationEvidenceVerifier({
       bundleProvider: provider,
       identityVerifier: new D1Ed25519IdentityVerifier(env.AUTHORITY_DB),
       ownerVerifier: new D1Ed25519OwnerDecisionVerifier(env.AUTHORITY_DB),
       now: () => now,
-    }).verify(value.evidence)).resolves.toMatchObject({ valid: true, reviewedCommit: COMMIT });
+    });
+    await expect(evidenceVerifier.verify(value.evidence)).resolves.toMatchObject({ valid: true, reviewedCommit: COMMIT });
+    await expect(new AuthenticatedDevelopmentActivationEvidenceChainVerifier({
+      evidenceVerifier,
+      writeReceiptVerifier,
+      now: () => now,
+    }).verify(value.evidence)).resolves.toMatchObject({
+      valid: true,
+      reviewedCommit: COMMIT,
+      makerPrincipalId: "activation-maker",
+      checkerPrincipalId: "activation-checker",
+      ownerPrincipalId: "activation-owner",
+      verificationDigest: expect.stringMatching(/^sha256:[a-f0-9]{64}$/u),
+    });
   });
 
   it("rejects unsigned, OAuth-bearing, wrong-route, and unauthorized-writer requests without inserting", async () => {

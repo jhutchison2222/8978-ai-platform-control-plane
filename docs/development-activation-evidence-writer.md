@@ -22,4 +22,4 @@ The module contains no OAuth flow, bearer fallback, external `fetch`, Cloudflare
 
 Workers-pool tests use the real local D1 migration set, real Ed25519 verification, HMAC request signing, and the real SQLite replay Durable Object. Test-only inserts seed ephemeral public keys; no remote D1 or Cloudflare resource is touched.
 
-Actual development activation still requires separately authorized resource creation and remote migration, installation of an HMAC writer secret, authoritative evidence creation and insertion, independent verification of both the evidence bundle and its authenticated-write receipt, and a later distinct owner authorization for Worker deployment.
+Actual development activation still requires separately authorized resource creation and remote migration, installation of an HMAC writer secret, authoritative evidence creation and insertion, independent chained verification of both the evidence bundle and its authenticated-write receipt, and a later distinct owner authorization for Worker deployment.
