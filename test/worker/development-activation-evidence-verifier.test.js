@@ -20,6 +20,10 @@ const encoder = new TextEncoder();
 let makerKeys;
 let checkerKeys;
 let ownerKeys;
+let alternateMakerKeys;
+let alternateCheckerKeys;
+let alternateOwnerKeys;
+let untrustedOwnerKeys;
 
 function base64url(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -39,10 +43,12 @@ async function seedIdentityKey({ keyId, principalId, roles, keyPair }) {
   ).run();
 }
 
-async function seedOwnerKey() {
-  const keyId = "activation-owner-key";
-  const principalId = "activation-owner";
-  const publicKeyBase64url = base64url(await crypto.subtle.exportKey("raw", ownerKeys.publicKey));
+async function seedOwnerKey({
+  keyId = "activation-owner-key",
+  principalId = "activation-owner",
+  keyPair = ownerKeys,
+} = {}) {
+  const publicKeyBase64url = base64url(await crypto.subtle.exportKey("raw", keyPair.publicKey));
   const keyRecord = { keyId, principalId, algorithm: "Ed25519", publicKeyBase64url, version: 1 };
   await env.AUTHORITY_DB.prepare(`
     INSERT INTO authority_owner_keys
@@ -71,20 +77,27 @@ async function signedAttestation({ keyId, principalId, role, purpose, keyPair, a
   return { token: `v1.${base64url(bytes)}.${base64url(signature)}`, evidenceDigest: await digestCanonicalValue(payload) };
 }
 
-async function signedOwnerDecision({ purpose, decisionId, overrides = {} }) {
+async function signedOwnerDecision({
+  purpose,
+  decisionId,
+  keyPair = ownerKeys,
+  keyId = "activation-owner-key",
+  principalId = "activation-owner",
+  overrides = {},
+}) {
   const actionDigest = await developmentActivationPurposeDigest(REVIEWED_COMMIT, purpose);
   const payload = {
     decisionId,
     requestedActionDigest: actionDigest,
     decision: "approved",
-    decidedBy: "activation-owner",
+    decidedBy: principalId,
     decidedAt: new Date(NOW.valueOf() - 60_000).toISOString(),
     expiresAt: new Date(NOW.valueOf() + 3_600_000).toISOString(),
-    issuerKeyId: "activation-owner-key",
+    issuerKeyId: keyId,
     signatureAlgorithm: "Ed25519",
     ...overrides,
   };
-  const signature = await crypto.subtle.sign("Ed25519", ownerKeys.privateKey, encoder.encode(canonicalize(payload)));
+  const signature = await crypto.subtle.sign("Ed25519", keyPair.privateKey, encoder.encode(canonicalize(payload)));
   const decision = { ...payload, signature: base64url(signature) };
   return {
     actionDigest,
@@ -175,6 +188,10 @@ describe("authenticated development activation evidence verifier", () => {
     makerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
     checkerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
     ownerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
+    alternateMakerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
+    alternateCheckerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
+    alternateOwnerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
+    untrustedOwnerKeys = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
   });
 
   beforeEach(async () => {
@@ -223,6 +240,123 @@ describe("authenticated development activation evidence verifier", () => {
       workerDeploymentDecision: bundle.resourceActivationDecision,
     }).verify(evidence)).rejects.toThrow(/owner binding mismatch|must be distinct/);
     await expect(verifier({ ...bundle, unexpected: true }).verify(evidence)).rejects.toThrow(/fields must be exact/);
+  });
+
+  it("rejects each owner authorization when its Ed25519 signature is invalid", async () => {
+    const { evidence, bundle } = await fixture();
+    const invalidResource = await signedOwnerDecision({
+      purpose: "resource_activation_authorization",
+      decisionId: "activation-resource-decision",
+      keyPair: untrustedOwnerKeys,
+    });
+    await expect(verifier({
+      ...bundle,
+      resourceActivationDecision: invalidResource.decision,
+    }).verify({
+      ...evidence,
+      resourceActivationAuthorizationDigest: invalidResource.evidenceDigest,
+    })).rejects.toThrow(/owner authorization signature invalid/);
+
+    const invalidWorker = await signedOwnerDecision({
+      purpose: "worker_deployment_authorization",
+      decisionId: "activation-worker-decision",
+      keyPair: untrustedOwnerKeys,
+    });
+    await expect(verifier({
+      ...bundle,
+      workerDeploymentDecision: invalidWorker.decision,
+    }).verify({
+      ...evidence,
+      workerDeploymentAuthorizationDigest: invalidWorker.evidenceDigest,
+    })).rejects.toThrow(/owner authorization signature invalid/);
+  });
+
+  it("rejects caller-supplied resource and Worker decision digest mismatches", async () => {
+    const { evidence, bundle } = await fixture();
+    await expect(verifier(bundle).verify({
+      ...evidence,
+      resourceActivationAuthorizationDigest: `sha256:${"0".repeat(64)}`,
+    })).rejects.toThrow(/owner authorization evidence mismatch/);
+    await expect(verifier(bundle).verify({
+      ...evidence,
+      workerDeploymentAuthorizationDigest: `sha256:${"1".repeat(64)}`,
+    })).rejects.toThrow(/owner authorization evidence mismatch/);
+  });
+
+  it("rejects maker, checker, and owner role-continuity mismatches", async () => {
+    await seedIdentityKey({
+      keyId: "activation-alternate-maker-key", principalId: "activation-alternate-maker",
+      roles: ["maker"], keyPair: alternateMakerKeys,
+    });
+    await seedIdentityKey({
+      keyId: "activation-alternate-checker-key", principalId: "activation-alternate-checker",
+      roles: ["checker"], keyPair: alternateCheckerKeys,
+    });
+    await seedOwnerKey({
+      keyId: "activation-alternate-owner-key", principalId: "activation-alternate-owner",
+      keyPair: alternateOwnerKeys,
+    });
+
+    const makerMismatch = await fixture();
+    const alternateBackup = await signedAttestation({
+      keyId: "activation-alternate-maker-key", principalId: "activation-alternate-maker", role: "maker",
+      purpose: "backup_evidence", keyPair: alternateMakerKeys, attestationId: "activation-alternate-backup",
+    });
+    await expect(verifier({
+      ...makerMismatch.bundle,
+      backupAttestation: alternateBackup.token,
+    }).verify({
+      ...makerMismatch.evidence,
+      backupDigest: alternateBackup.evidenceDigest,
+    })).rejects.toThrow(/role continuity mismatch/);
+
+    const checkerMismatch = await fixture();
+    const alternateRollback = await signedAttestation({
+      keyId: "activation-alternate-checker-key", principalId: "activation-alternate-checker", role: "checker",
+      purpose: "rollback_evidence", keyPair: alternateCheckerKeys, attestationId: "activation-alternate-rollback",
+    });
+    await expect(verifier({
+      ...checkerMismatch.bundle,
+      rollbackAttestation: alternateRollback.token,
+    }).verify({
+      ...checkerMismatch.evidence,
+      rollbackEvidenceDigest: alternateRollback.evidenceDigest,
+    })).rejects.toThrow(/role continuity mismatch/);
+
+    const ownerMismatch = await fixture();
+    const alternateWorker = await signedOwnerDecision({
+      purpose: "worker_deployment_authorization",
+      decisionId: "activation-alternate-worker-decision",
+      keyPair: alternateOwnerKeys,
+      keyId: "activation-alternate-owner-key",
+      principalId: "activation-alternate-owner",
+    });
+    await expect(verifier({
+      ...ownerMismatch.bundle,
+      workerDeploymentDecision: alternateWorker.decision,
+    }).verify({
+      ...ownerMismatch.evidence,
+      workerDeploymentAuthorizationDigest: alternateWorker.evidenceDigest,
+    })).rejects.toThrow(/role continuity mismatch/);
+  });
+
+  it("rejects distinct signed owner decisions that reuse one decision ID", async () => {
+    const { evidence, bundle } = await fixture();
+    const reusedResource = await signedOwnerDecision({
+      purpose: "resource_activation_authorization", decisionId: "activation-reused-decision",
+    });
+    const reusedWorker = await signedOwnerDecision({
+      purpose: "worker_deployment_authorization", decisionId: "activation-reused-decision",
+    });
+    await expect(verifier({
+      ...bundle,
+      resourceActivationDecision: reusedResource.decision,
+      workerDeploymentDecision: reusedWorker.decision,
+    }).verify({
+      ...evidence,
+      resourceActivationAuthorizationDigest: reusedResource.evidenceDigest,
+      workerDeploymentAuthorizationDigest: reusedWorker.evidenceDigest,
+    })).rejects.toThrow(/owner decisions must be distinct/);
   });
 
   it("rejects principal collisions, role discontinuity, and unavailable evidence providers", async () => {
