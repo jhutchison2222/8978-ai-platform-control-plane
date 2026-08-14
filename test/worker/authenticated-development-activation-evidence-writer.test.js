@@ -46,19 +46,20 @@ async function seedIdentityKey({ keyId, principalId, role, keyPair }) {
   ).run();
 }
 
-async function seedOwnerKey() {
+async function seedOwnerKey({
+  keyId = "activation-owner-key", principalId = "activation-owner",
+} = {}) {
   const publicKeyBase64url = base64url(await crypto.subtle.exportKey("raw", ownerKeys.publicKey));
   const keyRecord = {
-    keyId: "activation-owner-key", principalId: "activation-owner",
-    algorithm: "Ed25519", publicKeyBase64url, version: 1,
+    keyId, principalId, algorithm: "Ed25519", publicKeyBase64url, version: 1,
   };
   await env.AUTHORITY_DB.prepare(`
     INSERT INTO authority_owner_keys
       (record_id, key_id, principal_id, algorithm, public_key_base64url, key_digest,
        status, enabled, valid_from_ms, valid_until_ms, version)
-    VALUES (?1, 'activation-owner-key', 'activation-owner', 'Ed25519', ?2, ?3, 'FINAL', 1, ?4, ?5, 1)
+    VALUES (?1, ?2, ?3, 'Ed25519', ?4, ?5, 'FINAL', 1, ?6, ?7, 1)
   `).bind(
-    crypto.randomUUID(), publicKeyBase64url, await digestCanonicalValue(keyRecord),
+    crypto.randomUUID(), keyId, principalId, publicKeyBase64url, await digestCanonicalValue(keyRecord),
     Date.now() - 86_400_000, Date.now() + 86_400_000,
   ).run();
 }
@@ -79,16 +80,18 @@ async function signedAttestation({ keyId, principalId, role, purpose, keyPair, a
   return { token: `v1.${base64url(bytes)}.${base64url(signature)}`, digest: await digestCanonicalValue(payload) };
 }
 
-async function signedOwnerDecision(purpose, decisionId, now) {
+async function signedOwnerDecision(purpose, decisionId, now, {
+  keyId = "activation-owner-key", principalId = "activation-owner",
+} = {}) {
   const actionDigest = await developmentActivationPurposeDigest(COMMIT, purpose);
   const payload = {
     decisionId,
     requestedActionDigest: actionDigest,
     decision: "approved",
-    decidedBy: "activation-owner",
+    decidedBy: principalId,
     decidedAt: new Date(now.valueOf() - 60_000).toISOString(),
     expiresAt: new Date(now.valueOf() + 3_600_000).toISOString(),
-    issuerKeyId: "activation-owner-key",
+    issuerKeyId: keyId,
     signatureAlgorithm: "Ed25519",
   };
   const signature = await crypto.subtle.sign("Ed25519", ownerKeys.privateKey, encoder.encode(canonicalize(payload)));
@@ -99,25 +102,35 @@ async function signedOwnerDecision(purpose, decisionId, now) {
   };
 }
 
-async function fixture(now = new Date(), { recordId = crypto.randomUUID() } = {}) {
+async function fixture(now = new Date(), {
+  recordId = crypto.randomUUID(),
+  makerKeyId = "activation-maker-key", makerPrincipalId = "activation-maker",
+  checkerKeyId = "activation-checker-key", checkerPrincipalId = "activation-checker",
+  ownerKeyId = "activation-owner-key", ownerPrincipalId = "activation-owner",
+} = {}) {
   const maker = await signedAttestation({
-    keyId: "activation-maker-key", principalId: "activation-maker", role: "maker",
+    keyId: makerKeyId, principalId: makerPrincipalId, role: "maker",
     purpose: "maker_validation", keyPair: makerKeys, attestationId: "activation-maker-validation", now,
   });
   const checker = await signedAttestation({
-    keyId: "activation-checker-key", principalId: "activation-checker", role: "checker",
+    keyId: checkerKeyId, principalId: checkerPrincipalId, role: "checker",
     purpose: "checker_validation", keyPair: checkerKeys, attestationId: "activation-checker-validation", now,
   });
   const rollback = await signedAttestation({
-    keyId: "activation-checker-key", principalId: "activation-checker", role: "checker",
+    keyId: checkerKeyId, principalId: checkerPrincipalId, role: "checker",
     purpose: "rollback_evidence", keyPair: checkerKeys, attestationId: "activation-rollback-evidence", now,
   });
   const backup = await signedAttestation({
-    keyId: "activation-maker-key", principalId: "activation-maker", role: "maker",
+    keyId: makerKeyId, principalId: makerPrincipalId, role: "maker",
     purpose: "backup_evidence", keyPair: makerKeys, attestationId: "activation-backup-evidence", now,
   });
-  const resource = await signedOwnerDecision("resource_activation_authorization", "activation-resource-decision", now);
-  const worker = await signedOwnerDecision("worker_deployment_authorization", "activation-worker-decision", now);
+  const owner = { keyId: ownerKeyId, principalId: ownerPrincipalId };
+  const resource = await signedOwnerDecision(
+    "resource_activation_authorization", "activation-resource-decision", now, owner,
+  );
+  const worker = await signedOwnerDecision(
+    "worker_deployment_authorization", "activation-worker-decision", now, owner,
+  );
   const evidence = {
     reviewedCommit: COMMIT,
     makerValidationDigest: maker.digest,
@@ -322,6 +335,38 @@ describe("authenticated development activation evidence writer", () => {
     await expect(writer().write(await signed({
       ...value, expiresAt: new Date(now.valueOf() + 86_400_001).toISOString(),
     }, now), { now })).rejects.toThrow(/validity window/);
+  });
+
+  it("rejects HMAC writer identity collisions with maker, checker, and owner before insertion", async () => {
+    const now = new Date();
+    await seedIdentityKey({
+      keyId: "writer-collision-maker-key", principalId: WRITER.principalId, role: "maker", keyPair: makerKeys,
+    });
+    await seedIdentityKey({
+      keyId: "writer-collision-checker-key", principalId: WRITER.principalId, role: "checker", keyPair: checkerKeys,
+    });
+    await seedOwnerKey({ keyId: "writer-collision-owner-key", principalId: WRITER.principalId });
+
+    const collisions = [
+      ["maker", { makerKeyId: "writer-collision-maker-key", makerPrincipalId: WRITER.principalId }],
+      ["checker", { checkerKeyId: "writer-collision-checker-key", checkerPrincipalId: WRITER.principalId }],
+      ["owner", { ownerKeyId: "writer-collision-owner-key", ownerPrincipalId: WRITER.principalId }],
+    ];
+    for (const [role, identity] of collisions) {
+      const value = await fixture(now, { recordId: `writer-${role}-collision`, ...identity });
+      await expect(writer().write(await signed(value, now), { now })).rejects.toThrow(
+        /writer must be independent of maker, checker, and owner/,
+      );
+    }
+
+    const bundles = await env.AUTHORITY_DB.prepare(
+      "SELECT COUNT(*) AS count FROM authority_development_activation_evidence_bundles",
+    ).first();
+    const writes = await env.AUTHORITY_DB.prepare(
+      "SELECT COUNT(*) AS count FROM authority_development_activation_evidence_writes",
+    ).first();
+    expect(bundles.count).toBe(0);
+    expect(writes.count).toBe(0);
   });
 
   it("allows only one atomic active write per reviewed commit under concurrency", async () => {
