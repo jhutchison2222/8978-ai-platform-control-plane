@@ -10,6 +10,7 @@ import {
   digestDevelopmentActivationOwnerDecision,
 } from "../../src/development-activation-evidence-verifier.js";
 import { D1DevelopmentActivationEvidenceBundleProvider } from "../../src/d1-development-activation-evidence-provider.js";
+import { D1DevelopmentActivationEvidenceWriteVerifier } from "../../src/d1-development-activation-evidence-write-verifier.js";
 import { D1Ed25519OwnerDecisionVerifier } from "../../src/d1-owner-control-runtime.js";
 import { D1Ed25519IdentityVerifier } from "../../src/d1-validation-runtime.js";
 import { createServiceAuthenticatedRequest } from "../../src/service-auth-adapter.js";
@@ -267,6 +268,19 @@ describe("authenticated development activation evidence writer", () => {
       insertedAt: now.toISOString(),
       version: 1,
     })).resolves.toBe(receipt.writeDigest);
+
+    await expect(new D1DevelopmentActivationEvidenceWriteVerifier(env.AUTHORITY_DB, {
+      authorizedWriter: { principalId: WRITER.principalId, keyId: WRITER.keyId },
+      reviewedCommit: COMMIT,
+    }).verify(value.evidence, { now })).resolves.toMatchObject({
+      valid: true,
+      recordId: value.recordId,
+      recordDigest: receipt.recordDigest,
+      requestBodyDigest: receipt.requestBodyDigest,
+      writeDigest: receipt.writeDigest,
+      servicePrincipalId: WRITER.principalId,
+      serviceKeyId: WRITER.keyId,
+    });
 
     const provider = new D1DevelopmentActivationEvidenceBundleProvider(env.AUTHORITY_DB);
     await expect(new AuthenticatedDevelopmentActivationEvidenceVerifier({
