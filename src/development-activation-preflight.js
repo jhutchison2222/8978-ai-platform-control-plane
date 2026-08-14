@@ -18,6 +18,7 @@ export const AUTHORITY_MIGRATIONS = Object.freeze([
   Object.freeze({ path: "migrations/authority/0002_validation_evidence.sql", sha256: "75e03891d1b93baf4d10bb0d248b9779405b31f78458f6874e629c320ed5b4b9" }),
   Object.freeze({ path: "migrations/authority/0003_governing_project_knowledge.sql", sha256: "8383c73014a72d30fd179628b0ff8411bf0ab27572585a281279227d03fb3c7a" }),
   Object.freeze({ path: "migrations/authority/0004_owner_control.sql", sha256: "4f7d4cb7939eefb8e6c2f7f292c7e806399b3366e135d775fa317214d7f67185" }),
+  Object.freeze({ path: "migrations/authority/0005_development_activation_evidence.sql", sha256: "4f75b03549ab1df797fb73a87768291caf921a22f796939c7b466eea3eb528c3" }),
 ]);
 
 const PROHIBITED_AUTHORITY_DATABASES = Object.freeze(new Set([

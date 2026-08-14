@@ -36,6 +36,10 @@
       {
         "path": "migrations/authority/0004_owner_control.sql",
         "sha256": "4f7d4cb7939eefb8e6c2f7f292c7e806399b3366e135d775fa317214d7f67185"
+      },
+      {
+        "path": "migrations/authority/0005_development_activation_evidence.sql",
+        "sha256": "4f75b03549ab1df797fb73a87768291caf921a22f796939c7b466eea3eb528c3"
       }
     ]
   },

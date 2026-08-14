@@ -25,6 +25,8 @@ The additive, empty `0003_governing_project_knowledge.sql` migration adds a gove
 
 The additive, empty `0004_owner_control.sql` migration adds public owner-key and standing-state tables. It installs no key or state and remains unbound; its trust rules are documented in `docs/owner-control-runtime.md`.
 
+The additive, empty `0005_development_activation_evidence.sql` migration adds the read model for exact authenticated development-activation evidence bundles. It inserts no evidence and remains unbound; its trust rules are documented in `docs/development-activation-evidence-provider.md`.
+
 The runtime adapter contains only parameterized `SELECT` queries. A separate, future authority-management path must own writes, approvals, promotion, and rollback. Those capabilities must not be added to this adapter.
 
 ## Deliberately unbound
