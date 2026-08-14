@@ -41,6 +41,8 @@ const policyGatewaySource = await readFile("src/policy-gateway.js", "utf8");
 const runtimeContractsSource = await readFile("src/runtime-contracts.js", "utf8");
 const activationPreflightSource = await readFile("src/development-activation-preflight.js", "utf8");
 const activationEvidenceVerifierSource = await readFile("src/development-activation-evidence-verifier.js", "utf8");
+const activationEvidenceProviderSource = await readFile("src/d1-development-activation-evidence-provider.js", "utf8");
+const activationEvidenceMigration = await readFile("migrations/authority/0005_development_activation_evidence.sql", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -232,6 +234,33 @@ for (const required of [
   "resourceKey(resource) !== row.resource_key", "Authoritative ${label} is ambiguous", "actionDigest",
 ]) if (!authorityAdapterSource.includes(required)) throw new Error(`Authoritative D1 read invariant missing: ${required}`);
 const writeSqlPattern = /\b(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|UPDATE\s+[A-Za-z_]|DELETE\s+FROM|REPLACE\s+INTO|CREATE\s+(?:TABLE|INDEX|VIEW|TRIGGER)|DROP\s+(?:TABLE|INDEX|VIEW|TRIGGER)|ALTER\s+TABLE|PRAGMA\b|ATTACH\s+(?:DATABASE\s+)?|DETACH\s+(?:DATABASE\s+)?|VACUUM\b|REINDEX\b)/iu;
+for (const required of [
+  "D1DevelopmentActivationEvidenceBundleProvider",
+  "FROM authority_development_activation_evidence_bundles",
+  "reviewed_commit = ?1", "maker_validation_digest = ?2", "checker_validation_digest = ?3",
+  "resource_activation_authorization_digest = ?4", "worker_deployment_authorization_digest = ?5",
+  "rollback_evidence_digest = ?6", "backup_digest = ?7",
+  "enabled = 1 AND status IN ('CURRENT', 'FINAL')", "issued_at_ms <= ?8 AND expires_at_ms > ?8",
+  "evidence.reviewedCommit", "evidence.makerValidationDigest", "evidence.checkerValidationDigest",
+  "evidence.resourceActivationAuthorizationDigest", "evidence.workerDeploymentAuthorizationDigest",
+  "evidence.rollbackEvidenceDigest", "evidence.backupDigest", ").all()",
+  "Development activation evidence bundle unavailable", "Development activation evidence bundle is ambiguous",
+  "parseJsonStrict(row.bundle_json)", "canonicalize(bundle) !== row.bundle_json",
+  "const MAX_BUNDLE_BYTES = 65_536", "encoder.encode(row.bundle_json).byteLength > MAX_BUNDLE_BYTES",
+  'component(row.record_id, "evidence bundle record ID")',
+  "digestCanonicalValue(bundle) !== row.bundle_digest", "digestCanonicalValue(record) !== row.record_digest",
+  "Development activation evidence digests must be unique", "return freeze(bundle)",
+]) if (!activationEvidenceProviderSource.includes(required)) {
+  throw new Error(`Development activation evidence provider invariant missing: ${required}`);
+}
+if (writeSqlPattern.test(activationEvidenceProviderSource) || /\bfetch\s*\(/u.test(activationEvidenceProviderSource) ||
+    /privateKey|SERVICE_AUTH_KEYS_JSON|Proxy-Authorization/u.test(activationEvidenceProviderSource)) {
+  throw new Error("Development activation evidence provider must remain read-only, fetch-free, and public-key-only");
+}
+if (workerSource.includes("d1-development-activation-evidence-provider") ||
+    developmentRuntimeSource.includes("d1-development-activation-evidence-provider")) {
+  throw new Error("Development activation evidence provider cannot be imported by the Worker runtime");
+}
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
 }
@@ -253,6 +282,19 @@ function assertTableConstraints(source, tableName, required) {
 const commonAuthorityConstraints = ["record_id TEXT PRIMARY KEY", "status IN ('CURRENT', 'FINAL')", "enabled IN (0, 1)", "version > 0"];
 assertTableConstraints(authorityMigration, "authority_resources", [...commonAuthorityConstraints, "valid_until_ms > valid_from_ms"]);
 assertTableConstraints(authorityMigration, "authority_limits", [...commonAuthorityConstraints, "valid_until_ms > valid_from_ms", "cost_usd >= 0", "record_count >= 0"]);
+for (const required of [
+  "CREATE TABLE authority_development_activation_evidence_bundles",
+  "CREATE INDEX authority_activation_evidence_active_commit",
+]) if (!activationEvidenceMigration.includes(required)) {
+  throw new Error(`Development activation evidence migration invariant missing: ${required}`);
+}
+assertTableConstraints(activationEvidenceMigration, "authority_development_activation_evidence_bundles", [
+  "record_id TEXT PRIMARY KEY", "status IN ('CURRENT', 'FINAL')", "enabled IN (0, 1)",
+  "version > 0", "expires_at_ms > issued_at_ms",
+]);
+if (/\b(?:INSERT|UPDATE|DELETE|REPLACE)\b/iu.test(activationEvidenceMigration)) {
+  throw new Error("Development activation evidence migration cannot seed or mutate authority data");
+}
 if (!vitestSource.includes('d1Databases: ["AUTHORITY_DB"]') || !vitestSource.includes("readD1Migrations(\"migrations/authority\")") ||
     !vitestSource.includes("AUTHORITY_TEST_MIGRATIONS")) throw new Error("Authority D1 must be migration-backed in the Workers test runtime");
 if (workerSource.includes("AUTHORITY_DB")) throw new Error("Worker entrypoint cannot directly access authority D1 before its reviewed deployment binding step");
@@ -521,4 +563,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, four read-only authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, five read-only authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
