@@ -5,6 +5,7 @@ import { AuthenticatedDevelopmentActivationEvidenceWriter } from "../../src/auth
 import { canonicalize, digestCanonicalValue } from "../../src/canonical-digest.js";
 import { CloudflareDurableReplayStore } from "../../src/cloudflare-replay-store.js";
 import { createD1DevelopmentActivationEvidenceChainVerifier } from "../../src/d1-development-activation-evidence-runtime-composition.js";
+import { D1DevelopmentActivationPreflightEvaluator } from "../../src/d1-development-activation-preflight-evaluator.js";
 import {
   AuthenticatedDevelopmentActivationEvidenceVerifier,
   developmentActivationPurposeDigest,
@@ -14,6 +15,7 @@ import { D1DevelopmentActivationEvidenceBundleProvider } from "../../src/d1-deve
 import { D1DevelopmentActivationEvidenceWriteVerifier } from "../../src/d1-development-activation-evidence-write-verifier.js";
 import { D1Ed25519OwnerDecisionVerifier } from "../../src/d1-owner-control-runtime.js";
 import { D1Ed25519IdentityVerifier } from "../../src/d1-validation-runtime.js";
+import { AUTHORITY_MIGRATIONS } from "../../src/development-activation-preflight.js";
 import { createServiceAuthenticatedRequest } from "../../src/service-auth-adapter.js";
 import { digestServiceBody } from "../../src/service-auth.js";
 
@@ -195,6 +197,43 @@ function signed(value, now, overrides = {}) {
   });
 }
 
+function readyPlan(evidence) {
+  return {
+    schemaVersion: "1.0.0", status: "READY", governing: false, environment: "development",
+    activationAuthorized: true, workerDeploymentAuthorized: true,
+    worker: {
+      name: "8978-ai-control-plane-dev", workersDev: false, previewUrls: false,
+      externalWritesEnabled: false, executeRouteEnabled: false,
+    },
+    authorityDatabase: {
+      binding: "AUTHORITY_DB", databaseName: "8978-ai-authority-dev",
+      databaseId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", resourceCreated: true,
+      bindingInstalled: true, migrationsApplied: true, remoteSchemaVerified: true,
+      migrations: AUTHORITY_MIGRATIONS.map((migration) => ({ ...migration })),
+    },
+    workflow: {
+      binding: "ORCHESTRATOR_WORKFLOW", name: "8978-ai-orchestrator-dev",
+      className: "OrchestratorWorkflow", resourceCreated: true, bindingInstalled: true,
+    },
+    queue: {
+      binding: "ORCHESTRATOR_QUEUE", name: "8978-ai-orchestrator-dev",
+      resourceCreated: true, bindingInstalled: true,
+    },
+    evidence: {
+      reviewedCommit: evidence.reviewedCommit,
+      makerValidationDigest: evidence.makerValidationDigest,
+      checkerValidationDigest: evidence.checkerValidationDigest,
+      resourceActivationAuthorizationDigest: evidence.resourceActivationAuthorizationDigest,
+      workerDeploymentAuthorizationDigest: evidence.workerDeploymentAuthorizationDigest,
+      rollbackEvidenceDigest: evidence.rollbackEvidenceDigest,
+    },
+    rollback: {
+      strategy: "unbind_before_delete", restoreCommit: "848190a3517c7b23c537450a5f1e6832f1690f8d",
+      backupDigest: evidence.backupDigest, unbindFirst: true, automaticResourceDeletion: false,
+    },
+  };
+}
+
 describe("authenticated development activation evidence writer", () => {
   beforeAll(async () => {
     await applyD1Migrations(env.AUTHORITY_DB, env.AUTHORITY_TEST_MIGRATIONS);
@@ -305,6 +344,13 @@ describe("authenticated development activation evidence writer", () => {
       checkerPrincipalId: "activation-checker",
       ownerPrincipalId: "activation-owner",
       verificationDigest: expect.stringMatching(/^sha256:[a-f0-9]{64}$/u),
+    });
+    await expect(new D1DevelopmentActivationPreflightEvaluator(env.AUTHORITY_DB, {
+      authorizedWriter: { principalId: WRITER.principalId, keyId: WRITER.keyId },
+      reviewedCommit: COMMIT,
+      now: () => now,
+    }).evaluate(readyPlan(value.evidence))).resolves.toEqual({
+      ready: true, environment: "development", blockers: [],
     });
   });
 

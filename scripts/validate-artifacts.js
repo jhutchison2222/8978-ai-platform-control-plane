@@ -48,11 +48,13 @@ const activationEvidenceWriteMigration = await readFile("migrations/authority/00
 const activationEvidenceWriteVerifierSource = await readFile("src/d1-development-activation-evidence-write-verifier.js", "utf8");
 const activationEvidenceChainVerifierSource = await readFile("src/development-activation-evidence-chain-verifier.js", "utf8");
 const activationEvidenceRuntimeCompositionSource = await readFile("src/d1-development-activation-evidence-runtime-composition.js", "utf8");
+const activationPreflightEvaluatorSource = await readFile("src/d1-development-activation-preflight-evaluator.js", "utf8");
 const activationEvidenceVerifierTestSource = await readFile("test/worker/development-activation-evidence-verifier.test.js", "utf8");
 const activationEvidenceWriterTestSource = await readFile("test/worker/authenticated-development-activation-evidence-writer.test.js", "utf8");
 const activationEvidenceWriteVerifierTestSource = await readFile("test/worker/d1-development-activation-evidence-write-verifier.test.js", "utf8");
 const activationEvidenceChainVerifierTestSource = await readFile("test/development-activation-evidence-chain-verifier.test.js", "utf8");
 const activationEvidenceRuntimeCompositionTestSource = await readFile("test/d1-development-activation-evidence-runtime-composition.test.js", "utf8");
+const activationPreflightEvaluatorTestSource = await readFile("test/d1-development-activation-preflight-evaluator.test.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -502,6 +504,43 @@ for (const required of [
 ]) if (!activationEvidenceRuntimeCompositionTestSource.includes(required)) {
   throw new Error(`D1 development activation evidence composition coverage missing: ${required}`);
 }
+for (const required of [
+  "D1DevelopmentActivationPreflightEvaluator",
+  "createD1DevelopmentActivationEvidenceChainVerifier(database, options)",
+  "Object.freeze(this)", "async evaluate(plan)",
+  "developmentActivationPreflight(plan, { evidenceVerifier: this.evidenceVerifier })",
+]) if (!activationPreflightEvaluatorSource.includes(required)) {
+  throw new Error(`D1 development activation preflight evaluator invariant missing: ${required}`);
+}
+if ((activationPreflightEvaluatorSource.match(/createD1DevelopmentActivationEvidenceChainVerifier\(/gu) ?? []).length !== 1 ||
+    (activationPreflightEvaluatorSource.match(/developmentActivationPreflight\(/gu) ?? []).length !== 1 ||
+    activationDangerousPattern.test(activationPreflightEvaluatorSource) ||
+    /privateKey|secretResolver|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.|Request\b|globalThis|process\.env|return\s+\{\s*ready:\s*true/iu.test(activationPreflightEvaluatorSource)) {
+  throw new Error("D1 development activation preflight evaluator must remain one-chain, one-preflight, validation-only, ambient-state-independent, and secret-independent");
+}
+if (workerSource.includes("d1-development-activation-preflight-evaluator") ||
+    developmentRuntimeSource.includes("d1-development-activation-preflight-evaluator") ||
+    activationPreflightSource.includes("d1-development-activation-preflight-evaluator") ||
+    JSON.stringify(activationPlan).includes("d1-development-activation-preflight-evaluator")) {
+  throw new Error("D1 development activation preflight evaluator cannot be imported by runtime, preflight, or plan");
+}
+for (const required of [
+  "injects only the reviewed evidence chain", "rejects invalid construction and malformed plans",
+  'evaluator.evidenceVerifier.constructor.name, "AuthenticatedDevelopmentActivationEvidenceChainVerifier"',
+  "evaluator.evidenceVerifier.now, now", "report.blockers.length, 19",
+  'report.blockers.includes("independent_evidence_verifier_unavailable"), false', "queries, 0",
+  "new D1DevelopmentActivationPreflightEvaluator(null, options)", "unexpected: true",
+  "evaluator.evaluate({ ...plan, unexpected: true })",
+]) if (!activationPreflightEvaluatorTestSource.includes(required)) {
+  throw new Error(`D1 development activation preflight evaluator coverage missing: ${required}`);
+}
+for (const required of [
+  "function readyPlan(evidence)", 'status: "READY"', "AUTHORITY_MIGRATIONS.map",
+  "new D1DevelopmentActivationPreflightEvaluator(env.AUTHORITY_DB, {",
+  "evaluate(readyPlan(value.evidence))", "ready: true, environment: \"development\", blockers: []",
+]) if (!activationEvidenceWriterTestSource.includes(required)) {
+  throw new Error(`Actual D1 development activation preflight interoperability missing: ${required}`);
+}
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
 }
@@ -820,4 +859,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
