@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED",
+  "governing": false,
+  "environment": "development",
+  "phase": "create_unbound_storage_and_queue",
+  "executionAuthorized": false,
+  "foundationBaseline": "ff8134db56272ba52f985f6fda7247e4e35ea90a",
+  "sourcePlan": {
+    "path": "deployment/development-activation-plan.json",
+    "sha256": "0d6345c6537184e08f69f0953cfdc3de42c8456114fcccd4d71be08fda641fac"
+  },
+  "account": {
+    "accountId": null,
+    "selection": "exact_owner_authorized_account_required_at_execution"
+  },
+  "authorityDatabase": {
+    "operation": "create",
+    "name": "8978-ai-authority-dev",
+    "binding": "AUTHORITY_DB",
+    "locationPolicy": "cloudflare_automatic",
+    "requireAbsent": true,
+    "empty": true,
+    "bind": false,
+    "migrate": false,
+    "seed": false,
+    "writeEvidence": false,
+    "updateConfig": false
+  },
+  "queue": {
+    "operation": "create",
+    "name": "8978-ai-orchestrator-dev",
+    "binding": "ORCHESTRATOR_QUEUE",
+    "requireAbsent": true,
+    "deliveryDelaySeconds": 0,
+    "messageRetentionSeconds": 86400,
+    "bind": false,
+    "addProducer": false,
+    "addConsumer": false,
+    "publish": false
+  },
+  "workflow": {
+    "operation": "deferred",
+    "name": "8978-ai-orchestrator-dev",
+    "binding": "ORCHESTRATOR_WORKFLOW",
+    "className": "OrchestratorWorkflow",
+    "reason": "Cloudflare creates a Workflow through Worker configuration and deployment; no standalone Wrangler create command exists."
+  },
+  "stopConditions": [
+    "owner authorization does not identify exactly one Cloudflare account ID and the exact reviewed packet digest",
+    "the authenticated Cloudflare account does not match the owner-authorized account ID",
+    "a D1 database named 8978-ai-authority-dev already exists",
+    "a Queue named 8978-ai-orchestrator-dev already exists",
+    "the operator cannot prove wrangler.jsonc and deployment/development-activation-plan.json remain unchanged",
+    "the requested operation would create or update a binding, Worker, Workflow, consumer, producer, route, secret, migration, schema, or record",
+    "any create or verification response is ambiguous, incomplete, or inconsistent with this packet"
+  ],
+  "prohibitedOperations": [
+    "create_or_deploy_worker",
+    "create_or_trigger_workflow",
+    "install_or_update_binding",
+    "modify_wrangler_config",
+    "apply_or_create_migration",
+    "execute_d1_sql",
+    "insert_update_or_delete_d1_data",
+    "seed_authority_or_project_knowledge",
+    "write_activation_evidence",
+    "install_or_rotate_secret_or_key",
+    "add_queue_producer",
+    "add_queue_consumer",
+    "publish_queue_message",
+    "create_or_modify_route",
+    "deploy_or_activate_runtime",
+    "touch_production_or_customer_resource",
+    "reuse_pk_d1_dev",
+    "delete_or_automatically_clean_up_resource"
+  ],
+  "partialFailurePolicy": {
+    "automaticDeletion": false,
+    "automaticRetry": false,
+    "action": "stop_and_report_exact_remote_state"
+  },
+  "requiredEvidence": [
+    "reviewed repository commit and packet SHA-256 digest",
+    "authenticated operator identity without credential material",
+    "owner-authorized Cloudflare account ID",
+    "read-only preflight name-collision results",
+    "D1 database name and immutable database ID",
+    "D1 location and jurisdiction metadata returned by Cloudflare",
+    "proof the D1 database is empty and unbound without executing SQL",
+    "Queue name and immutable queue ID",
+    "Queue delivery-delay and retention settings",
+    "proof the Queue has no producers or consumers and received no messages",
+    "proof no Workflow or Worker deployment was created or changed",
+    "exact errors and final remote state if execution stops partially complete"
+  ]
+}

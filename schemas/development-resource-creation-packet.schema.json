@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-resource-creation-packet.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","status","governing","environment","phase","executionAuthorized","foundationBaseline","sourcePlan","account","authorityDatabase","queue","workflow","stopConditions","prohibitedOperations","partialFailurePolicy","requiredEvidence"],
+  "properties": {
+    "schemaVersion": {"const":"1.0.0"},
+    "status": {"const":"PLANNED"},
+    "governing": {"const":false},
+    "environment": {"const":"development"},
+    "phase": {"const":"create_unbound_storage_and_queue"},
+    "executionAuthorized": {"const":false},
+    "foundationBaseline": {"const":"ff8134db56272ba52f985f6fda7247e4e35ea90a"},
+    "sourcePlan": {
+      "type":"object","additionalProperties":false,"required":["path","sha256"],
+      "properties":{"path":{"const":"deployment/development-activation-plan.json"},"sha256":{"const":"0d6345c6537184e08f69f0953cfdc3de42c8456114fcccd4d71be08fda641fac"}}
+    },
+    "account": {
+      "type":"object","additionalProperties":false,"required":["accountId","selection"],
+      "properties":{"accountId":{"type":"null"},"selection":{"const":"exact_owner_authorized_account_required_at_execution"}}
+    },
+    "authorityDatabase": {
+      "type":"object","additionalProperties":false,"required":["operation","name","binding","locationPolicy","requireAbsent","empty","bind","migrate","seed","writeEvidence","updateConfig"],
+      "properties": {
+        "operation":{"const":"create"},"name":{"const":"8978-ai-authority-dev"},"binding":{"const":"AUTHORITY_DB"},
+        "locationPolicy":{"const":"cloudflare_automatic"},"requireAbsent":{"const":true},"empty":{"const":true},
+        "bind":{"const":false},"migrate":{"const":false},"seed":{"const":false},"writeEvidence":{"const":false},"updateConfig":{"const":false}
+      }
+    },
+    "queue": {
+      "type":"object","additionalProperties":false,"required":["operation","name","binding","requireAbsent","deliveryDelaySeconds","messageRetentionSeconds","bind","addProducer","addConsumer","publish"],
+      "properties": {
+        "operation":{"const":"create"},"name":{"const":"8978-ai-orchestrator-dev"},"binding":{"const":"ORCHESTRATOR_QUEUE"},
+        "requireAbsent":{"const":true},"deliveryDelaySeconds":{"const":0},"messageRetentionSeconds":{"const":86400},
+        "bind":{"const":false},"addProducer":{"const":false},"addConsumer":{"const":false},"publish":{"const":false}
+      }
+    },
+    "workflow": {
+      "type":"object","additionalProperties":false,"required":["operation","name","binding","className","reason"],
+      "properties": {
+        "operation":{"const":"deferred"},"name":{"const":"8978-ai-orchestrator-dev"},"binding":{"const":"ORCHESTRATOR_WORKFLOW"},
+        "className":{"const":"OrchestratorWorkflow"},"reason":{"const":"Cloudflare creates a Workflow through Worker configuration and deployment; no standalone Wrangler create command exists."}
+      }
+    },
+    "stopConditions": {"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}},
+    "prohibitedOperations": {"type":"array","minItems":18,"maxItems":18,"items":{"type":"string","minLength":1}},
+    "partialFailurePolicy": {
+      "type":"object","additionalProperties":false,"required":["automaticDeletion","automaticRetry","action"],
+      "properties":{"automaticDeletion":{"const":false},"automaticRetry":{"const":false},"action":{"const":"stop_and_report_exact_remote_state"}}
+    },
+    "requiredEvidence": {"type":"array","minItems":12,"maxItems":12,"items":{"type":"string","minLength":1}}
+  }
+}
