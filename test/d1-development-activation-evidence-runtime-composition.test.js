@@ -49,3 +49,16 @@ test("D1 activation evidence composition rejects missing, extra, or malformed au
     ...options, authorizedWriter: { principalId: "activation-writer" },
   }), /fields must be exact/);
 });
+
+test("D1 activation evidence composition rejects ambient default database fallback", () => {
+  const options = { authorizedWriter: WRITER, reviewedCommit: COMMIT, now: () => new Date() };
+  globalThis.__DEFAULT_AUTHORITY_DB__ = database;
+  try {
+    assert.throws(
+      () => createD1DevelopmentActivationEvidenceChainVerifier(null, options),
+      /D1 binding is unavailable/,
+    );
+  } finally {
+    delete globalThis.__DEFAULT_AUTHORITY_DB__;
+  }
+});

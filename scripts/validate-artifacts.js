@@ -482,8 +482,8 @@ for (const [label, pattern] of [
   throw new Error(`D1 development activation evidence composition ${label} invariant missing`);
 }
 if (activationDangerousPattern.test(activationEvidenceRuntimeCompositionSource) ||
-    /privateKey|secretResolver|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.|Request\b/iu.test(activationEvidenceRuntimeCompositionSource)) {
-  throw new Error("D1 development activation evidence composition must remain construction-only and secret-independent");
+    /privateKey|secretResolver|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.|Request\b|globalThis|__DEFAULT_AUTHORITY_DB__|process\.env/iu.test(activationEvidenceRuntimeCompositionSource)) {
+  throw new Error("D1 development activation evidence composition must remain construction-only, ambient-state-independent, and secret-independent");
 }
 if (workerSource.includes("d1-development-activation-evidence-runtime-composition") ||
     developmentRuntimeSource.includes("d1-development-activation-evidence-runtime-composition") ||
@@ -498,6 +498,7 @@ for (const required of [
   'chain.evidenceVerifier.ownerVerifier.database, database',
   'chain.writeReceiptVerifier.database, database', 'unexpected: true', 'now: null',
   'reviewedCommit: "invalid"', 'authorizedWriter: { principalId: "activation-writer" }',
+  'globalThis.__DEFAULT_AUTHORITY_DB__ = database', 'delete globalThis.__DEFAULT_AUTHORITY_DB__',
 ]) if (!activationEvidenceRuntimeCompositionTestSource.includes(required)) {
   throw new Error(`D1 development activation evidence composition coverage missing: ${required}`);
 }
