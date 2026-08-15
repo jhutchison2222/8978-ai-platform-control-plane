@@ -21,6 +21,8 @@ const customerBindingsSchema = await load("schemas/customer-runtime-bindings.sch
 const activationPlanSchema = await load("schemas/development-activation-plan.schema.json");
 const activationEvidenceSchema = await load("schemas/development-activation-evidence-bundle.schema.json");
 const activationPlan = await load("deployment/development-activation-plan.json");
+const resourceCreationPacketSchema = await load("schemas/development-resource-creation-packet.schema.json");
+const resourceCreationPacket = await load("deployment/development-resource-creation-packet.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
@@ -114,6 +116,7 @@ assertValid("orchestrator envelope", envelopeSchema, { messageId:"m",actionDiges
 assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceResolver","identityVerifier","evidenceProvider","rollbackVerifier","limitProvider","ownerVerifier","ownerDecisionStore","idempotencyStore","auditStore","projectKnowledge","workflowDispatcher","queuePublisher"].map((key) => [key, {}]).concat([["revalidateStandingState", "injected-function"]])));
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
 assertValid("development activation plan", activationPlanSchema, activationPlan);
+assertValid("development resource creation packet", resourceCreationPacketSchema, resourceCreationPacket);
 if (activationEvidenceSchema.additionalProperties !== false || activationEvidenceSchema.properties?.schemaVersion?.const !== "1.0.0" ||
     activationEvidenceSchema.properties?.resourceActivationDecision?.properties?.decision?.const !== "approved" ||
     activationEvidenceSchema.properties?.workerDeploymentDecision?.properties?.signatureAlgorithm?.const !== "Ed25519") {
@@ -144,6 +147,46 @@ if (activationPlan.rollback.restoreCommit !== "848190a3517c7b23c537450a5f1e6832f
     activationPlan.rollback.automaticResourceDeletion !== false) throw new Error("Development activation rollback must restore PR #14 and unbind before any manual deletion");
 if (JSON.stringify(activationPlan.authorityDatabase.migrations) !== JSON.stringify(AUTHORITY_MIGRATIONS)) {
   throw new Error("Development activation migration manifest drifted from source constants");
+}
+if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
+    resourceCreationPacket.executionAuthorized !== false || resourceCreationPacket.account.accountId !== null ||
+    resourceCreationPacket.foundationBaseline !== "ff8134db56272ba52f985f6fda7247e4e35ea90a") {
+  throw new Error("Development resource creation packet must remain non-governing, execution-disabled, and account-unresolved");
+}
+if (createHash("sha256").update(await readFile("deployment/development-resource-creation-packet.json")).digest("hex") !==
+    "a3dd1fe2657818a068bdb1095df82eeed00af8642d412b65b2e6b1aad5720f0a") {
+  throw new Error("Development resource creation packet bytes drifted from the reviewed execution boundary");
+}
+if (resourceCreationPacket.sourcePlan.path !== "deployment/development-activation-plan.json" ||
+    createHash("sha256").update(await readFile(resourceCreationPacket.sourcePlan.path)).digest("hex") !== resourceCreationPacket.sourcePlan.sha256) {
+  throw new Error("Development resource creation packet must pin the unchanged activation plan bytes");
+}
+if (JSON.stringify(resourceCreationPacket.authorityDatabase) !== JSON.stringify({
+  operation:"create", name:"8978-ai-authority-dev", binding:"AUTHORITY_DB", locationPolicy:"cloudflare_automatic",
+  requireAbsent:true, empty:true, bind:false, migrate:false, seed:false, writeEvidence:false, updateConfig:false,
+}) || JSON.stringify(resourceCreationPacket.queue) !== JSON.stringify({
+  operation:"create", name:"8978-ai-orchestrator-dev", binding:"ORCHESTRATOR_QUEUE", requireAbsent:true,
+  deliveryDelaySeconds:0, messageRetentionSeconds:86400, bind:false, addProducer:false, addConsumer:false, publish:false,
+}) || resourceCreationPacket.workflow.operation !== "deferred") {
+  throw new Error("Development resource creation packet expanded beyond empty unbound D1 and unconnected Queue creation");
+}
+for (const prohibited of [
+  "create_or_deploy_worker", "create_or_trigger_workflow", "install_or_update_binding", "modify_wrangler_config",
+  "apply_or_create_migration", "execute_d1_sql", "insert_update_or_delete_d1_data", "seed_authority_or_project_knowledge",
+  "write_activation_evidence", "install_or_rotate_secret_or_key", "add_queue_producer", "add_queue_consumer",
+  "publish_queue_message", "create_or_modify_route", "deploy_or_activate_runtime", "touch_production_or_customer_resource",
+  "reuse_pk_d1_dev", "delete_or_automatically_clean_up_resource",
+]) if (!resourceCreationPacket.prohibitedOperations.includes(prohibited)) {
+  throw new Error(`Development resource creation packet prohibition missing: ${prohibited}`);
+}
+if (resourceCreationPacket.stopConditions.length !== 7 || resourceCreationPacket.requiredEvidence.length !== 12 ||
+    resourceCreationPacket.partialFailurePolicy.automaticDeletion !== false ||
+    resourceCreationPacket.partialFailurePolicy.automaticRetry !== false ||
+    resourceCreationPacket.partialFailurePolicy.action !== "stop_and_report_exact_remote_state") {
+  throw new Error("Development resource creation packet stop, evidence, or partial-failure boundary weakened");
+}
+for (const source of [workerSource, developmentRuntimeSource, activationPreflightSource, activationPreflightEvaluatorSource]) {
+  if (source.includes("development-resource-creation-packet")) throw new Error("Development resource creation packet cannot be imported by runtime or preflight code");
 }
 for (const migration of activationPlan.authorityDatabase.migrations) {
   const actual = createHash("sha256").update(await readFile(migration.path)).digest("hex");
@@ -859,4 +902,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one non-executing development resource-creation packet, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
