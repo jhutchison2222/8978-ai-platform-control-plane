@@ -47,10 +47,12 @@ const activationEvidenceWriterSource = await readFile("src/authenticated-develop
 const activationEvidenceWriteMigration = await readFile("migrations/authority/0006_development_activation_evidence_writes.sql", "utf8");
 const activationEvidenceWriteVerifierSource = await readFile("src/d1-development-activation-evidence-write-verifier.js", "utf8");
 const activationEvidenceChainVerifierSource = await readFile("src/development-activation-evidence-chain-verifier.js", "utf8");
+const activationEvidenceRuntimeCompositionSource = await readFile("src/d1-development-activation-evidence-runtime-composition.js", "utf8");
 const activationEvidenceVerifierTestSource = await readFile("test/worker/development-activation-evidence-verifier.test.js", "utf8");
 const activationEvidenceWriterTestSource = await readFile("test/worker/authenticated-development-activation-evidence-writer.test.js", "utf8");
 const activationEvidenceWriteVerifierTestSource = await readFile("test/worker/d1-development-activation-evidence-write-verifier.test.js", "utf8");
 const activationEvidenceChainVerifierTestSource = await readFile("test/development-activation-evidence-chain-verifier.test.js", "utf8");
+const activationEvidenceRuntimeCompositionTestSource = await readFile("test/d1-development-activation-evidence-runtime-composition.test.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 
@@ -430,8 +432,9 @@ if (workerSource.includes("development-activation-evidence-chain-verifier") ||
   throw new Error("Development activation evidence chain verifier cannot be imported by runtime or preflight");
 }
 for (const required of [
-  "new AuthenticatedDevelopmentActivationEvidenceChainVerifier({", "evidenceVerifier,",
-  "writeReceiptVerifier,", "makerPrincipalId: \"activation-maker\"",
+  "createD1DevelopmentActivationEvidenceChainVerifier(env.AUTHORITY_DB, {",
+  "authorizedWriter: { principalId: WRITER.principalId, keyId: WRITER.keyId }",
+  "reviewedCommit: COMMIT", "now: () => now", "makerPrincipalId: \"activation-maker\"",
   "checkerPrincipalId: \"activation-checker\"", "ownerPrincipalId: \"activation-owner\"",
 ]) if (!activationEvidenceWriterTestSource.includes(required)) {
   throw new Error(`Actual activation evidence chain interoperability test missing: ${required}`);
@@ -458,6 +461,46 @@ for (const required of [
   "evidenceVerifier.verify(value.evidence, { now })", "now: () => now",
 ]) if (!activationEvidenceWriterTestSource.includes(required)) {
   throw new Error(`Actual activation evidence single-clock interoperability missing: ${required}`);
+}
+for (const required of [
+  "createD1DevelopmentActivationEvidenceChainVerifier", "exactOptions(options)",
+  'Object.freeze(["authorizedWriter", "now", "reviewedCommit"])',
+  'typeof now !== "function"', "new D1DevelopmentActivationEvidenceBundleProvider(database)",
+  "new D1Ed25519IdentityVerifier(database)", "new D1Ed25519OwnerDecisionVerifier(database)",
+  "new AuthenticatedDevelopmentActivationEvidenceVerifier({", "bundleProvider:", "identityVerifier:",
+  "ownerVerifier:", "new D1DevelopmentActivationEvidenceWriteVerifier(database, {",
+  "authorizedWriter,", "reviewedCommit,", "new AuthenticatedDevelopmentActivationEvidenceChainVerifier({",
+  "evidenceVerifier,", "writeReceiptVerifier,", "now,",
+]) if (!activationEvidenceRuntimeCompositionSource.includes(required)) {
+  throw new Error(`D1 development activation evidence composition invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["exact options", /JSON\.stringify\(Object\.keys\(value\)\.sort\(\)\) !== JSON\.stringify\(OPTION_FIELDS\)/u],
+  ["single database", /new D1DevelopmentActivationEvidenceBundleProvider\(database\)[\s\S]*?new D1Ed25519IdentityVerifier\(database\)[\s\S]*?new D1Ed25519OwnerDecisionVerifier\(database\)[\s\S]*?new D1DevelopmentActivationEvidenceWriteVerifier\(database,/u],
+  ["single clock", /new AuthenticatedDevelopmentActivationEvidenceVerifier\(\{[\s\S]*?now,[\s\S]*?new AuthenticatedDevelopmentActivationEvidenceChainVerifier\(\{[\s\S]*?now,/u],
+]) if (!pattern.test(activationEvidenceRuntimeCompositionSource)) {
+  throw new Error(`D1 development activation evidence composition ${label} invariant missing`);
+}
+if (activationDangerousPattern.test(activationEvidenceRuntimeCompositionSource) ||
+    /privateKey|secretResolver|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.|Request\b|globalThis|__DEFAULT_AUTHORITY_DB__|process\.env/iu.test(activationEvidenceRuntimeCompositionSource)) {
+  throw new Error("D1 development activation evidence composition must remain construction-only, ambient-state-independent, and secret-independent");
+}
+if (workerSource.includes("d1-development-activation-evidence-runtime-composition") ||
+    developmentRuntimeSource.includes("d1-development-activation-evidence-runtime-composition") ||
+    activationPreflightSource.includes("d1-development-activation-evidence-runtime-composition")) {
+  throw new Error("D1 development activation evidence composition cannot be imported by runtime or preflight");
+}
+for (const required of [
+  "constructs the exact reviewed single-clock chain", "rejects missing, extra, or malformed authority inputs",
+  'chain.now, now', 'chain.evidenceVerifier.now, now',
+  'chain.evidenceVerifier.bundleProvider.database, database',
+  'chain.evidenceVerifier.identityVerifier.database, database',
+  'chain.evidenceVerifier.ownerVerifier.database, database',
+  'chain.writeReceiptVerifier.database, database', 'unexpected: true', 'now: null',
+  'reviewedCommit: "invalid"', 'authorizedWriter: { principalId: "activation-writer" }',
+  'globalThis.__DEFAULT_AUTHORITY_DB__ = database', 'delete globalThis.__DEFAULT_AUTHORITY_DB__',
+]) if (!activationEvidenceRuntimeCompositionTestSource.includes(required)) {
+  throw new Error(`D1 development activation evidence composition coverage missing: ${required}`);
 }
 if (writeSqlPattern.test(authorityAdapterSource) || /\bfetch\s*\(/u.test(authorityAdapterSource)) {
   throw new Error("Authoritative D1 adapter must remain read-only and cannot use external fetch");
@@ -777,4 +820,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

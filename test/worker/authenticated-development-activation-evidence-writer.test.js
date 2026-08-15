@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { AuthenticatedDevelopmentActivationEvidenceWriter } from "../../src/authenticated-development-activation-evidence-writer.js";
 import { canonicalize, digestCanonicalValue } from "../../src/canonical-digest.js";
 import { CloudflareDurableReplayStore } from "../../src/cloudflare-replay-store.js";
-import { AuthenticatedDevelopmentActivationEvidenceChainVerifier } from "../../src/development-activation-evidence-chain-verifier.js";
+import { createD1DevelopmentActivationEvidenceChainVerifier } from "../../src/d1-development-activation-evidence-runtime-composition.js";
 import {
   AuthenticatedDevelopmentActivationEvidenceVerifier,
   developmentActivationPurposeDigest,
@@ -294,9 +294,9 @@ describe("authenticated development activation evidence writer", () => {
     await expect(evidenceVerifier.verify(value.evidence, { now })).resolves.toMatchObject({
       valid: true, reviewedCommit: COMMIT,
     });
-    await expect(new AuthenticatedDevelopmentActivationEvidenceChainVerifier({
-      evidenceVerifier,
-      writeReceiptVerifier,
+    await expect(createD1DevelopmentActivationEvidenceChainVerifier(env.AUTHORITY_DB, {
+      authorizedWriter: { principalId: WRITER.principalId, keyId: WRITER.keyId },
+      reviewedCommit: COMMIT,
       now: () => now,
     }).verify(value.evidence)).resolves.toMatchObject({
       valid: true,
