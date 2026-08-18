@@ -36,6 +36,8 @@ const authorityMigrationPacketSchema = await load("schemas/development-authority
 const authorityMigrationPacket = await load("deployment/development-authority-migration-execution-packet.json");
 const authorityMigrationWrangler = await load("deployment/wrangler.authority-migrations.jsonc");
 const authorityMigrationRecordSchema = await load("schemas/development-authority-migration-execution-record.schema.json");
+const authoritySchemaInventoryPacketSchema = await load("schemas/development-authority-schema-inventory-verification-packet.schema.json");
+const authoritySchemaInventoryPacket = await load("deployment/development-authority-schema-inventory-verification-packet.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
@@ -136,6 +138,7 @@ assertValid("development resource creation packet", resourceCreationPacketSchema
 assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 assertValid("development resource creation completion record", resourceCreationCompletionSchema, resourceCreationCompletion);
 assertValid("development authority migration execution packet", authorityMigrationPacketSchema, authorityMigrationPacket);
+assertValid("development authority schema inventory verification packet", authoritySchemaInventoryPacketSchema, authoritySchemaInventoryPacket);
 if (activationEvidenceSchema.additionalProperties !== false || activationEvidenceSchema.properties?.schemaVersion?.const !== "1.0.0" ||
     activationEvidenceSchema.properties?.resourceActivationDecision?.properties?.decision?.const !== "approved" ||
     activationEvidenceSchema.properties?.workerDeploymentDecision?.properties?.signatureAlgorithm?.const !== "Ed25519") {
@@ -231,6 +234,7 @@ for (const source of [workerSource, developmentRuntimeSource, activationPrefligh
   if (source.includes("development-authority-migration-execution-packet")) throw new Error("Development authority migration execution packet cannot be imported by runtime or preflight code");
   if (source.includes("wrangler.authority-migrations")) throw new Error("Development authority migration configuration cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-record")) throw new Error("Development authority migration execution record contract cannot be imported by runtime or preflight code");
+  if (source.includes("development-authority-schema-inventory-verification-packet")) throw new Error("Development authority schema inventory packet cannot be imported by runtime or preflight code");
 }
 if (resourceCreationRecord.status !== "STOPPED_PARTIAL" || resourceCreationRecord.governing !== false ||
     resourceCreationRecord.continuation.authorized !== false || resourceCreationRecord.locationDeviation.ownerAccepted !== false ||
@@ -396,6 +400,58 @@ for (const required of [
 }
 if (/\bfetch\s*\(|\b(?:exec|spawn)\s*\(|process\.env|\.prepare\s*\(|\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM)\b/iu.test(authorityMigrationRecordValidatorSource)) {
   throw new Error("Development authority migration execution-record validator must remain pure and operation-free");
+}
+for (const source of [authoritySchemaInventoryPacket.sourceMigrationPacket,
+  { path: authoritySchemaInventoryPacket.sourceExecutionRecordContract.schemaPath, sha256: authoritySchemaInventoryPacket.sourceExecutionRecordContract.schemaSha256 },
+  { path: authoritySchemaInventoryPacket.sourceExecutionRecordContract.validatorPath, sha256: authoritySchemaInventoryPacket.sourceExecutionRecordContract.validatorSha256 }]) {
+  if (createHash("sha256").update(await readFile(source.path)).digest("hex") !== source.sha256) {
+    throw new Error(`Development authority schema inventory source drifted: ${source.path}`);
+  }
+}
+if (authoritySchemaInventoryPacket.status !== "PLANNED" || authoritySchemaInventoryPacket.governing !== false ||
+    authoritySchemaInventoryPacket.executionAuthorized !== false || authoritySchemaInventoryPacket.account.accountId !== null ||
+    authoritySchemaInventoryPacket.prerequisite.recordSha256 !== null ||
+    authoritySchemaInventoryPacket.prerequisite.satisfied !== false ||
+    authoritySchemaInventoryPacket.foundationBaseline !== "de948d58cd95328bbabb757b08d88bb75fea9d73") {
+  throw new Error("Development authority schema inventory packet must remain blocked, non-governing, and execution-disabled");
+}
+const derivedAuthorityTables = [];
+const derivedAuthorityIndexes = [];
+for (const migration of AUTHORITY_MIGRATIONS) {
+  const sql = await readFile(migration.path, "utf8");
+  derivedAuthorityTables.push(...[...sql.matchAll(/^CREATE TABLE ([a-z0-9_]+)/gimu)].map((match) => match[1]));
+  derivedAuthorityIndexes.push(...[...sql.matchAll(/^CREATE (?:UNIQUE )?INDEX ([a-z0-9_]+)/gimu)].map((match) => match[1]));
+}
+const expectedInventoryTables = [...derivedAuthorityTables.sort(), "d1_migrations"];
+if (JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.tables) !== JSON.stringify(expectedInventoryTables) ||
+    JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.indexes) !== JSON.stringify(derivedAuthorityIndexes.sort()) ||
+    JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.appliedMigrations) !==
+      JSON.stringify(AUTHORITY_MIGRATIONS.map(({ path }) => path.split("/").at(-1))) ||
+    authoritySchemaInventoryPacket.expectedInventory.authorityTableRowCount !== 0) {
+  throw new Error("Development authority schema inventory drifted from the six immutable migrations");
+}
+for (const [name, command] of Object.entries(authoritySchemaInventoryPacket.queries)) {
+  if (name === "databaseInfo") {
+    if (command !== "wrangler d1 info 8978-ai-authority-dev --json") throw new Error("Schema inventory D1 info command drifted");
+    continue;
+  }
+  if (!command.startsWith("wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command ") ||
+      !command.endsWith(" --json") || /\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|ATTACH|DETACH|VACUUM)\b/iu.test(command) ||
+      !/(?:SELECT|PRAGMA)/u.test(command)) throw new Error(`Schema inventory query is not exact read-only D1 evidence: ${name}`);
+}
+if (Object.entries(authoritySchemaInventoryPacket.resultBoundary).some(([key, value]) =>
+  ["activationPlanUpdateDeferred", "verificationRecordRequired"].includes(key) ? value !== true : value !== false)) {
+  throw new Error("Development authority schema inventory packet cannot fabricate verification or update the activation plan");
+}
+for (const prohibited of [
+  "execute_mutating_sql", "apply_or_create_migration", "insert_update_or_delete_authority_data",
+  "install_or_update_runtime_binding", "create_or_deploy_worker", "create_or_trigger_workflow",
+  "add_queue_producer_or_consumer", "publish_queue_message", "install_or_rotate_secret_or_key",
+  "seed_project_knowledge", "write_activation_evidence", "certify_remote_schema_without_definition_evidence",
+  "update_activation_plan", "restore_database", "retry_query_automatically",
+  "delete_or_automatically_clean_up_resource", "touch_production_or_customer_resource",
+]) if (!authoritySchemaInventoryPacket.prohibitedOperations.includes(prohibited)) {
+  throw new Error(`Development authority schema inventory prohibition missing: ${prohibited}`);
 }
 for (const required of [
   '"pk-d1-dev"', '"9cd8094c-f334-44e6-bdd1-b325802474d5"', 'databaseName !== "8978-ai-authority-dev"',
@@ -1107,4 +1163,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, one non-executing authority migration packet, one pure migration execution-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, one non-executing authority migration packet, one pure migration execution-record contract with no record instance, one blocked non-executing schema inventory verification packet, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
