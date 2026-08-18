@@ -2,6 +2,10 @@ import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { digestCanonicalValue, parseJsonStrict } from "../src/canonical-digest.js";
 import { AUTHORITY_MIGRATIONS, developmentActivationPreflight } from "../src/development-activation-preflight.js";
+import {
+  AUTHORIZED_DEVELOPMENT_ACCOUNT_ID, MIGRATION_APPLY_COMMAND, ORDERED_AUTHORITY_MIGRATIONS,
+  REVIEWED_MIGRATION_PACKET_COMMIT, REVIEWED_MIGRATION_PACKET_SHA256,
+} from "../src/development-authority-migration-execution-record.js";
 import { TRUSTED_POLICY_SET_DIGESTS } from "../src/trusted-policy-sets.js";
 import { validateSchema } from "./json-schema-lite.js";
 
@@ -31,6 +35,7 @@ const resourceCreationCompletion = await load("deployment/development-resource-c
 const authorityMigrationPacketSchema = await load("schemas/development-authority-migration-execution-packet.schema.json");
 const authorityMigrationPacket = await load("deployment/development-authority-migration-execution-packet.json");
 const authorityMigrationWrangler = await load("deployment/wrangler.authority-migrations.jsonc");
+const authorityMigrationRecordSchema = await load("schemas/development-authority-migration-execution-record.schema.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
@@ -67,6 +72,8 @@ const activationEvidenceRuntimeCompositionTestSource = await readFile("test/d1-d
 const activationPreflightEvaluatorTestSource = await readFile("test/d1-development-activation-preflight-evaluator.test.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
+const authorityMigrationRecordValidatorSource = await readFile("src/development-authority-migration-execution-record.js", "utf8");
+const deploymentFiles = await readdir("deployment");
 
 const batch1Proposed = await load("docs/project-knowledge/proposed/batch-1/proposed-records.json");
 const batch1Review = await load("docs/reviews/pr-3/PR-3-Batch-1-Master-Prompt-Architecture-Review.json");
@@ -223,6 +230,7 @@ for (const source of [workerSource, developmentRuntimeSource, activationPrefligh
   if (source.includes("development-activation-plan-resource-reconciled")) throw new Error("Development activation resource-reconciled plan cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-packet")) throw new Error("Development authority migration execution packet cannot be imported by runtime or preflight code");
   if (source.includes("wrangler.authority-migrations")) throw new Error("Development authority migration configuration cannot be imported by runtime or preflight code");
+  if (source.includes("development-authority-migration-execution-record")) throw new Error("Development authority migration execution record contract cannot be imported by runtime or preflight code");
 }
 if (resourceCreationRecord.status !== "STOPPED_PARTIAL" || resourceCreationRecord.governing !== false ||
     resourceCreationRecord.continuation.authorized !== false || resourceCreationRecord.locationDeviation.ownerAccepted !== false ||
@@ -351,6 +359,42 @@ for (const prohibited of [
   "delete_or_automatically_clean_up_resource", "touch_production_or_customer_resource", "reuse_or_modify_pk_d1_dev",
 ]) if (!authorityMigrationPacket.prohibitedOperations.includes(prohibited)) {
   throw new Error(`Development authority migration prohibition missing: ${prohibited}`);
+}
+if (createHash("sha256").update(await readFile("deployment/development-authority-migration-execution-packet.json")).digest("hex") !==
+    REVIEWED_MIGRATION_PACKET_SHA256 || REVIEWED_MIGRATION_PACKET_COMMIT !== "b2e3188b28b7c9071e267e69e90c374650747035" ||
+    AUTHORIZED_DEVELOPMENT_ACCOUNT_ID !== "de5e0273347b0b4c5f8f4e554aa2288f" ||
+    MIGRATION_APPLY_COMMAND !== authorityMigrationPacket.commands.applyOnce) {
+  throw new Error("Development migration execution-record contract source boundary drifted");
+}
+if (deploymentFiles.includes("development-authority-migration-execution-record.json")) {
+  throw new Error("No development authority migration execution record may exist before actual authorized execution");
+}
+if (authorityMigrationRecordSchema.additionalProperties !== false ||
+    JSON.stringify(authorityMigrationRecordSchema.properties?.status?.enum) !==
+      JSON.stringify(["COMPLETED", "STOPPED_NO_MUTATION", "STOPPED_PARTIAL"]) ||
+    authorityMigrationRecordSchema.properties?.governing?.const !== false ||
+    authorityMigrationRecordSchema.properties?.source?.properties?.reviewedCommit?.const !== REVIEWED_MIGRATION_PACKET_COMMIT ||
+    authorityMigrationRecordSchema.properties?.source?.properties?.packetSha256?.const !== REVIEWED_MIGRATION_PACKET_SHA256 ||
+    authorityMigrationRecordSchema.properties?.authorization?.properties?.accountId?.const !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||
+    authorityMigrationRecordSchema.properties?.authorization?.properties?.authorizedAttemptLimit?.const !== 1 ||
+    authorityMigrationRecordSchema.properties?.postState?.properties?.remoteSchemaVerified?.const !== false) {
+  throw new Error("Development authority migration execution-record schema boundary weakened");
+}
+if (JSON.stringify(ORDERED_AUTHORITY_MIGRATIONS) !== JSON.stringify(AUTHORITY_MIGRATIONS.map(({ path }) => path.split("/").at(-1)))) {
+  throw new Error("Development authority migration execution-record filename order drifted");
+}
+for (const required of [
+  "assertInvocationPrerequisites", "assertNoAdjacentEffects", "prefixLength", "authorizedAttemptLimit !== 1",
+  "assertEvidenceConsistency", "Applied migration filenames require migration bookkeeping evidence",
+  'record.status === "COMPLETED"', 'record.status === "STOPPED_NO_MUTATION"',
+  '["FAILED", "INTERRUPTED", "AMBIGUOUS"]', "record.postState.migrationsApplied",
+  "record.postState.remoteSchemaVerified !== false", "Object.values(record.externalEffects)",
+  "Object.values(record.partialFailurePolicy)", "record.errors.length === 0",
+]) if (!authorityMigrationRecordValidatorSource.includes(required)) {
+  throw new Error(`Development authority migration execution-record invariant missing: ${required}`);
+}
+if (/\bfetch\s*\(|\b(?:exec|spawn)\s*\(|process\.env|\.prepare\s*\(|\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM)\b/iu.test(authorityMigrationRecordValidatorSource)) {
+  throw new Error("Development authority migration execution-record validator must remain pure and operation-free");
 }
 for (const required of [
   '"pk-d1-dev"', '"9cd8094c-f334-44e6-bdd1-b325802474d5"', 'databaseName !== "8978-ai-authority-dev"',
@@ -1062,4 +1106,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, one non-executing authority migration packet, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, one non-executing authority migration packet, one pure migration execution-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
