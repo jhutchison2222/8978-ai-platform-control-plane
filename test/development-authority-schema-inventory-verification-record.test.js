@@ -106,8 +106,6 @@ test("verified result requires exact complete evidence and independent acceptanc
     (r) => { r.observations.foreignKey.onDelete = "CASCADE"; },
     (r) => { r.observations.integrity.result = "error"; },
     (r) => { r.observations.authorityData.rowCount = 1; },
-    (r) => { r.independentReview.checkerPrincipalId = null; },
-    (r) => { r.independentReview.checkerPrincipalId = ""; },
     (r) => { r.independentReview.checkerPrincipalId = r.operator.principalId; },
     (r) => { r.independentReview.accepted = false; },
     (r) => { r.conclusions.remoteSchemaVerified = false; },
@@ -115,6 +113,14 @@ test("verified result requires exact complete evidence and independent acceptanc
   for (const mutate of mutations) {
     const changed = clone(fixture()); mutate(changed);
     assert.throws(() => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed));
+  }
+  for (const checkerPrincipalId of [null, ""]) {
+    const changed = clone(fixture());
+    changed.independentReview.checkerPrincipalId = checkerPrincipalId;
+    assert.throws(
+      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed),
+      /^Error: Verified schema record lacks exact read-only evidence or independent acceptance$/u,
+    );
   }
 });
 
