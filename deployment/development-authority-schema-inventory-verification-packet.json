@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED",
+  "governing": false,
+  "environment": "development",
+  "phase": "read_only_authority_schema_inventory_verification",
+  "executionAuthorized": false,
+  "foundationBaseline": "de948d58cd95328bbabb757b08d88bb75fea9d73",
+  "sourceMigrationPacket": {
+    "path": "deployment/development-authority-migration-execution-packet.json",
+    "sha256": "ab865340c48279e6e5654e8e6b0ed52cb9d4af28115c49b47d787ad1ec205d8a"
+  },
+  "sourceExecutionRecordContract": {
+    "schemaPath": "schemas/development-authority-migration-execution-record.schema.json",
+    "schemaSha256": "737cef389c6dc173a33f26d17a9fd58d096d5308bd020f23c09db52d0e193e68",
+    "validatorPath": "src/development-authority-migration-execution-record.js",
+    "validatorSha256": "69f35b35f717dff8d70da8c2ed37b382eecbd389290e625f6cd88658308562dc"
+  },
+  "prerequisite": {
+    "executionRecordRequired": true,
+    "executionRecordPath": "deployment/development-authority-migration-execution-record.json",
+    "requiredStatus": "COMPLETED",
+    "recordSha256": null,
+    "satisfied": false
+  },
+  "account": {
+    "accountId": null,
+    "selection": "exact_owner_authorized_account_required_at_execution"
+  },
+  "authorityDatabase": {
+    "name": "8978-ai-authority-dev",
+    "databaseId": "741ade94-8539-4fc8-b6be-24884720dee8",
+    "expectedRegion": "WNAM",
+    "expectedJurisdiction": null,
+    "requiredVersion": "production"
+  },
+  "expectedInventory": {
+    "tables": [
+      "authority_development_activation_evidence_bundles",
+      "authority_development_activation_evidence_writes",
+      "authority_identity_keys",
+      "authority_limits",
+      "authority_owner_keys",
+      "authority_project_knowledge",
+      "authority_resources",
+      "authority_rollbacks",
+      "authority_standing_state",
+      "authority_test_evidence",
+      "d1_migrations"
+    ],
+    "indexes": [
+      "authority_activation_evidence_active_commit",
+      "authority_activation_evidence_write_nonce",
+      "authority_identity_keys_active_key",
+      "authority_limits_active_resource_operation",
+      "authority_owner_keys_active_key",
+      "authority_project_knowledge_active_scope",
+      "authority_resources_active_locator",
+      "authority_rollbacks_active_reference",
+      "authority_standing_state_active_policy",
+      "authority_test_evidence_active_action"
+    ],
+    "appliedMigrations": [
+      "0001_authority_read_model.sql",
+      "0002_validation_evidence.sql",
+      "0003_governing_project_knowledge.sql",
+      "0004_owner_control.sql",
+      "0005_development_activation_evidence.sql",
+      "0006_development_activation_evidence_writes.sql"
+    ],
+    "authorityTableRowCount": 0
+  },
+  "queries": {
+    "databaseInfo": "wrangler d1 info 8978-ai-authority-dev --json",
+    "definitions": "wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command \"SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index') AND name NOT LIKE 'sqlite_%' ORDER BY type, name\" --json",
+    "appliedMigrations": "wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command \"SELECT name FROM d1_migrations ORDER BY id\" --json",
+    "foreignKeys": "wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command \"PRAGMA foreign_key_list(authority_development_activation_evidence_writes)\" --json",
+    "integrity": "wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command \"PRAGMA integrity_check\" --json",
+    "authorityRows": "wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command \"SELECT (SELECT count(*) FROM authority_resources) + (SELECT count(*) FROM authority_limits) + (SELECT count(*) FROM authority_identity_keys) + (SELECT count(*) FROM authority_test_evidence) + (SELECT count(*) FROM authority_rollbacks) + (SELECT count(*) FROM authority_project_knowledge) + (SELECT count(*) FROM authority_owner_keys) + (SELECT count(*) FROM authority_standing_state) + (SELECT count(*) FROM authority_development_activation_evidence_bundles) + (SELECT count(*) FROM authority_development_activation_evidence_writes) AS authority_row_count\" --json"
+  },
+  "resultBoundary": {
+    "inventoryVerified": false,
+    "definitionsVerified": false,
+    "foreignKeysVerified": false,
+    "integrityVerified": false,
+    "emptyAuthorityDataVerified": false,
+    "remoteSchemaVerified": false,
+    "activationPlanUpdateDeferred": true,
+    "verificationRecordRequired": true
+  },
+  "stopConditions": [
+    "the exact owner authorization, account identity, or completed migration execution record is unavailable",
+    "the database identity, WNAM region, null jurisdiction, or production version differs",
+    "any query cannot be proven read-only before execution",
+    "the table, index, or applied-migration inventory differs from the expected ordered inventory",
+    "any authority table contains a row",
+    "the evidence-write foreign key differs from the reviewed migration",
+    "the integrity check does not return exactly ok",
+    "definition-level verification is unavailable or ambiguous",
+    "the requested operation would mutate SQL, bind, deploy, write evidence, activate, retry, restore, clean up, or delete"
+  ],
+  "prohibitedOperations": [
+    "execute_mutating_sql",
+    "apply_or_create_migration",
+    "insert_update_or_delete_authority_data",
+    "install_or_update_runtime_binding",
+    "create_or_deploy_worker",
+    "create_or_trigger_workflow",
+    "add_queue_producer_or_consumer",
+    "publish_queue_message",
+    "install_or_rotate_secret_or_key",
+    "seed_project_knowledge",
+    "write_activation_evidence",
+    "certify_remote_schema_without_definition_evidence",
+    "update_activation_plan",
+    "restore_database",
+    "retry_query_automatically",
+    "delete_or_automatically_clean_up_resource",
+    "touch_production_or_customer_resource"
+  ]
+}
