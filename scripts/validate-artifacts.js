@@ -21,6 +21,7 @@ const customerBindingsSchema = await load("schemas/customer-runtime-bindings.sch
 const activationPlanSchema = await load("schemas/development-activation-plan.schema.json");
 const activationEvidenceSchema = await load("schemas/development-activation-evidence-bundle.schema.json");
 const activationPlan = await load("deployment/development-activation-plan.json");
+const activationResourceReconciledPlan = await load("deployment/development-activation-plan-resource-reconciled.json");
 const resourceCreationPacketSchema = await load("schemas/development-resource-creation-packet.schema.json");
 const resourceCreationPacket = await load("deployment/development-resource-creation-packet.json");
 const resourceCreationRecordSchema = await load("schemas/development-resource-creation-partial-execution-record.schema.json");
@@ -120,6 +121,7 @@ assertValid("orchestrator envelope", envelopeSchema, { messageId:"m",actionDiges
 assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceResolver","identityVerifier","evidenceProvider","rollbackVerifier","limitProvider","ownerVerifier","ownerDecisionStore","idempotencyStore","auditStore","projectKnowledge","workflowDispatcher","queuePublisher"].map((key) => [key, {}]).concat([["revalidateStandingState", "injected-function"]])));
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
 assertValid("development activation plan", activationPlanSchema, activationPlan);
+assertValid("development activation resource-reconciled plan", activationPlanSchema, activationResourceReconciledPlan);
 assertValid("development resource creation packet", resourceCreationPacketSchema, resourceCreationPacket);
 assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 assertValid("development resource creation completion record", resourceCreationCompletionSchema, resourceCreationCompletion);
@@ -153,6 +155,25 @@ if (activationPlan.rollback.restoreCommit !== "848190a3517c7b23c537450a5f1e6832f
     activationPlan.rollback.automaticResourceDeletion !== false) throw new Error("Development activation rollback must restore PR #14 and unbind before any manual deletion");
 if (JSON.stringify(activationPlan.authorityDatabase.migrations) !== JSON.stringify(AUTHORITY_MIGRATIONS)) {
   throw new Error("Development activation migration manifest drifted from source constants");
+}
+const reconciledActivationReport = await developmentActivationPreflight(activationResourceReconciledPlan);
+if (reconciledActivationReport.ready !== false || reconciledActivationReport.blockers.length !== 17 ||
+    !reconciledActivationReport.blockers.includes("independent_evidence_verifier_unavailable") ||
+    ["authority_database_not_created", "authority_database_id_unavailable", "queue_not_created"].some((blocker) => reconciledActivationReport.blockers.includes(blocker))) {
+  throw new Error("Resource-reconciled activation plan must remain blocked by exactly 17 gates after resolving only D1 and Queue creation state");
+}
+const expectedReconciledPlan = structuredClone(activationPlan);
+expectedReconciledPlan.authorityDatabase.databaseId = "741ade94-8539-4fc8-b6be-24884720dee8";
+expectedReconciledPlan.authorityDatabase.resourceCreated = true;
+expectedReconciledPlan.queue.resourceCreated = true;
+if (JSON.stringify(activationResourceReconciledPlan) !== JSON.stringify(expectedReconciledPlan)) {
+  throw new Error("Resource-reconciled activation plan may differ from the historical plan in exactly three resource facts");
+}
+if (createHash("sha256").update(await readFile("deployment/development-activation-plan.json")).digest("hex") !==
+    "0d6345c6537184e08f69f0953cfdc3de42c8456114fcccd4d71be08fda641fac" ||
+    createHash("sha256").update(await readFile("deployment/development-resource-creation-completion-record.json")).digest("hex") !==
+    "98f9c0623e2240aad87d68f9fdc7b3fe895d0853308d272c9398ec6858815747") {
+  throw new Error("Resource reconciliation source evidence drifted");
 }
 if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
     resourceCreationPacket.executionAuthorized !== false || resourceCreationPacket.account.accountId !== null ||
@@ -195,6 +216,7 @@ for (const source of [workerSource, developmentRuntimeSource, activationPrefligh
   if (source.includes("development-resource-creation-packet")) throw new Error("Development resource creation packet cannot be imported by runtime or preflight code");
   if (source.includes("development-resource-creation-partial-execution-record")) throw new Error("Development resource creation record cannot be imported by runtime or preflight code");
   if (source.includes("development-resource-creation-completion-record")) throw new Error("Development resource creation completion record cannot be imported by runtime or preflight code");
+  if (source.includes("development-activation-plan-resource-reconciled")) throw new Error("Development activation resource-reconciled plan cannot be imported by runtime or preflight code");
 }
 if (resourceCreationRecord.status !== "STOPPED_PARTIAL" || resourceCreationRecord.governing !== false ||
     resourceCreationRecord.continuation.authorized !== false || resourceCreationRecord.locationDeviation.ownerAccepted !== false ||
@@ -975,4 +997,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
