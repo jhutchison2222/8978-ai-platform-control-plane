@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "RESOURCE_CREATION_COMPLETED_UNBOUND",
+  "governing": false,
+  "environment": "development",
+  "phase": "record_completed_unbound_resource_creation",
+  "recordedAt": "2026-08-18T19:37:23Z",
+  "sourcePacket": {
+    "path": "deployment/development-resource-creation-packet.json",
+    "sha256": "a3dd1fe2657818a068bdb1095df82eeed00af8642d412b65b2e6b1aad5720f0a",
+    "reviewedHead": "604604473cadf68a7f26732b45314c2c8af288d2",
+    "mergeCommit": "fd5f218158f57bf4efd18d01466e20a743abe5d4"
+  },
+  "sourcePartialRecord": {
+    "path": "deployment/development-resource-creation-partial-execution-record.json",
+    "sha256": "83944ee501f17eed7072412cf1be380333e823856cc904872fed275d57504345",
+    "reviewedHead": "a1cf2e1c9fe2ed95aea2b0010a3753f5658a9059",
+    "mergeCommit": "240e3ef94067bf60535ed258769b5c223f943ee0"
+  },
+  "ownerDecision": {
+    "accountName": "smartsitecapture.com",
+    "accountId": "de5e0273347b0b4c5f8f4e554aa2288f",
+    "wnamAccepted": true,
+    "retainDatabaseWithoutDeletionOrRecreation": true,
+    "queueCreationAuthorized": true,
+    "queueCreationMethod": "cloudflare_dashboard_manual",
+    "activationAuthorized": false,
+    "workerDeploymentAuthorized": false
+  },
+  "authorityDatabase": {
+    "outcome": "CREATED_UNCHANGED",
+    "name": "8978-ai-authority-dev",
+    "databaseId": "741ade94-8539-4fc8-b6be-24884720dee8",
+    "createdAt": "2026-08-18T17:17:23.103Z",
+    "actualRegion": "WNAM",
+    "jurisdiction": null,
+    "readReplication": "disabled",
+    "numTables": 0,
+    "fileSizeBytes": 12288,
+    "ownerAccepted": true,
+    "sqlExecuted": false,
+    "migrationsApplied": false,
+    "dataInserted": false,
+    "bindingInstalled": false,
+    "deleteAuthorized": false
+  },
+  "queue": {
+    "operation": "create",
+    "outcome": "CREATED_OWNER_ATTESTED",
+    "name": "8978-ai-orchestrator-dev",
+    "queueId": "fe649364dd804ebd984297b68da6a534",
+    "createdAt": null,
+    "exactNameMatchCount": "UNVERIFIED_BY_TOOL",
+    "deliveryDelaySeconds": 0,
+    "messageRetentionSeconds": 86400,
+    "operationalStatus": "INACTIVE",
+    "inactivityAssessment": "EXPECTED_UNCONNECTED",
+    "bindingStatus": "OWNER_ATTESTED_NONE_WITH_TIMESTAMP_INFERENCE",
+    "producerStatus": "OWNER_ATTESTED_NONE",
+    "consumerStatus": "OWNER_ATTESTED_NONE",
+    "messagePublicationStatus": "UNVERIFIED",
+    "independentVerificationStatus": "TOOLING_UNAVAILABLE"
+  },
+  "sameNamedWorker": {
+    "exists": true,
+    "name": "8978-ai-orchestrator-dev",
+    "workerId": "7d8fe11595134e5980a2c888a805ff03",
+    "createdAt": "2026-08-11T16:41:29Z",
+    "modifiedAt": "2026-08-11T16:43:02Z",
+    "separateResourceNamespace": true,
+    "technicalCollision": false,
+    "renameAuthorized": false
+  },
+  "workflow": {
+    "operation": "NOT_ATTEMPTED",
+    "existence": "UNVERIFIED_TOOLING_UNAVAILABLE",
+    "changed": false
+  },
+  "externalEffects": {
+    "queueCreated": true,
+    "workerDeployed": false,
+    "configurationChanged": false,
+    "routeChanged": false,
+    "secretOrKeyChanged": false,
+    "activationPerformed": false,
+    "automaticRetryPerformed": false,
+    "automaticCleanupPerformed": false
+  },
+  "continuation": {
+    "authorized": false,
+    "activationAuthorized": false,
+    "workerDeploymentAuthorized": false,
+    "nextPermittedRepositoryAction": "independent_review_of_this_code_only_record"
+  },
+  "verification": {
+    "method": "MIXED_D1_API_AND_OWNER_QUEUE_ATTESTATION",
+    "d1CheckerVerdict": "D1_REVERIFIED_UNCHANGED",
+    "queueCheckerVerdict": "CLAUDE READ-ONLY VERIFICATION: QUEUE TOOLING UNAVAILABLE",
+    "limitations": [
+      "Queue list and get tools were unavailable to the checker",
+      "authenticated Cloudflare account identity was unavailable to the checker",
+      "Queue exact-name count, immutable ID, timestamps and settings were owner-attested rather than independently retrieved",
+      "Worker bindings were inferred from deployment timestamps rather than directly enumerated",
+      "Queue message publication history was unavailable and remains unverified",
+      "Workflow tooling and Workflow existence were unavailable to the checker"
+    ]
+  }
+}
