@@ -99,7 +99,8 @@ export function assertDevelopmentAuthorityMigrationExecutionRecord(schema, recor
     assertInvocationPrerequisites(record);
     if (record.migration.attemptCount !== 1 || !record.migration.invoked ||
         !["FAILED", "INTERRUPTED", "AMBIGUOUS"].includes(record.migration.outcome) ||
-        record.postState.migrationsApplied || record.errors.length === 0) {
+        appliedCount >= ORDERED_AUTHORITY_MIGRATIONS.length || record.postState.migrationsApplied ||
+        record.errors.length === 0) {
       throw new Error("Partial-stop record must preserve an uncertain one-attempt failure without promotion");
     }
   }

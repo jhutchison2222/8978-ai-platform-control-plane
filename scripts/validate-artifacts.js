@@ -388,6 +388,7 @@ for (const required of [
   "assertEvidenceConsistency", "Applied migration filenames require migration bookkeeping evidence",
   'record.status === "COMPLETED"', 'record.status === "STOPPED_NO_MUTATION"',
   '["FAILED", "INTERRUPTED", "AMBIGUOUS"]', "record.postState.migrationsApplied",
+  "appliedCount >= ORDERED_AUTHORITY_MIGRATIONS.length",
   "record.postState.remoteSchemaVerified !== false", "Object.values(record.externalEffects)",
   "Object.values(record.partialFailurePolicy)", "record.errors.length === 0",
 ]) if (!authorityMigrationRecordValidatorSource.includes(required)) {

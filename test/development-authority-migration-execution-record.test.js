@@ -95,6 +95,7 @@ test("stopped outcomes cannot promote uncertain state or hide invocation", () =>
     ["STOPPED_PARTIAL", (r) => { r.postState.migrationsApplied = true; }],
     ["STOPPED_PARTIAL", (r) => { r.errors = []; }],
     ["STOPPED_PARTIAL", (r) => { r.migration.applied = [ORDERED_AUTHORITY_MIGRATIONS[1]]; }],
+    ["STOPPED_PARTIAL", (r) => { r.migration.applied = [...ORDERED_AUTHORITY_MIGRATIONS]; r.migration.pendingAfter = []; }],
     ["STOPPED_PARTIAL", (r) => { r.postState.migrationBookkeepingRowsCreated = false; }],
     ["STOPPED_PARTIAL", (r) => { r.postState.tableCount = 11; }],
   ];
