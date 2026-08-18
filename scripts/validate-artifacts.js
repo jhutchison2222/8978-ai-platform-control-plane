@@ -492,6 +492,8 @@ for (const required of [
   "Uninvoked schema queries cannot carry result evidence", "Uninvoked schema queries cannot carry retrieved observations",
   "record.independentReview.checkerPrincipalId === record.operator.principalId",
   "record.observations.authorityData.rowCount !== 0", "record.observations.integrity.result !== \"ok\"",
+  "typeof record.independentReview.checkerPrincipalId !== \"string\"",
+  "record.independentReview.checkerPrincipalId.length === 0",
   "Object.values(record.externalEffects)", "Object.values(record.failurePolicy)",
   "record.conclusions.activationPlanUpdateAuthorized", "record.conclusions.activationPlanUpdated",
 ]) if (!authoritySchemaInventoryRecordValidatorSource.includes(required)) {

@@ -106,6 +106,8 @@ test("verified result requires exact complete evidence and independent acceptanc
     (r) => { r.observations.foreignKey.onDelete = "CASCADE"; },
     (r) => { r.observations.integrity.result = "error"; },
     (r) => { r.observations.authorityData.rowCount = 1; },
+    (r) => { r.independentReview.checkerPrincipalId = null; },
+    (r) => { r.independentReview.checkerPrincipalId = ""; },
     (r) => { r.independentReview.checkerPrincipalId = r.operator.principalId; },
     (r) => { r.independentReview.accepted = false; },
     (r) => { r.conclusions.remoteSchemaVerified = false; },

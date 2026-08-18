@@ -111,6 +111,8 @@ function assertVerified(record) {
       !record.observations.integrity.retrieved || record.observations.integrity.result !== "ok" ||
       !record.observations.authorityData.retrieved || record.observations.authorityData.rowCount !== 0 ||
       !record.independentReview.completed || !record.independentReview.accepted ||
+      typeof record.independentReview.checkerPrincipalId !== "string" ||
+      record.independentReview.checkerPrincipalId.length === 0 ||
       record.independentReview.checkerPrincipalId === record.operator.principalId ||
       typeof record.independentReview.checkerDigest !== "string" || record.errors.length !== 0) {
     throw new Error("Verified schema record lacks exact read-only evidence or independent acceptance");
