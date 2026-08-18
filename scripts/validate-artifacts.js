@@ -23,6 +23,8 @@ const activationEvidenceSchema = await load("schemas/development-activation-evid
 const activationPlan = await load("deployment/development-activation-plan.json");
 const resourceCreationPacketSchema = await load("schemas/development-resource-creation-packet.schema.json");
 const resourceCreationPacket = await load("deployment/development-resource-creation-packet.json");
+const resourceCreationRecordSchema = await load("schemas/development-resource-creation-partial-execution-record.schema.json");
+const resourceCreationRecord = await load("deployment/development-resource-creation-partial-execution-record.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
@@ -117,6 +119,7 @@ assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceRes
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
 assertValid("development activation plan", activationPlanSchema, activationPlan);
 assertValid("development resource creation packet", resourceCreationPacketSchema, resourceCreationPacket);
+assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 if (activationEvidenceSchema.additionalProperties !== false || activationEvidenceSchema.properties?.schemaVersion?.const !== "1.0.0" ||
     activationEvidenceSchema.properties?.resourceActivationDecision?.properties?.decision?.const !== "approved" ||
     activationEvidenceSchema.properties?.workerDeploymentDecision?.properties?.signatureAlgorithm?.const !== "Ed25519") {
@@ -187,6 +190,34 @@ if (resourceCreationPacket.stopConditions.length !== 7 || resourceCreationPacket
 }
 for (const source of [workerSource, developmentRuntimeSource, activationPreflightSource, activationPreflightEvaluatorSource]) {
   if (source.includes("development-resource-creation-packet")) throw new Error("Development resource creation packet cannot be imported by runtime or preflight code");
+  if (source.includes("development-resource-creation-partial-execution-record")) throw new Error("Development resource creation record cannot be imported by runtime or preflight code");
+}
+if (resourceCreationRecord.status !== "STOPPED_PARTIAL" || resourceCreationRecord.governing !== false ||
+    resourceCreationRecord.continuation.authorized !== false || resourceCreationRecord.locationDeviation.ownerAccepted !== false ||
+    resourceCreationRecord.locationDeviation.deleteAuthorized !== false || resourceCreationRecord.locationDeviation.automaticCleanupAuthorized !== false) {
+  throw new Error("Development resource creation record cannot promote, continue, accept, delete, or clean up");
+}
+if (resourceCreationRecord.sourcePacket.path !== "deployment/development-resource-creation-packet.json" ||
+    createHash("sha256").update(await readFile(resourceCreationRecord.sourcePacket.path)).digest("hex") !== resourceCreationRecord.sourcePacket.sha256 ||
+    resourceCreationRecord.sourcePacket.sha256 !== "a3dd1fe2657818a068bdb1095df82eeed00af8642d412b65b2e6b1aad5720f0a") {
+  throw new Error("Development resource creation record must bind the immutable reviewed PR #24 packet");
+}
+if (JSON.stringify(resourceCreationRecord.authorityDatabase) !== JSON.stringify({
+  operation:"create", outcome:"CREATED", name:"8978-ai-authority-dev", databaseId:"741ade94-8539-4fc8-b6be-24884720dee8",
+  createdAt:"2026-08-18T17:17:23.103Z", requestedLocationPolicy:"cloudflare_automatic", actualRegion:"WNAM",
+  jurisdiction:null, readReplication:"disabled", numTables:0, fileSizeBytes:12288, sqlExecuted:false,
+  migrationsApplied:false, dataInserted:false, bindingInstalled:false,
+  bindingVerification:{status:"INFERRED_UNBOUND", basis:"all_eight_workers_predate_database_creation", latestWorkerModifiedAt:"2026-08-11T16:43:02Z"},
+}) || JSON.stringify(resourceCreationRecord.queue) !== JSON.stringify({
+  operation:"create", outcome:"NOT_ATTEMPTED", name:"8978-ai-orchestrator-dev", expectedDeliveryDelaySeconds:0,
+  expectedMessageRetentionSeconds:86400, postStopExistence:"UNVERIFIED", bindingInstalled:false,
+  producerAdded:false, consumerAdded:false, messagePublished:false,
+})) {
+  throw new Error("Development resource creation partial result or stopped Queue state drifted");
+}
+if (!Object.values(resourceCreationRecord.externalEffects).every((value) => value === false) ||
+    resourceCreationRecord.workflow.outcome !== "NOT_ATTEMPTED") {
+  throw new Error("Development resource creation record cannot claim adjacent external effects");
 }
 for (const migration of activationPlan.authorityDatabase.migrations) {
   const actual = createHash("sha256").update(await readFile(migration.path)).digest("hex");
@@ -902,4 +933,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one non-executing development resource-creation packet, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, 8 code-composed authority dependencies, one blocked non-governing development activation plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
