@@ -39,6 +39,14 @@ export const EXPECTED_AUTHORITY_MIGRATIONS = Object.freeze([
   "0005_development_activation_evidence.sql",
   "0006_development_activation_evidence_writes.sql",
 ]);
+const OBSERVATION_BY_QUERY = Object.freeze({
+  databaseInfo: "database",
+  definitions: "definitions",
+  appliedMigrations: "migrations",
+  foreignKeys: "foreignKey",
+  integrity: "integrity",
+  authorityRows: "authorityData",
+});
 
 function exactList(actual, expected, label) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${label} must match the exact reviewed order`);
@@ -68,6 +76,22 @@ function assertObservationConsistency(record) {
       record.observations.database.identityMatched)) throw new Error("Unavailable database metadata cannot claim identity evidence");
   if (!record.observations.foreignKey.retrieved && record.observations.foreignKey.matched) {
     throw new Error("Unavailable foreign-key evidence cannot claim a match");
+  }
+}
+
+function assertQueryEvidenceConsistency(record) {
+  for (const queryName of ORDERED_SCHEMA_INVENTORY_QUERIES) {
+    const digested = typeof record.evidence.queryResultSha256[queryName] === "string";
+    const retrieved = record.observations[OBSERVATION_BY_QUERY[queryName]].retrieved;
+    if (digested !== retrieved) {
+      throw new Error("Schema query result evidence must match its retrieved observation");
+    }
+  }
+  if (record.execution.outcome === "SUCCEEDED" &&
+      (record.execution.commandsInvoked.length !== ORDERED_SCHEMA_INVENTORY_QUERIES.length ||
+       ORDERED_SCHEMA_INVENTORY_QUERIES.some((queryName) =>
+         typeof record.evidence.queryResultSha256[queryName] !== "string"))) {
+    throw new Error("Successful schema verification execution must carry every reviewed query result");
   }
 }
 
@@ -152,6 +176,7 @@ export function assertDevelopmentAuthoritySchemaInventoryVerificationRecord(sche
   }
   assertNoAdjacentEffects(record);
   assertObservationConsistency(record);
+  assertQueryEvidenceConsistency(record);
   const invokedCount = record.execution.commandsInvoked.length;
   exactList(record.execution.commandsInvoked, ORDERED_SCHEMA_INVENTORY_QUERIES.slice(0, invokedCount), "Invoked schema queries");
   for (let index = invokedCount; index < ORDERED_SCHEMA_INVENTORY_QUERIES.length; index += 1) {
