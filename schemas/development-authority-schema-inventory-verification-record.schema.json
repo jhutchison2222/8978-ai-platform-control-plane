@@ -98,7 +98,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["completed", "checkerPrincipalId", "checkerDigest", "accepted"],
       "properties": {
-        "completed": { "type": "boolean" }, "checkerPrincipalId": { "type": ["string", "null"] }, "checkerDigest": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" }, "accepted": { "type": "boolean" }
+        "completed": { "type": "boolean" }, "checkerPrincipalId": { "type": ["string", "null"], "minLength": 1 }, "checkerDigest": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" }, "accepted": { "type": "boolean" }
       }
     },
     "conclusions": {
