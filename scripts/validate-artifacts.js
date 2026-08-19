@@ -153,6 +153,8 @@ if (activationEvidenceSchema.additionalProperties !== false || activationEvidenc
 }
 if (validateSchema(customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker",dedicatedD1DatabaseId:"d1",sharedProductionD1:true }).length === 0) throw new Error("Shared production D1 negative fixture unexpectedly passed");
 if (validateSchema(resourceSchema, { kind:"github_repository",provider:"cloudflare",repository:"x",environment:"development",isolation:{} }).length === 0) throw new Error("Resource discriminator negative fixture unexpectedly passed");
+if (validateSchema({ type:"string", format:"date-time" }, "2026-08-19").length === 0) throw new Error("JSON Schema date-time shape negative fixture unexpectedly passed");
+if (validateSchema({ type:"string", format:"date-time" }, "2026-02-30T00:00:00Z").length === 0) throw new Error("JSON Schema date-time calendar negative fixture unexpectedly passed");
 if (validateSchema({ type:"string", maxLength:1 }, "too long").length === 0) throw new Error("JSON Schema maxLength negative fixture unexpectedly passed");
 if (validateSchema({ type:"integer", maximum:1 }, 2).length === 0) throw new Error("JSON Schema maximum negative fixture unexpectedly passed");
 if (validateSchema({ type:"array", maxItems:1 }, ["one", "two"]).length === 0) throw new Error("JSON Schema maxItems negative fixture unexpectedly passed");

@@ -2,6 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { validateSchema } from "../scripts/json-schema-lite.js";
 
+test("date-time requires an explicit valid calendar time and timezone", () => {
+  const schema = { type: "string", format: "date-time" };
+  for (const value of [
+    "2026-08-19T21:00:00Z",
+    "2024-02-29t23:59:59.123+05:30",
+  ]) assert.deepEqual(validateSchema(schema, value), []);
+  for (const value of [
+    "2026-08-19",
+    "2026-08-19T21:00:00",
+    "2026-02-30T00:00:00Z",
+    "2026-08-19T24:00:00Z",
+    "2026-08-19T21:00:00+24:00",
+  ]) assert.deepEqual(validateSchema(schema, value), ["$ is not date-time"]);
+});
+
 test("string bounds enforce minLength and maxLength inclusively", () => {
   const schema = { type: "string", minLength: 1, maxLength: 2 };
   assert.deepEqual(validateSchema(schema, "a"), []);
