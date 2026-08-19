@@ -80,12 +80,17 @@ function assertObservationConsistency(record) {
 }
 
 function assertQueryEvidenceConsistency(record) {
+  let missingResultSeen = false;
   for (const queryName of ORDERED_SCHEMA_INVENTORY_QUERIES) {
     const digested = typeof record.evidence.queryResultSha256[queryName] === "string";
     const retrieved = record.observations[OBSERVATION_BY_QUERY[queryName]].retrieved;
     if (digested !== retrieved) {
       throw new Error("Schema query result evidence must match its retrieved observation");
     }
+    if (digested && missingResultSeen) {
+      throw new Error("Schema query result evidence must form an ordered prefix");
+    }
+    if (!digested) missingResultSeen = true;
   }
   if (record.execution.outcome === "SUCCEEDED" &&
       (record.execution.commandsInvoked.length !== ORDERED_SCHEMA_INVENTORY_QUERIES.length ||
