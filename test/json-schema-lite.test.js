@@ -25,6 +25,13 @@ test("string bounds enforce minLength and maxLength inclusively", () => {
   assert.deepEqual(validateSchema(schema, "abc"), ["$ is too long"]);
 });
 
+test("string bounds count Unicode characters instead of UTF-16 code units", () => {
+  const schema = { type: "string", minLength: 2, maxLength: 2 };
+  assert.deepEqual(validateSchema(schema, "😀a"), []);
+  assert.deepEqual(validateSchema(schema, "😀"), ["$ is too short"]);
+  assert.deepEqual(validateSchema(schema, "😀ab"), ["$ is too long"]);
+});
+
 test("numeric bounds enforce minimum and maximum inclusively", () => {
   const schema = { type: "integer", minimum: 0, maximum: 1 };
   assert.deepEqual(validateSchema(schema, 0), []);
