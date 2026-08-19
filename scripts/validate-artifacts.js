@@ -488,12 +488,15 @@ if (JSON.stringify(ORDERED_SCHEMA_INVENTORY_QUERIES) !== JSON.stringify(Object.k
 }
 for (const required of [
   "assertInvocationPrerequisites", "assertNoAdjacentEffects", "assertObservationConsistency",
-  "assertIndependentReviewConsistency", "assertVerified",
+  "assertQueryEvidenceConsistency(record);", "assertIndependentReviewConsistency", "assertVerified",
   "record.authorization.ownerDecisionId.length === 0",
   "typeof record.authorization.ownerAuthorizationDigest !== \"string\"",
   "record.status === \"VERIFIED\"", "record.status === \"STOPPED_NO_QUERY\"",
   "INCONCLUSIVE_READ_ONLY", "ORDERED_SCHEMA_INVENTORY_QUERIES.slice(0, invokedCount)",
   "Uninvoked schema queries cannot carry result evidence", "Uninvoked schema queries cannot carry retrieved observations",
+  "Schema query result evidence must match its retrieved observation",
+  "record.execution.outcome === \"SUCCEEDED\"",
+  "Successful schema verification execution must carry every reviewed query result",
   "record.independentReview.checkerPrincipalId === record.operator.principalId",
   "record.observations.authorityData.rowCount !== 0", "record.observations.integrity.result !== \"ok\"",
   "typeof record.independentReview.checkerPrincipalId !== \"string\"",

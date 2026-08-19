@@ -19,6 +19,7 @@ function fixture(status = "VERIFIED") {
   const inconclusive = status === "INCONCLUSIVE_READ_ONLY";
   const invoked = verified || inconclusive;
   const observed = verified;
+  const databaseObserved = verified || inconclusive;
   return {
     schemaVersion: "1.0.0", status, governing: false, environment: "development",
     source: {
@@ -48,10 +49,10 @@ function fixture(status = "VERIFIED") {
       [key, verified || (inconclusive && index === 0) ? `${index + 1}`.repeat(64) : null])) },
     observations: {
       database: {
-        retrieved: observed, name: observed ? "8978-ai-authority-dev" : null,
-        databaseId: observed ? "741ade94-8539-4fc8-b6be-24884720dee8" : null,
-        region: observed ? "WNAM" : null, jurisdiction: null, version: observed ? "production" : null,
-        identityMatched: observed,
+        retrieved: databaseObserved, name: databaseObserved ? "8978-ai-authority-dev" : null,
+        databaseId: databaseObserved ? "741ade94-8539-4fc8-b6be-24884720dee8" : null,
+        region: databaseObserved ? "WNAM" : null, jurisdiction: null,
+        version: databaseObserved ? "production" : null, identityMatched: databaseObserved,
       },
       definitions: {
         retrieved: observed, tables: observed ? [...EXPECTED_AUTHORITY_TABLES] : null,
@@ -144,6 +145,44 @@ test("stopped and inconclusive results cannot promote verification or hide query
     const changed = clone(fixture(status)); mutate(changed);
     assert.throws(() => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed));
   }
+});
+
+test("query result digests match retrieved observations and successful execution is complete", () => {
+  const successfulInconclusive = clone(fixture("VERIFIED"));
+  successfulInconclusive.status = "INCONCLUSIVE_READ_ONLY";
+  successfulInconclusive.independentReview = {
+    completed: false, checkerPrincipalId: null, checkerDigest: null, accepted: false,
+  };
+  successfulInconclusive.conclusions = allFalse([
+    "inventoryVerified", "definitionsVerified", "foreignKeysVerified", "integrityVerified",
+    "emptyAuthorityDataVerified", "remoteSchemaVerified", "activationPlanUpdateAuthorized", "activationPlanUpdated",
+  ]);
+  successfulInconclusive.errors = ["fixture independent review unavailable"];
+  assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, successfulInconclusive), true);
+
+  const digestWithoutObservation = clone(fixture("INCONCLUSIVE_READ_ONLY"));
+  digestWithoutObservation.observations.database = {
+    retrieved: false, name: null, databaseId: null, region: null, jurisdiction: null, version: null,
+    identityMatched: false,
+  };
+  assert.throws(
+    () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, digestWithoutObservation),
+    /^Error: Schema query result evidence must match its retrieved observation$/u,
+  );
+
+  const observationWithoutDigest = clone(fixture("INCONCLUSIVE_READ_ONLY"));
+  observationWithoutDigest.evidence.queryResultSha256.databaseInfo = null;
+  assert.throws(
+    () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, observationWithoutDigest),
+    /^Error: Schema query result evidence must match its retrieved observation$/u,
+  );
+
+  const incompleteSuccess = clone(fixture("INCONCLUSIVE_READ_ONLY"));
+  incompleteSuccess.execution.outcome = "SUCCEEDED";
+  assert.throws(
+    () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, incompleteSuccess),
+    /^Error: Successful schema verification execution must carry every reviewed query result$/u,
+  );
 });
 
 test("invoked outcomes require exact authorization and accepted migration evidence", () => {
