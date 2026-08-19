@@ -30,8 +30,12 @@ export function validateSchema(schema, value, path = "$") {
   if (typeof value === "number" && schema.minimum !== undefined && value < schema.minimum) {
     errors.push(`${path} is below minimum`);
   }
+  if (typeof value === "number" && schema.maximum !== undefined && value > schema.maximum) {
+    errors.push(`${path} is above maximum`);
+  }
   if (Array.isArray(value)) {
     if (schema.minItems !== undefined && value.length < schema.minItems) errors.push(`${path} has too few items`);
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) errors.push(`${path} has too many items`);
     if (schema.items) value.forEach((item, index) => errors.push(...validateSchema(schema.items, item, `${path}[${index}]`)));
   }
   if (value !== null && typeof value === "object" && !Array.isArray(value)) {

@@ -65,6 +65,7 @@ test("schema rejects authorization, account, resource, and side-effect drift", (
     (value) => { value.queue.publish = true; },
     (value) => { value.workflow.operation = "create"; },
     (value) => { value.partialFailurePolicy.automaticDeletion = true; },
+    (value) => { value.stopConditions.push("unexpected extra stop condition"); },
     (value) => { value.unexpected = true; },
   ];
   for (const mutate of mutations) {

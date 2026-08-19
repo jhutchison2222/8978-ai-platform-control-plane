@@ -58,6 +58,7 @@ test("schema rejects evidence promotion, drift, rename, deletion, and activation
     (value) => { value.sameNamedWorker.renameAuthorized = true; },
     (value) => { value.ownerDecision.activationAuthorized = true; },
     (value) => { value.continuation.authorized = true; },
+    (value) => { value.verification.limitations.push("unexpected extra limitation"); },
     (value) => { value.externalEffects.workerDeployed = true; },
     (value) => { value.unexpected = true; },
   ];
