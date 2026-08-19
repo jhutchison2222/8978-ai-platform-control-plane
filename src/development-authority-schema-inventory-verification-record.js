@@ -81,6 +81,21 @@ function assertNoAdjacentEffects(record) {
   }
 }
 
+function assertIndependentReviewConsistency(record) {
+  const identified = typeof record.independentReview.checkerPrincipalId === "string" &&
+    record.independentReview.checkerPrincipalId.length > 0;
+  const digested = typeof record.independentReview.checkerDigest === "string";
+  if (identified !== digested || record.independentReview.completed !== (identified && digested)) {
+    throw new Error("Schema verification independent review completion must match identified checker evidence");
+  }
+  if (record.independentReview.accepted && !record.independentReview.completed) {
+    throw new Error("Schema verification cannot claim acceptance without completed independent review");
+  }
+  if (identified && record.independentReview.checkerPrincipalId === record.operator.principalId) {
+    throw new Error("Schema verification checker must be independent of the operator");
+  }
+}
+
 function assertInvocationPrerequisites(record) {
   if (!record.authorization.readOnlyVerificationAuthorized || record.authorization.authorizedAttemptLimit !== 1 ||
       typeof record.authorization.ownerDecisionId !== "string" ||
@@ -162,6 +177,7 @@ export function assertDevelopmentAuthoritySchemaInventoryVerificationRecord(sche
     }
   } else if (record.status === "INCONCLUSIVE_READ_ONLY") {
     assertInvocationPrerequisites(record);
+    assertIndependentReviewConsistency(record);
     if (record.execution.attemptCount !== 1 || !record.execution.invoked || invokedCount < 1 ||
         !["SUCCEEDED", "FAILED", "INTERRUPTED", "AMBIGUOUS"].includes(record.execution.outcome) ||
         Object.values(record.conclusions).some((value) => value !== false) || record.independentReview.accepted ||

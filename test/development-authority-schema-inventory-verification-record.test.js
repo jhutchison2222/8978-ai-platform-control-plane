@@ -117,8 +117,10 @@ test("verified result requires exact complete evidence and independent acceptanc
   for (const checkerPrincipalId of [null, ""]) {
     const changed = clone(fixture());
     changed.independentReview.checkerPrincipalId = checkerPrincipalId;
+    const semanticSchema = clone(schema);
+    delete semanticSchema.properties.independentReview.properties.checkerPrincipalId.minLength;
     assert.throws(
-      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed),
+      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(semanticSchema, changed),
       /^Error: Verified schema record lacks exact read-only evidence or independent acceptance$/u,
     );
   }
@@ -170,6 +172,47 @@ test("invoked outcomes require exact authorization and accepted migration eviden
       /^Error: Read-only schema verification requires exact authorization, account identity, and accepted migration evidence$/u,
     );
   }
+});
+
+test("independent review completion requires exact identified checker evidence", () => {
+  const reviewed = fixture("INCONCLUSIVE_READ_ONLY");
+  reviewed.independentReview = {
+    completed: true,
+    checkerPrincipalId: "fixture-independent-checker",
+    checkerDigest: `sha256:${"d".repeat(64)}`,
+    accepted: false,
+  };
+  assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, reviewed), true);
+
+  for (const mutate of [
+    (r) => { r.independentReview.checkerPrincipalId = null; },
+    (r) => { r.independentReview.checkerDigest = null; },
+    (r) => { r.independentReview.completed = false; },
+    (r) => { r.independentReview.checkerPrincipalId = r.operator.principalId; },
+  ]) {
+    const changed = clone(reviewed); mutate(changed);
+    assert.throws(() => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed));
+  }
+
+  for (const mutate of [
+    (r) => { r.independentReview.checkerPrincipalId = "fixture-independent-checker"; },
+    (r) => { r.independentReview.checkerDigest = `sha256:${"d".repeat(64)}`; },
+  ]) {
+    const changed = clone(fixture("INCONCLUSIVE_READ_ONLY")); mutate(changed);
+    assert.throws(
+      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed),
+      /^Error: Schema verification independent review completion must match identified checker evidence$/u,
+    );
+  }
+
+  const schemaWithoutCheckerMinLength = clone(schema);
+  delete schemaWithoutCheckerMinLength.properties.independentReview.properties.checkerPrincipalId.minLength;
+  const emptyChecker = clone(reviewed);
+  emptyChecker.independentReview.checkerPrincipalId = "";
+  assert.throws(
+    () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schemaWithoutCheckerMinLength, emptyChecker),
+    /^Error: Schema verification independent review completion must match identified checker evidence$/u,
+  );
 });
 
 test("every outcome rejects source drift and adjacent effects", () => {
