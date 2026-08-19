@@ -38,8 +38,9 @@ export function validateSchema(schema, value, path = "$") {
     }
   }
   if (typeof value === "string") {
-    if (schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${path} is too short`);
-    if (schema.maxLength !== undefined && value.length > schema.maxLength) errors.push(`${path} is too long`);
+    const length = [...value].length;
+    if (schema.minLength !== undefined && length < schema.minLength) errors.push(`${path} is too short`);
+    if (schema.maxLength !== undefined && length > schema.maxLength) errors.push(`${path} is too long`);
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${path} does not match pattern`);
     if (schema.format === "date-time" && !isDateTime(value)) errors.push(`${path} is not date-time`);
   }
