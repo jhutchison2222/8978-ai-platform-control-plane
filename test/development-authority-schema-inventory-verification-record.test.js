@@ -194,6 +194,17 @@ test("independent review completion requires exact identified checker evidence",
     assert.throws(() => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed));
   }
 
+  for (const mutate of [
+    (r) => { r.independentReview.checkerPrincipalId = "fixture-independent-checker"; },
+    (r) => { r.independentReview.checkerDigest = `sha256:${"d".repeat(64)}`; },
+  ]) {
+    const changed = clone(fixture("INCONCLUSIVE_READ_ONLY")); mutate(changed);
+    assert.throws(
+      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed),
+      /^Error: Schema verification independent review completion must match identified checker evidence$/u,
+    );
+  }
+
   const schemaWithoutCheckerMinLength = clone(schema);
   delete schemaWithoutCheckerMinLength.properties.independentReview.properties.checkerPrincipalId.minLength;
   const emptyChecker = clone(reviewed);

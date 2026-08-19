@@ -498,6 +498,7 @@ for (const required of [
   "record.observations.authorityData.rowCount !== 0", "record.observations.integrity.result !== \"ok\"",
   "typeof record.independentReview.checkerPrincipalId !== \"string\"",
   "record.independentReview.checkerPrincipalId.length === 0",
+  "identified !== digested",
   "record.independentReview.completed !== (identified && digested)",
   "record.independentReview.accepted && !record.independentReview.completed",
   "Object.values(record.externalEffects)", "Object.values(record.failurePolicy)",

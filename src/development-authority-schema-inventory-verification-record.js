@@ -85,7 +85,7 @@ function assertIndependentReviewConsistency(record) {
   const identified = typeof record.independentReview.checkerPrincipalId === "string" &&
     record.independentReview.checkerPrincipalId.length > 0;
   const digested = typeof record.independentReview.checkerDigest === "string";
-  if (record.independentReview.completed !== (identified && digested)) {
+  if (identified !== digested || record.independentReview.completed !== (identified && digested)) {
     throw new Error("Schema verification independent review completion must match identified checker evidence");
   }
   if (record.independentReview.accepted && !record.independentReview.completed) {
