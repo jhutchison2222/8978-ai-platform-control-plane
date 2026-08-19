@@ -468,6 +468,7 @@ if (authoritySchemaInventoryRecordSchema.additionalProperties !== false ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.reviewedCommit?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.packetSha256?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256 ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.authorizedAccountId?.const !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||
+    authoritySchemaInventoryRecordSchema.properties?.authorization?.properties?.ownerDecisionId?.minLength !== 1 ||
     authoritySchemaInventoryRecordSchema.properties?.conclusions?.properties?.activationPlanUpdateAuthorized?.const !== false ||
     authoritySchemaInventoryRecordSchema.properties?.conclusions?.properties?.activationPlanUpdated?.const !== false) {
   throw new Error("Development authority schema inventory verification record schema boundary weakened");
@@ -486,6 +487,7 @@ if (JSON.stringify(ORDERED_SCHEMA_INVENTORY_QUERIES) !== JSON.stringify(Object.k
 }
 for (const required of [
   "assertInvocationPrerequisites", "assertNoAdjacentEffects", "assertObservationConsistency", "assertVerified",
+  "record.authorization.ownerDecisionId.length === 0",
   "typeof record.authorization.ownerAuthorizationDigest !== \"string\"",
   "record.status === \"VERIFIED\"", "record.status === \"STOPPED_NO_QUERY\"",
   "INCONCLUSIVE_READ_ONLY", "ORDERED_SCHEMA_INVENTORY_QUERIES.slice(0, invokedCount)",

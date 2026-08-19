@@ -84,6 +84,7 @@ function assertNoAdjacentEffects(record) {
 function assertInvocationPrerequisites(record) {
   if (!record.authorization.readOnlyVerificationAuthorized || record.authorization.authorizedAttemptLimit !== 1 ||
       typeof record.authorization.ownerDecisionId !== "string" ||
+      record.authorization.ownerDecisionId.length === 0 ||
       typeof record.authorization.ownerAuthorizationDigest !== "string" ||
       record.authorization.accountId !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||
       record.operator.authenticatedAccountId !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||

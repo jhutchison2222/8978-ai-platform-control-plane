@@ -148,6 +148,7 @@ test("invoked outcomes require exact authorization and accepted migration eviden
   for (const status of ["VERIFIED", "INCONCLUSIVE_READ_ONLY"]) {
     for (const mutate of [
       (r) => { r.authorization.readOnlyVerificationAuthorized = false; },
+      (r) => { r.authorization.ownerDecisionId = ""; },
       (r) => { r.authorization.ownerAuthorizationDigest = null; },
       (r) => { r.authorization.accountId = "wrong"; },
       (r) => { r.operator.authenticatedAccountId = "wrong"; },
@@ -157,6 +158,17 @@ test("invoked outcomes require exact authorization and accepted migration eviden
       const changed = clone(fixture(status)); mutate(changed);
       assert.throws(() => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, changed));
     }
+  }
+
+  const schemaWithoutOwnerDecisionMinLength = clone(schema);
+  delete schemaWithoutOwnerDecisionMinLength.properties.authorization.properties.ownerDecisionId.minLength;
+  for (const status of ["VERIFIED", "INCONCLUSIVE_READ_ONLY"]) {
+    const changed = clone(fixture(status));
+    changed.authorization.ownerDecisionId = "";
+    assert.throws(
+      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schemaWithoutOwnerDecisionMinLength, changed),
+      /^Error: Read-only schema verification requires exact authorization, account identity, and accepted migration evidence$/u,
+    );
   }
 });
 
