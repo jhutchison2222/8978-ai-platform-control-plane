@@ -495,6 +495,8 @@ for (const required of [
   "INCONCLUSIVE_READ_ONLY", "ORDERED_SCHEMA_INVENTORY_QUERIES.slice(0, invokedCount)",
   "Uninvoked schema queries cannot carry result evidence", "Uninvoked schema queries cannot carry retrieved observations",
   "Schema query result evidence must match its retrieved observation",
+  "digested && missingResultSeen",
+  "Schema query result evidence must form an ordered prefix",
   "record.execution.outcome === \"SUCCEEDED\"",
   "Successful schema verification execution must carry every reviewed query result",
   "record.independentReview.checkerPrincipalId === record.operator.principalId",

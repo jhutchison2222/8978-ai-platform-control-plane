@@ -185,6 +185,30 @@ test("query result digests match retrieved observations and successful execution
   );
 });
 
+test("partial query result evidence forms an ordered prefix", () => {
+  const interruptedAfterSecondInvocation = clone(fixture("INCONCLUSIVE_READ_ONLY"));
+  interruptedAfterSecondInvocation.execution.commandsInvoked.push("definitions");
+  assert.equal(
+    assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, interruptedAfterSecondInvocation),
+    true,
+  );
+
+  const gappedEvidence = clone(interruptedAfterSecondInvocation);
+  gappedEvidence.evidence.queryResultSha256.databaseInfo = null;
+  gappedEvidence.observations.database = {
+    retrieved: false, name: null, databaseId: null, region: null, jurisdiction: null, version: null,
+    identityMatched: false,
+  };
+  gappedEvidence.evidence.queryResultSha256.definitions = "e".repeat(64);
+  gappedEvidence.observations.definitions = {
+    retrieved: true, tables: [], indexes: [], definitionsSha256: "f".repeat(64),
+  };
+  assert.throws(
+    () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, gappedEvidence),
+    /^Error: Schema query result evidence must form an ordered prefix$/u,
+  );
+});
+
 test("invoked outcomes require exact authorization and accepted migration evidence", () => {
   for (const status of ["VERIFIED", "INCONCLUSIVE_READ_ONLY"]) {
     for (const mutate of [
