@@ -24,7 +24,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["ownerDecisionId", "ownerAuthorizationDigest", "accountId", "readOnlyVerificationAuthorized", "authorizedAttemptLimit"],
       "properties": {
-        "ownerDecisionId": { "type": ["string", "null"] },
+        "ownerDecisionId": { "type": ["string", "null"], "minLength": 1 },
         "ownerAuthorizationDigest": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
         "accountId": { "type": ["string", "null"] },
         "readOnlyVerificationAuthorized": { "type": "boolean" },
