@@ -1,0 +1,67 @@
+name: Development D1 backup and migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: Type APPLY AUTHORITY MIGRATIONS ONCE
+        required: true
+        type: string
+      source_commit:
+        description: Reviewed source commit
+        required: true
+        default: 727d34322b9e725c482cd041d1d9405772737af3
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-authority-d1-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Capture backup and apply once
+    if: >-
+      github.repository == 'jhutchison2222/8978-ai-platform-control-plane' &&
+      github.actor == 'jhutchison2222' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.approval == 'APPLY AUTHORITY MIGRATIONS ONCE' &&
+      inputs.source_commit == '727d34322b9e725c482cd041d1d9405772737af3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: development-d1-migration
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_aiemployees_voice_chat_API_TOKEN_d1 }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      MIGRATION_EVIDENCE_DIR: ${{ runner.temp }}/development-authority-migration-evidence
+    steps:
+      - name: Check out exact reviewed source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned dependencies
+        run: npm ci
+
+      - name: Validate repository artifacts
+        run: |
+          npm test
+          npm run check
+          npm run secret-scan
+          npm run cf:types:check
+          npm run cf:dry-run
+
+      - name: Capture backup and apply exact migrations once
+        run: bash scripts/run-development-authority-migration.sh
+
+      - name: Publish sanitized execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: development-authority-migration-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/development-authority-migration-evidence
+          if-no-files-found: error
+          retention-days: 7
