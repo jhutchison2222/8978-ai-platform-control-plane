@@ -11,7 +11,7 @@ test("migration workflow is manual, account-pinned, main-only, and approval-gate
   assert.match(workflow, /github\.actor == 'jhutchison2222'/);
   assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
   assert.match(workflow, /APPLY AUTHORITY MIGRATIONS ONCE/);
-  assert.match(workflow, /inputs\.execution_commit == '4a9080ef49fbbca42017a679baad026bbea1c456'/);
+  assert.match(workflow, /inputs\.execution_commit == '33042914d8a1d10018197c8cf5b7218ddaceb3c1'/);
   assert.match(workflow, /ref: \$\{\{ inputs\.execution_commit \}\}/);
   assert.match(workflow, /MIGRATION_EXECUTION_COMMIT: \$\{\{ inputs\.execution_commit \}\}/);
   assert.match(workflow, /environment: development-d1-migration/);
