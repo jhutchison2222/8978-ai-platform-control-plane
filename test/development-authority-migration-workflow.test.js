@@ -40,6 +40,8 @@ test("migration runner pins reviewed authority inputs and contains one apply inv
   assert.match(runner, /Checked-out runtime does not match the reviewed execution commit/);
   assert.match(runner, /pending-before-migrations\.txt/);
   assert.match(runner, /pending-after-migrations\.txt/);
+  assert.match(runner, /if \"\$WRANGLER\" d1 migrations apply/);
+  assert.doesNotMatch(runner, /set \+e/);
   assert.match(runner, /trap 'record_unhandled_error' ERR/);
   assert.match(runner, /trap 'cleanup_sensitive_files' EXIT/);
   assert.match(runner, /\$\{RUNNER_TEMP\}\/development-authority-whoami\.txt/);
@@ -52,6 +54,7 @@ test("migration runner pins reviewed authority inputs and contains one apply inv
 test("migration runner does not contain adjacent Cloudflare operations or recovery attempts", () => {
   for (const prohibited of [
     /wrangler deploy/,
+    /"\$WRANGLER"\s+deploy/,
     /d1 time-travel restore/,
     /d1 delete/,
     /queues create/,
