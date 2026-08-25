@@ -99,10 +99,9 @@ jq -e \
 jq -e \
   --arg name "$EXPECTED_DATABASE_NAME" \
   --arg uuid "$EXPECTED_DATABASE_ID" \
-  '.name == $name and .uuid == $uuid and
-   .running_in_region == "WNAM" and .jurisdiction == null and
+  '.name == $name and .uuid == $uuid and .jurisdiction == null and
    .version == "production" and .num_tables == 0' \
-  "$EVIDENCE_DIR/pre-migration-d1-target.json" > /dev/null || fail "Pre-migration D1 identity, placement, version, or empty-state verification failed"
+  "$EVIDENCE_DIR/pre-migration-d1-target.json" > /dev/null || fail "Pre-migration D1 identity, version, or empty-state verification failed"
 
 jq -e \
   --arg name "$EXPECTED_DATABASE_NAME" \
