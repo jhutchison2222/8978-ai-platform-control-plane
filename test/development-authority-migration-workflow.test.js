@@ -13,6 +13,7 @@ test("migration workflow is manual, account-pinned, main-only, and approval-gate
   assert.match(workflow, /APPLY AUTHORITY MIGRATIONS ONCE/);
   assert.match(workflow, /inputs\.execution_commit == '4a9080ef49fbbca42017a679baad026bbea1c456'/);
   assert.match(workflow, /ref: \$\{\{ inputs\.execution_commit \}\}/);
+  assert.match(workflow, /MIGRATION_EXECUTION_COMMIT: \$\{\{ inputs\.execution_commit \}\}/);
   assert.match(workflow, /environment: development-d1-migration/);
   assert.match(workflow, /CLOUDFLARE_aiemployees_voice_chat_API_TOKEN_d1/);
   assert.match(workflow, /permissions:\n\s+contents: read/);
