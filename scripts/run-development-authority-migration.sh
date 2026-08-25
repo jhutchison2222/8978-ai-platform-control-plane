@@ -127,11 +127,12 @@ capture_migration_names "$EVIDENCE_DIR/pending-before.txt" "$EVIDENCE_DIR/pendin
 assert_exact_migration_list "$EVIDENCE_DIR/pending-before-migrations.txt"
 
 printf '1\n' > "$EVIDENCE_DIR/attempt-count.txt"
-set +e
-"$WRANGLER" d1 migrations apply "$EXPECTED_DATABASE_NAME" --remote --config "$MIGRATION_CONFIG" \
-  > "$EVIDENCE_DIR/apply-result.txt" 2>&1
-apply_status=$?
-set -e
+if "$WRANGLER" d1 migrations apply "$EXPECTED_DATABASE_NAME" --remote --config "$MIGRATION_CONFIG" \
+  > "$EVIDENCE_DIR/apply-result.txt" 2>&1; then
+  apply_status=0
+else
+  apply_status=$?
+fi
 if [[ "$apply_status" -ne 0 ]]; then
   "$WRANGLER" d1 migrations list "$EXPECTED_DATABASE_NAME" --remote --config "$MIGRATION_CONFIG" \
     > "$EVIDENCE_DIR/pending-after-failed-apply.txt" 2>&1 || true
