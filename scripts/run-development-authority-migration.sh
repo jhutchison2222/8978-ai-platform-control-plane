@@ -10,6 +10,9 @@ readonly EXPECTED_PACKET_SHA256="ab865340c48279e6e5654e8e6b0ed52cb9d4af28115c49b
 readonly MIGRATION_CONFIG="deployment/wrangler.authority-migrations.jsonc"
 readonly EVIDENCE_DIR="${MIGRATION_EVIDENCE_DIR:?MIGRATION_EVIDENCE_DIR is required}"
 readonly BACKUP_PATH="${RUNNER_TEMP:?RUNNER_TEMP is required}/8978-ai-authority-dev-pre-migration.sql"
+readonly OPERATOR_PATH="${RUNNER_TEMP}/development-authority-whoami.txt"
+readonly D1_LIST_PATH="${RUNNER_TEMP}/development-authority-d1-list.json"
+readonly D1_LIST_ERROR_PATH="${RUNNER_TEMP}/development-authority-d1-list.stderr"
 readonly WRANGLER="./node_modules/.bin/wrangler"
 
 readonly -a EXPECTED_MIGRATIONS=(
@@ -22,8 +25,22 @@ readonly -a EXPECTED_MIGRATIONS=(
 )
 
 mkdir -p "$EVIDENCE_DIR"
-rm -f "$BACKUP_PATH"
-trap 'rm -f "$BACKUP_PATH"' EXIT
+rm -f "$BACKUP_PATH" "$OPERATOR_PATH" "$D1_LIST_PATH" "$D1_LIST_ERROR_PATH"
+
+cleanup_sensitive_files() {
+  rm -f "$BACKUP_PATH" "$OPERATOR_PATH" "$D1_LIST_PATH" "$D1_LIST_ERROR_PATH"
+}
+
+record_unhandled_error() {
+  local status=$?
+  trap - ERR
+  printf 'Unhandled command failure at line %s (exit %s)\n' "${BASH_LINENO[0]:-unknown}" "$status" \
+    >> "$EVIDENCE_DIR/errors.txt"
+  exit "$status"
+}
+
+trap 'record_unhandled_error' ERR
+trap 'cleanup_sensitive_files' EXIT
 
 fail() {
   printf '%s\n' "$1" >&2
@@ -66,19 +83,26 @@ fded8c2fe248ecd7cfbb1214d0449f012b7099220f85e80fcd3012b3b9ade424  migrations/aut
 DIGESTS
 
 "$WRANGLER" --version > "$EVIDENCE_DIR/wrangler-version.txt"
-"$WRANGLER" whoami > "$EVIDENCE_DIR/operator.txt"
-grep -Fq "$EXPECTED_ACCOUNT_ID" "$EVIDENCE_DIR/operator.txt" || fail "Authenticated Wrangler identity did not report the authorized account"
-"$WRANGLER" d1 list --json > "$EVIDENCE_DIR/pre-migration-d1-list.json"
+"$WRANGLER" whoami > "$OPERATOR_PATH" 2>&1
+grep -Fq "$EXPECTED_ACCOUNT_ID" "$OPERATOR_PATH" || fail "Authenticated Wrangler identity did not report the authorized account"
+jq -n --arg accountId "$EXPECTED_ACCOUNT_ID" \
+  '{accountId:$accountId, authenticated:true}' > "$EVIDENCE_DIR/operator-summary.json"
+
+"$WRANGLER" d1 list --json > "$D1_LIST_PATH" 2> "$D1_LIST_ERROR_PATH"
+jq -e \
+  --arg name "$EXPECTED_DATABASE_NAME" \
+  '[.[] | select(.name == $name)] |
+   if length == 1 then .[0] else error("Expected exactly one target D1 database") end' \
+  "$D1_LIST_PATH" > "$EVIDENCE_DIR/pre-migration-d1-target.json"
 "$WRANGLER" d1 info "$EXPECTED_DATABASE_NAME" --json > "$EVIDENCE_DIR/pre-migration-d1-info.json"
 
 jq -e \
   --arg name "$EXPECTED_DATABASE_NAME" \
   --arg uuid "$EXPECTED_DATABASE_ID" \
-  '[.[] | select(.name == $name)] as $matches |
-   ($matches | length) == 1 and $matches[0].uuid == $uuid and
-   $matches[0].running_in_region == "WNAM" and $matches[0].jurisdiction == null and
-   $matches[0].version == "production" and $matches[0].num_tables == 0' \
-  "$EVIDENCE_DIR/pre-migration-d1-list.json" > /dev/null || fail "Pre-migration D1 identity, placement, version, or empty-state verification failed"
+  '.name == $name and .uuid == $uuid and
+   .running_in_region == "WNAM" and .jurisdiction == null and
+   .version == "production" and .num_tables == 0' \
+  "$EVIDENCE_DIR/pre-migration-d1-target.json" > /dev/null || fail "Pre-migration D1 identity, placement, version, or empty-state verification failed"
 
 jq -e \
   --arg name "$EXPECTED_DATABASE_NAME" \
