@@ -40,7 +40,13 @@ test("migration runner pins reviewed authority inputs and contains one apply inv
   assert.match(runner, /Checked-out runtime does not match the reviewed execution commit/);
   assert.match(runner, /pending-before-migrations\.txt/);
   assert.match(runner, /pending-after-migrations\.txt/);
-  assert.match(runner, /trap 'rm -f \"\$BACKUP_PATH\"' EXIT/);
+  assert.match(runner, /trap 'record_unhandled_error' ERR/);
+  assert.match(runner, /trap 'cleanup_sensitive_files' EXIT/);
+  assert.match(runner, /\$\{RUNNER_TEMP\}\/development-authority-whoami\.txt/);
+  assert.match(runner, /\$\{RUNNER_TEMP\}\/development-authority-d1-list\.json/);
+  assert.match(runner, /pre-migration-d1-target\.json/);
+  assert.doesNotMatch(runner, /\$EVIDENCE_DIR\/pre-migration-d1-list\.json/);
+  assert.doesNotMatch(runner, /\$EVIDENCE_DIR\/operator\.txt/);
 });
 
 test("migration runner does not contain adjacent Cloudflare operations or recovery attempts", () => {
