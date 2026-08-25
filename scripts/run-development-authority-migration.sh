@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly EXPECTED_COMMIT="727d34322b9e725c482cd041d1d9405772737af3"
+readonly EXPECTED_BASELINE_COMMIT="727d34322b9e725c482cd041d1d9405772737af3"
+readonly EXPECTED_EXECUTION_COMMIT="${MIGRATION_EXECUTION_COMMIT:?MIGRATION_EXECUTION_COMMIT is required}"
 readonly EXPECTED_ACCOUNT_ID="de5e0273347b0b4c5f8f4e554aa2288f"
 readonly EXPECTED_DATABASE_NAME="8978-ai-authority-dev"
 readonly EXPECTED_DATABASE_ID="741ade94-8539-4fc8-b6be-24884720dee8"
@@ -45,8 +46,9 @@ assert_exact_migration_list() {
 
 [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || fail "CLOUDFLARE_API_TOKEN is unavailable"
 [[ "${CLOUDFLARE_ACCOUNT_ID:-}" == "$EXPECTED_ACCOUNT_ID" ]] || fail "Authenticated account selection does not match the authorized account"
-git merge-base --is-ancestor "$EXPECTED_COMMIT" HEAD || fail "Reviewed source is not an ancestor of the workflow commit"
-git diff --quiet "$EXPECTED_COMMIT" HEAD -- \
+[[ "$(git rev-parse HEAD)" == "$EXPECTED_EXECUTION_COMMIT" ]] || fail "Checked-out runtime does not match the reviewed execution commit"
+git merge-base --is-ancestor "$EXPECTED_BASELINE_COMMIT" "$EXPECTED_EXECUTION_COMMIT" || fail "Reviewed migration baseline is not an ancestor of the execution commit"
+git diff --quiet "$EXPECTED_BASELINE_COMMIT" "$EXPECTED_EXECUTION_COMMIT" -- \
   deployment/development-authority-migration-execution-packet.json \
   deployment/wrangler.authority-migrations.jsonc \
   migrations/authority \
@@ -132,14 +134,15 @@ jq -e \
 
 jq -n \
   --arg recordedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-  --arg reviewedCommit "$EXPECTED_COMMIT" \
+  --arg reviewedCommit "$EXPECTED_BASELINE_COMMIT" \
+  --arg executionCommit "$EXPECTED_EXECUTION_COMMIT" \
   --arg packetSha256 "$EXPECTED_PACKET_SHA256" \
   --arg accountId "$EXPECTED_ACCOUNT_ID" \
   --arg databaseId "$EXPECTED_DATABASE_ID" \
   --arg bookmark "$(jq -r '.bookmark' "$EVIDENCE_DIR/time-travel.json")" \
   --arg exportSha256 "$(< "$EVIDENCE_DIR/export-sha256.txt")" \
   --argjson exportSizeBytes "$(< "$EVIDENCE_DIR/export-size-bytes.txt")" \
-  '{recordedAt:$recordedAt, reviewedCommit:$reviewedCommit, packetSha256:$packetSha256,
+  '{recordedAt:$recordedAt, reviewedCommit:$reviewedCommit, executionCommit:$executionCommit, packetSha256:$packetSha256,
     accountId:$accountId, databaseId:$databaseId, bookmark:$bookmark,
     exportSha256:$exportSha256, exportSizeBytes:$exportSizeBytes,
     migrationAttemptCount:1, migrationOutcome:"SUCCEEDED", sqlExportRetained:false,
