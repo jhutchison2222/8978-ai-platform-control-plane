@@ -51,6 +51,27 @@ test("migration runner pins reviewed authority inputs and contains one apply inv
   assert.doesNotMatch(runner, /\$EVIDENCE_DIR\/operator\.txt/);
 });
 
+test("migration runner verifies placement from d1 info rather than d1 list", () => {
+  const d1InfoCommand = runner.indexOf('"$WRANGLER" d1 info');
+  const listGuardStart = runner.indexOf("\njq -e", d1InfoCommand);
+  const infoGuardStart = runner.indexOf("\njq -e", listGuardStart + 1);
+  const timeTravelStart = runner.indexOf('\n"$WRANGLER" d1 time-travel info', infoGuardStart);
+
+  assert.ok(d1InfoCommand >= 0);
+  assert.ok(listGuardStart > d1InfoCommand);
+  assert.ok(infoGuardStart > listGuardStart);
+  assert.ok(timeTravelStart > infoGuardStart);
+
+  const listGuard = runner.slice(listGuardStart, infoGuardStart);
+  const infoGuard = runner.slice(infoGuardStart, timeTravelStart);
+
+  assert.match(listGuard, /pre-migration-d1-target\.json/);
+  assert.match(listGuard, /\.version == "production"/);
+  assert.doesNotMatch(listGuard, /running_in_region/);
+  assert.match(infoGuard, /pre-migration-d1-info\.json/);
+  assert.match(infoGuard, /\.running_in_region == "WNAM"/);
+});
+
 test("migration runner does not contain adjacent Cloudflare operations or recovery attempts", () => {
   for (const prohibited of [
     /wrangler deploy/,
