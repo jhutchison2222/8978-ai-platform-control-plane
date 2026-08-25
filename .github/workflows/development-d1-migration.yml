@@ -10,7 +10,7 @@ on:
       execution_commit:
         description: Reviewed immutable migration runtime commit
         required: true
-        default: 33042914d8a1d10018197c8cf5b7218ddaceb3c1
+        default: 0079d5a0051ed41870aedc15e8a21a6bca8c410a
         type: string
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
       github.actor == 'jhutchison2222' &&
       github.ref == 'refs/heads/main' &&
       inputs.approval == 'APPLY AUTHORITY MIGRATIONS ONCE' &&
-      inputs.execution_commit == '33042914d8a1d10018197c8cf5b7218ddaceb3c1'
+      inputs.execution_commit == '0079d5a0051ed41870aedc15e8a21a6bca8c410a'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: development-d1-migration
