@@ -1,10 +1,10 @@
 # Development Authority Migration Execution Record Contract
 
-Status: CODE-ONLY CONTRACT — NO EXECUTION RECORD EXISTS
+Status: CODE-ONLY CONTRACT WITH COMPLETED NON-GOVERNING EXECUTION RECORD
 
-This contract prepares the evidence shape for the separately authorized development authority migration phase. It does not authorize or perform a D1 read, bookmark capture, export, migration, SQL operation, binding, deployment, restore, retry, cleanup, or activation.
+This contract defines the evidence shape for the separately authorized development authority migration phase. The checked-in instance records the already-completed authorized execution; neither the contract nor the record authorizes or performs a D1 read, bookmark capture, export, migration, SQL operation, binding, deployment, restore, retry, cleanup, or activation.
 
-The contract pins the accepted PR #28 head, packet digest, authorized Cloudflare account, and target development D1 identity. A future record must contain a real owner-decision identifier and digest plus the observed authenticated operator, account, and D1 metadata. A no-mutation stop can therefore preserve an unexpected account or missing/mismatched D1 observation; invocation is permitted only when every observed value matches the authorized target. Test values are fixtures only and are never deployment evidence.
+The contract pins the accepted PR #28 head, packet digest, authorized Cloudflare account, and target development D1 identity. A record must contain a real owner-decision identifier and digest plus the observed authenticated operator, account, and D1 metadata. A no-mutation stop can therefore preserve an unexpected account or missing/mismatched D1 observation; invocation is permitted only when every observed value matches the authorized target. Test values are fixtures only and are never deployment evidence.
 
 ## Outcome separation
 
@@ -14,4 +14,4 @@ The contract pins the accepted PR #28 head, packet digest, authorized Cloudflare
 
 For any outcome, the contract rejects bindings, Worker or Workflow effects, Queue connections/messages, secrets/keys, authority data, Project Knowledge, activation evidence, plan updates, deployment/activation, production/customer effects, restore, retry, cleanup, and deletion.
 
-No execution-record JSON instance is checked in by this PR. The future maker must construct one only from actual execution evidence, and an independent checker must validate it before any activation-plan reconciliation.
+One completed, non-governing execution-record JSON instance is checked in by this PR from actual GitHub Actions run `32901834491` evidence. The independent checker must validate it before any activation-plan reconciliation.
