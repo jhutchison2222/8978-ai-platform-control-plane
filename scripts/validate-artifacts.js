@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 28055)
-Total output lines: 1248
-
 import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { digestCanonicalValue, parseJsonStrict } from "../src/canonical-digest.js";
@@ -552,7 +549,146 @@ for (const required of [
 ]) if (!activationPreflightSource.includes(required)) throw new Error(`Development activation preflight invariant missing: ${required}`);
 const activationDangerousPattern = /\bfetch\s*\(|\b(?:exec|spawn)\s*\(|\bwrangler\b|\.prepare\s*\(|\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM|REINDEX)\b/iu;
 if (activationDangerousPattern.test(activationPreflightSource)) throw new Error("Development activation preflight must remain validation-only");
-if (workerSource.includes("development-activation-preflight") || developmentRuntimeSource…3055 tokens truncated…INSERT INTO authority_development_activation_evidence_writes", "identity.bodyDigest",
+if (workerSource.includes("development-activation-preflight") || developmentRuntimeSource.includes("development-activation-preflight")) {
+  throw new Error("Development activation preflight cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "AuthenticatedDevelopmentActivationEvidenceVerifier", "developmentActivationPurposeDigest",
+  "digestDevelopmentActivationOwnerDecision", 'structuredClone(await this.bundleProvider.read(requestedEvidence, { now }))',
+  "function verificationTime(value)", 'now: requestedNow = this.now()',
+  "const now = verificationTime(requestedNow)",
+  '"maker_validation"', '"checker_validation"', '"resource_activation_authorization"',
+  '"worker_deployment_authorization"', '"rollback_evidence"', '"backup_evidence"',
+  "Development activation evidence digests must be unique",
+  "Development activation evidence bundle provider is unavailable",
+  "Development activation identity verifier is unavailable", "Development activation owner verifier is unavailable",
+  'role: "maker", actionDigest: purposes.maker_validation',
+  'role: "checker", actionDigest: purposes.checker_validation',
+  'role: "checker", actionDigest: purposes.rollback_evidence',
+  'role: "maker", actionDigest: purposes.backup_evidence',
+  "purposes.resource_activation_authorization", "purposes.worker_deployment_authorization",
+  "this.ownerVerifier.verify(bundle.resourceActivationDecision",
+  "this.ownerVerifier.verify(bundle.workerDeploymentDecision",
+  "resourcePayload.decisionId === workerPayload.decisionId", "resourceApproved !== true || workerApproved !== true",
+  "resourceDigest !== evidence.resourceActivationAuthorizationDigest",
+  "workerDigest !== evidence.workerDeploymentAuthorizationDigest",
+  "maker.principalId !== backup.principalId", "checker.principalId !== rollback.principalId",
+  "resourcePayload.decidedBy !== workerPayload.decidedBy",
+  "new Set(principals).size !== principals.length", "verificationDigest = await digestCanonicalValue",
+]) if (!activationEvidenceVerifierSource.includes(required)) {
+  throw new Error(`Development activation evidence verifier invariant missing: ${required}`);
+}
+if ((activationEvidenceVerifierSource.match(/this\.now\(\)/gu) ?? []).length !== 1 ||
+    !/function verificationTime\(value\) \{\s*if \(!\(value instanceof Date\) \|\| !Number\.isSafeInteger\(value\.valueOf\(\)\)\)/u.test(activationEvidenceVerifierSource) ||
+    !/async verify\(evidence, \{ now: requestedNow = this\.now\(\) \} = \{\}\) \{\s*assertEvidence\(evidence\);\s*const now = verificationTime\(requestedNow\);/u.test(activationEvidenceVerifierSource) ||
+    !/this\.bundleProvider\.read\(requestedEvidence, \{ now \}\)/u.test(activationEvidenceVerifierSource)) {
+  throw new Error("Development activation evidence verifier must capture and propagate exactly one verification time");
+}
+const activationIdentityPurposePatterns = [
+  ["maker validation", /identityVerifier\.verify\(bundle\.makerValidationAttestation, \{\s*role: "maker", actionDigest: purposes\.maker_validation, now,/u],
+  ["checker validation", /identityVerifier\.verify\(bundle\.checkerValidationAttestation, \{\s*role: "checker", actionDigest: purposes\.checker_validation, now,/u],
+  ["rollback evidence", /identityVerifier\.verify\(bundle\.rollbackAttestation, \{\s*role: "checker", actionDigest: purposes\.rollback_evidence, now,/u],
+  ["backup evidence", /identityVerifier\.verify\(bundle\.backupAttestation, \{\s*role: "maker", actionDigest: purposes\.backup_evidence, now,/u],
+];
+for (const [label, pattern] of activationIdentityPurposePatterns) {
+  if (!pattern.test(activationEvidenceVerifierSource)) {
+    throw new Error(`Development activation identity purpose binding missing: ${label}`);
+  }
+}
+if (activationDangerousPattern.test(activationEvidenceVerifierSource) ||
+    /privateKey|SERVICE_AUTH_KEYS_JSON|Proxy-Authorization/u.test(activationEvidenceVerifierSource)) {
+  throw new Error("Development activation evidence verifier must remain validation-only and public-key-only");
+}
+if (workerSource.includes("development-activation-evidence-verifier") ||
+    developmentRuntimeSource.includes("development-activation-evidence-verifier")) {
+  throw new Error("Development activation evidence verifier cannot be imported by the Worker runtime");
+}
+if (!secretScanSource.includes('"deployment"')) throw new Error("Deployment manifests must remain inside the default secret-scan roots");
+
+if (wrangler.name !== "8978-ai-control-plane-dev" || wrangler.main !== "src/control-plane-worker.js") throw new Error("Worker must remain development-scoped with the reviewed entry point");
+if (wrangler.compatibility_date !== "2026-08-12" || !wrangler.compatibility_flags?.includes("nodejs_compat")) throw new Error("Worker compatibility configuration changed without review");
+if (wrangler.workers_dev !== false || wrangler.preview_urls !== false) throw new Error("Development Worker cannot expose workers.dev or preview URLs");
+if (wrangler.vars?.CONTROL_PLANE_MODE !== "development" || wrangler.vars?.ALLOW_EXTERNAL_WRITES !== "false") throw new Error("Worker external-write boundary must remain fail closed");
+if (Object.hasOwn(wrangler.vars ?? {}, "SERVICE_AUTH_KEYS_JSON")) throw new Error("Service-auth keys must be secret bindings, never plaintext vars");
+for (const binding of ["d1_databases", "r2_buckets", "queues", "workflows", "services", "hyperdrive", "vectorize"]) {
+  if (wrangler[binding] !== undefined) throw new Error(`Development Worker cannot add ${binding} bindings in this foundation`);
+}
+const durableBindings = wrangler.durable_objects?.bindings ?? [];
+const expectedDurableBindings = [
+  ["SERVICE_AUTH_REPLAY", "ServiceAuthReplayDurableObject"],
+  ["IDEMPOTENCY_STORE", "IdempotencyStateDurableObject"],
+  ["OWNER_DECISION_STORE", "OwnerDecisionStateDurableObject"],
+  ["AUDIT_STORE", "AuditStateDurableObject"],
+];
+if (JSON.stringify(durableBindings.map(({ name, class_name: className }) => [name, className])) !== JSON.stringify(expectedDurableBindings)) throw new Error("Worker Durable Object bindings must remain exact and ordered");
+if (wrangler.migrations?.length !== 2 || wrangler.migrations[0].tag !== "v1" || JSON.stringify(wrangler.migrations[0].new_sqlite_classes) !== JSON.stringify(["ServiceAuthReplayDurableObject"]) ||
+    wrangler.migrations[1].tag !== "v2" || JSON.stringify(wrangler.migrations[1].new_sqlite_classes) !== JSON.stringify(["IdempotencyStateDurableObject", "OwnerDecisionStateDurableObject", "AuditStateDurableObject"])) throw new Error("Worker SQLite Durable Object migrations must preserve v1 replay and exact v2 durable state classes");
+for (const required of ["authenticateServiceRequest", "CloudflareDurableReplayStore", "PolicyGateway.create", "execution_disabled", "authorization", "proxy-authorization"]) {
+  if (!workerSource.includes(required)) throw new Error(`Worker fail-closed invariant missing: ${required}`);
+}
+for (const required of ["IDEMPOTENCY_STORE", "OWNER_DECISION_STORE", "AUDIT_STORE", "createDevelopmentRuntime", "durableDependencies"]) {
+  if (!workerSource.includes(required)) throw new Error(`Worker durable-state wiring missing: ${required}`);
+}
+for (const required of ["transactionSync", "this.ctx.id.name !== decisionId", "ON CONFLICT(id) DO NOTHING", "UPDATE audit_head SET scope=COALESCE(scope", "Audit append contention limit exceeded"]) {
+  if (!durableStateSource.includes(required)) throw new Error(`Durable-state atomicity invariant missing: ${required}`);
+}
+if (/DELETE FROM audit_events/iu.test(durableStateSource) || /\bfetch\s*\(/u.test(durableStateSource + durableAdapterSource)) throw new Error("Durable state cannot delete audit events or use external fetch");
+
+for (const required of [
+  "D1AuthoritativeResourceResolver", "D1TrustedLimitProvider", "status IN ('CURRENT', 'FINAL')",
+  "valid_from_ms <= ?2", "valid_from_ms <= ?3", ".bind(...bindings).all()", "digestCanonicalValue(resource)",
+  "resourceKey(resource) !== row.resource_key", "Authoritative ${label} is ambiguous", "actionDigest",
+]) if (!authorityAdapterSource.includes(required)) throw new Error(`Authoritative D1 read invariant missing: ${required}`);
+const writeSqlPattern = /\b(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|UPDATE\s+[A-Za-z_]|DELETE\s+FROM|REPLACE\s+INTO|CREATE\s+(?:TABLE|INDEX|VIEW|TRIGGER)|DROP\s+(?:TABLE|INDEX|VIEW|TRIGGER)|ALTER\s+TABLE|PRAGMA\b|ATTACH\s+(?:DATABASE\s+)?|DETACH\s+(?:DATABASE\s+)?|VACUUM\b|REINDEX\b)/iu;
+for (const required of [
+  "D1DevelopmentActivationEvidenceBundleProvider",
+  "FROM authority_development_activation_evidence_bundles",
+  "reviewed_commit = ?1", "maker_validation_digest = ?2", "checker_validation_digest = ?3",
+  "resource_activation_authorization_digest = ?4", "worker_deployment_authorization_digest = ?5",
+  "rollback_evidence_digest = ?6", "backup_digest = ?7",
+  "enabled = 1 AND status IN ('CURRENT', 'FINAL')", "issued_at_ms <= ?8 AND expires_at_ms > ?8",
+  "evidence.reviewedCommit", "evidence.makerValidationDigest", "evidence.checkerValidationDigest",
+  "evidence.resourceActivationAuthorizationDigest", "evidence.workerDeploymentAuthorizationDigest",
+  "evidence.rollbackEvidenceDigest", "evidence.backupDigest", ").all()",
+  "Development activation evidence bundle unavailable", "Development activation evidence bundle is ambiguous",
+  "parseJsonStrict(row.bundle_json)", "canonicalize(bundle) !== row.bundle_json",
+  "const MAX_BUNDLE_BYTES = 65_536", "encoder.encode(row.bundle_json).byteLength > MAX_BUNDLE_BYTES",
+  'component(row.record_id, "evidence bundle record ID")',
+  "digestCanonicalValue(bundle) !== row.bundle_digest", "digestCanonicalValue(record) !== row.record_digest",
+  "Development activation evidence digests must be unique", "return freeze(bundle)",
+]) if (!activationEvidenceProviderSource.includes(required)) {
+  throw new Error(`Development activation evidence provider invariant missing: ${required}`);
+}
+if (writeSqlPattern.test(activationEvidenceProviderSource) || /\bfetch\s*\(/u.test(activationEvidenceProviderSource) ||
+    /privateKey|SERVICE_AUTH_KEYS_JSON|Proxy-Authorization/u.test(activationEvidenceProviderSource)) {
+  throw new Error("Development activation evidence provider must remain read-only, fetch-free, and public-key-only");
+}
+if (workerSource.includes("d1-development-activation-evidence-provider") ||
+    developmentRuntimeSource.includes("d1-development-activation-evidence-provider")) {
+  throw new Error("Development activation evidence provider cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "AuthenticatedDevelopmentActivationEvidenceWriter", "authenticateServiceRequest",
+  "const MAX_BODY_BYTES = 65_536", "const MAX_VALIDITY_MS = 86_400_000",
+  'typeof secretResolver.resolve !== "function"', "replayStore.atomic !== true",
+  'replayStore.durability !== "durable"', 'typeof replayStore.consume !== "function"',
+  'typeof identityVerifier.verify !== "function"', 'typeof ownerVerifier.verify !== "function"',
+  "!COMMIT.test(reviewedCommit)",
+  'request.method !== "POST"', 'target.pathname !== "/v1/development-activation/evidence"', 'target.search !== ""',
+  'request.headers.has("authorization")', 'request.headers.has("proxy-authorization")',
+  'request.headers.get("content-type") !== "application/json"', "maxBodyBytes: MAX_BODY_BYTES",
+  "identity.principalId !== this.authorizedWriter.principalId", "identity.keyId !== this.authorizedWriter.keyId",
+  "allowedClockSkewMs > 300_000", "Object.freeze(this)",
+  'new TextDecoder("utf-8", { fatal: true })', "parseJsonStrict(text)", "canonicalize(value) !== text",
+  'request.status !== "CURRENT"', "request.version !== 1",
+  "request.evidence?.reviewedCommit !== expectedCommit", "expiresAtMs - issuedAtMs > MAX_VALIDITY_MS",
+  "AuthenticatedDevelopmentActivationEvidenceVerifier", "canonicalize(evidence) !== canonicalize(value.evidence)",
+  "structuredClone(value.bundle)", "verified.makerPrincipalId",
+  "verified.checkerPrincipalId", "verified.ownerPrincipalId", "includes(identity.principalId)",
+  "digestCanonicalValue(value.bundle)", "digestCanonicalValue(record)", "digestCanonicalValue(writeRecord)",
+  "this.database.batch([", "INSERT INTO authority_development_activation_evidence_bundles",
+  "WHERE NOT EXISTS (", "WHERE reviewed_commit = ?2 AND enabled = 1 AND status IN ('CURRENT', 'FINAL')",
+  "INSERT INTO authority_development_activation_evidence_writes", "identity.bodyDigest",
   "identity.principalId", "identity.keyId", "identity.nonce", "Date.parse(identity.issuedAt)",
   "return freeze({", "inserted: true", 'status: "CURRENT"',
 ]) if (!activationEvidenceWriterSource.includes(required)) {
