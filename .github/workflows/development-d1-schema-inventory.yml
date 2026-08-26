@@ -1,0 +1,75 @@
+name: Development D1 schema inventory verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: Type VERIFY AUTHORITY SCHEMA READ ONLY ONCE
+        required: true
+        type: string
+      execution_commit:
+        description: Reviewed immutable read-only verification runtime commit
+        required: true
+        default: cf1bdb9f890a7a00a005f68921cf0de7198d453c
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-authority-d1-schema-inventory
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Read-only schema inventory once
+    if: >-
+      github.repository == 'jhutchison2222/8978-ai-platform-control-plane' &&
+      github.actor == 'jhutchison2222' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.approval == 'VERIFY AUTHORITY SCHEMA READ ONLY ONCE' &&
+      inputs.execution_commit == 'cf1bdb9f890a7a00a005f68921cf0de7198d453c'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: development-d1-migration
+    steps:
+      - name: Initialize evidence capture
+        run: |
+          mkdir -p "${RUNNER_TEMP}/development-authority-schema-inventory-evidence"
+          printf 'workflow_started\n' > "${RUNNER_TEMP}/development-authority-schema-inventory-evidence/workflow-status.txt"
+
+      - name: Check out immutable reviewed runtime
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.execution_commit }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install pinned dependencies
+        run: npm ci
+
+      - name: Validate repository artifacts
+        run: |
+          npm test
+          npm run check
+          npm run secret-scan
+          npm run cf:types:check
+          npm run cf:dry-run
+
+      - name: Run exact read-only schema inventory once
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_aiemployees_voice_chat_API_TOKEN_d1 }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          SCHEMA_VERIFICATION_APPROVAL: ${{ inputs.approval }}
+          SCHEMA_VERIFICATION_EVIDENCE_DIR: ${{ runner.temp }}/development-authority-schema-inventory-evidence
+          SCHEMA_VERIFICATION_EXECUTION_COMMIT: ${{ inputs.execution_commit }}
+        run: bash scripts/run-development-authority-schema-inventory-verification.sh
+
+      - name: Publish sanitized read-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: development-authority-schema-inventory-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/development-authority-schema-inventory-evidence
+          if-no-files-found: warn
+          retention-days: 7
