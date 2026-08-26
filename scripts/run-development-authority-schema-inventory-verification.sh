@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 readonly EXPECTED_PACKET_COMMIT="79bf051947019a0703e6095d71bc3d926612c76b"
+readonly EXPECTED_RECONCILED_BASE_COMMIT="5d34fd3eb39b37c5dca6a64afd0469478390a808"
 readonly EXPECTED_EXECUTION_COMMIT="${SCHEMA_VERIFICATION_EXECUTION_COMMIT:?SCHEMA_VERIFICATION_EXECUTION_COMMIT is required}"
 readonly EXPECTED_ACCOUNT_ID="de5e0273347b0b4c5f8f4e554aa2288f"
 readonly EXPECTED_DATABASE_NAME="8978-ai-authority-dev"
@@ -130,14 +131,15 @@ run_query() {
 [[ "${GITHUB_ACTOR:-}" == "jhutchison2222" ]] || fail "Schema verification operator is not the repository owner"
 [[ "$(git rev-parse HEAD)" == "$EXPECTED_EXECUTION_COMMIT" ]] || fail "Checked-out runtime does not match the reviewed execution commit"
 git merge-base --is-ancestor "$EXPECTED_PACKET_COMMIT" "$EXPECTED_EXECUTION_COMMIT" || fail "Reviewed schema packet commit is not an ancestor of the execution commit"
-git diff --quiet "$EXPECTED_PACKET_COMMIT" "$EXPECTED_EXECUTION_COMMIT" -- \
+git merge-base --is-ancestor "$EXPECTED_RECONCILED_BASE_COMMIT" "$EXPECTED_EXECUTION_COMMIT" || fail "Accepted schema reconciliation commit is not an ancestor of the execution commit"
+git diff --quiet "$EXPECTED_RECONCILED_BASE_COMMIT" "$EXPECTED_EXECUTION_COMMIT" -- \
   deployment/development-authority-schema-inventory-verification-packet.json \
   deployment/development-authority-migration-execution-record.json \
   deployment/wrangler.authority-migrations.jsonc \
   migrations/authority \
   schemas/development-authority-schema-inventory-verification-record.schema.json \
   src/development-authority-schema-inventory-verification-record.js \
-  || fail "Reviewed packet, migration evidence, schema, validator, configuration, or SQL drifted"
+  || fail "Accepted reconciled packet, migration evidence, schema, validator, configuration, or SQL drifted"
 
 [[ "$(sha256sum deployment/development-authority-schema-inventory-verification-packet.json | cut -d' ' -f1)" == "$EXPECTED_PACKET_SHA256" ]] || fail "Schema inventory packet digest drifted"
 [[ "$(sha256sum deployment/development-authority-migration-execution-record.json | cut -d' ' -f1)" == "$EXPECTED_MIGRATION_RECORD_SHA256" ]] || fail "Accepted migration execution record digest drifted"
