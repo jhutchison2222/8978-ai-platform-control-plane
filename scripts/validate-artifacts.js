@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 28050)
+Warning: truncated output (original token count: 28055)
 Total output lines: 1248
 
 import { readFile, readdir } from "node:fs/promises";
@@ -435,7 +435,240 @@ for (const source of [authoritySchemaInventoryPacket.sourceMigrationPacket,
   }
 }
 if (authoritySchemaInventoryPacket.status !== "PLANNED" || authoritySchemaInventoryPacket.governing !== false ||
-    authoritySchemaInventoryPacket.executionAuthoriz…8050 tokens truncated…result\.checkerPrincipalId, result\.ownerPrincipalId\]\)\.size !== 3/u],
+    authoritySchemaInventoryPacket.executionAuthorized !== false || authoritySchemaInventoryPacket.account.accountId !== null ||
+    authoritySchemaInventoryPacket.prerequisite.recordSha256 !==
+      "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1" ||
+    authoritySchemaInventoryPacket.prerequisite.satisfied !== true ||
+    authoritySchemaInventoryPacket.foundationBaseline !== "de948d58cd95328bbabb757b08d88bb75fea9d73") {
+  throw new Error("Development authority schema inventory packet must preserve its accepted prerequisite and remain non-governing and execution-disabled");
+}
+if (authorityMigrationRecord.status !== authoritySchemaInventoryPacket.prerequisite.requiredStatus ||
+    createHash("sha256").update(await readFile(authoritySchemaInventoryPacket.prerequisite.executionRecordPath)).digest("hex") !==
+      authoritySchemaInventoryPacket.prerequisite.recordSha256) {
+  throw new Error("Development authority schema inventory prerequisite drifted from the accepted migration record");
+}
+const derivedAuthorityTables = [];
+const derivedAuthorityIndexes = [];
+for (const migration of AUTHORITY_MIGRATIONS) {
+  const sql = await readFile(migration.path, "utf8");
+  derivedAuthorityTables.push(...[...sql.matchAll(/^CREATE TABLE ([a-z0-9_]+)/gimu)].map((match) => match[1]));
+  derivedAuthorityIndexes.push(...[...sql.matchAll(/^CREATE (?:UNIQUE )?INDEX ([a-z0-9_]+)/gimu)].map((match) => match[1]));
+}
+const expectedInventoryTables = [...derivedAuthorityTables.sort(), "d1_migrations"];
+if (JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.tables) !== JSON.stringify(expectedInventoryTables) ||
+    JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.indexes) !== JSON.stringify(derivedAuthorityIndexes.sort()) ||
+    JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.appliedMigrations) !==
+      JSON.stringify(AUTHORITY_MIGRATIONS.map(({ path }) => path.split("/").at(-1))) ||
+    authoritySchemaInventoryPacket.expectedInventory.authorityTableRowCount !== 0) {
+  throw new Error("Development authority schema inventory drifted from the six immutable migrations");
+}
+for (const [name, command] of Object.entries(authoritySchemaInventoryPacket.queries)) {
+  if (name === "databaseInfo") {
+    if (command !== "wrangler d1 info 8978-ai-authority-dev --json") throw new Error("Schema inventory D1 info command drifted");
+    continue;
+  }
+  if (!command.startsWith("wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command ") ||
+      !command.endsWith(" --json") || /\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|ATTACH|DETACH|VACUUM)\b/iu.test(command) ||
+      !/(?:SELECT|PRAGMA)/u.test(command)) throw new Error(`Schema inventory query is not exact read-only D1 evidence: ${name}`);
+}
+if (Object.entries(authoritySchemaInventoryPacket.resultBoundary).some(([key, value]) =>
+  ["activationPlanUpdateDeferred", "verificationRecordRequired"].includes(key) ? value !== true : value !== false)) {
+  throw new Error("Development authority schema inventory packet cannot fabricate verification or update the activation plan");
+}
+for (const prohibited of [
+  "execute_mutating_sql", "apply_or_create_migration", "insert_update_or_delete_authority_data",
+  "install_or_update_runtime_binding", "create_or_deploy_worker", "create_or_trigger_workflow",
+  "add_queue_producer_or_consumer", "publish_queue_message", "install_or_rotate_secret_or_key",
+  "seed_project_knowledge", "write_activation_evidence", "certify_remote_schema_without_definition_evidence",
+  "update_activation_plan", "restore_database", "retry_query_automatically",
+  "delete_or_automatically_clean_up_resource", "touch_production_or_customer_resource",
+]) if (!authoritySchemaInventoryPacket.prohibitedOperations.includes(prohibited)) {
+  throw new Error(`Development authority schema inventory prohibition missing: ${prohibited}`);
+}
+if (deploymentFiles.some((file) => /^development-authority-schema-inventory-verification-record(?:\.|-)/u.test(file))) {
+  throw new Error("Development authority schema inventory verification record instance must not exist before execution");
+}
+if (authoritySchemaInventoryRecordSchema.additionalProperties !== false ||
+    authoritySchemaInventoryRecordSchema.properties?.source?.properties?.reviewedCommit?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT ||
+    authoritySchemaInventoryRecordSchema.properties?.source?.properties?.packetSha256?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256 ||
+    authoritySchemaInventoryRecordSchema.properties?.source?.properties?.authorizedAccountId?.const !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||
+    authoritySchemaInventoryRecordSchema.properties?.authorization?.properties?.ownerDecisionId?.minLength !== 1 ||
+    authoritySchemaInventoryRecordSchema.properties?.independentReview?.properties?.checkerPrincipalId?.minLength !== 1 ||
+    authoritySchemaInventoryRecordSchema.properties?.conclusions?.properties?.activationPlanUpdateAuthorized?.const !== false ||
+    authoritySchemaInventoryRecordSchema.properties?.conclusions?.properties?.activationPlanUpdated?.const !== false) {
+  throw new Error("Development authority schema inventory verification record schema boundary weakened");
+}
+if (createHash("sha256").update(await readFile(authoritySchemaInventoryPacket.sourceMigrationPacket.path)).digest("hex") !==
+      authoritySchemaInventoryPacket.sourceMigrationPacket.sha256 ||
+    createHash("sha256").update(await readFile("deployment/development-authority-schema-inventory-verification-packet.json")).digest("hex") !==
+      REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256) {
+  throw new Error("Development authority schema inventory verification record source packet drifted");
+}
+if (JSON.stringify(ORDERED_SCHEMA_INVENTORY_QUERIES) !== JSON.stringify(Object.keys(authoritySchemaInventoryPacket.queries)) ||
+    JSON.stringify(EXPECTED_AUTHORITY_TABLES) !== JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.tables) ||
+    JSON.stringify(EXPECTED_AUTHORITY_INDEXES) !== JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.indexes) ||
+    JSON.stringify(EXPECTED_AUTHORITY_MIGRATIONS) !== JSON.stringify(authoritySchemaInventoryPacket.expectedInventory.appliedMigrations)) {
+  throw new Error("Development authority schema inventory verification record expectations drifted from its packet");
+}
+for (const required of [
+  "assertInvocationPrerequisites", "assertNoAdjacentEffects", "assertObservationConsistency",
+  "assertQueryEvidenceConsistency(record);", "assertIndependentReviewConsistency", "assertVerified",
+  "record.authorization.ownerDecisionId.length === 0",
+  "typeof record.authorization.ownerAuthorizationDigest !== \"string\"",
+  "record.status === \"VERIFIED\"", "record.status === \"STOPPED_NO_QUERY\"",
+  "INCONCLUSIVE_READ_ONLY", "ORDERED_SCHEMA_INVENTORY_QUERIES.slice(0, invokedCount)",
+  "Uninvoked schema queries cannot carry result evidence", "Uninvoked schema queries cannot carry retrieved observations",
+  "Schema query result evidence must match its retrieved observation",
+  "digested && missingResultSeen",
+  "Schema query result evidence must form an ordered prefix",
+  "record.execution.outcome === \"SUCCEEDED\"",
+  "Successful schema verification execution must carry every reviewed query result",
+  "record.independentReview.checkerPrincipalId === record.operator.principalId",
+  "record.observations.authorityData.rowCount !== 0", "record.observations.integrity.result !== \"ok\"",
+  "typeof record.independentReview.checkerPrincipalId !== \"string\"",
+  "record.independentReview.checkerPrincipalId.length === 0",
+  "identified !== digested",
+  "record.independentReview.completed !== (identified && digested)",
+  "record.independentReview.accepted && !record.independentReview.completed",
+  "Object.values(record.externalEffects)", "Object.values(record.failurePolicy)",
+  "record.conclusions.activationPlanUpdateAuthorized", "record.conclusions.activationPlanUpdated",
+]) if (!authoritySchemaInventoryRecordValidatorSource.includes(required)) {
+  throw new Error(`Development authority schema inventory verification record invariant missing: ${required}`);
+}
+if (/\bfetch\s*\(|\b(?:exec|spawn)\s*\(|process\.env|\.prepare\s*\(|\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM)\b/iu.test(authoritySchemaInventoryRecordValidatorSource)) {
+  throw new Error("Development authority schema inventory verification record validator must remain pure and operation-free");
+}
+for (const required of [
+  '"pk-d1-dev"', '"9cd8094c-f334-44e6-bdd1-b325802474d5"', 'databaseName !== "8978-ai-authority-dev"',
+  'Existing authority database reuse is prohibited',
+  'binding !== "AUTHORITY_DB"', 'binding !== "ORCHESTRATOR_WORKFLOW"', 'binding !== "ORCHESTRATOR_QUEUE"',
+  'plan.status !== "READY"', 'plan.activationAuthorized', 'plan.workerDeploymentAuthorized',
+  'plan.rollback.backupDigest === null', 'maker and checker evidence must be independent',
+  'Resource activation and Worker deployment authorizations must be distinct',
+  'typeof evidenceVerifier.verify !== "function"', 'independent_evidence_verifier_unavailable',
+  'independent_evidence_verification_failed', 'verification.makerPrincipalId === verification.checkerPrincipalId',
+  'verification.ownerPrincipalId === verification.makerPrincipalId',
+  'verification.resourceActivationAuthorizationDigest !== evidence.resourceActivationAuthorizationDigest',
+]) if (!activationPreflightSource.includes(required)) throw new Error(`Development activation preflight invariant missing: ${required}`);
+const activationDangerousPattern = /\bfetch\s*\(|\b(?:exec|spawn)\s*\(|\bwrangler\b|\.prepare\s*\(|\b(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM|REINDEX)\b/iu;
+if (activationDangerousPattern.test(activationPreflightSource)) throw new Error("Development activation preflight must remain validation-only");
+if (workerSource.includes("development-activation-preflight") || developmentRuntimeSource…3055 tokens truncated…INSERT INTO authority_development_activation_evidence_writes", "identity.bodyDigest",
+  "identity.principalId", "identity.keyId", "identity.nonce", "Date.parse(identity.issuedAt)",
+  "return freeze({", "inserted: true", 'status: "CURRENT"',
+]) if (!activationEvidenceWriterSource.includes(required)) {
+  throw new Error(`Development activation evidence writer invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["HMAC authentication call", /\bconst authenticated = await authenticateServiceRequest\(\{/u],
+  ["authorized principal and key", /identity\.principalId !== this\.authorizedWriter\.principalId \|\| identity\.keyId !== this\.authorizedWriter\.keyId/u],
+  ["maker/checker/owner independence", /\[verified\.makerPrincipalId, verified\.checkerPrincipalId, verified\.ownerPrincipalId\]\s*\.includes\(identity\.principalId\)/u],
+  ["atomic D1 batch", /await this\.database\.batch\(\[\s*this\.database\.prepare\(`/u],
+]) if (!pattern.test(activationEvidenceWriterSource)) {
+  throw new Error(`Development activation evidence writer ${label} invariant missing`);
+}
+const writerInsertions = activationEvidenceWriterSource.match(/\bINSERT\s+INTO\s+authority_development_activation_evidence_(?:bundles|writes)\b/gu) ?? [];
+if (writerInsertions.length !== 2 || /\b(?:UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|PRAGMA|ATTACH|DETACH|VACUUM|REINDEX)\b/iu.test(activationEvidenceWriterSource) ||
+    /\bfetch\s*\(|privateKey|SERVICE_AUTH_KEYS_JSON|\bwrangler\b/iu.test(activationEvidenceWriterSource)) {
+  throw new Error("Development activation evidence writer must remain two-insert-only, fetch-free, and secret-binding-independent");
+}
+if (workerSource.includes("authenticated-development-activation-evidence-writer") ||
+    developmentRuntimeSource.includes("authenticated-development-activation-evidence-writer")) {
+  throw new Error("Development activation evidence writer cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "D1DevelopmentActivationEvidenceWriteVerifier", 'typeof database.prepare !== "function"',
+  "assertAuthorizedWriter(authorizedWriter)", "!COMMIT.test(reviewedCommit)",
+  "assertEvidence(evidence, this.reviewedCommit)", "Development activation evidence digests must be unique",
+  "FROM authority_development_activation_evidence_bundles AS bundles",
+  "INNER JOIN authority_development_activation_evidence_writes AS writes",
+  "ON writes.record_id = bundles.record_id", "bundles.reviewed_commit = ?1",
+  "bundles.maker_validation_digest = ?2", "bundles.checker_validation_digest = ?3",
+  "bundles.resource_activation_authorization_digest = ?4",
+  "bundles.worker_deployment_authorization_digest = ?5", "bundles.rollback_evidence_digest = ?6",
+  "bundles.backup_digest = ?7", "bundles.enabled = 1 AND bundles.status = 'CURRENT'",
+  "bundles.issued_at_ms <= ?8 AND bundles.expires_at_ms > ?8", ").all()",
+  "Development activation evidence write receipt unavailable",
+  "Development activation evidence write receipt is ambiguous",
+  "row.write_id !== row.record_id", "row.write_record_digest !== row.record_digest",
+  "row.service_principal_id !== this.authorizedWriter.principalId",
+  "row.service_key_id !== this.authorizedWriter.keyId", 'row.status !== "CURRENT"',
+  "row.record_version !== 1", "row.write_version !== 1", "row.authenticated_at_ms > row.inserted_at_ms",
+  "row.inserted_at_ms < row.issued_at_ms", "row.inserted_at_ms >= row.expires_at_ms",
+  "digestCanonicalValue(record) !== row.record_digest",
+  "digestCanonicalValue(writeRecord) !== row.write_digest", "verificationDigest = await digestCanonicalValue",
+  "evidence,", "recordDigest: row.record_digest", "writeDigest: row.write_digest", "return freeze({",
+]) if (!activationEvidenceWriteVerifierSource.includes(required)) {
+  throw new Error(`Development activation evidence write verifier invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["exact join", /FROM authority_development_activation_evidence_bundles AS bundles\s+INNER JOIN authority_development_activation_evidence_writes AS writes\s+ON writes\.record_id = bundles\.record_id/u],
+  ["exact cardinality", /if \(response\.results\.length !== 1\) \{\s*throw new Error\("Development activation evidence write receipt is ambiguous"\);\s*\}/u],
+  ["current validity", /bundles\.enabled = 1 AND bundles\.status = 'CURRENT'\s+AND bundles\.issued_at_ms <= \?8 AND bundles\.expires_at_ms > \?8/u],
+  ["authorized writer binding", /row\.service_principal_id !== this\.authorizedWriter\.principalId \|\|\s*row\.service_key_id !== this\.authorizedWriter\.keyId/u],
+  ["record and write binding", /row\.write_id !== row\.record_id \|\| row\.write_record_digest !== row\.record_digest/u],
+  ["exact versions", /row\.status !== "CURRENT" \|\| row\.record_version !== 1 \|\| row\.write_version !== 1/u],
+  ["temporal ordering", /row\.expires_at_ms <= row\.issued_at_ms \|\| row\.inserted_at_ms < row\.issued_at_ms \|\|\s*row\.inserted_at_ms >= row\.expires_at_ms \|\| row\.authenticated_at_ms > row\.inserted_at_ms/u],
+  ["record integrity", /if \(await digestCanonicalValue\(record\) !== row\.record_digest\)/u],
+  ["write integrity", /if \(await digestCanonicalValue\(writeRecord\) !== row\.write_digest\)/u],
+  ["verification digest", /digestCanonicalValue\(\{\s*evidence,\s*recordDigest: row\.record_digest,\s*writeDigest: row\.write_digest,\s*schemaVersion: "1\.0\.0",\s*\}\)/u],
+]) if (!pattern.test(activationEvidenceWriteVerifierSource)) {
+  throw new Error(`Development activation evidence write verifier ${label} invariant missing`);
+}
+if ((activationEvidenceWriteVerifierSource.match(/this\.database\.prepare\(/gu) ?? []).length !== 1 ||
+    writeSqlPattern.test(activationEvidenceWriteVerifierSource) || /\.(?:run|batch)\s*\(/u.test(activationEvidenceWriteVerifierSource) ||
+    /\bfetch\s*\(|privateKey|SERVICE_AUTH_KEYS_JSON|Bearer|OAuth|headers\.has|\bwrangler\b/iu.test(activationEvidenceWriteVerifierSource)) {
+  throw new Error("Development activation evidence write verifier must remain one-query, read-only, fetch-free, and secret-independent");
+}
+if (workerSource.includes("d1-development-activation-evidence-write-verifier") ||
+    developmentRuntimeSource.includes("d1-development-activation-evidence-write-verifier")) {
+  throw new Error("Development activation evidence write verifier cannot be imported by the Worker runtime");
+}
+for (const required of [
+  "new D1DevelopmentActivationEvidenceWriteVerifier(env.AUTHORITY_DB", "authorizedWriter:",
+  "recordDigest: receipt.recordDigest", "requestBodyDigest: receipt.requestBodyDigest",
+  "writeDigest: receipt.writeDigest", "servicePrincipalId: WRITER.principalId",
+]) if (!activationEvidenceWriterTestSource.includes(required)) {
+  throw new Error(`Actual activation evidence writer interoperability test missing: ${required}`);
+}
+for (const required of [
+  'status: "FINAL"', 'principalId: "wrong-writer"', "rejects.toThrow(/ambiguous/)",
+  "rejects.toThrow(/record integrity/)", "rejects.toThrow(/receipt integrity/)",
+  'SET request_body_digest = \'invalid\'', 'SET service_nonce = \'invalid nonce\'',
+  'SET service_key_id = \'wrong-key\'', "rejects.toThrow(/receipt is invalid/)",
+]) if (!activationEvidenceWriteVerifierTestSource.includes(required)) {
+  throw new Error(`Development activation evidence write verifier negative coverage missing: ${required}`);
+}
+for (const required of [
+  "AuthenticatedDevelopmentActivationEvidenceChainVerifier",
+  'assertVerifier(evidenceVerifier, "verify", "evidence verifier")',
+  'assertVerifier(writeReceiptVerifier, "verify", "write receipt verifier")',
+  'typeof now !== "function"', "assertEvidence(evidence)",
+  "Development activation evidence digests must be unique", "const requestedEvidence = Object.freeze({ ...evidence })",
+  "this.evidenceVerifier.verify(requestedEvidence, { now })", "this.writeReceiptVerifier.verify(requestedEvidence, { now })",
+  "structuredClone(result)", "assertEvidenceResult(evidenceResult, requestedEvidence)",
+  "assertWriteResult(writeResult, requestedEvidence)", "result.valid !== true",
+  "result[field] !== evidence[field]", "result.reviewedCommit !== evidence.reviewedCommit",
+  "Development activation maker, checker, and owner must be distinct principals",
+  ".includes(writeResult.servicePrincipalId)",
+  "Development activation writer must be independent of maker, checker, and owner",
+  "evidenceVerificationDigest: evidenceResult.verificationDigest",
+  "writeReceiptVerificationDigest: writeResult.verificationDigest",
+  "authenticatedAt: writeResult.authenticatedAt", "insertedAt: writeResult.insertedAt",
+  "recordDigest: writeResult.recordDigest", "recordId: writeResult.recordId",
+  "requestBodyDigest: writeResult.requestBodyDigest", "writeDigest: writeResult.writeDigest",
+  "writerKeyId: writeResult.serviceKeyId", "writerPrincipalId: writeResult.servicePrincipalId",
+  'schemaVersion: "1.0.0"',
+  "return Object.freeze({", "verificationDigest,",
+]) if (!activationEvidenceChainVerifierSource.includes(required)) {
+  throw new Error(`Development activation evidence chain verifier invariant missing: ${required}`);
+}
+for (const [label, pattern] of [
+  ["dual verification", /Promise\.all\(\[\s*this\.evidenceVerifier\.verify\(requestedEvidence, \{ now \}\),\s*this\.writeReceiptVerifier\.verify\(requestedEvidence, \{ now \}\),\s*\]\)/u],
+  ["clock validation", /if \(!\(now instanceof Date\) \|\| !Number\.isSafeInteger\(now\.valueOf\(\)\)\)/u],
+  ["evidence result validity", /function assertEvidenceResult\(result, evidence\) \{[\s\S]*?if \(result\.valid !== true\) throw new Error\("Development activation evidence verification failed"\);/u],
+  ["write result validity", /function assertWriteResult\(result, evidence\) \{[\s\S]*?if \(result\.valid !== true \|\| result\.reviewedCommit !== evidence\.reviewedCommit\)/u],
+  ["evidence binding", /for \(const field of EVIDENCE_FIELDS\) \{\s*if \(result\[field\] !== evidence\[field\]\)/u],
+  ["role independence", /new Set\(\[result\.makerPrincipalId, result\.checkerPrincipalId, result\.ownerPrincipalId\]\)\.size !== 3/u],
   ["writer independence", /\[evidenceResult\.makerPrincipalId, evidenceResult\.checkerPrincipalId, evidenceResult\.ownerPrincipalId\]\s*\.includes\(writeResult\.servicePrincipalId\)/u],
   ["chain digest", /digestCanonicalValue\(\{\s*authenticatedAt: writeResult\.authenticatedAt,\s*evidence: requestedEvidence,\s*evidenceVerificationDigest: evidenceResult\.verificationDigest,\s*insertedAt: writeResult\.insertedAt,[\s\S]*?recordDigest: writeResult\.recordDigest,\s*recordId: writeResult\.recordId,\s*requestBodyDigest: writeResult\.requestBodyDigest,\s*schemaVersion: "1\.0\.0",\s*writeDigest: writeResult\.writeDigest,\s*writeReceiptVerificationDigest: writeResult\.verificationDigest,\s*writerKeyId: writeResult\.serviceKeyId,\s*\}\)/u],
 ]) if (!pattern.test(activationEvidenceChainVerifierSource)) {
@@ -876,4 +1109,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one blocked non-executing schema inventory verification packet, one pure schema inventory verification-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one pure schema inventory verification-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

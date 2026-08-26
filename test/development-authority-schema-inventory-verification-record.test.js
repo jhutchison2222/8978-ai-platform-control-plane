@@ -23,9 +23,9 @@ function fixture(status = "VERIFIED") {
   return {
     schemaVersion: "1.0.0", status, governing: false, environment: "development",
     source: {
-      reviewedCommit: "fb0812cf84508602904dc556ebde5f1f6c88c7a3",
+      reviewedCommit: "79bf051947019a0703e6095d71bc3d926612c76b",
       packetPath: "deployment/development-authority-schema-inventory-verification-packet.json",
-      packetSha256: "0d4db909103fffbc81b70d09335dcf44f84261fd8593234b242f035cde49c0c8",
+      packetSha256: "bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376",
       authorizedAccountId: "de5e0273347b0b4c5f8f4e554aa2288f",
     },
     authorization: {
