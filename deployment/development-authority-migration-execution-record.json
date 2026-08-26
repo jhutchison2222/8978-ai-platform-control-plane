@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "COMPLETED",
+  "governing": false,
+  "environment": "development",
+  "source": {
+    "reviewedCommit": "b2e3188b28b7c9071e267e69e90c374650747035",
+    "packetPath": "deployment/development-authority-migration-execution-packet.json",
+    "packetSha256": "ab865340c48279e6e5654e8e6b0ed52cb9d4af28115c49b47d787ad1ec205d8a"
+  },
+  "authorization": {
+    "ownerDecisionId": "github-workflow-dispatch-32901834491",
+    "ownerAuthorizationDigest": "sha256:8f7514a2162657546d9b11e1773e4519b9ba4ba1f5137291ce53328ff5c75781",
+    "accountId": "de5e0273347b0b4c5f8f4e554aa2288f",
+    "executionAuthorized": true,
+    "authorizedAttemptLimit": 1
+  },
+  "operator": {
+    "principalId": "github:jhutchison2222",
+    "authenticatedAccountId": "de5e0273347b0b4c5f8f4e554aa2288f"
+  },
+  "preflight": {
+    "completed": true,
+    "databaseName": "8978-ai-authority-dev",
+    "databaseId": "741ade94-8539-4fc8-b6be-24884720dee8",
+    "region": "WNAM",
+    "jurisdiction": null,
+    "version": "production",
+    "tableCount": 0,
+    "fileSizeBytes": 12288,
+    "identityMatched": true,
+    "emptyStateMatched": true
+  },
+  "backup": {
+    "bookmarkCaptured": true,
+    "bookmark": "00000008-00000000-000050d2-0f9536043bdd22b0b7d2153732df78d8",
+    "exportCaptured": true,
+    "exportSha256": "309d1516f5d4f4f792b17106f7b761312f848c634e3028d70e6eb8ed39df7398",
+    "exportSizeBytes": 32,
+    "exportCommitted": false
+  },
+  "migration": {
+    "attemptCount": 1,
+    "applyCommand": "wrangler d1 migrations apply 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc",
+    "invoked": true,
+    "outcome": "SUCCEEDED",
+    "pendingBefore": [
+      "0001_authority_read_model.sql",
+      "0002_validation_evidence.sql",
+      "0003_governing_project_knowledge.sql",
+      "0004_owner_control.sql",
+      "0005_development_activation_evidence.sql",
+      "0006_development_activation_evidence_writes.sql"
+    ],
+    "applied": [
+      "0001_authority_read_model.sql",
+      "0002_validation_evidence.sql",
+      "0003_governing_project_knowledge.sql",
+      "0004_owner_control.sql",
+      "0005_development_activation_evidence.sql",
+      "0006_development_activation_evidence_writes.sql"
+    ],
+    "pendingAfter": []
+  },
+  "postState": {
+    "retrieved": true,
+    "tableCount": 11,
+    "fileSizeBytes": 172032,
+    "migrationsApplied": true,
+    "migrationBookkeepingRowsCreated": true,
+    "remoteSchemaVerified": false
+  },
+  "externalEffects": {
+    "runtimeBindingInstalled": false,
+    "workerCreatedOrDeployed": false,
+    "workflowCreatedOrTriggered": false,
+    "queueConnectedOrPublished": false,
+    "secretOrKeyChanged": false,
+    "authorityDataWritten": false,
+    "projectKnowledgeSeeded": false,
+    "activationEvidenceWritten": false,
+    "activationPlanUpdated": false,
+    "deploymentActivated": false,
+    "productionOrCustomerResourceTouched": false
+  },
+  "partialFailurePolicy": {
+    "restoreAttempted": false,
+    "retryAttempted": false,
+    "cleanupAttempted": false,
+    "deletionAttempted": false
+  },
+  "errors": [],
+  "recordedAt": "2026-08-25T21:36:23Z"
+}

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { digestCanonicalValue, parseJsonStrict } from "../src/canonical-digest.js";
 import { AUTHORITY_MIGRATIONS, developmentActivationPreflight } from "../src/development-activation-preflight.js";
 import {
+  assertDevelopmentAuthorityMigrationExecutionRecord,
   AUTHORIZED_DEVELOPMENT_ACCOUNT_ID, MIGRATION_APPLY_COMMAND, ORDERED_AUTHORITY_MIGRATIONS,
   REVIEWED_MIGRATION_PACKET_COMMIT, REVIEWED_MIGRATION_PACKET_SHA256,
 } from "../src/development-authority-migration-execution-record.js";
@@ -41,6 +42,7 @@ const authorityMigrationPacketSchema = await load("schemas/development-authority
 const authorityMigrationPacket = await load("deployment/development-authority-migration-execution-packet.json");
 const authorityMigrationWrangler = await load("deployment/wrangler.authority-migrations.jsonc");
 const authorityMigrationRecordSchema = await load("schemas/development-authority-migration-execution-record.schema.json");
+const authorityMigrationRecord = await load("deployment/development-authority-migration-execution-record.json");
 const authoritySchemaInventoryPacketSchema = await load("schemas/development-authority-schema-inventory-verification-packet.schema.json");
 const authoritySchemaInventoryPacket = await load("deployment/development-authority-schema-inventory-verification-packet.json");
 const authoritySchemaInventoryRecordSchema = await load("schemas/development-authority-schema-inventory-verification-record.schema.json");
@@ -145,6 +147,8 @@ assertValid("development resource creation packet", resourceCreationPacketSchema
 assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 assertValid("development resource creation completion record", resourceCreationCompletionSchema, resourceCreationCompletion);
 assertValid("development authority migration execution packet", authorityMigrationPacketSchema, authorityMigrationPacket);
+assertValid("development authority migration execution record", authorityMigrationRecordSchema, authorityMigrationRecord);
+assertDevelopmentAuthorityMigrationExecutionRecord(authorityMigrationRecordSchema, authorityMigrationRecord);
 assertValid("development authority schema inventory verification packet", authoritySchemaInventoryPacketSchema, authoritySchemaInventoryPacket);
 if (activationEvidenceSchema.additionalProperties !== false || activationEvidenceSchema.properties?.schemaVersion?.const !== "1.0.0" ||
     activationEvidenceSchema.properties?.resourceActivationDecision?.properties?.decision?.const !== "approved" ||
@@ -385,8 +389,12 @@ if (createHash("sha256").update(await readFile("deployment/development-authority
     MIGRATION_APPLY_COMMAND !== authorityMigrationPacket.commands.applyOnce) {
   throw new Error("Development migration execution-record contract source boundary drifted");
 }
-if (deploymentFiles.includes("development-authority-migration-execution-record.json")) {
-  throw new Error("No development authority migration execution record may exist before actual authorized execution");
+if (deploymentFiles.filter((file) => file === "development-authority-migration-execution-record.json").length !== 1) {
+  throw new Error("Exactly one development authority migration execution record is required after authorized execution");
+}
+if (createHash("sha256").update(await readFile("deployment/development-authority-migration-execution-record.json")).digest("hex") !==
+    "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1") {
+  throw new Error("Development authority migration execution record digest drifted");
 }
 if (authorityMigrationRecordSchema.additionalProperties !== false ||
     JSON.stringify(authorityMigrationRecordSchema.properties?.status?.enum) !==
@@ -1231,4 +1239,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six undeployed authority migrations, one non-executing authority migration packet, one pure migration execution-record contract with no record instance, one blocked non-executing schema inventory verification packet, one pure schema inventory verification-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one blocked non-executing schema inventory verification packet, one pure schema inventory verification-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

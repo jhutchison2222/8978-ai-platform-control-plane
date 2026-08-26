@@ -8,6 +8,7 @@ import {
 } from "../src/development-authority-migration-execution-record.js";
 
 const schema = parseJsonStrict(await readFile("schemas/development-authority-migration-execution-record.schema.json", "utf8"));
+const executionRecord = parseJsonStrict(await readFile("deployment/development-authority-migration-execution-record.json", "utf8"));
 const clone = (value) => structuredClone(value);
 
 function fixture(status = "COMPLETED") {
@@ -61,6 +62,20 @@ function fixture(status = "COMPLETED") {
     recordedAt: "2026-08-18T21:00:00.000Z",
   };
 }
+
+test("actual completed record preserves the exact successful migration boundary", () => {
+  assert.equal(assertDevelopmentAuthorityMigrationExecutionRecord(schema, executionRecord), true);
+  assert.equal(executionRecord.authorization.ownerDecisionId, "github-workflow-dispatch-32901834491");
+  assert.equal(executionRecord.operator.principalId, "github:jhutchison2222");
+  assert.equal(executionRecord.preflight.tableCount, 0);
+  assert.equal(executionRecord.backup.exportCommitted, false);
+  assert.deepEqual(executionRecord.migration.pendingBefore, ORDERED_AUTHORITY_MIGRATIONS);
+  assert.deepEqual(executionRecord.migration.applied, ORDERED_AUTHORITY_MIGRATIONS);
+  assert.deepEqual(executionRecord.migration.pendingAfter, []);
+  assert.equal(executionRecord.postState.tableCount, 11);
+  assert.equal(executionRecord.postState.remoteSchemaVerified, false);
+  assert.deepEqual(executionRecord.errors, []);
+});
 
 test("contract accepts exact completed, no-mutation, and partial-stop fixtures", () => {
   for (const status of ["COMPLETED", "STOPPED_NO_MUTATION", "STOPPED_PARTIAL"]) {
