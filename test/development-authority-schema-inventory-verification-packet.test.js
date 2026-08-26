@@ -9,6 +9,7 @@ const load = async (path) => parseJsonStrict(await readFile(path, "utf8"));
 const digest = async (path) => createHash("sha256").update(await readFile(path)).digest("hex");
 const packet = await load("deployment/development-authority-schema-inventory-verification-packet.json");
 const schema = await load("schemas/development-authority-schema-inventory-verification-packet.schema.json");
+const migrationRecord = await load("deployment/development-authority-migration-execution-record.json");
 const migrationPaths = Array.from({ length: 6 }, (_, index) => `migrations/authority/000${index + 1}_${[
   "authority_read_model", "validation_evidence", "governing_project_knowledge", "owner_control",
   "development_activation_evidence", "development_activation_evidence_writes",
@@ -17,14 +18,15 @@ const migrationPaths = Array.from({ length: 6 }, (_, index) => `migrations/autho
 const expectedTables = packet.expectedInventory.tables.filter((name) => name !== "d1_migrations");
 const expectedIndexes = packet.expectedInventory.indexes;
 
-test("schema inventory packet is non-executing and blocked on a real completed record", async () => {
+test("schema inventory packet remains non-executing after accepting the completed migration record", async () => {
   assert.deepEqual(validateSchema(schema, packet), []);
   assert.equal(packet.status, "PLANNED");
   assert.equal(packet.governing, false);
   assert.equal(packet.executionAuthorized, false);
   assert.equal(packet.account.accountId, null);
-  assert.equal(packet.prerequisite.recordSha256, null);
-  assert.equal(packet.prerequisite.satisfied, false);
+  assert.equal(packet.prerequisite.recordSha256, await digest(packet.prerequisite.executionRecordPath));
+  assert.equal(packet.prerequisite.satisfied, true);
+  assert.equal(migrationRecord.status, packet.prerequisite.requiredStatus);
   assert.equal(await digest(packet.sourceMigrationPacket.path), packet.sourceMigrationPacket.sha256);
   assert.equal(await digest(packet.sourceExecutionRecordContract.schemaPath), packet.sourceExecutionRecordContract.schemaSha256);
   assert.equal(await digest(packet.sourceExecutionRecordContract.validatorPath), packet.sourceExecutionRecordContract.validatorSha256);
@@ -65,7 +67,7 @@ test("schema rejects authorization, prerequisite, result, and adjacent-effect pr
     (value) => { value.executionAuthorized = true; },
     (value) => { value.account.accountId = "de5e0273347b0b4c5f8f4e554aa2288f"; },
     (value) => { value.prerequisite.recordSha256 = "a".repeat(64); },
-    (value) => { value.prerequisite.satisfied = true; },
+    (value) => { value.prerequisite.satisfied = false; },
     (value) => { value.authorityDatabase.databaseId = "wrong"; },
     (value) => { value.resultBoundary.inventoryVerified = true; },
     (value) => { value.resultBoundary.remoteSchemaVerified = true; },

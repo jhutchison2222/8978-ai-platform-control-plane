@@ -20,8 +20,8 @@
     "executionRecordRequired": true,
     "executionRecordPath": "deployment/development-authority-migration-execution-record.json",
     "requiredStatus": "COMPLETED",
-    "recordSha256": null,
-    "satisfied": false
+    "recordSha256": "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1",
+    "satisfied": true
   },
   "account": {
     "accountId": null,

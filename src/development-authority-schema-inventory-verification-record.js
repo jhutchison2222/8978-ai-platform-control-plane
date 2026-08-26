@@ -1,7 +1,7 @@
 import { validateSchema } from "../scripts/json-schema-lite.js";
 
-export const REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT = "fb0812cf84508602904dc556ebde5f1f6c88c7a3";
-export const REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256 = "0d4db909103fffbc81b70d09335dcf44f84261fd8593234b242f035cde49c0c8";
+export const REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT = "79bf051947019a0703e6095d71bc3d926612c76b";
+export const REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256 = "bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376";
 export const AUTHORIZED_DEVELOPMENT_ACCOUNT_ID = "de5e0273347b0b4c5f8f4e554aa2288f";
 export const ORDERED_SCHEMA_INVENTORY_QUERIES = Object.freeze([
   "databaseInfo", "definitions", "appliedMigrations", "foreignKeys", "integrity", "authorityRows",
