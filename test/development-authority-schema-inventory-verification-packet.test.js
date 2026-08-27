@@ -56,6 +56,11 @@ test("all planned queries are read-only and cannot certify schema by themselves"
       assert.match(command, /(?:SELECT|PRAGMA)/u);
     }
   }
+  assert.equal(
+    packet.queries.integrity,
+    "wrangler d1 execute 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc --command \"PRAGMA quick_check\" --json",
+  );
+  assert.doesNotMatch(packet.queries.integrity, /integrity_check/u);
   assert.equal(Object.values(packet.resultBoundary).filter((value) => value === true).length, 2);
   assert.equal(packet.resultBoundary.remoteSchemaVerified, false);
   assert.equal(packet.resultBoundary.activationPlanUpdateDeferred, true);
