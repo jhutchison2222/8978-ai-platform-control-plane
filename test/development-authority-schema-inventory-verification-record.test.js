@@ -109,6 +109,17 @@ test("verified result accepts an unreported D1 storage version but rejects a rep
   );
 });
 
+test("unretrieved database observations reject fabricated optional version evidence", () => {
+  for (const version of ["production", "legacy"]) {
+    const fabricated = clone(fixture("STOPPED_NO_QUERY"));
+    fabricated.observations.database.version = version;
+    assert.throws(
+      () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, fabricated),
+      /^Error: Unavailable schema observation cannot contain retrieved evidence$/u,
+    );
+  }
+});
+
 test("verified result requires exact complete evidence and independent acceptance", () => {
   const mutations = [
     (r) => { r.execution.commandsInvoked.pop(); },
