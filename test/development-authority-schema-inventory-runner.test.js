@@ -8,7 +8,7 @@ const runner = await readFile("scripts/run-development-authority-schema-inventor
 test("schema inventory runner pins the accepted packet, migration record, account, and database", () => {
   for (const literal of [
     "79bf051947019a0703e6095d71bc3d926612c76b",
-    "8fa30ed4414c9d0cbb6361ff2939f1303eef55aa",
+    "791fcbef9b4d6bde27e71ea30d688f628f7fea78",
     "bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376",
     "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1",
     "de5e0273347b0b4c5f8f4e554aa2288f",
