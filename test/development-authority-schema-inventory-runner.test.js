@@ -4,10 +4,6 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const runner = await readFile("scripts/run-development-authority-schema-inventory-verification.sh", "utf8");
-const observedDatabaseInfo = JSON.parse(await readFile(
-  "test/fixtures/development-authority-database-info-wrangler-4.122.0.json",
-  "utf8",
-));
 
 test("schema inventory runner pins the accepted packet, migration record, account, and database", () => {
   for (const literal of [
@@ -30,18 +26,25 @@ test("schema inventory runner pins the accepted packet, migration record, accoun
 });
 
 test("schema inventory runner accepts Wrangler 4.122.0 omitting version and rejects a reported wrong version", () => {
+  const databaseInfoWithoutVersion = {
+    jurisdiction: null,
+    name: "synthetic-d1",
+    num_tables: 11,
+    running_in_region: "WNAM",
+    uuid: "synthetic-uuid",
+  };
   const filter = [
     '.name == $name and .uuid == $uuid and .running_in_region == "WNAM" and',
     '.jurisdiction == null and ((has("version") | not) or .version == "production") and .num_tables == 11',
   ].join(" ");
   const args = [
-    "-e", "--arg", "name", "8978-ai-authority-dev", "--arg", "uuid",
-    "741ade94-8539-4fc8-b6be-24884720dee8", filter,
+    "-e", "--arg", "name", databaseInfoWithoutVersion.name, "--arg", "uuid",
+    databaseInfoWithoutVersion.uuid, filter,
   ];
 
-  assert.equal(spawnSync("jq", args, { input: JSON.stringify(observedDatabaseInfo) }).status, 0);
+  assert.equal(spawnSync("jq", args, { input: JSON.stringify(databaseInfoWithoutVersion) }).status, 0);
   assert.notEqual(spawnSync("jq", args, {
-    input: JSON.stringify({ ...observedDatabaseInfo, version: "legacy" }),
+    input: JSON.stringify({ ...databaseInfoWithoutVersion, version: "legacy" }),
   }).status, 0);
   assert.match(runner, /\(\(has\("version"\) \| not\) or \.version == "production"\)/);
 });
