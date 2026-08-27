@@ -72,6 +72,9 @@ function assertObservationConsistency(record) {
       throw new Error("Retrieved schema observation must contain complete evidence");
     }
   }
+  if (!record.observations.database.retrieved && record.observations.database.version !== null) {
+    throw new Error("Unavailable schema observation cannot contain retrieved evidence");
+  }
   if (!record.observations.database.retrieved && (record.observations.database.jurisdiction !== null ||
       record.observations.database.identityMatched)) throw new Error("Unavailable database metadata cannot claim identity evidence");
   if (!record.observations.foreignKey.retrieved && record.observations.foreignKey.matched) {
