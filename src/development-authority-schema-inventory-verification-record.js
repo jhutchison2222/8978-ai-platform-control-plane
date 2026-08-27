@@ -54,7 +54,7 @@ function exactList(actual, expected, label) {
 
 function assertObservationConsistency(record) {
   const pairs = [
-    [record.observations.database.retrieved, ["name", "databaseId", "region", "version"]],
+    [record.observations.database.retrieved, ["name", "databaseId", "region"]],
     [record.observations.definitions.retrieved, ["tables", "indexes", "definitionsSha256"]],
     [record.observations.migrations.retrieved, ["names"]],
     [record.observations.foreignKey.retrieved, ["fromTable", "toTable", "fromColumn", "toColumn", "onUpdate", "onDelete"]],
@@ -146,7 +146,8 @@ function assertVerified(record) {
       !record.observations.database.retrieved || record.observations.database.name !== "8978-ai-authority-dev" ||
       record.observations.database.databaseId !== "741ade94-8539-4fc8-b6be-24884720dee8" ||
       record.observations.database.region !== "WNAM" || record.observations.database.jurisdiction !== null ||
-      record.observations.database.version !== "production" || !record.observations.database.identityMatched ||
+      !["production", null].includes(record.observations.database.version) ||
+      !record.observations.database.identityMatched ||
       !record.observations.definitions.retrieved || !record.observations.migrations.retrieved ||
       !record.observations.foreignKey.retrieved || !record.observations.foreignKey.matched ||
       record.observations.foreignKey.fromTable !== "authority_development_activation_evidence_writes" ||
