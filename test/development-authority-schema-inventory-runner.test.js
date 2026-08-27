@@ -7,6 +7,7 @@ const runner = await readFile("scripts/run-development-authority-schema-inventor
 test("schema inventory runner pins the accepted packet, migration record, account, and database", () => {
   for (const literal of [
     "79bf051947019a0703e6095d71bc3d926612c76b",
+    "5d34fd3eb39b37c5dca6a64afd0469478390a808",
     "bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376",
     "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1",
     "de5e0273347b0b4c5f8f4e554aa2288f",
@@ -17,7 +18,9 @@ test("schema inventory runner pins the accepted packet, migration record, accoun
 
   assert.match(runner, /SCHEMA_VERIFICATION_EXECUTION_COMMIT/);
   assert.match(runner, /git merge-base --is-ancestor/);
-  assert.match(runner, /git diff --quiet/);
+  assert.match(runner, /git merge-base --is-ancestor "\$EXPECTED_RECONCILED_BASE_COMMIT" "\$EXPECTED_EXECUTION_COMMIT"/);
+  assert.match(runner, /git diff --quiet "\$EXPECTED_RECONCILED_BASE_COMMIT" "\$EXPECTED_EXECUTION_COMMIT"/);
+  assert.doesNotMatch(runner, /git diff --quiet "\$EXPECTED_PACKET_COMMIT"/);
   assert.match(runner, /Authenticated Wrangler identity did not report the authorized account/);
 });
 
