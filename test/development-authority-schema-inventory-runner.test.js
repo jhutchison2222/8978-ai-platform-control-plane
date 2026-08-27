@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
@@ -7,7 +8,7 @@ const runner = await readFile("scripts/run-development-authority-schema-inventor
 test("schema inventory runner pins the accepted packet, migration record, account, and database", () => {
   for (const literal of [
     "79bf051947019a0703e6095d71bc3d926612c76b",
-    "5d34fd3eb39b37c5dca6a64afd0469478390a808",
+    "791fcbef9b4d6bde27e71ea30d688f628f7fea78",
     "bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376",
     "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1",
     "de5e0273347b0b4c5f8f4e554aa2288f",
@@ -22,6 +23,30 @@ test("schema inventory runner pins the accepted packet, migration record, accoun
   assert.match(runner, /git diff --quiet "\$EXPECTED_RECONCILED_BASE_COMMIT" "\$EXPECTED_EXECUTION_COMMIT"/);
   assert.doesNotMatch(runner, /git diff --quiet "\$EXPECTED_PACKET_COMMIT"/);
   assert.match(runner, /Authenticated Wrangler identity did not report the authorized account/);
+});
+
+test("schema inventory runner accepts Wrangler 4.122.0 omitting version and rejects a reported wrong version", () => {
+  const databaseInfoWithoutVersion = {
+    jurisdiction: null,
+    name: "synthetic-d1",
+    num_tables: 11,
+    running_in_region: "WNAM",
+    uuid: "synthetic-uuid",
+  };
+  const filter = [
+    '.name == $name and .uuid == $uuid and .running_in_region == "WNAM" and',
+    '.jurisdiction == null and ((has("version") | not) or .version == "production") and .num_tables == 11',
+  ].join(" ");
+  const args = [
+    "-e", "--arg", "name", databaseInfoWithoutVersion.name, "--arg", "uuid",
+    databaseInfoWithoutVersion.uuid, filter,
+  ];
+
+  assert.equal(spawnSync("jq", args, { input: JSON.stringify(databaseInfoWithoutVersion) }).status, 0);
+  assert.notEqual(spawnSync("jq", args, {
+    input: JSON.stringify({ ...databaseInfoWithoutVersion, version: "legacy" }),
+  }).status, 0);
+  assert.match(runner, /\(\(has\("version"\) \| not\) or \.version == "production"\)/);
 });
 
 test("schema inventory runner invokes exactly the six reviewed read-only observations", () => {

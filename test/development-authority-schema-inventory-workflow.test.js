@@ -11,7 +11,7 @@ test("schema inventory workflow is manual, owner-only, main-only, and immutable"
   assert.match(workflow, /github\.actor == 'jhutchison2222'/);
   assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
   assert.match(workflow, /VERIFY AUTHORITY SCHEMA READ ONLY ONCE/);
-  assert.match(workflow, /inputs\.execution_commit == '03532c499db6c58e9d037d8bdcf6d8ed9fae3c88'/);
+  assert.match(workflow, /inputs\.execution_commit == '1bf4bbfd2e7c3ed0881eb4804188b33807416535'/);
   assert.match(workflow, /ref: \$\{\{ inputs\.execution_commit \}\}/);
   assert.match(workflow, /SCHEMA_VERIFICATION_EXECUTION_COMMIT: \$\{\{ inputs\.execution_commit \}\}/);
   assert.match(workflow, /permissions:\n\s+contents: read/);

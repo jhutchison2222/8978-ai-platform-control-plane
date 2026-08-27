@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 readonly EXPECTED_PACKET_COMMIT="79bf051947019a0703e6095d71bc3d926612c76b"
-readonly EXPECTED_RECONCILED_BASE_COMMIT="5d34fd3eb39b37c5dca6a64afd0469478390a808"
+readonly EXPECTED_RECONCILED_BASE_COMMIT="791fcbef9b4d6bde27e71ea30d688f628f7fea78"
 readonly EXPECTED_EXECUTION_COMMIT="${SCHEMA_VERIFICATION_EXECUTION_COMMIT:?SCHEMA_VERIFICATION_EXECUTION_COMMIT is required}"
 readonly EXPECTED_ACCOUNT_ID="de5e0273347b0b4c5f8f4e554aa2288f"
 readonly EXPECTED_DATABASE_NAME="8978-ai-authority-dev"
@@ -158,8 +158,8 @@ jq -e \
   --arg name "$EXPECTED_DATABASE_NAME" \
   --arg uuid "$EXPECTED_DATABASE_ID" \
   '.name == $name and .uuid == $uuid and .running_in_region == "WNAM" and
-   .jurisdiction == null and .version == "production" and .num_tables == 11' \
-  "$EVIDENCE_DIR/databaseInfo.json" > /dev/null || fail "D1 identity, placement, version, or table count differed"
+   .jurisdiction == null and ((has("version") | not) or .version == "production") and .num_tables == 11' \
+  "$EVIDENCE_DIR/databaseInfo.json" > /dev/null || fail "D1 identity, placement, reported version, or table count differed"
 
 run_query definitions "$DEFINITIONS_SQL"
 jq -c '[.[0].results[] | select(.type == "table" and .name != "_cf_KV") | .name] | sort' \
