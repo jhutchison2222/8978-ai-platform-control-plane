@@ -61,19 +61,20 @@ test("schema inventory runner invokes exactly the six reviewed read-only observa
   assert.match(runner, /commands-invoked\.txt/);
   assert.match(runner, /attempt-count\.txt/);
   assert.match(runner, /INTEGRITY_SQL="PRAGMA quick_check"/);
-  assert.match(runner, /\.\[0\]\.quick_check == "ok"/);
+  assert.match(runner, /\.\[0\]\.integrity_check == "ok"/);
+  assert.doesNotMatch(runner, /\.\[0\]\.quick_check == "ok"/);
   assert.doesNotMatch(runner, /PRAGMA integrity_check/);
 });
 
-test("schema inventory runner accepts only the documented quick-check ok result", () => {
-  const filter = '.[0].results | length == 1 and .[0].quick_check == "ok"';
+test("schema inventory runner accepts only SQLite’s quick-check result shape", () => {
+  const filter = '.[0].results | length == 1 and .[0].integrity_check == "ok"';
   const runFilter = (result) => spawnSync("jq", ["-e", filter], {
     input: JSON.stringify([{ success: true, results: [result] }]),
   }).status;
 
-  assert.equal(runFilter({ quick_check: "ok" }), 0);
-  assert.notEqual(runFilter({ integrity_check: "ok" }), 0);
-  assert.notEqual(runFilter({ quick_check: "corrupt" }), 0);
+  assert.equal(runFilter({ integrity_check: "ok" }), 0);
+  assert.notEqual(runFilter({ quick_check: "ok" }), 0);
+  assert.notEqual(runFilter({ integrity_check: "corrupt" }), 0);
 });
 
 test("schema inventory runner fails closed without adjacent operations or retries", () => {
