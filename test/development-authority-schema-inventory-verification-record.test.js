@@ -96,6 +96,19 @@ test("contract accepts verified, no-query stop, and inconclusive read-only fixtu
   }
 });
 
+test("verified result accepts an unreported D1 storage version but rejects a reported non-production version", () => {
+  const omittedVersion = clone(fixture());
+  omittedVersion.observations.database.version = null;
+  assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, omittedVersion), true);
+
+  const wrongVersion = clone(fixture());
+  wrongVersion.observations.database.version = "legacy";
+  assert.throws(
+    () => assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, wrongVersion),
+    /^Error: Verified schema record lacks exact read-only evidence or independent acceptance$/u,
+  );
+});
+
 test("verified result requires exact complete evidence and independent acceptance", () => {
   const mutations = [
     (r) => { r.execution.commandsInvoked.pop(); },
