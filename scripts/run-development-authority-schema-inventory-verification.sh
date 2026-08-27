@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-readonly EXPECTED_PACKET_COMMIT="79bf051947019a0703e6095d71bc3d926612c76b"
-readonly EXPECTED_RECONCILED_BASE_COMMIT="791fcbef9b4d6bde27e71ea30d688f628f7fea78"
+readonly EXPECTED_PACKET_COMMIT="295606daa8caca8b998290b959184c131eed0fb0"
+readonly EXPECTED_RECONCILED_BASE_COMMIT="008a0bb5d4a2613e71e50b5ab058adaa616a2399"
 readonly EXPECTED_EXECUTION_COMMIT="${SCHEMA_VERIFICATION_EXECUTION_COMMIT:?SCHEMA_VERIFICATION_EXECUTION_COMMIT is required}"
 readonly EXPECTED_ACCOUNT_ID="de5e0273347b0b4c5f8f4e554aa2288f"
 readonly EXPECTED_DATABASE_NAME="8978-ai-authority-dev"
 readonly EXPECTED_DATABASE_ID="741ade94-8539-4fc8-b6be-24884720dee8"
-readonly EXPECTED_PACKET_SHA256="bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376"
+readonly EXPECTED_PACKET_SHA256="86f8b5e82beef8a51f09b69f5eb02964237014a00d204d69c52a35db53d287de"
 readonly EXPECTED_MIGRATION_RECORD_SHA256="627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1"
 readonly EXPECTED_APPROVAL="VERIFY AUTHORITY SCHEMA READ ONLY ONCE"
 readonly MIGRATION_CONFIG="deployment/wrangler.authority-migrations.jsonc"
@@ -19,7 +19,7 @@ readonly WRANGLER="./node_modules/.bin/wrangler"
 readonly DEFINITIONS_SQL="SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index') AND name NOT LIKE 'sqlite_%' ORDER BY type, name"
 readonly MIGRATIONS_SQL="SELECT name FROM d1_migrations ORDER BY id"
 readonly FOREIGN_KEYS_SQL="PRAGMA foreign_key_list(authority_development_activation_evidence_writes)"
-readonly INTEGRITY_SQL="PRAGMA integrity_check"
+readonly INTEGRITY_SQL="PRAGMA quick_check"
 readonly AUTHORITY_ROWS_SQL="SELECT (SELECT count(*) FROM authority_resources) + (SELECT count(*) FROM authority_limits) + (SELECT count(*) FROM authority_identity_keys) + (SELECT count(*) FROM authority_test_evidence) + (SELECT count(*) FROM authority_rollbacks) + (SELECT count(*) FROM authority_project_knowledge) + (SELECT count(*) FROM authority_owner_keys) + (SELECT count(*) FROM authority_standing_state) + (SELECT count(*) FROM authority_development_activation_evidence_bundles) + (SELECT count(*) FROM authority_development_activation_evidence_writes) AS authority_row_count"
 
 readonly -a EXPECTED_TABLES=(
@@ -105,7 +105,7 @@ assert_read_only_sql() {
   if grep -Eiq '\b(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|ATTACH|DETACH|VACUUM|REINDEX|UPSERT|MERGE)\b' <<< "$sql"; then
     fail "A reviewed schema command contained mutating SQL"
   fi
-  if [[ "$sql" != SELECT\ * && "$sql" != "PRAGMA foreign_key_list(authority_development_activation_evidence_writes)" && "$sql" != "PRAGMA integrity_check" ]]; then
+  if [[ "$sql" != SELECT\ * && "$sql" != "PRAGMA foreign_key_list(authority_development_activation_evidence_writes)" && "$sql" != "PRAGMA quick_check" ]]; then
     fail "A reviewed schema command was outside the exact read-only allowlist"
   fi
 }
@@ -182,7 +182,7 @@ jq -e \
   "$EVIDENCE_DIR/foreignKeys.json" > /dev/null || fail "Reviewed evidence-write foreign key differed"
 
 run_query integrity "$INTEGRITY_SQL"
-jq -e '.[0].results | length == 1 and .[0].integrity_check == "ok"' \
+jq -e '.[0].results | length == 1 and .[0].quick_check == "ok"' \
   "$EVIDENCE_DIR/integrity.json" > /dev/null || fail "D1 integrity check did not return exactly ok"
 
 run_query authorityRows "$AUTHORITY_ROWS_SQL"
@@ -228,7 +228,7 @@ jq -n \
       definitions:{retrieved:true,tables:$tables[0],indexes:$indexes[0],definitionsSha256:$definitionsSha256},
       migrations:{retrieved:true,names:$migrations[0]},
       foreignKey:{retrieved:true,fromTable:"authority_development_activation_evidence_writes",toTable:$foreignKeys[0][0].results[0].table,fromColumn:$foreignKeys[0][0].results[0].from,toColumn:$foreignKeys[0][0].results[0].to,onUpdate:$foreignKeys[0][0].results[0].on_update,onDelete:$foreignKeys[0][0].results[0].on_delete,matched:true},
-      integrity:{retrieved:true,result:$integrity[0][0].results[0].integrity_check},
+      integrity:{retrieved:true,result:$integrity[0][0].results[0].quick_check},
       authorityData:{retrieved:true,rowCount:$authorityRows[0][0].results[0].authority_row_count}
     },
     independentReview:{completed:false,checkerPrincipalId:null,checkerDigest:null,accepted:false},
