@@ -10,7 +10,7 @@ on:
       execution_commit:
         description: Reviewed immutable read-only verification runtime commit
         required: true
-        default: 43a852ff0e3749de4b25299cda4a192fd73e4aca
+        default: 45da9fa6bfda92b3de719e089ebfc9070b0cabb0
         type: string
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
       github.actor == 'jhutchison2222' &&
       github.ref == 'refs/heads/main' &&
       inputs.approval == 'VERIFY AUTHORITY SCHEMA READ ONLY ONCE' &&
-      inputs.execution_commit == '43a852ff0e3749de4b25299cda4a192fd73e4aca'
+      inputs.execution_commit == '45da9fa6bfda92b3de719e089ebfc9070b0cabb0'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: development-d1-migration

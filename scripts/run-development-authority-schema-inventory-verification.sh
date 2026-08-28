@@ -182,7 +182,8 @@ jq -e \
   "$EVIDENCE_DIR/foreignKeys.json" > /dev/null || fail "Reviewed evidence-write foreign key differed"
 
 run_query integrity "$INTEGRITY_SQL"
-jq -e '.[0].results | length == 1 and .[0].integrity_check == "ok"' \
+jq -e '.[0].results | length == 1 and
+  (.[0] | type == "object" and keys == ["quick_check"] and .quick_check == "ok")' \
   "$EVIDENCE_DIR/integrity.json" > /dev/null || fail "D1 integrity check did not return exactly ok"
 
 run_query authorityRows "$AUTHORITY_ROWS_SQL"
@@ -228,7 +229,7 @@ jq -n \
       definitions:{retrieved:true,tables:$tables[0],indexes:$indexes[0],definitionsSha256:$definitionsSha256},
       migrations:{retrieved:true,names:$migrations[0]},
       foreignKey:{retrieved:true,fromTable:"authority_development_activation_evidence_writes",toTable:$foreignKeys[0][0].results[0].table,fromColumn:$foreignKeys[0][0].results[0].from,toColumn:$foreignKeys[0][0].results[0].to,onUpdate:$foreignKeys[0][0].results[0].on_update,onDelete:$foreignKeys[0][0].results[0].on_delete,matched:true},
-      integrity:{retrieved:true,result:$integrity[0][0].results[0].integrity_check},
+      integrity:{retrieved:true,result:$integrity[0][0].results[0].quick_check},
       authorityData:{retrieved:true,rowCount:$authorityRows[0][0].results[0].authority_row_count}
     },
     independentReview:{completed:false,checkerPrincipalId:null,checkerDigest:null,accepted:false},
