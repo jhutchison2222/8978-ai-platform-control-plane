@@ -7,9 +7,9 @@ const runner = await readFile("scripts/run-development-authority-schema-inventor
 
 test("schema inventory runner pins the accepted packet, migration record, account, and database", () => {
   for (const literal of [
-    "79bf051947019a0703e6095d71bc3d926612c76b",
-    "791fcbef9b4d6bde27e71ea30d688f628f7fea78",
-    "bf95a3168ea30273f428e6a8426a0b16a8d05e8c537587925d990254778b7376",
+    "295606daa8caca8b998290b959184c131eed0fb0",
+    "008a0bb5d4a2613e71e50b5ab058adaa616a2399",
+    "86f8b5e82beef8a51f09b69f5eb02964237014a00d204d69c52a35db53d287de",
     "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1",
     "de5e0273347b0b4c5f8f4e554aa2288f",
     "8978-ai-authority-dev",
@@ -60,6 +60,21 @@ test("schema inventory runner invokes exactly the six reviewed read-only observa
   assert.match(runner, /A reviewed schema command contained mutating SQL/);
   assert.match(runner, /commands-invoked\.txt/);
   assert.match(runner, /attempt-count\.txt/);
+  assert.match(runner, /INTEGRITY_SQL="PRAGMA quick_check"/);
+  assert.match(runner, /\.\[0\]\.integrity_check == "ok"/);
+  assert.doesNotMatch(runner, /\.\[0\]\.quick_check == "ok"/);
+  assert.doesNotMatch(runner, /PRAGMA integrity_check/);
+});
+
+test("schema inventory runner accepts only SQLite’s quick-check result shape", () => {
+  const filter = '.[0].results | length == 1 and .[0].integrity_check == "ok"';
+  const runFilter = (result) => spawnSync("jq", ["-e", filter], {
+    input: JSON.stringify([{ success: true, results: [result] }]),
+  }).status;
+
+  assert.equal(runFilter({ integrity_check: "ok" }), 0);
+  assert.notEqual(runFilter({ quick_check: "ok" }), 0);
+  assert.notEqual(runFilter({ integrity_check: "corrupt" }), 0);
 });
 
 test("schema inventory runner fails closed without adjacent operations or retries", () => {

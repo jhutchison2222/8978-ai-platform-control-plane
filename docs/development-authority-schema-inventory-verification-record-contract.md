@@ -4,7 +4,7 @@ Status: CONTRACT ONLY — NO RECORD INSTANCE AND NO READ-ONLY EXECUTION AUTHORIZ
 
 This contract defines three honest outcomes for a future, separately authorized read-only authority-schema verification pass: `VERIFIED`, `STOPPED_NO_QUERY`, and `INCONCLUSIVE_READ_ONLY`. Its reviewed packet now pins the independently accepted completed migration record while remaining execution-disabled and account-unset.
 
-A verified record requires the exact reviewed packet, authorized Cloudflare account, independently accepted completed migration record, one read-only attempt, all six result digests, exact database identity, exact table/index/migration inventories, the reviewed foreign key, `PRAGMA integrity_check` equal to `ok`, zero authority rows, and acceptance by a checker distinct from the operator.
+A verified record requires the exact reviewed packet, authorized Cloudflare account, independently accepted completed migration record, one read-only attempt, all six result digests, exact database identity, exact table/index/migration inventories, the reviewed foreign key, Cloudflare D1's documented `PRAGMA quick_check` equal to `ok`, zero authority rows, and acceptance by a checker distinct from the operator.
 
 Every invoked outcome requires a non-empty owner-decision identifier as well as the exact owner-authorization digest, authorized account, authenticated account, and independently accepted completed migration record. An empty identifier cannot represent authorization, even when the remaining authorization fields are populated.
 
