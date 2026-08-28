@@ -8,6 +8,7 @@ import {
   REVIEWED_MIGRATION_PACKET_COMMIT, REVIEWED_MIGRATION_PACKET_SHA256,
 } from "../src/development-authority-migration-execution-record.js";
 import {
+  assertDevelopmentAuthoritySchemaInventoryVerificationRecord,
   EXPECTED_AUTHORITY_INDEXES, EXPECTED_AUTHORITY_MIGRATIONS, EXPECTED_AUTHORITY_TABLES,
   ORDERED_SCHEMA_INVENTORY_QUERIES, REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT,
   REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256,
@@ -46,6 +47,7 @@ const authorityMigrationRecord = await load("deployment/development-authority-mi
 const authoritySchemaInventoryPacketSchema = await load("schemas/development-authority-schema-inventory-verification-packet.schema.json");
 const authoritySchemaInventoryPacket = await load("deployment/development-authority-schema-inventory-verification-packet.json");
 const authoritySchemaInventoryRecordSchema = await load("schemas/development-authority-schema-inventory-verification-record.schema.json");
+const authoritySchemaInventoryRecord = await load("deployment/development-authority-schema-inventory-verification-record.json");
 const wrangler = await load("wrangler.jsonc");
 const workerSource = await readFile("src/control-plane-worker.js", "utf8");
 const durableStateSource = await readFile("src/control-plane-state-durable-objects.js", "utf8");
@@ -150,6 +152,8 @@ assertValid("development authority migration execution packet", authorityMigrati
 assertValid("development authority migration execution record", authorityMigrationRecordSchema, authorityMigrationRecord);
 assertDevelopmentAuthorityMigrationExecutionRecord(authorityMigrationRecordSchema, authorityMigrationRecord);
 assertValid("development authority schema inventory verification packet", authoritySchemaInventoryPacketSchema, authoritySchemaInventoryPacket);
+assertValid("development authority schema inventory verification record", authoritySchemaInventoryRecordSchema, authoritySchemaInventoryRecord);
+assertDevelopmentAuthoritySchemaInventoryVerificationRecord(authoritySchemaInventoryRecordSchema, authoritySchemaInventoryRecord);
 if (activationEvidenceSchema.additionalProperties !== false || activationEvidenceSchema.properties?.schemaVersion?.const !== "1.0.0" ||
     activationEvidenceSchema.properties?.resourceActivationDecision?.properties?.decision?.const !== "approved" ||
     activationEvidenceSchema.properties?.workerDeploymentDecision?.properties?.signatureAlgorithm?.const !== "Ed25519") {
@@ -482,8 +486,12 @@ for (const prohibited of [
 ]) if (!authoritySchemaInventoryPacket.prohibitedOperations.includes(prohibited)) {
   throw new Error(`Development authority schema inventory prohibition missing: ${prohibited}`);
 }
-if (deploymentFiles.some((file) => /^development-authority-schema-inventory-verification-record(?:\.|-)/u.test(file))) {
-  throw new Error("Development authority schema inventory verification record instance must not exist before execution");
+if (deploymentFiles.filter((file) => file === "development-authority-schema-inventory-verification-record.json").length !== 1) {
+  throw new Error("Exactly one development authority schema inventory verification record is required after authorized execution");
+}
+if (createHash("sha256").update(await readFile("deployment/development-authority-schema-inventory-verification-record.json")).digest("hex") !==
+    "e91680b5d68728d9f3531e9c642b9ff8dc4b0e4d8e410594d49fd968281e6121") {
+  throw new Error("Development authority schema inventory verification candidate digest drifted");
 }
 if (authoritySchemaInventoryRecordSchema.additionalProperties !== false ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.reviewedCommit?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT ||
@@ -1245,4 +1253,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one pure schema inventory verification-record contract with no record instance, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one successful non-governing schema inventory candidate pending independent review, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

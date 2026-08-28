@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "INCONCLUSIVE_READ_ONLY",
+  "governing": false,
+  "environment": "development",
+  "source": {
+    "reviewedCommit": "295606daa8caca8b998290b959184c131eed0fb0",
+    "packetPath": "deployment/development-authority-schema-inventory-verification-packet.json",
+    "packetSha256": "86f8b5e82beef8a51f09b69f5eb02964237014a00d204d69c52a35db53d287de",
+    "authorizedAccountId": "de5e0273347b0b4c5f8f4e554aa2288f"
+  },
+  "authorization": {
+    "ownerDecisionId": "github-workflow-dispatch-33211326511",
+    "ownerAuthorizationDigest": "sha256:b023127b818a335e50a5157b36d8ba902cbeddc1327204c1c0a4dcded278051b",
+    "accountId": "de5e0273347b0b4c5f8f4e554aa2288f",
+    "readOnlyVerificationAuthorized": true,
+    "authorizedAttemptLimit": 1
+  },
+  "operator": {
+    "principalId": "github:jhutchison2222",
+    "authenticatedAccountId": "de5e0273347b0b4c5f8f4e554aa2288f"
+  },
+  "prerequisite": {
+    "executionRecordPath": "deployment/development-authority-migration-execution-record.json",
+    "executionRecordSha256": "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1",
+    "status": "COMPLETED",
+    "independentlyAccepted": true
+  },
+  "execution": {
+    "attemptCount": 1,
+    "invoked": true,
+    "commandsInvoked": [
+      "databaseInfo",
+      "definitions",
+      "appliedMigrations",
+      "foreignKeys",
+      "integrity",
+      "authorityRows"
+    ],
+    "outcome": "SUCCEEDED"
+  },
+  "evidence": {
+    "queryResultSha256": {
+      "databaseInfo": "5070e79530eeac5a0434fd99ab65acd705ee2567955f4066fffa2d6e4be24702",
+      "definitions": "4d623a18b39bd4fbc5f3cbb50902aae29eb2a33c84c52513a993bae548546992",
+      "appliedMigrations": "4a959711c1b355e317e2dedca45c97a7c51a4a1c9539647c6f9a0cf2981f05e5",
+      "foreignKeys": "ce8110c2579b00d80adc7999a4f7ec2a80bfea9ff1a590db66adaf853e34a8d2",
+      "integrity": "35c2aa5696b13925501ce336ff24e649efbdc164890c2141ba205475f32eafad",
+      "authorityRows": "937bf9012efe726e317b2ac2eb74729a9244b883b3d608dff21380141fc9b048"
+    }
+  },
+  "observations": {
+    "database": {
+      "retrieved": true,
+      "name": "8978-ai-authority-dev",
+      "databaseId": "741ade94-8539-4fc8-b6be-24884720dee8",
+      "region": "WNAM",
+      "jurisdiction": null,
+      "version": null,
+      "identityMatched": true
+    },
+    "definitions": {
+      "retrieved": true,
+      "tables": [
+        "authority_development_activation_evidence_bundles",
+        "authority_development_activation_evidence_writes",
+        "authority_identity_keys",
+        "authority_limits",
+        "authority_owner_keys",
+        "authority_project_knowledge",
+        "authority_resources",
+        "authority_rollbacks",
+        "authority_standing_state",
+        "authority_test_evidence",
+        "d1_migrations"
+      ],
+      "indexes": [
+        "authority_activation_evidence_active_commit",
+        "authority_activation_evidence_write_nonce",
+        "authority_identity_keys_active_key",
+        "authority_limits_active_resource_operation",
+        "authority_owner_keys_active_key",
+        "authority_project_knowledge_active_scope",
+        "authority_resources_active_locator",
+        "authority_rollbacks_active_reference",
+        "authority_standing_state_active_policy",
+        "authority_test_evidence_active_action"
+      ],
+      "definitionsSha256": "4d623a18b39bd4fbc5f3cbb50902aae29eb2a33c84c52513a993bae548546992"
+    },
+    "migrations": {
+      "retrieved": true,
+      "names": [
+        "0001_authority_read_model.sql",
+        "0002_validation_evidence.sql",
+        "0003_governing_project_knowledge.sql",
+        "0004_owner_control.sql",
+        "0005_development_activation_evidence.sql",
+        "0006_development_activation_evidence_writes.sql"
+      ]
+    },
+    "foreignKey": {
+      "retrieved": true,
+      "fromTable": "authority_development_activation_evidence_writes",
+      "toTable": "authority_development_activation_evidence_bundles",
+      "fromColumn": "record_id",
+      "toColumn": "record_id",
+      "onUpdate": "RESTRICT",
+      "onDelete": "RESTRICT",
+      "matched": true
+    },
+    "integrity": {
+      "retrieved": true,
+      "result": "ok"
+    },
+    "authorityData": {
+      "retrieved": true,
+      "rowCount": 0
+    }
+  },
+  "independentReview": {
+    "completed": false,
+    "checkerPrincipalId": null,
+    "checkerDigest": null,
+    "accepted": false
+  },
+  "conclusions": {
+    "inventoryVerified": false,
+    "definitionsVerified": false,
+    "foreignKeysVerified": false,
+    "integrityVerified": false,
+    "emptyAuthorityDataVerified": false,
+    "remoteSchemaVerified": false,
+    "activationPlanUpdateAuthorized": false,
+    "activationPlanUpdated": false
+  },
+  "externalEffects": {
+    "mutatingSqlExecuted": false,
+    "migrationAppliedOrCreated": false,
+    "runtimeBindingInstalled": false,
+    "workerCreatedOrDeployed": false,
+    "workflowCreatedOrTriggered": false,
+    "queueConnectedOrPublished": false,
+    "secretOrKeyChanged": false,
+    "authorityDataWritten": false,
+    "projectKnowledgeSeeded": false,
+    "activationEvidenceWritten": false,
+    "deploymentActivated": false,
+    "productionOrCustomerResourceTouched": false
+  },
+  "failurePolicy": {
+    "restoreAttempted": false,
+    "retryAttempted": false,
+    "cleanupAttempted": false,
+    "deletionAttempted": false
+  },
+  "errors": [
+    "Independent definition-level review remains pending"
+  ],
+  "recordedAt": "2026-08-28T21:10:07Z"
+}
