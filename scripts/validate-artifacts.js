@@ -36,6 +36,8 @@ const activationResourceReconciledPlan = await load("deployment/development-acti
 const activationSchemaReconciledPlan = await load("deployment/development-activation-plan-schema-reconciled.json");
 const activationReadinessPacketSchema = await load("schemas/development-activation-readiness-packet.schema.json");
 const activationReadinessPacket = await load("deployment/development-activation-readiness-packet.json");
+const activationEvidenceMaterialPacketSchema = await load("schemas/development-activation-evidence-material-packet.schema.json");
+const activationEvidenceMaterialPacket = await load("deployment/development-activation-evidence-material-packet.json");
 const resourceCreationPacketSchema = await load("schemas/development-resource-creation-packet.schema.json");
 const resourceCreationPacket = await load("deployment/development-resource-creation-packet.json");
 const resourceCreationRecordSchema = await load("schemas/development-resource-creation-partial-execution-record.schema.json");
@@ -151,6 +153,7 @@ assertValid("development activation plan", activationPlanSchema, activationPlan)
 assertValid("development activation resource-reconciled plan", activationPlanSchema, activationResourceReconciledPlan);
 assertValid("development activation schema-reconciled plan", activationPlanSchema, activationSchemaReconciledPlan);
 assertValid("development activation readiness packet", activationReadinessPacketSchema, activationReadinessPacket);
+assertValid("development activation evidence material packet", activationEvidenceMaterialPacketSchema, activationEvidenceMaterialPacket);
 assertValid("development resource creation packet", resourceCreationPacketSchema, resourceCreationPacket);
 assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 assertValid("development resource creation completion record", resourceCreationCompletionSchema, resourceCreationCompletion);
@@ -269,6 +272,48 @@ if (JSON.stringify(activationReadinessPacket.alwaysProhibited) !== JSON.stringif
 ]) || Object.values(activationReadinessPacket.partialFailurePolicy).some((value) => value === true)) {
   throw new Error("Development activation readiness packet permanent exclusions or stop-only failure policy weakened");
 }
+if (activationEvidenceMaterialPacket.status !== "PLANNED" || activationEvidenceMaterialPacket.governing !== false ||
+    activationEvidenceMaterialPacket.materializationAuthorized !== false ||
+    activationEvidenceMaterialPacket.target.reviewedCommit !== null ||
+    activationEvidenceMaterialPacket.target.requiresFinalReviewedRuntimeWiringCommit !== true) {
+  throw new Error("Development activation evidence material packet cannot self-materialize or invent a reviewed commit");
+}
+if (activationEvidenceMaterialPacket.sourceReadinessPacket.path !== "deployment/development-activation-readiness-packet.json" ||
+    createHash("sha256").update(await readFile(activationEvidenceMaterialPacket.sourceReadinessPacket.path)).digest("hex") !== activationEvidenceMaterialPacket.sourceReadinessPacket.sha256 ||
+    activationEvidenceMaterialPacket.sourceReadinessPacket.sha256 !== "dfdbd7c59f14dc07eb4f07cd185023626230501688dec37e9b7d65605ce84e8a" ||
+    activationEvidenceMaterialPacket.sourceReadinessPacket.pr55MergeCommit !== "44c08d6673cf095a767dba5a1a10f4c82a7b34e4" ||
+    createHash("sha256").update(await readFile(activationEvidenceMaterialPacket.target.activationPlanPath)).digest("hex") !== activationEvidenceMaterialPacket.target.activationPlanSha256 ||
+    activationEvidenceMaterialPacket.target.activationPlanSha256 !== "7191626c099ee5fba00cfcd76091e090139a9eeac1ff7ae5d7a6344048912b9e") {
+  throw new Error("Development activation evidence material packet source evidence drifted");
+}
+const expectedActivationMaterials = [
+  ["maker_validation_attestation", "maker", "maker_validation", "identity_attestation"],
+  ["checker_validation_attestation", "checker", "checker_validation", "identity_attestation"],
+  ["rollback_attestation", "checker", "rollback_evidence", "identity_attestation"],
+  ["backup_attestation", "maker", "backup_evidence", "identity_attestation"],
+  ["resource_activation_decision", "owner", "resource_activation_authorization", "owner_decision"],
+  ["worker_deployment_decision", "owner", "worker_deployment_authorization", "owner_decision"],
+];
+if (JSON.stringify(activationEvidenceMaterialPacket.materials.map(({ id, role, purpose, kind }) => [id, role, purpose, kind])) !== JSON.stringify(expectedActivationMaterials) ||
+    !activationEvidenceMaterialPacket.materials.every((material) => material.status === "PENDING" && material.actionDigest === null &&
+      material.evidenceDigest === null && material.signedMaterial === null) ||
+    JSON.stringify(activationEvidenceMaterialPacket.roles.maker.purposes) !== JSON.stringify(["maker_validation", "backup_evidence"]) ||
+    JSON.stringify(activationEvidenceMaterialPacket.roles.checker.purposes) !== JSON.stringify(["checker_validation", "rollback_evidence"]) ||
+    JSON.stringify(activationEvidenceMaterialPacket.roles.owner.purposes) !== JSON.stringify(["resource_activation_authorization", "worker_deployment_authorization"]) ||
+    ![activationEvidenceMaterialPacket.roles.maker, activationEvidenceMaterialPacket.roles.checker, activationEvidenceMaterialPacket.roles.owner]
+      .every((role) => role.principalId === null && role.keyId === null && role.samePrincipalRequired === true) ||
+    activationEvidenceMaterialPacket.roles.owner.distinctDecisionIdsRequired !== true ||
+    activationEvidenceMaterialPacket.roles.pairwiseDistinctPrincipalsRequired !== true) {
+  throw new Error("Development activation evidence materials or role-independence boundary drifted");
+}
+if (JSON.stringify(activationEvidenceMaterialPacket.storageBoundary) !== JSON.stringify({
+  publicIdentityAndOwnerKeysMayBeStoredInAuthorityD1:true, privateKeysMayBeStoredInRepository:false,
+  privateKeysMayBeStoredInD1:false, privateKeysRequireManagedSecrets:true,
+  credentialValuesMayAppearInLogsOrArtifacts:false, authorityD1WriteDeferred:true,
+  managedSecretInstallationDeferred:true,
+}) || Object.values(activationEvidenceMaterialPacket.partialFailurePolicy).some((value) => value === true)) {
+  throw new Error("Development activation evidence private-key or stop-only failure boundary weakened");
+}
 if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
     resourceCreationPacket.executionAuthorized !== false || resourceCreationPacket.account.accountId !== null ||
     resourceCreationPacket.foundationBaseline !== "ff8134db56272ba52f985f6fda7247e4e35ea90a") {
@@ -313,6 +358,7 @@ for (const source of [workerSource, developmentRuntimeSource, activationPrefligh
   if (source.includes("development-activation-plan-resource-reconciled")) throw new Error("Development activation resource-reconciled plan cannot be imported by runtime or preflight code");
   if (source.includes("development-activation-plan-schema-reconciled")) throw new Error("Development activation schema-reconciled plan cannot be imported by runtime or preflight code");
   if (source.includes("development-activation-readiness-packet")) throw new Error("Development activation readiness packet cannot be imported by runtime or preflight code");
+  if (source.includes("development-activation-evidence-material-packet")) throw new Error("Development activation evidence material packet cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-packet")) throw new Error("Development authority migration execution packet cannot be imported by runtime or preflight code");
   if (source.includes("wrangler.authority-migrations")) throw new Error("Development authority migration configuration cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-record")) throw new Error("Development authority migration execution record contract cannot be imported by runtime or preflight code");
@@ -1371,4 +1417,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one independently accepted non-governing verified development schema inventory record, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one schema-reconciled 15-gate blocked successor plan, one non-executing development activation readiness packet, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one independently accepted non-governing verified development schema inventory record, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one schema-reconciled 15-gate blocked successor plan, one non-executing development activation readiness packet, one non-materializing development activation evidence packet, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
