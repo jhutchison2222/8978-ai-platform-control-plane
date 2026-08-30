@@ -86,6 +86,7 @@ const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
 const authorityMigrationRecordValidatorSource = await readFile("src/development-authority-migration-execution-record.js", "utf8");
 const authoritySchemaInventoryRecordValidatorSource = await readFile("src/development-authority-schema-inventory-verification-record.js", "utf8");
+const prMergeGateWorkflowSource = await readFile(".github/workflows/dispatch-pr-merge-gate.yml", "utf8");
 const deploymentFiles = await readdir("deployment");
 
 const batch1Proposed = await load("docs/project-knowledge/proposed/batch-1/proposed-records.json");
@@ -490,7 +491,7 @@ if (deploymentFiles.filter((file) => file === "development-authority-schema-inve
   throw new Error("Exactly one development authority schema inventory verification record is required after authorized execution");
 }
 if (createHash("sha256").update(await readFile("deployment/development-authority-schema-inventory-verification-record.json")).digest("hex") !==
-    "0f70d324672669e711ff39da884a5a831fe8d7113c7029b23a4dbef0d7679dc6") {
+    "253a4e87adbd56daed27e6b6080592544e60fb7b9d2c2a72e9d6f379601e67b6") {
   throw new Error("Development authority schema inventory verified record digest drifted");
 }
 if (!authoritySchemaInventoryRecord.independentReview.completed ||
@@ -504,12 +505,55 @@ if (!authoritySchemaInventoryRecord.independentReview.completed ||
     authoritySchemaInventoryRecord.errors.length !== 0) {
   throw new Error("Development authority schema inventory verified review boundary drifted");
 }
+const expectedSchemaInventoryReviewReference = {
+  acceptanceBasis: "EXPLICIT_REVIEW_BODY",
+  bodySha256: "96921d0c1799dc8c659e4d556bb8a4e048826b57135a8720702b68bffdb9994e",
+  checkerLogin: "claude[bot]",
+  checkerUserId: 209825114,
+  githubReviewState: "COMMENTED",
+  pullRequestNumber: 52,
+  repository: "jhutchison2222/8978-ai-platform-control-plane",
+  reviewNodeId: "PRR_kwDOT1hi5M8AAAABLavDxA",
+  reviewedHead: "78bc653194ecacb7cf560e4c5a27c076c8fe091c",
+  submittedAt: "2026-08-30T15:30:08Z",
+  system: "GITHUB_PULL_REQUEST_REVIEW",
+};
+const schemaInventoryReviewProvenance = authoritySchemaInventoryRecord.independentReview.provenance;
+if (!schemaInventoryReviewProvenance ||
+    await digestCanonicalValue(schemaInventoryReviewProvenance.reviewReference) !==
+      "sha256:e0d5e2b0a1450cb8c66b14b2baf67adfa0d4fe30705be220e289ee9e9d019a37" ||
+    schemaInventoryReviewProvenance.reviewReferenceDigest !==
+      "sha256:e0d5e2b0a1450cb8c66b14b2baf67adfa0d4fe30705be220e289ee9e9d019a37" ||
+    await digestCanonicalValue(schemaInventoryReviewProvenance.reviewReference) !==
+      await digestCanonicalValue(expectedSchemaInventoryReviewReference) ||
+    authoritySchemaInventoryRecord.independentReview.checkerDigest !== `sha256:${createHash("sha256")
+      .update(`github-review-node:${schemaInventoryReviewProvenance.reviewReference.reviewNodeId}`).digest("hex")}` ||
+    schemaInventoryReviewProvenance.repositoryValidationScope !== "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY" ||
+    schemaInventoryReviewProvenance.externalEnforcement !== "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE" ||
+    schemaInventoryReviewProvenance.cryptographicallyVerifiedByRepository !== false) {
+  throw new Error("Development authority schema inventory review provenance or assurance scope drifted");
+}
+for (const required of [
+  "github.event.review.user.id == 209825114",
+  "github.event.review.user.login == 'claude[bot]'",
+  ".review.commit_id",
+  ".review.user.id",
+  ".review.body",
+  "Retrieve fresh GitHub evidence and apply the published merge-gate policy.",
+]) if (!prMergeGateWorkflowSource.includes(required)) {
+  throw new Error(`Trusted GitHub review-event merge gate invariant missing: ${required}`);
+}
 if (authoritySchemaInventoryRecordSchema.additionalProperties !== false ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.reviewedCommit?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.packetSha256?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256 ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.authorizedAccountId?.const !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||
     authoritySchemaInventoryRecordSchema.properties?.authorization?.properties?.ownerDecisionId?.minLength !== 1 ||
     authoritySchemaInventoryRecordSchema.properties?.independentReview?.properties?.checkerPrincipalId?.minLength !== 1 ||
+    authoritySchemaInventoryRecordSchema.properties?.independentReview?.properties?.provenance?.properties?.repositoryValidationScope?.const !==
+      "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY" ||
+    authoritySchemaInventoryRecordSchema.properties?.independentReview?.properties?.provenance?.properties?.externalEnforcement?.const !==
+      "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE" ||
+    authoritySchemaInventoryRecordSchema.properties?.independentReview?.properties?.provenance?.properties?.cryptographicallyVerifiedByRepository?.const !== false ||
     authoritySchemaInventoryRecordSchema.properties?.conclusions?.properties?.activationPlanUpdateAuthorized?.const !== false ||
     authoritySchemaInventoryRecordSchema.properties?.conclusions?.properties?.activationPlanUpdated?.const !== false) {
   throw new Error("Development authority schema inventory verification record schema boundary weakened");
@@ -546,6 +590,10 @@ for (const required of [
   "identified !== digested",
   "record.independentReview.completed !== (identified && digested)",
   "record.independentReview.accepted && !record.independentReview.completed",
+  "assertAcceptedReviewProvenance",
+  "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY",
+  "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE",
+  "cryptographicallyVerifiedByRepository !== false",
   "Object.values(record.externalEffects)", "Object.values(record.failurePolicy)",
   "record.conclusions.activationPlanUpdateAuthorized", "record.conclusions.activationPlanUpdated",
 ]) if (!authoritySchemaInventoryRecordValidatorSource.includes(required)) {
