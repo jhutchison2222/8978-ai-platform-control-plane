@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-runtime-wiring-execution-packet.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","status","governing","environment","phase","executionAuthorized","configurationMutationAuthorized","externalExecutionAuthorized","sourceReadinessPacket","sourceEvidenceMaterialPacket","currentConfiguration","reviewCandidate","preservedRuntimeBoundary","requiredReview","nextPermittedRepositoryAction","stopConditions","prohibitedOperations","partialFailurePolicy"],
+  "properties": {
+    "schemaVersion": {"const":"1.0.0"},
+    "status": {"const":"PLANNED"},
+    "governing": {"const":false},
+    "environment": {"const":"development"},
+    "phase": {"const":"wire_development_runtime_resources"},
+    "executionAuthorized": {"const":false},
+    "configurationMutationAuthorized": {"const":false},
+    "externalExecutionAuthorized": {"const":false},
+    "sourceReadinessPacket": {
+      "type":"object","additionalProperties":false,"required":["path","sha256","pr55MergeCommit"],
+      "properties":{"path":{"const":"deployment/development-activation-readiness-packet.json"},"sha256":{"const":"dfdbd7c59f14dc07eb4f07cd185023626230501688dec37e9b7d65605ce84e8a"},"pr55MergeCommit":{"const":"44c08d6673cf095a767dba5a1a10f4c82a7b34e4"}}
+    },
+    "sourceEvidenceMaterialPacket": {
+      "type":"object","additionalProperties":false,"required":["path","sha256","pr56MergeCommit"],
+      "properties":{"path":{"const":"deployment/development-activation-evidence-material-packet.json"},"sha256":{"const":"2e2e2c748265354d5ddb0d41ed38385ec4d99726d1ad2dcc4f095ddb9084ab45"},"pr56MergeCommit":{"const":"122b76f31be61ebc4459d0bfa8a62855069ace4d"}}
+    },
+    "currentConfiguration": {
+      "type":"object","additionalProperties":false,"required":["path","sha256","authorityBindingInstalled","workflowBindingInstalled","queueProducerBindingInstalled"],
+      "properties":{"path":{"const":"wrangler.jsonc"},"sha256":{"const":"f89a62bacd64f303c3ced7eef52dbc481e6a50900220222291701e82044dbdcc"},"authorityBindingInstalled":{"const":false},"workflowBindingInstalled":{"const":false},"queueProducerBindingInstalled":{"const":false}}
+    },
+    "reviewCandidate": {
+      "type":"object","additionalProperties":false,"required":["authorityDatabase","workflow","queueProducer","queueConsumers","routes","secretValues"],
+      "properties": {
+        "authorityDatabase":{"type":"object","additionalProperties":false,"required":["binding","database_name","database_id","migrations_dir"],"properties":{"binding":{"const":"AUTHORITY_DB"},"database_name":{"const":"8978-ai-authority-dev"},"database_id":{"const":"741ade94-8539-4fc8-b6be-24884720dee8"},"migrations_dir":{"const":"migrations/authority"}}},
+        "workflow":{"type":"object","additionalProperties":false,"required":["binding","name","class_name"],"properties":{"binding":{"const":"ORCHESTRATOR_WORKFLOW"},"name":{"const":"8978-ai-orchestrator-dev"},"class_name":{"const":"OrchestratorWorkflow"}}},
+        "queueProducer":{"type":"object","additionalProperties":false,"required":["binding","queue"],"properties":{"binding":{"const":"ORCHESTRATOR_QUEUE"},"queue":{"const":"8978-ai-orchestrator-dev"}}},
+        "queueConsumers":{"type":"array","maxItems":0},
+        "routes":{"type":"array","maxItems":0},
+        "secretValues":{"type":"array","maxItems":0}
+      }
+    },
+    "preservedRuntimeBoundary": {
+      "type":"object","additionalProperties":false,"required":["workersDev","previewUrls","controlPlaneMode","allowExternalWrites","executeRouteEnabled","workflowExecutionEnabled","queuePublishingPerformed","authorityD1WritesEnabled"],
+      "properties":{"workersDev":{"const":false},"previewUrls":{"const":false},"controlPlaneMode":{"const":"development"},"allowExternalWrites":{"const":"false"},"executeRouteEnabled":{"const":false},"workflowExecutionEnabled":{"const":false},"queuePublishingPerformed":{"const":false},"authorityD1WritesEnabled":{"const":false}}
+    },
+    "requiredReview": {
+      "type":"object","additionalProperties":false,"required":["independentExactHeadReview","wranglerSchemaValidation","workerTypeCheck","fullTestSuite","secretScan","finalReviewedWiringCommitRequired"],
+      "properties":{"independentExactHeadReview":{"const":true},"wranglerSchemaValidation":{"const":true},"workerTypeCheck":{"const":true},"fullTestSuite":{"const":true},"secretScan":{"const":true},"finalReviewedWiringCommitRequired":{"const":true}}
+    },
+    "nextPermittedRepositoryAction": {"const":"publish_code_only_wrangler_wiring_candidate"},
+    "stopConditions": {"type":"array","minItems":8,"maxItems":8,"items":{"type":"string","minLength":1}},
+    "prohibitedOperations": {"type":"array","minItems":12,"maxItems":12,"items":{"type":"string","minLength":1}},
+    "partialFailurePolicy": {"type":"object","additionalProperties":false,"required":["automaticDeletion","automaticCleanup","automaticRetry","automaticRestore","action"],"properties":{"automaticDeletion":{"const":false},"automaticCleanup":{"const":false},"automaticRetry":{"const":false},"automaticRestore":{"const":false},"action":{"const":"stop_and_report_exact_state"}}}
+  }
+}

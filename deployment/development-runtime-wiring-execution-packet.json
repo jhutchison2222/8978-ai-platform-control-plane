@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED",
+  "governing": false,
+  "environment": "development",
+  "phase": "wire_development_runtime_resources",
+  "executionAuthorized": false,
+  "configurationMutationAuthorized": false,
+  "externalExecutionAuthorized": false,
+  "sourceReadinessPacket": {
+    "path": "deployment/development-activation-readiness-packet.json",
+    "sha256": "dfdbd7c59f14dc07eb4f07cd185023626230501688dec37e9b7d65605ce84e8a",
+    "pr55MergeCommit": "44c08d6673cf095a767dba5a1a10f4c82a7b34e4"
+  },
+  "sourceEvidenceMaterialPacket": {
+    "path": "deployment/development-activation-evidence-material-packet.json",
+    "sha256": "2e2e2c748265354d5ddb0d41ed38385ec4d99726d1ad2dcc4f095ddb9084ab45",
+    "pr56MergeCommit": "122b76f31be61ebc4459d0bfa8a62855069ace4d"
+  },
+  "currentConfiguration": {
+    "path": "wrangler.jsonc",
+    "sha256": "f89a62bacd64f303c3ced7eef52dbc481e6a50900220222291701e82044dbdcc",
+    "authorityBindingInstalled": false,
+    "workflowBindingInstalled": false,
+    "queueProducerBindingInstalled": false
+  },
+  "reviewCandidate": {
+    "authorityDatabase": {
+      "binding": "AUTHORITY_DB",
+      "database_name": "8978-ai-authority-dev",
+      "database_id": "741ade94-8539-4fc8-b6be-24884720dee8",
+      "migrations_dir": "migrations/authority"
+    },
+    "workflow": {
+      "binding": "ORCHESTRATOR_WORKFLOW",
+      "name": "8978-ai-orchestrator-dev",
+      "class_name": "OrchestratorWorkflow"
+    },
+    "queueProducer": {
+      "binding": "ORCHESTRATOR_QUEUE",
+      "queue": "8978-ai-orchestrator-dev"
+    },
+    "queueConsumers": [],
+    "routes": [],
+    "secretValues": []
+  },
+  "preservedRuntimeBoundary": {
+    "workersDev": false,
+    "previewUrls": false,
+    "controlPlaneMode": "development",
+    "allowExternalWrites": "false",
+    "executeRouteEnabled": false,
+    "workflowExecutionEnabled": false,
+    "queuePublishingPerformed": false,
+    "authorityD1WritesEnabled": false
+  },
+  "requiredReview": {
+    "independentExactHeadReview": true,
+    "wranglerSchemaValidation": true,
+    "workerTypeCheck": true,
+    "fullTestSuite": true,
+    "secretScan": true,
+    "finalReviewedWiringCommitRequired": true
+  },
+  "nextPermittedRepositoryAction": "publish_code_only_wrangler_wiring_candidate",
+  "stopConditions": [
+    "the source readiness or evidence-material packet bytes change",
+    "the current wrangler configuration bytes change before the wiring candidate is prepared",
+    "the development D1 UUID name or binding does not match the verified authority database",
+    "the Workflow or Queue name class or binding differs from the reviewed activation plan",
+    "a route Queue consumer secret value or external-write enablement would be added",
+    "the execute route or Workflow implementation would become executable",
+    "an operation would contact Cloudflare or mutate any remote resource",
+    "any result or repository state is ambiguous partial or inconsistent"
+  ],
+  "prohibitedOperations": [
+    "modify_wrangler_configuration_in_this_packet",
+    "install_or_update_binding",
+    "create_or_trigger_workflow",
+    "add_queue_consumer",
+    "publish_queue_message",
+    "execute_d1_sql_or_write",
+    "install_or_rotate_secret_or_key",
+    "deploy_or_activate_worker",
+    "create_or_modify_route",
+    "delete_cleanup_retry_or_restore",
+    "production_or_customer_operation",
+    "unreviewed_scope_expansion"
+  ],
+  "partialFailurePolicy": {
+    "automaticDeletion": false,
+    "automaticCleanup": false,
+    "automaticRetry": false,
+    "automaticRestore": false,
+    "action": "stop_and_report_exact_state"
+  }
+}
