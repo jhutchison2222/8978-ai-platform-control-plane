@@ -97,9 +97,9 @@ test("contract accepts verified, no-query stop, and inconclusive read-only fixtu
   }
 });
 
-test("actual candidate preserves the exact successful read-only execution boundary", () => {
+test("actual record preserves the exact independently accepted read-only verification boundary", () => {
   assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, executionRecord), true);
-  assert.equal(executionRecord.status, "INCONCLUSIVE_READ_ONLY");
+  assert.equal(executionRecord.status, "VERIFIED");
   assert.equal(executionRecord.authorization.ownerDecisionId, "github-workflow-dispatch-33211326511");
   assert.equal(executionRecord.operator.principalId, "github:jhutchison2222");
   assert.equal(executionRecord.execution.attemptCount, 1);
@@ -115,15 +115,22 @@ test("actual candidate preserves the exact successful read-only execution bounda
   assert.equal(executionRecord.independentReview.checkerPrincipalId, "github-app:claude");
   assert.equal(
     executionRecord.independentReview.checkerDigest,
-    "sha256:79de2cba03825223608e72da9f75440265177fa37e3db2ae82d828f070f8c16f",
+    "sha256:b16637feefd8db86aa54e9fd843351d4cdb9713d9e4a2b12bb8812c0ed61f67e",
   );
-  assert.equal(executionRecord.independentReview.accepted, false);
-  assert.equal(Object.values(executionRecord.conclusions).some(Boolean), false);
+  assert.equal(executionRecord.independentReview.accepted, true);
+  assert.deepEqual({ ...executionRecord.conclusions }, {
+    inventoryVerified: true,
+    definitionsVerified: true,
+    foreignKeysVerified: true,
+    integrityVerified: true,
+    emptyAuthorityDataVerified: true,
+    remoteSchemaVerified: true,
+    activationPlanUpdateAuthorized: false,
+    activationPlanUpdated: false,
+  });
   assert.equal(Object.values(executionRecord.externalEffects).some(Boolean), false);
   assert.equal(Object.values(executionRecord.failurePolicy).some(Boolean), false);
-  assert.deepEqual(executionRecord.errors, [
-    "Independent review found no bugs but did not explicitly accept the exact head",
-  ]);
+  assert.deepEqual(executionRecord.errors, []);
 });
 
 test("verified result accepts an unreported D1 storage version but rejects a reported non-production version", () => {
