@@ -33,6 +33,7 @@ const activationPlanSchema = await load("schemas/development-activation-plan.sch
 const activationEvidenceSchema = await load("schemas/development-activation-evidence-bundle.schema.json");
 const activationPlan = await load("deployment/development-activation-plan.json");
 const activationResourceReconciledPlan = await load("deployment/development-activation-plan-resource-reconciled.json");
+const activationSchemaReconciledPlan = await load("deployment/development-activation-plan-schema-reconciled.json");
 const resourceCreationPacketSchema = await load("schemas/development-resource-creation-packet.schema.json");
 const resourceCreationPacket = await load("deployment/development-resource-creation-packet.json");
 const resourceCreationRecordSchema = await load("schemas/development-resource-creation-partial-execution-record.schema.json");
@@ -146,6 +147,7 @@ assertValid("runtime readiness", runtimeSchema, Object.fromEntries(["resourceRes
 assertValid("customer runtime bindings", customerBindingsSchema, { customerId:"customer-1",dedicatedWorkerName:"worker-customer-1",dedicatedD1DatabaseId:"d1-customer-1",sharedProductionD1:false });
 assertValid("development activation plan", activationPlanSchema, activationPlan);
 assertValid("development activation resource-reconciled plan", activationPlanSchema, activationResourceReconciledPlan);
+assertValid("development activation schema-reconciled plan", activationPlanSchema, activationSchemaReconciledPlan);
 assertValid("development resource creation packet", resourceCreationPacketSchema, resourceCreationPacket);
 assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 assertValid("development resource creation completion record", resourceCreationCompletionSchema, resourceCreationCompletion);
@@ -212,6 +214,27 @@ if (createHash("sha256").update(await readFile("deployment/development-activatio
     "98f9c0623e2240aad87d68f9fdc7b3fe895d0853308d272c9398ec6858815747") {
   throw new Error("Resource reconciliation source evidence drifted");
 }
+const schemaReconciledActivationReport = await developmentActivationPreflight(activationSchemaReconciledPlan);
+if (schemaReconciledActivationReport.ready !== false || schemaReconciledActivationReport.blockers.length !== 15 ||
+    !schemaReconciledActivationReport.blockers.includes("independent_evidence_verifier_unavailable") ||
+    ["authority_database_not_created", "authority_database_id_unavailable", "authority_migrations_not_applied", "authority_schema_not_verified", "queue_not_created"]
+      .some((blocker) => schemaReconciledActivationReport.blockers.includes(blocker))) {
+  throw new Error("Schema-reconciled activation plan must remain blocked by exactly 15 gates after recording only completed migrations and verified schema state");
+}
+const expectedSchemaReconciledPlan = structuredClone(activationResourceReconciledPlan);
+expectedSchemaReconciledPlan.authorityDatabase.migrationsApplied = true;
+expectedSchemaReconciledPlan.authorityDatabase.remoteSchemaVerified = true;
+if (JSON.stringify(activationSchemaReconciledPlan) !== JSON.stringify(expectedSchemaReconciledPlan)) {
+  throw new Error("Schema-reconciled activation plan may differ from the resource-reconciled plan in exactly two verified schema facts");
+}
+if (createHash("sha256").update(await readFile("deployment/development-activation-plan-resource-reconciled.json")).digest("hex") !==
+    "3621dc92abf5c309d4a92a86cf4dc3f01da473d88c273697c9e91e9e7d092825" ||
+    createHash("sha256").update(await readFile("deployment/development-authority-migration-execution-record.json")).digest("hex") !==
+    "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1" ||
+    createHash("sha256").update(await readFile("deployment/development-authority-schema-inventory-verification-record.json")).digest("hex") !==
+    "253a4e87adbd56daed27e6b6080592544e60fb7b9d2c2a72e9d6f379601e67b6") {
+  throw new Error("Schema reconciliation source evidence drifted");
+}
 if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
     resourceCreationPacket.executionAuthorized !== false || resourceCreationPacket.account.accountId !== null ||
     resourceCreationPacket.foundationBaseline !== "ff8134db56272ba52f985f6fda7247e4e35ea90a") {
@@ -254,6 +277,7 @@ for (const source of [workerSource, developmentRuntimeSource, activationPrefligh
   if (source.includes("development-resource-creation-partial-execution-record")) throw new Error("Development resource creation record cannot be imported by runtime or preflight code");
   if (source.includes("development-resource-creation-completion-record")) throw new Error("Development resource creation completion record cannot be imported by runtime or preflight code");
   if (source.includes("development-activation-plan-resource-reconciled")) throw new Error("Development activation resource-reconciled plan cannot be imported by runtime or preflight code");
+  if (source.includes("development-activation-plan-schema-reconciled")) throw new Error("Development activation schema-reconciled plan cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-packet")) throw new Error("Development authority migration execution packet cannot be imported by runtime or preflight code");
   if (source.includes("wrangler.authority-migrations")) throw new Error("Development authority migration configuration cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-record")) throw new Error("Development authority migration execution record contract cannot be imported by runtime or preflight code");
@@ -1312,4 +1336,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one independently accepted non-governing verified development schema inventory record, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one independently accepted non-governing verified development schema inventory record, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one schema-reconciled 15-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
