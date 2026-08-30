@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-activation-evidence-material-packet.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","status","governing","environment","phase","materializationAuthorized","sourceReadinessPacket","target","roles","materials","storageBoundary","stopConditions","prohibitedOperations","partialFailurePolicy"],
+  "properties": {
+    "schemaVersion":{"const":"1.0.0"},"status":{"const":"PLANNED"},"governing":{"const":false},
+    "environment":{"const":"development"},"phase":{"const":"prepare_authenticated_evidence"},
+    "materializationAuthorized":{"const":false},
+    "sourceReadinessPacket":{"type":"object","additionalProperties":false,"required":["path","sha256","pr55MergeCommit"],"properties":{"path":{"const":"deployment/development-activation-readiness-packet.json"},"sha256":{"const":"dfdbd7c59f14dc07eb4f07cd185023626230501688dec37e9b7d65605ce84e8a"},"pr55MergeCommit":{"const":"44c08d6673cf095a767dba5a1a10f4c82a7b34e4"}}},
+    "target":{"type":"object","additionalProperties":false,"required":["reviewedCommit","requiresFinalReviewedRuntimeWiringCommit","activationPlanPath","activationPlanSha256"],"properties":{"reviewedCommit":{"type":"null"},"requiresFinalReviewedRuntimeWiringCommit":{"const":true},"activationPlanPath":{"const":"deployment/development-activation-plan-schema-reconciled.json"},"activationPlanSha256":{"const":"7191626c099ee5fba00cfcd76091e090139a9eeac1ff7ae5d7a6344048912b9e"}}},
+    "roles":{"type":"object","additionalProperties":false,"required":["maker","checker","owner","pairwiseDistinctPrincipalsRequired"],"properties":{
+      "maker":{"type":"object","additionalProperties":false,"required":["principalId","keyId","purposes","samePrincipalRequired"],"properties":{"principalId":{"type":"null"},"keyId":{"type":"null"},"purposes":{"type":"array","minItems":2,"maxItems":2,"items":{"enum":["maker_validation","backup_evidence"]}},"samePrincipalRequired":{"const":true}}},
+      "checker":{"type":"object","additionalProperties":false,"required":["principalId","keyId","purposes","samePrincipalRequired"],"properties":{"principalId":{"type":"null"},"keyId":{"type":"null"},"purposes":{"type":"array","minItems":2,"maxItems":2,"items":{"enum":["checker_validation","rollback_evidence"]}},"samePrincipalRequired":{"const":true}}},
+      "owner":{"type":"object","additionalProperties":false,"required":["principalId","keyId","purposes","samePrincipalRequired","distinctDecisionIdsRequired"],"properties":{"principalId":{"type":"null"},"keyId":{"type":"null"},"purposes":{"type":"array","minItems":2,"maxItems":2,"items":{"enum":["resource_activation_authorization","worker_deployment_authorization"]}},"samePrincipalRequired":{"const":true},"distinctDecisionIdsRequired":{"const":true}}},
+      "pairwiseDistinctPrincipalsRequired":{"const":true}
+    }},
+    "materials":{"type":"array","minItems":6,"maxItems":6,"items":{"type":"object","additionalProperties":false,"required":["id","role","purpose","kind","status","actionDigest","evidenceDigest","signedMaterial"],"properties":{"id":{"type":"string","minLength":1},"role":{"enum":["maker","checker","owner"]},"purpose":{"type":"string","minLength":1},"kind":{"enum":["identity_attestation","owner_decision"]},"status":{"const":"PENDING"},"actionDigest":{"type":"null"},"evidenceDigest":{"type":"null"},"signedMaterial":{"type":"null"}}}},
+    "storageBoundary":{"type":"object","additionalProperties":false,"required":["publicIdentityAndOwnerKeysMayBeStoredInAuthorityD1","privateKeysMayBeStoredInRepository","privateKeysMayBeStoredInD1","privateKeysRequireManagedSecrets","credentialValuesMayAppearInLogsOrArtifacts","authorityD1WriteDeferred","managedSecretInstallationDeferred"],"properties":{"publicIdentityAndOwnerKeysMayBeStoredInAuthorityD1":{"const":true},"privateKeysMayBeStoredInRepository":{"const":false},"privateKeysMayBeStoredInD1":{"const":false},"privateKeysRequireManagedSecrets":{"const":true},"credentialValuesMayAppearInLogsOrArtifacts":{"const":false},"authorityD1WriteDeferred":{"const":true},"managedSecretInstallationDeferred":{"const":true}}},
+    "stopConditions":{"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}},
+    "prohibitedOperations":{"type":"array","minItems":10,"maxItems":10,"items":{"type":"string","minLength":1}},
+    "partialFailurePolicy":{"type":"object","additionalProperties":false,"required":["automaticDeletion","automaticCleanup","automaticRetry","automaticRestore","action"],"properties":{"automaticDeletion":{"const":false},"automaticCleanup":{"const":false},"automaticRetry":{"const":false},"automaticRestore":{"const":false},"action":{"const":"stop_and_report_exact_state"}}}
+  }
+}
