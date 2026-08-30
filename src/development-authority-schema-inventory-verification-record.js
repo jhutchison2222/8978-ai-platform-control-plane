@@ -126,6 +126,32 @@ function assertIndependentReviewConsistency(record) {
   if (identified && record.independentReview.checkerPrincipalId === record.operator.principalId) {
     throw new Error("Schema verification checker must be independent of the operator");
   }
+  const provenance = record.independentReview.provenance ?? null;
+  if (provenance !== null && (!record.independentReview.completed || !record.independentReview.accepted)) {
+    throw new Error("Schema verification review provenance can only support completed acceptance");
+  }
+}
+
+function assertAcceptedReviewProvenance(record) {
+  const provenance = record.independentReview.provenance;
+  const reference = provenance?.reviewReference;
+  if (!provenance || !reference ||
+      reference.system !== "GITHUB_PULL_REQUEST_REVIEW" ||
+      reference.repository !== "jhutchison2222/8978-ai-platform-control-plane" ||
+      reference.checkerLogin !== "claude[bot]" || reference.checkerUserId !== 209825114 ||
+      reference.acceptanceBasis !== "EXPLICIT_REVIEW_BODY" ||
+      !["COMMENTED", "APPROVED"].includes(reference.githubReviewState) ||
+      !Number.isInteger(reference.pullRequestNumber) || reference.pullRequestNumber < 1 ||
+      typeof reference.reviewNodeId !== "string" || !/^PRR_[A-Za-z0-9_-]+$/u.test(reference.reviewNodeId) ||
+      typeof reference.reviewedHead !== "string" || !/^[a-f0-9]{40}$/u.test(reference.reviewedHead) ||
+      typeof reference.bodySha256 !== "string" || !/^[a-f0-9]{64}$/u.test(reference.bodySha256) ||
+      typeof provenance.reviewReferenceDigest !== "string" ||
+      !/^sha256:[a-f0-9]{64}$/u.test(provenance.reviewReferenceDigest) ||
+      provenance.repositoryValidationScope !== "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY" ||
+      provenance.externalEnforcement !== "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE" ||
+      provenance.cryptographicallyVerifiedByRepository !== false) {
+    throw new Error("Verified schema record must disclose exact external review provenance and assurance scope");
+  }
 }
 
 function assertInvocationPrerequisites(record) {
@@ -166,6 +192,7 @@ function assertVerified(record) {
       typeof record.independentReview.checkerDigest !== "string" || record.errors.length !== 0) {
     throw new Error("Verified schema record lacks exact read-only evidence or independent acceptance");
   }
+  assertAcceptedReviewProvenance(record);
   exactList(record.observations.definitions.tables, EXPECTED_AUTHORITY_TABLES, "Observed tables");
   exactList(record.observations.definitions.indexes, EXPECTED_AUTHORITY_INDEXES, "Observed indexes");
   exactList(record.observations.migrations.names, EXPECTED_AUTHORITY_MIGRATIONS, "Observed migrations");
@@ -206,7 +233,8 @@ export function assertDevelopmentAuthoritySchemaInventoryVerificationRecord(sche
         invokedCount !== 0 || Object.values(record.evidence.queryResultSha256).some((value) => value !== null) ||
         Object.values(record.conclusions).some((value) => value !== false) || record.independentReview.completed ||
         record.independentReview.accepted || record.independentReview.checkerPrincipalId !== null ||
-        record.independentReview.checkerDigest !== null || record.errors.length === 0) {
+        record.independentReview.checkerDigest !== null || (record.independentReview.provenance ?? null) !== null ||
+        record.errors.length === 0) {
       throw new Error("No-query stop record contradicts its read-only execution state");
     }
   } else if (record.status === "INCONCLUSIVE_READ_ONLY") {

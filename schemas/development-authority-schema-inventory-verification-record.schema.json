@@ -98,7 +98,37 @@
       "type": "object", "additionalProperties": false,
       "required": ["completed", "checkerPrincipalId", "checkerDigest", "accepted"],
       "properties": {
-        "completed": { "type": "boolean" }, "checkerPrincipalId": { "type": ["string", "null"], "minLength": 1 }, "checkerDigest": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" }, "accepted": { "type": "boolean" }
+        "completed": { "type": "boolean" },
+        "checkerPrincipalId": { "type": ["string", "null"], "minLength": 1 },
+        "checkerDigest": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+        "accepted": { "type": "boolean" },
+        "provenance": {
+          "type": ["object", "null"], "additionalProperties": false,
+          "required": ["reviewReference", "reviewReferenceDigest", "repositoryValidationScope", "externalEnforcement", "cryptographicallyVerifiedByRepository"],
+          "properties": {
+            "reviewReference": {
+              "type": "object", "additionalProperties": false,
+              "required": ["acceptanceBasis", "bodySha256", "checkerLogin", "checkerUserId", "githubReviewState", "pullRequestNumber", "repository", "reviewNodeId", "reviewedHead", "submittedAt", "system"],
+              "properties": {
+                "acceptanceBasis": { "const": "EXPLICIT_REVIEW_BODY" },
+                "bodySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "checkerLogin": { "const": "claude[bot]" },
+                "checkerUserId": { "const": 209825114 },
+                "githubReviewState": { "enum": ["COMMENTED", "APPROVED"] },
+                "pullRequestNumber": { "type": "integer", "minimum": 1 },
+                "repository": { "const": "jhutchison2222/8978-ai-platform-control-plane" },
+                "reviewNodeId": { "type": "string", "pattern": "^PRR_[A-Za-z0-9_-]+$" },
+                "reviewedHead": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+                "submittedAt": { "type": "string", "format": "date-time" },
+                "system": { "const": "GITHUB_PULL_REQUEST_REVIEW" }
+              }
+            },
+            "reviewReferenceDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            "repositoryValidationScope": { "const": "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY" },
+            "externalEnforcement": { "const": "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE" },
+            "cryptographicallyVerifiedByRepository": { "const": false }
+          }
+        }
       }
     },
     "conclusions": {

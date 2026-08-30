@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { parseJsonStrict } from "../src/canonical-digest.js";
+import { digestCanonicalValue, parseJsonStrict } from "../src/canonical-digest.js";
 import {
   assertDevelopmentAuthoritySchemaInventoryVerificationRecord,
   EXPECTED_AUTHORITY_INDEXES,
@@ -74,6 +74,25 @@ function fixture(status = "VERIFIED") {
     independentReview: {
       completed: verified, checkerPrincipalId: verified ? "fixture-independent-checker" : null,
       checkerDigest: verified ? `sha256:${"d".repeat(64)}` : null, accepted: verified,
+      provenance: verified ? {
+        reviewReference: {
+          acceptanceBasis: "EXPLICIT_REVIEW_BODY",
+          bodySha256: "e".repeat(64),
+          checkerLogin: "claude[bot]",
+          checkerUserId: 209825114,
+          githubReviewState: "COMMENTED",
+          pullRequestNumber: 52,
+          repository: "jhutchison2222/8978-ai-platform-control-plane",
+          reviewNodeId: "PRR_fixture",
+          reviewedHead: "f".repeat(40),
+          submittedAt: "2026-08-30T15:30:08Z",
+          system: "GITHUB_PULL_REQUEST_REVIEW",
+        },
+        reviewReferenceDigest: `sha256:${"a".repeat(64)}`,
+        repositoryValidationScope: "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY",
+        externalEnforcement: "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE",
+        cryptographicallyVerifiedByRepository: false,
+      } : null,
     },
     conclusions: verified ? {
       inventoryVerified: true, definitionsVerified: true, foreignKeysVerified: true,
@@ -97,9 +116,9 @@ test("contract accepts verified, no-query stop, and inconclusive read-only fixtu
   }
 });
 
-test("actual candidate preserves the exact successful read-only execution boundary", () => {
+test("actual record preserves the exact independently accepted read-only verification boundary", () => {
   assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, executionRecord), true);
-  assert.equal(executionRecord.status, "INCONCLUSIVE_READ_ONLY");
+  assert.equal(executionRecord.status, "VERIFIED");
   assert.equal(executionRecord.authorization.ownerDecisionId, "github-workflow-dispatch-33211326511");
   assert.equal(executionRecord.operator.principalId, "github:jhutchison2222");
   assert.equal(executionRecord.execution.attemptCount, 1);
@@ -115,15 +134,46 @@ test("actual candidate preserves the exact successful read-only execution bounda
   assert.equal(executionRecord.independentReview.checkerPrincipalId, "github-app:claude");
   assert.equal(
     executionRecord.independentReview.checkerDigest,
-    "sha256:79de2cba03825223608e72da9f75440265177fa37e3db2ae82d828f070f8c16f",
+    "sha256:b16637feefd8db86aa54e9fd843351d4cdb9713d9e4a2b12bb8812c0ed61f67e",
   );
-  assert.equal(executionRecord.independentReview.accepted, false);
-  assert.equal(Object.values(executionRecord.conclusions).some(Boolean), false);
+  assert.equal(executionRecord.independentReview.accepted, true);
+  assert.equal(executionRecord.independentReview.provenance.reviewReference.reviewNodeId, "PRR_kwDOT1hi5M8AAAABLavDxA");
+  assert.equal(executionRecord.independentReview.provenance.reviewReference.reviewedHead, "78bc653194ecacb7cf560e4c5a27c076c8fe091c");
+  assert.equal(executionRecord.independentReview.provenance.reviewReference.bodySha256, "96921d0c1799dc8c659e4d556bb8a4e048826b57135a8720702b68bffdb9994e");
+  assert.equal(executionRecord.independentReview.provenance.reviewReferenceDigest, "sha256:e0d5e2b0a1450cb8c66b14b2baf67adfa0d4fe30705be220e289ee9e9d019a37");
+  assert.equal(executionRecord.independentReview.provenance.repositoryValidationScope, "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY");
+  assert.equal(executionRecord.independentReview.provenance.externalEnforcement, "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE");
+  assert.equal(executionRecord.independentReview.provenance.cryptographicallyVerifiedByRepository, false);
+  assert.deepEqual({ ...executionRecord.conclusions }, {
+    inventoryVerified: true,
+    definitionsVerified: true,
+    foreignKeysVerified: true,
+    integrityVerified: true,
+    emptyAuthorityDataVerified: true,
+    remoteSchemaVerified: true,
+    activationPlanUpdateAuthorized: false,
+    activationPlanUpdated: false,
+  });
   assert.equal(Object.values(executionRecord.externalEffects).some(Boolean), false);
   assert.equal(Object.values(executionRecord.failurePolicy).some(Boolean), false);
-  assert.deepEqual(executionRecord.errors, [
-    "Independent review found no bugs but did not explicitly accept the exact head",
-  ]);
+  assert.deepEqual(executionRecord.errors, []);
+});
+
+test("actual accepted review reference is canonically digest-bound without claiming GitHub cryptographic authentication", async () => {
+  const provenance = executionRecord.independentReview.provenance;
+  assert.equal(await digestCanonicalValue(provenance.reviewReference), provenance.reviewReferenceDigest);
+  for (const mutate of [
+    (reference) => { reference.bodySha256 = "0".repeat(64); },
+    (reference) => { reference.reviewedHead = "0".repeat(40); },
+    (reference) => { reference.reviewNodeId = "PRR_tampered"; },
+  ]) {
+    const reference = clone(provenance.reviewReference);
+    mutate(reference);
+    assert.notEqual(await digestCanonicalValue(reference), provenance.reviewReferenceDigest);
+  }
+  assert.equal(provenance.repositoryValidationScope, "STRUCTURAL_AND_REFERENCE_DIGEST_ONLY");
+  assert.equal(provenance.externalEnforcement, "TRUSTED_GITHUB_REVIEW_EVENT_MERGE_GATE");
+  assert.equal(provenance.cryptographicallyVerifiedByRepository, false);
 });
 
 test("verified result accepts an unreported D1 storage version but rejects a reported non-production version", () => {
@@ -163,6 +213,10 @@ test("verified result requires exact complete evidence and independent acceptanc
     (r) => { r.observations.authorityData.rowCount = 1; },
     (r) => { r.independentReview.checkerPrincipalId = r.operator.principalId; },
     (r) => { r.independentReview.accepted = false; },
+    (r) => { r.independentReview.provenance = null; },
+    (r) => { r.independentReview.provenance.reviewReference.checkerUserId = 1; },
+    (r) => { r.independentReview.provenance.repositoryValidationScope = "CRYPTOGRAPHIC"; },
+    (r) => { r.independentReview.provenance.cryptographicallyVerifiedByRepository = true; },
     (r) => { r.conclusions.remoteSchemaVerified = false; },
   ];
   for (const mutate of mutations) {
@@ -205,7 +259,7 @@ test("query result digests match retrieved observations and successful execution
   const successfulInconclusive = clone(fixture("VERIFIED"));
   successfulInconclusive.status = "INCONCLUSIVE_READ_ONLY";
   successfulInconclusive.independentReview = {
-    completed: false, checkerPrincipalId: null, checkerDigest: null, accepted: false,
+    completed: false, checkerPrincipalId: null, checkerDigest: null, accepted: false, provenance: null,
   };
   successfulInconclusive.conclusions = allFalse([
     "inventoryVerified", "definitionsVerified", "foreignKeysVerified", "integrityVerified",
@@ -298,6 +352,7 @@ test("independent review completion requires exact identified checker evidence",
     checkerPrincipalId: "fixture-independent-checker",
     checkerDigest: `sha256:${"d".repeat(64)}`,
     accepted: false,
+    provenance: null,
   };
   assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, reviewed), true);
 
