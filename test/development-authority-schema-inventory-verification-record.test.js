@@ -11,6 +11,7 @@ import {
 } from "../src/development-authority-schema-inventory-verification-record.js";
 
 const schema = parseJsonStrict(await readFile("schemas/development-authority-schema-inventory-verification-record.schema.json", "utf8"));
+const executionRecord = parseJsonStrict(await readFile("deployment/development-authority-schema-inventory-verification-record.json", "utf8"));
 const clone = (value) => structuredClone(value);
 const allFalse = (keys) => Object.fromEntries(keys.map((key) => [key, false]));
 
@@ -94,6 +95,30 @@ test("contract accepts verified, no-query stop, and inconclusive read-only fixtu
   for (const status of ["VERIFIED", "STOPPED_NO_QUERY", "INCONCLUSIVE_READ_ONLY"]) {
     assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, fixture(status)), true);
   }
+});
+
+test("actual candidate preserves the exact successful read-only execution boundary", () => {
+  assert.equal(assertDevelopmentAuthoritySchemaInventoryVerificationRecord(schema, executionRecord), true);
+  assert.equal(executionRecord.status, "INCONCLUSIVE_READ_ONLY");
+  assert.equal(executionRecord.authorization.ownerDecisionId, "github-workflow-dispatch-33211326511");
+  assert.equal(executionRecord.operator.principalId, "github:jhutchison2222");
+  assert.equal(executionRecord.execution.attemptCount, 1);
+  assert.equal(executionRecord.execution.outcome, "SUCCEEDED");
+  assert.deepEqual(executionRecord.execution.commandsInvoked, ORDERED_SCHEMA_INVENTORY_QUERIES);
+  assert.deepEqual(executionRecord.observations.definitions.tables, EXPECTED_AUTHORITY_TABLES);
+  assert.deepEqual(executionRecord.observations.definitions.indexes, EXPECTED_AUTHORITY_INDEXES);
+  assert.deepEqual(executionRecord.observations.migrations.names, EXPECTED_AUTHORITY_MIGRATIONS);
+  assert.equal(executionRecord.observations.foreignKey.matched, true);
+  assert.equal(executionRecord.observations.integrity.result, "ok");
+  assert.equal(executionRecord.observations.authorityData.rowCount, 0);
+  assert.equal(executionRecord.independentReview.completed, false);
+  assert.equal(executionRecord.independentReview.checkerPrincipalId, null);
+  assert.equal(executionRecord.independentReview.checkerDigest, null);
+  assert.equal(executionRecord.independentReview.accepted, false);
+  assert.equal(Object.values(executionRecord.conclusions).some(Boolean), false);
+  assert.equal(Object.values(executionRecord.externalEffects).some(Boolean), false);
+  assert.equal(Object.values(executionRecord.failurePolicy).some(Boolean), false);
+  assert.deepEqual(executionRecord.errors, ["Independent definition-level review remains pending"]);
 });
 
 test("verified result accepts an unreported D1 storage version but rejects a reported non-production version", () => {
