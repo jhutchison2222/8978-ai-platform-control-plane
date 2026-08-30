@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED",
+  "governing": false,
+  "environment": "development",
+  "phase": "sequence_remaining_activation_readiness",
+  "executionAuthorized": false,
+  "ownerDirection": {
+    "received": true,
+    "scope": "all_remaining_development_activation_phases",
+    "codeOnlyPublicationAndMergeAuthorized": true,
+    "developmentExternalOperationsAuthorized": true,
+    "exactReviewedSubpacketRequired": true,
+    "productionOrCustomerOperationsAuthorized": false
+  },
+  "sourcePlan": {
+    "path": "deployment/development-activation-plan-schema-reconciled.json",
+    "sha256": "7191626c099ee5fba00cfcd76091e090139a9eeac1ff7ae5d7a6344048912b9e",
+    "pr54MergeCommit": "56054110c0e7ff00625030e569826430b6aafc18"
+  },
+  "remainingBlockers": [
+    "plan_not_ready",
+    "activation_not_authorized",
+    "worker_deployment_not_authorized",
+    "authority_binding_not_installed",
+    "workflow_not_created",
+    "workflow_binding_not_installed",
+    "queue_binding_not_installed",
+    "reviewed_commit_unavailable",
+    "maker_validation_unavailable",
+    "checker_validation_unavailable",
+    "resource_activation_authorization_unavailable",
+    "worker_deployment_authorization_unavailable",
+    "rollback_evidence_unavailable",
+    "rollback_backup_unavailable",
+    "independent_evidence_verifier_unavailable"
+  ],
+  "orderedPhases": [
+    {
+      "sequence": 1,
+      "id": "prepare_authenticated_evidence",
+      "resolves": [
+        "reviewed_commit_unavailable",
+        "maker_validation_unavailable",
+        "checker_validation_unavailable",
+        "resource_activation_authorization_unavailable",
+        "worker_deployment_authorization_unavailable",
+        "rollback_evidence_unavailable",
+        "rollback_backup_unavailable"
+      ],
+      "requiresIndependentReview": true,
+      "requiresExactExecutionPacket": true,
+      "externalExecutionPermittedByThisPacket": false
+    },
+    {
+      "sequence": 2,
+      "id": "wire_development_runtime_resources",
+      "resolves": [
+        "authority_binding_not_installed",
+        "workflow_not_created",
+        "workflow_binding_not_installed",
+        "queue_binding_not_installed",
+        "independent_evidence_verifier_unavailable"
+      ],
+      "requiresIndependentReview": true,
+      "requiresExactExecutionPacket": true,
+      "externalExecutionPermittedByThisPacket": false
+    },
+    {
+      "sequence": 3,
+      "id": "promote_reviewed_development_plan",
+      "resolves": [
+        "plan_not_ready"
+      ],
+      "requiresIndependentReview": true,
+      "requiresExactExecutionPacket": true,
+      "externalExecutionPermittedByThisPacket": false
+    },
+    {
+      "sequence": 4,
+      "id": "activate_development_resources",
+      "resolves": [
+        "activation_not_authorized"
+      ],
+      "requiresIndependentReview": true,
+      "requiresExactExecutionPacket": true,
+      "externalExecutionPermittedByThisPacket": false
+    },
+    {
+      "sequence": 5,
+      "id": "deploy_reviewed_development_worker",
+      "resolves": [
+        "worker_deployment_not_authorized"
+      ],
+      "requiresIndependentReview": true,
+      "requiresExactExecutionPacket": true,
+      "externalExecutionPermittedByThisPacket": false
+    }
+  ],
+  "stopConditions": [
+    "the exact reviewed subpacket or commit does not match",
+    "the authenticated Cloudflare account or development resource identity does not match",
+    "a requested action is not needed to resolve the subphase blockers",
+    "a secret value, private key, token, or unsanitized evidence would enter the repository or logs",
+    "an operation would touch production or customer resources",
+    "an operation would delete, clean up, retry, restore, or broaden scope",
+    "a result is ambiguous, partial, inconsistent, or lacks required sanitized evidence"
+  ],
+  "alwaysProhibited": [
+    "production_or_customer_operation",
+    "resource_deletion",
+    "automatic_cleanup",
+    "automatic_retry",
+    "automatic_restore",
+    "unreviewed_scope_expansion",
+    "credential_or_private_key_disclosure",
+    "reuse_unrelated_d1_database",
+    "customer_call_message_campaign_booking_transfer_or_payment"
+  ],
+  "partialFailurePolicy": {
+    "automaticDeletion": false,
+    "automaticCleanup": false,
+    "automaticRetry": false,
+    "automaticRestore": false,
+    "action": "stop_and_report_exact_state"
+  },
+  "requiredEvidence": [
+    "exact reviewed commit and subpacket digest",
+    "authenticated operator and Cloudflare account identity without credentials",
+    "exact development resource identifiers and pre-operation state",
+    "exact operation count and command or API contract",
+    "sanitized result and post-operation state",
+    "proof no production or customer resource was touched",
+    "proof no deletion cleanup retry or restore occurred",
+    "exact errors and last confirmed state for any stopped or partial result"
+  ]
+}
