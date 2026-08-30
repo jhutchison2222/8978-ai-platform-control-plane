@@ -490,8 +490,17 @@ if (deploymentFiles.filter((file) => file === "development-authority-schema-inve
   throw new Error("Exactly one development authority schema inventory verification record is required after authorized execution");
 }
 if (createHash("sha256").update(await readFile("deployment/development-authority-schema-inventory-verification-record.json")).digest("hex") !==
-    "e91680b5d68728d9f3531e9c642b9ff8dc4b0e4d8e410594d49fd968281e6121") {
+    "161550f81891b93205c7019bc55a3aaa26bead5c48abd61aeb6f6d4479b9acc5") {
   throw new Error("Development authority schema inventory verification candidate digest drifted");
+}
+if (!authoritySchemaInventoryRecord.independentReview.completed ||
+    authoritySchemaInventoryRecord.independentReview.checkerPrincipalId !== "github-app:claude" ||
+    authoritySchemaInventoryRecord.independentReview.checkerDigest !==
+      "sha256:79de2cba03825223608e72da9f75440265177fa37e3db2ae82d828f070f8c16f" ||
+    authoritySchemaInventoryRecord.independentReview.accepted ||
+    authoritySchemaInventoryRecord.status !== "INCONCLUSIVE_READ_ONLY" || authoritySchemaInventoryRecord.governing ||
+    Object.values(authoritySchemaInventoryRecord.conclusions).some(Boolean)) {
+  throw new Error("Development authority schema inventory review deferral boundary drifted");
 }
 if (authoritySchemaInventoryRecordSchema.additionalProperties !== false ||
     authoritySchemaInventoryRecordSchema.properties?.source?.properties?.reviewedCommit?.const !== REVIEWED_SCHEMA_INVENTORY_PACKET_COMMIT ||
@@ -1253,4 +1262,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one successful non-governing schema inventory candidate pending independent review, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one successful non-governing schema inventory candidate with completed non-accepting independent review, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);

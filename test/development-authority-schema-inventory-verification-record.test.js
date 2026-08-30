@@ -111,14 +111,19 @@ test("actual candidate preserves the exact successful read-only execution bounda
   assert.equal(executionRecord.observations.foreignKey.matched, true);
   assert.equal(executionRecord.observations.integrity.result, "ok");
   assert.equal(executionRecord.observations.authorityData.rowCount, 0);
-  assert.equal(executionRecord.independentReview.completed, false);
-  assert.equal(executionRecord.independentReview.checkerPrincipalId, null);
-  assert.equal(executionRecord.independentReview.checkerDigest, null);
+  assert.equal(executionRecord.independentReview.completed, true);
+  assert.equal(executionRecord.independentReview.checkerPrincipalId, "github-app:claude");
+  assert.equal(
+    executionRecord.independentReview.checkerDigest,
+    "sha256:79de2cba03825223608e72da9f75440265177fa37e3db2ae82d828f070f8c16f",
+  );
   assert.equal(executionRecord.independentReview.accepted, false);
   assert.equal(Object.values(executionRecord.conclusions).some(Boolean), false);
   assert.equal(Object.values(executionRecord.externalEffects).some(Boolean), false);
   assert.equal(Object.values(executionRecord.failurePolicy).some(Boolean), false);
-  assert.deepEqual(executionRecord.errors, ["Independent definition-level review remains pending"]);
+  assert.deepEqual(executionRecord.errors, [
+    "Independent review found no bugs but did not explicitly accept the exact head",
+  ]);
 });
 
 test("verified result accepts an unreported D1 storage version but rejects a reported non-production version", () => {
