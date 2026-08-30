@@ -314,6 +314,22 @@ if (JSON.stringify(activationEvidenceMaterialPacket.storageBoundary) !== JSON.st
 }) || Object.values(activationEvidenceMaterialPacket.partialFailurePolicy).some((value) => value === true)) {
   throw new Error("Development activation evidence private-key or stop-only failure boundary weakened");
 }
+if (JSON.stringify(activationEvidenceMaterialPacket.stopConditions) !== JSON.stringify([
+  "the final reviewed runtime-wiring commit is unavailable or changes",
+  "maker checker and owner principals are not pairwise distinct",
+  "the maker or checker role-continuity requirement cannot be satisfied",
+  "the two owner decisions do not use distinct decision IDs",
+  "a public-key record or signed material does not bind the exact role purpose and reviewed commit",
+  "a private key credential or token would enter repository D1 logs or artifacts",
+  "any signing verification storage or result state is ambiguous incomplete or inconsistent",
+]) || JSON.stringify(activationEvidenceMaterialPacket.prohibitedOperations) !== JSON.stringify([
+  "generate_or_install_key", "sign_attestation_or_owner_decision", "write_authority_or_activation_evidence",
+  "install_or_rotate_secret", "modify_binding_or_wrangler_configuration", "create_or_trigger_workflow",
+  "publish_queue_message", "deploy_or_activate_worker", "delete_cleanup_retry_or_restore",
+  "production_or_customer_operation",
+])) {
+  throw new Error("Development activation evidence stop conditions or prohibited operations drifted");
+}
 if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
     resourceCreationPacket.executionAuthorized !== false || resourceCreationPacket.account.accountId !== null ||
     resourceCreationPacket.foundationBaseline !== "ff8134db56272ba52f985f6fda7247e4e35ea90a") {

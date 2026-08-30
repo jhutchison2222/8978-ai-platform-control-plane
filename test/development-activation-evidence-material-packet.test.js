@@ -51,6 +51,24 @@ test("private material stays out of repository D1 logs and artifacts", () => {
   assert.equal(Object.values(packet.partialFailurePolicy).some((value) => value === true), false);
 });
 
+test("stop conditions and prohibited operations are exact", () => {
+  assert.deepEqual(packet.stopConditions, [
+    "the final reviewed runtime-wiring commit is unavailable or changes",
+    "maker checker and owner principals are not pairwise distinct",
+    "the maker or checker role-continuity requirement cannot be satisfied",
+    "the two owner decisions do not use distinct decision IDs",
+    "a public-key record or signed material does not bind the exact role purpose and reviewed commit",
+    "a private key credential or token would enter repository D1 logs or artifacts",
+    "any signing verification storage or result state is ambiguous incomplete or inconsistent",
+  ]);
+  assert.deepEqual(packet.prohibitedOperations, [
+    "generate_or_install_key", "sign_attestation_or_owner_decision", "write_authority_or_activation_evidence",
+    "install_or_rotate_secret", "modify_binding_or_wrangler_configuration", "create_or_trigger_workflow",
+    "publish_queue_message", "deploy_or_activate_worker", "delete_cleanup_retry_or_restore",
+    "production_or_customer_operation",
+  ]);
+});
+
 test("schema rejects materialization secret exposure and fabricated evidence", () => {
   const mutations = [
     (value) => { value.materializationAuthorized = true; },
