@@ -39,6 +39,6 @@ Tests apply both authority migrations to a real local D1 instance through Cloudf
 
 ## Deliberately unbound
 
-The development runtime can now compose these readers from an injected `AUTHORITY_DB`, but `wrangler.jsonc` contains no D1 binding. The production-shaped Worker therefore remains `ready: false`, external writes remain disabled, and action evaluation still fails closed at resource resolution. `/v1/actions/execute` remains an unconditional denial.
+The code-only wiring candidate supplies the verified development `AUTHORITY_DB` binding so the runtime can compose these readers, but performs no deployment or D1 operation. The Worker remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains an unconditional denial.
 
 A future infrastructure PR must separately create or select a dedicated development authority database, define the reviewed evidence-writer trust boundary, install public keys without private material, apply migrations, bind the Worker, and receive independent checker plus owner authorization.

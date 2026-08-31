@@ -18,7 +18,7 @@ Migration `0006_development_activation_evidence_writes.sql` adds an empty append
 
 ## Safety boundary
 
-The module contains no OAuth flow, bearer fallback, external `fetch`, Cloudflare REST call, Wrangler invocation, process or filesystem action, private signing key, Queue publish, Workflow dispatch, provider mutation, update SQL, or delete SQL. It is not imported by the Worker or development runtime, and `wrangler.jsonc` remains unchanged with no D1, Workflow, Queue, service, route, or writer binding.
+The module contains no OAuth flow, bearer fallback, external `fetch`, Cloudflare REST call, Wrangler invocation, process or filesystem action, private signing key, Queue publish, Workflow dispatch, provider mutation, update SQL, or delete SQL. It is not imported by the Worker or development runtime. The later code-only wiring candidate adds the shared verified development bindings but no writer binding, route, secret value, or external execution.
 
 Workers-pool tests use the real local D1 migration set, real Ed25519 verification, HMAC request signing, and the real SQLite replay Durable Object. Test-only inserts seed ephemeral public keys; no remote D1 or Cloudflare resource is touched.
 

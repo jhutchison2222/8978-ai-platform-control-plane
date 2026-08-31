@@ -25,6 +25,6 @@ Migration `0005_development_activation_evidence.sql` creates one empty authority
 
 ## Safety boundary
 
-The adapter is read-only and contains no write SQL, external `fetch`, REST or OAuth dependency, service credential, private key, filesystem or process action, Wrangler invocation, Queue publish, Workflow dispatch, provider mutation, or deployment path. It is not imported by the Worker or development runtime. `wrangler.jsonc` remains unchanged with no D1, Workflow, or Queue binding.
+The adapter is read-only and contains no write SQL, external `fetch`, REST or OAuth dependency, service credential, private key, filesystem or process action, Wrangler invocation, Queue publish, Workflow dispatch, provider mutation, or deployment path. It is not imported by the Worker or development runtime. The later code-only wiring candidate adds the shared verified development bindings but does not wire this provider or perform any external operation.
 
 Actual activation still requires separately authorized resource creation, installation and remote application of the exact reviewed migration set, separately authorized use of the unbound authenticated evidence writer, independent verification, and distinct owner authorization for Worker deployment.

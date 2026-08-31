@@ -340,10 +340,17 @@ if (runtimeWiringPacket.status !== "PLANNED" || runtimeWiringPacket.governing !=
     runtimeWiringPacket.externalExecutionAuthorized !== false) {
   throw new Error("Development runtime-wiring packet must remain non-governing and execution-disabled");
 }
-for (const source of [runtimeWiringPacket.sourceReadinessPacket, runtimeWiringPacket.sourceEvidenceMaterialPacket, runtimeWiringPacket.currentConfiguration]) {
+for (const source of [runtimeWiringPacket.sourceReadinessPacket, runtimeWiringPacket.sourceEvidenceMaterialPacket]) {
   if (createHash("sha256").update(await readFile(source.path)).digest("hex") !== source.sha256) {
     throw new Error(`Development runtime-wiring source digest mismatch: ${source.path}`);
   }
+}
+if (runtimeWiringPacket.currentConfiguration.path !== "wrangler.jsonc" ||
+    runtimeWiringPacket.currentConfiguration.sha256 !== "f89a62bacd64f303c3ced7eef52dbc481e6a50900220222291701e82044dbdcc" ||
+    runtimeWiringPacket.currentConfiguration.authorityBindingInstalled !== false ||
+    runtimeWiringPacket.currentConfiguration.workflowBindingInstalled !== false ||
+    runtimeWiringPacket.currentConfiguration.queueProducerBindingInstalled !== false) {
+  throw new Error("Development runtime-wiring packet historical configuration boundary drifted");
 }
 if (JSON.stringify(runtimeWiringPacket.reviewCandidate) !== JSON.stringify({
   authorityDatabase:{binding:"AUTHORITY_DB",database_name:"8978-ai-authority-dev",database_id:"741ade94-8539-4fc8-b6be-24884720dee8",migrations_dir:"migrations/authority"},
@@ -515,8 +522,10 @@ if (JSON.stringify(authorityMigrationWrangler) !== JSON.stringify({
 for (const forbidden of ["queues", "workflows", "routes", "services", "vars", "durable_objects"]) {
   if (forbidden in authorityMigrationWrangler) throw new Error(`Development authority migration configuration cannot include ${forbidden}`);
 }
-if (Array.isArray(wrangler.d1_databases) || JSON.stringify(authorityMigrationPacket.migration.migrations) !== JSON.stringify(AUTHORITY_MIGRATIONS)) {
-  throw new Error("Development authority migrations cannot install a deployable binding or drift from the activation manifest");
+if (authorityMigrationPacket.migrationConfiguration.installsRuntimeBinding !== false ||
+    authorityMigrationPacket.migrationConfiguration.deployableWorkerConfiguration !== false ||
+    JSON.stringify(authorityMigrationPacket.migration.migrations) !== JSON.stringify(AUTHORITY_MIGRATIONS)) {
+  throw new Error("Development authority migration packet cannot install a runtime binding or drift from the activation manifest");
 }
 let authorityTableCount = 0;
 for (const migration of authorityMigrationPacket.migration.migrations) {
@@ -839,8 +848,16 @@ if (wrangler.compatibility_date !== "2026-08-12" || !wrangler.compatibility_flag
 if (wrangler.workers_dev !== false || wrangler.preview_urls !== false) throw new Error("Development Worker cannot expose workers.dev or preview URLs");
 if (wrangler.vars?.CONTROL_PLANE_MODE !== "development" || wrangler.vars?.ALLOW_EXTERNAL_WRITES !== "false") throw new Error("Worker external-write boundary must remain fail closed");
 if (Object.hasOwn(wrangler.vars ?? {}, "SERVICE_AUTH_KEYS_JSON")) throw new Error("Service-auth keys must be secret bindings, never plaintext vars");
-for (const binding of ["d1_databases", "r2_buckets", "queues", "workflows", "services", "hyperdrive", "vectorize"]) {
+if (JSON.stringify(wrangler.d1_databases) !== JSON.stringify([runtimeWiringPacket.reviewCandidate.authorityDatabase]) ||
+    JSON.stringify(wrangler.workflows) !== JSON.stringify([runtimeWiringPacket.reviewCandidate.workflow]) ||
+    JSON.stringify(wrangler.queues) !== JSON.stringify({ producers:[runtimeWiringPacket.reviewCandidate.queueProducer] })) {
+  throw new Error("Development runtime bindings must match the reviewed wiring candidate exactly");
+}
+for (const binding of ["r2_buckets", "services", "hyperdrive", "vectorize"]) {
   if (wrangler[binding] !== undefined) throw new Error(`Development Worker cannot add ${binding} bindings in this foundation`);
+}
+if (wrangler.routes !== undefined || wrangler.queues?.consumers !== undefined || Object.hasOwn(wrangler, "account_id")) {
+  throw new Error("Development wiring candidate cannot add routes, Queue consumers, or an account identifier");
 }
 const durableBindings = wrangler.durable_objects?.bindings ?? [];
 const expectedDurableBindings = [

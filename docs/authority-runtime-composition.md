@@ -23,11 +23,11 @@ Every dependency retains the read-only, integrity-checking behavior reviewed in 
 
 `createDevelopmentRuntime()` composes these readers only when an injected environment contains an `AUTHORITY_DB` object with the D1 `prepare()` contract. Without that binding, the existing throwing unavailable adapters remain in place and evaluation fails closed.
 
-The Workers test environment injects a real local D1 binding plus local Workflow and Queue bindings, so every dependency contract is composed there while readiness deliberately remains `false`. The checked-in `wrangler.jsonc` still has none of those bindings, so the deployable configuration continues to report authority and orchestrator dependencies unavailable.
+The Workers test environment injects a real local D1 binding plus local Workflow and Queue bindings, so every dependency contract is composed there while readiness deliberately remains `false`. The code-only wiring candidate now adds the exact reviewed development bindings to `wrangler.jsonc` without deploying them; readiness and execution remain deliberately disabled.
 
 ## Deliberately not activated
 
-- `wrangler.jsonc` contains no `d1_databases` entry, database name, database ID, preview database ID, account ID, or route.
+- `wrangler.jsonc` pins the dedicated verified development D1 name and UUID, with no preview database ID, account ID, or route.
 - The existing `pk-d1-dev` database is not reused as runtime authority storage.
 - The six authority migrations remain unapplied outside the local Workers test runtime.
 - No authority writer, promotion path, seed data, private key, secret, Workflow, Queue, or provider binding is added.

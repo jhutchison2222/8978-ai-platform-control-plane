@@ -22,4 +22,4 @@ Immediately before standing-policy execution, the adapter independently recomput
 
 `0004_owner_control.sql` creates schema only. Runtime code contains parameterized `SELECT` statements and Web Crypto verification; it has no DML, DDL, external fetch, key installation, signing, promotion, or state writer.
 
-The development runtime can now compose this adapter from an injected `AUTHORITY_DB`, but `wrangler.jsonc` still provides no such binding. The Worker remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains unconditionally denied.
+The code-only wiring candidate supplies the verified development `AUTHORITY_DB` binding so the runtime can compose this adapter, but performs no deployment or D1 operation. The Worker remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains unconditionally denied.

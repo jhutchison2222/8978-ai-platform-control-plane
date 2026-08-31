@@ -10,6 +10,29 @@
     "CONTROL_PLANE_MODE": "development",
     "ALLOW_EXTERNAL_WRITES": "false"
   },
+  "d1_databases": [
+    {
+      "binding": "AUTHORITY_DB",
+      "database_name": "8978-ai-authority-dev",
+      "database_id": "741ade94-8539-4fc8-b6be-24884720dee8",
+      "migrations_dir": "migrations/authority"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "ORCHESTRATOR_WORKFLOW",
+      "name": "8978-ai-orchestrator-dev",
+      "class_name": "OrchestratorWorkflow"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "ORCHESTRATOR_QUEUE",
+        "queue": "8978-ai-orchestrator-dev"
+      }
+    ]
+  },
   "durable_objects": {
     "bindings": [
       {
