@@ -843,6 +843,13 @@ if (workerSource.includes("development-activation-evidence-verifier") ||
 }
 if (!secretScanSource.includes('"deployment"')) throw new Error("Deployment manifests must remain inside the default secret-scan roots");
 
+const expectedWranglerTopLevelKeys = [
+  "$schema", "compatibility_date", "compatibility_flags", "d1_databases", "durable_objects", "main", "migrations",
+  "name", "observability", "preview_urls", "queues", "vars", "workers_dev", "workflows",
+];
+if (JSON.stringify(Object.keys(wrangler).sort()) !== JSON.stringify(expectedWranglerTopLevelKeys)) {
+  throw new Error("Development Worker configuration top-level keys must remain exact and reviewed");
+}
 if (wrangler.name !== "8978-ai-control-plane-dev" || wrangler.main !== "src/control-plane-worker.js") throw new Error("Worker must remain development-scoped with the reviewed entry point");
 if (wrangler.compatibility_date !== "2026-08-12" || !wrangler.compatibility_flags?.includes("nodejs_compat")) throw new Error("Worker compatibility configuration changed without review");
 if (wrangler.workers_dev !== false || wrangler.preview_urls !== false) throw new Error("Development Worker cannot expose workers.dev or preview URLs");
