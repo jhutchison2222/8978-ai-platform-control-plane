@@ -358,7 +358,16 @@ if (JSON.stringify(runtimeWiringPacket.prohibitedOperations) !== JSON.stringify(
   "add_queue_consumer","publish_queue_message","execute_d1_sql_or_write","install_or_rotate_secret_or_key",
   "deploy_or_activate_worker","create_or_modify_route","delete_cleanup_retry_or_restore",
   "production_or_customer_operation","unreviewed_scope_expansion",
-]) || runtimeWiringPacket.stopConditions.length !== 8 || runtimeWiringPacket.nextPermittedRepositoryAction !== "publish_code_only_wrangler_wiring_candidate") {
+]) || JSON.stringify(runtimeWiringPacket.stopConditions) !== JSON.stringify([
+  "the source readiness or evidence-material packet bytes change",
+  "the current wrangler configuration bytes change before the wiring candidate is prepared",
+  "the development D1 UUID name or binding does not match the verified authority database",
+  "the Workflow or Queue name class or binding differs from the reviewed activation plan",
+  "a route Queue consumer secret value or external-write enablement would be added",
+  "the execute route or Workflow implementation would become executable",
+  "an operation would contact Cloudflare or mutate any remote resource",
+  "any result or repository state is ambiguous partial or inconsistent",
+]) || runtimeWiringPacket.nextPermittedRepositoryAction !== "publish_code_only_wrangler_wiring_candidate") {
   throw new Error("Development runtime-wiring safety boundary drifted");
 }
 if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
