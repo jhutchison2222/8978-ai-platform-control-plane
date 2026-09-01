@@ -8,13 +8,17 @@ import {
   LATER_ACTION_DELAY_MS,
   SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
+  GitHubApi,
   checkState,
   claudeRequests,
+  ensureLabels,
   exactHeadClaudeVerdict,
+  hasLabel,
   hasMarker,
   marker,
   nextPullRequestAction,
   runAllIsolated,
+  selectQueuedTask,
 } from "../scripts/autonomy-supervisor.js";
 
 const HEAD = "a".repeat(40);
@@ -89,6 +93,42 @@ test("one failed item cannot prevent later supervision", async () => {
   assert.deepEqual(visited, [1, 2, 3]);
   assert.equal(errors.length, 1);
   assert.deepEqual(reported, ["fixture failure"]);
+});
+
+test("GitHub list requests paginate until a short page", async () => {
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    const page = Number(new URL(url).searchParams.get("page"));
+    const data = page === 1 ? Array.from({ length: 100 }, (_, id) => ({ id })) : [{ id: 100 }];
+    return { ok: true, status: 200, json: async () => data };
+  };
+  const api = new GitHubApi({ repository: "owner/repo", token: "fixture", fetchImpl });
+  const items = await api.getAll("/issues?state=open");
+  assert.equal(items.length, 101);
+  assert.equal(calls.length, 2);
+  assert.match(calls[0], /state=open&per_page=100&page=1$/u);
+  assert.match(calls[1], /state=open&per_page=100&page=2$/u);
+});
+
+test("required labels recognize GitHub case-insensitive matches", async () => {
+  const created = [];
+  const api = {
+    getAll: async () => [{ name: "Security-Review" }],
+    post: async (_path, label) => created.push(label.name),
+  };
+  await ensureLabels(api);
+  assert.equal(created.includes("security-review"), false);
+  assert.equal(created.length, 5);
+  assert.equal(hasLabel({ labels: [{ name: "AUTONOMY-BLOCKED" }] }, "autonomy-blocked"), true);
+});
+
+test("a parallel task can bypass an older sequential task while PRs are open", () => {
+  const sequential = { number: 1, labels: [{ name: "autonomy-ready" }] };
+  const parallel = { number: 2, labels: [{ name: "Autonomy-Parallel" }] };
+  assert.equal(selectQueuedTask([sequential, parallel], true), parallel);
+  assert.equal(selectQueuedTask([sequential, parallel], false), sequential);
+  assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "SECURITY-REVIEW" }, { name: "autonomy-parallel" }] }], true), undefined);
 });
 
 test("green PRs request Claude and retry on capped delays", () => {
