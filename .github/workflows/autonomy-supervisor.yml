@@ -1,0 +1,32 @@
+name: Autonomous supervisor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: autonomy-supervisor
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  supervise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Supervise pull requests and queued tasks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AGENT_ID: ${{ vars.CHATGPT_WORKSPACE_AGENT_ID }}
+          AGENT_TOKEN: ${{ secrets.CHATGPT_WORKSPACE_AGENT_TOKEN }}
+        run: node scripts/autonomy-supervisor.js
