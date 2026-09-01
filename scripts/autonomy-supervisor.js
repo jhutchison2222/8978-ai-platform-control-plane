@@ -9,6 +9,7 @@ export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
+const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const ACCEPTED_REVIEW = /\b(?:ACCEPTED|LGTM)\b|\blooks good\b/iu;
 const REJECTED_REVIEW = /\b(?:REJECTED|REQUEST_CHANGES|BLOCKING)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
@@ -19,9 +20,10 @@ function required(name, value) {
 }
 
 export function checkState(checkRuns) {
-  if (!Array.isArray(checkRuns) || checkRuns.length === 0) return "pending";
-  if (checkRuns.some((run) => run.status !== "completed")) return "pending";
-  return checkRuns.every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion)) ? "passed" : "failed";
+  const ciRuns = Array.isArray(checkRuns) ? checkRuns.filter((run) => !NON_CI_CHECK_NAMES.has(run.name)) : [];
+  if (ciRuns.length === 0) return "pending";
+  if (ciRuns.some((run) => run.status !== "completed")) return "pending";
+  return ciRuns.every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion)) ? "passed" : "failed";
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
@@ -45,7 +47,9 @@ export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, rev
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed") {
-    const latestCompletion = Math.max(...checkRuns.map((run) => Date.parse(run.completed_at ?? 0)));
+    const latestCompletion = Math.max(...checkRuns
+      .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
+      .map((run) => Date.parse(run.completed_at ?? 0)));
     return nowMs - latestCompletion >= EVENT_DISPATCH_FALLBACK_DELAY_MS
       ? { kind: "dispatch", reason: "checks-failed" }
       : { kind: "wait", reason: "event-dispatch-fallback-delay" };
