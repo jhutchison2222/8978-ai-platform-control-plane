@@ -10,4 +10,4 @@ Open issues labeled `autonomy-ready` form the task queue. The oldest eligible ta
 
 The supervisor creates these six repository labels if they do not already exist. It never changes an existing label definition.
 
-The workflow has only `actions: read`, `contents: read`, `issues: write`, and `pull-requests: write`. It has no `contents: write` permission and therefore cannot modify code or merge directly. Clean-code merging remains the responsibility of the Workspace Agent under the owner's standing authorization and the repository's exact-head independent-review policy.
+The workflow has only `actions: read`, `checks: read`, `contents: read`, `issues: write`, and `pull-requests: write`. It has no `contents: write` permission and therefore cannot modify code or merge directly. Clean-code merging remains the responsibility of the Workspace Agent under the owner's standing authorization and the repository's exact-head independent-review policy.
