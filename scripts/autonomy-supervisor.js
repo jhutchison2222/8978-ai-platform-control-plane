@@ -39,6 +39,17 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
   return ACCEPTED_REVIEW.test(body) ? "accepted" : "inconclusive";
 }
 
+export function hasLabel(subject, name) {
+  const expected = name.toLowerCase();
+  return subject.labels?.some((label) => label.name?.toLowerCase() === expected) ?? false;
+}
+
+export function selectQueuedTask(issues, hasOpenPullRequests) {
+  return issues.find((issue) => !issue.pull_request &&
+    !["autonomy-dispatched", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
+    (!hasOpenPullRequests || hasLabel(issue, "autonomy-parallel")));
+}
+
 export function claudeRequests(comments, headSha) {
   const expectedPrefix = `${MARKER_PREFIX}claude-request-`;
   return comments
@@ -107,7 +118,7 @@ export function hasMarker(comments, reason, headSha) {
   return comments.some((comment) => comment.body?.includes(expected));
 }
 
-class GitHubApi {
+export class GitHubApi {
   constructor({ repository, token, fetchImpl = fetch }) {
     this.repository = required("GITHUB_REPOSITORY", repository);
     this.token = required("GITHUB_TOKEN", token);
@@ -130,6 +141,17 @@ class GitHubApi {
   }
 
   get(path) { return this.request(path); }
+  async getAll(path, field) {
+    const items = [];
+    for (let page = 1; ; page += 1) {
+      const separator = path.includes("?") ? "&" : "?";
+      const data = await this.get(`${path}${separator}per_page=100&page=${page}`);
+      const pageItems = field ? data[field] : data;
+      if (!Array.isArray(pageItems)) throw new Error(`GitHub GET ${path} did not return a list`);
+      items.push(...pageItems);
+      if (pageItems.length < 100) return items;
+    }
+  }
   post(path, body) {
     return this.request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
@@ -144,10 +166,10 @@ const REQUIRED_LABELS = [
   { name: "major-decision", color: "FBCA04", description: "Owner decision required" },
 ];
 
-async function ensureLabels(api) {
-  const labels = await api.get("/labels?per_page=100");
-  const existing = new Set(labels.map((label) => label.name));
-  for (const label of REQUIRED_LABELS) if (!existing.has(label.name)) await api.post("/labels", label);
+export async function ensureLabels(api) {
+  const labels = await api.getAll("/labels");
+  const existing = new Set(labels.map((label) => label.name.toLowerCase()));
+  for (const label of REQUIRED_LABELS) if (!existing.has(label.name.toLowerCase())) await api.post("/labels", label);
 }
 
 export async function triggerWorkspaceAgent({ agentId, agentToken, conversationKey, input, idempotencyKey, fetchImpl = fetch }) {
@@ -196,11 +218,11 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (pr.draft) return;
   const headSha = pr.head.sha;
   const [checkData, reviews, comments] = await Promise.all([
-    api.get(`/commits/${headSha}/check-runs?per_page=100`),
-    api.get(`/pulls/${pr.number}/reviews?per_page=100`),
-    api.get(`/issues/${pr.number}/comments?per_page=100`),
+    api.getAll(`/commits/${headSha}/check-runs`, "check_runs"),
+    api.getAll(`/pulls/${pr.number}/reviews`),
+    api.getAll(`/issues/${pr.number}/comments`),
   ]);
-  const action = nextPullRequestAction({ checkRuns: checkData.check_runs, comments, headSha, nowMs, reviews });
+  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviews });
   if (action.kind === "wait") return;
   if (action.kind === "request-review") {
     await api.post(`/issues/${pr.number}/comments`, {
@@ -209,17 +231,15 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     return;
   }
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
-  if (action.reason === "review-stalled") {
+  if (action.reason === "review-stalled" && !hasLabel(pr, "autonomy-blocked")) {
     await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
   }
 }
 
 async function superviseTaskQueue({ api, agent, openPullRequests }) {
-  const issues = await api.get("/issues?state=open&labels=autonomy-ready&sort=created&direction=asc&per_page=100");
-  const task = issues.find((issue) => !issue.pull_request && !issue.labels.some((label) => ["autonomy-dispatched", "security-review", "major-decision"].includes(label.name)));
+  const issues = await api.getAll("/issues?state=open&labels=autonomy-ready&sort=created&direction=asc");
+  const task = selectQueuedTask(issues, openPullRequests.length > 0);
   if (!task) return;
-  const parallel = task.labels.some((label) => label.name === "autonomy-parallel");
-  if (openPullRequests.length > 0 && !parallel) return;
   const reason = "task-ready";
   await triggerWorkspaceAgent({
     ...agent,
@@ -250,7 +270,7 @@ export async function runSupervisor({
   const api = new GitHubApi({ repository, token: githubToken, fetchImpl });
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
-  const pullRequests = await api.get("/pulls?state=open&per_page=100");
+  const pullRequests = await api.getAll("/pulls?state=open");
   const errors = await runAllIsolated(pullRequests,
     (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
     (error) => console.error("Pull request supervision failed:", error));
