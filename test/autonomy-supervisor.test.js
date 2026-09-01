@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   CLAUDE_LOGIN,
   CLAUDE_USER_ID,
@@ -25,6 +26,19 @@ const review = (body, overrides = {}) => ({
   ...overrides,
 });
 const request = (createdAt) => ({ body: `@claude exact ${HEAD}`, created_at: createdAt });
+
+test("workflow is scheduled and least-privilege", async () => {
+  const workflow = await readFile(".github/workflows/autonomy-supervisor.yml", "utf8");
+  for (const required of [
+    'cron: "*/5 * * * *"',
+    "actions: read",
+    "contents: read",
+    "issues: write",
+    "pull-requests: write",
+    "node scripts/autonomy-supervisor.js",
+  ]) assert.match(workflow, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+  assert.doesNotMatch(workflow, /contents:\s*write|deploy|wrangler|cloudflare/iu);
+});
 
 test("check state is fail-closed", () => {
   assert.equal(checkState([]), "pending");
