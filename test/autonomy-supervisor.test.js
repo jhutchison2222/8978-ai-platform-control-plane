@@ -9,6 +9,7 @@ import {
   SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
   GitHubApi,
+  blockedLabelAction,
   checkState,
   claudeRequests,
   ensureLabels,
@@ -71,7 +72,10 @@ test("only an explicit exact-head Claude verdict is accepted", () => {
   assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but human review is still required")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
+  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${"b".repeat(40)}`)], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review(`REJECTED — exact head ${HEAD}`)], HEAD), "rejected");
+  assert.equal(exactHeadClaudeVerdict([review("File A looks good, but File B has SQL injection; do not merge")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}\nREQUEST_CHANGES was the prior status`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "missing");
 });
@@ -121,6 +125,14 @@ test("required labels recognize GitHub case-insensitive matches", async () => {
   assert.equal(created.includes("security-review"), false);
   assert.equal(created.length, 5);
   assert.equal(hasLabel({ labels: [{ name: "AUTONOMY-BLOCKED" }] }, "autonomy-blocked"), true);
+});
+
+test("the blocked label is idempotent and clears after recovery", () => {
+  const blocked = { labels: [{ name: "Autonomy-Blocked" }] };
+  assert.equal(blockedLabelAction(blocked, { reason: "review-stalled" }), null);
+  assert.deepEqual(blockedLabelAction({ labels: [] }, { reason: "review-stalled" }), { kind: "add" });
+  assert.deepEqual(blockedLabelAction(blocked, { reason: "checks-pending" }), { kind: "remove", name: "Autonomy-Blocked" });
+  assert.equal(blockedLabelAction({ labels: [] }, { reason: "merge-ready" }), null);
 });
 
 test("a parallel task can bypass an older sequential task while PRs are open", () => {
