@@ -16,7 +16,7 @@ import {
 
 const HEAD = "a".repeat(40);
 const NOW = Date.parse("2026-09-01T18:00:00Z");
-const checks = [{ status: "completed", conclusion: "success", completed_at: "2026-09-01T17:30:00Z" }];
+const checks = [{ name: "test", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:30:00Z" }];
 const review = (body, overrides = {}) => ({
   user: { id: CLAUDE_USER_ID, login: CLAUDE_LOGIN },
   commit_id: HEAD,
@@ -42,9 +42,15 @@ test("workflow is scheduled and least-privilege", async () => {
 
 test("check state is fail-closed", () => {
   assert.equal(checkState([]), "pending");
-  assert.equal(checkState([{ status: "in_progress", conclusion: null }]), "pending");
-  assert.equal(checkState([{ status: "completed", conclusion: "failure" }]), "failed");
-  assert.equal(checkState([{ status: "completed", conclusion: "neutral" }, ...checks]), "passed");
+  assert.equal(checkState([{ name: "test", status: "in_progress", conclusion: null }]), "pending");
+  assert.equal(checkState([{ name: "test", status: "completed", conclusion: "failure" }]), "failed");
+  assert.equal(checkState([{ name: "lint", status: "completed", conclusion: "neutral" }, ...checks]), "passed");
+});
+
+test("a stalled Claude check cannot hold green CI", () => {
+  const stalledClaude = { name: "Claude Code Review", status: "in_progress", conclusion: null };
+  assert.equal(checkState([stalledClaude]), "pending");
+  assert.equal(checkState([...checks, stalledClaude]), "passed");
 });
 
 test("only an explicit exact-head Claude verdict is accepted", () => {
@@ -65,13 +71,13 @@ test("green PRs request Claude and retry on capped delays", () => {
 });
 
 test("checks and verdicts route to the Workspace Agent", () => {
-  assert.deepEqual(nextPullRequestAction({ checkRuns: [{ status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() }], comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "checks-failed" });
+  assert.deepEqual(nextPullRequestAction({ checkRuns: [{ name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() }], comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "checks-failed" });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review("LGTM")] }), { kind: "dispatch", reason: "merge-ready" });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review("REJECTED")] }), { kind: "dispatch", reason: "review-rejected" });
 });
 
 test("event-triggered dispatch receives a ten-minute head start", () => {
-  const recentFailure = [{ status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() }];
+  const recentFailure = [{ name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() }];
   assert.deepEqual(nextPullRequestAction({ checkRuns: recentFailure, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "wait", reason: "event-dispatch-fallback-delay" });
   const recentAcceptance = review("LGTM", { submitted_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [recentAcceptance] }), { kind: "wait", reason: "event-dispatch-fallback-delay" });
