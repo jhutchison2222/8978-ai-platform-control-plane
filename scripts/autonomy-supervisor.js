@@ -11,8 +11,8 @@ export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
-const ACCEPTED_REVIEW = /\b(?:ACCEPTED|LGTM)\b|\blooks good\b/iu;
-const REJECTED_REVIEW = /^\s*(?:REJECTED|REQUEST_CHANGES)\b/imu;
+const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|LGTM|looks good)[.!]?$/iu;
+const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -34,14 +34,27 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
     .sort((left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at));
   const latest = exact.at(-1);
   if (!latest) return "missing";
-  const body = latest.body ?? "";
-  if (latest.state === "CHANGES_REQUESTED" || REJECTED_REVIEW.test(body)) return "rejected";
-  return ACCEPTED_REVIEW.test(body) ? "accepted" : "inconclusive";
+  if (latest.state === "CHANGES_REQUESTED") return "rejected";
+  const verdicts = (latest.body ?? "").split(/\r?\n/u).flatMap((line) => {
+    const text = line.trim();
+    const rejected = text.match(REJECTED_REVIEW);
+    if (rejected && (!rejected[1] || rejected[1].toLowerCase() === headSha.toLowerCase())) return ["rejected"];
+    const accepted = text.match(ACCEPTED_REVIEW);
+    if (accepted && (!accepted[1] || accepted[1].toLowerCase() === headSha.toLowerCase())) return ["accepted"];
+    return [];
+  });
+  return verdicts.at(-1) ?? "inconclusive";
 }
 
 export function hasLabel(subject, name) {
   const expected = name.toLowerCase();
   return subject.labels?.some((label) => label.name?.toLowerCase() === expected) ?? false;
+}
+
+export function blockedLabelAction(pr, action) {
+  const existing = pr.labels?.find((label) => label.name?.toLowerCase() === "autonomy-blocked");
+  if (action.reason === "review-stalled") return existing ? null : { kind: "add" };
+  return existing ? { kind: "remove", name: existing.name } : null;
 }
 
 export function selectQueuedTask(issues, hasOpenPullRequests) {
@@ -155,6 +168,7 @@ export class GitHubApi {
   post(path, body) {
     return this.request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
+  delete(path) { return this.request(path, { method: "DELETE" }); }
 }
 
 const REQUIRED_LABELS = [
@@ -223,6 +237,12 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     api.getAll(`/issues/${pr.number}/comments`),
   ]);
   const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviews });
+  const labelAction = blockedLabelAction(pr, action);
+  if (labelAction?.kind === "add") {
+    await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
+  } else if (labelAction?.kind === "remove") {
+    await api.delete(`/issues/${pr.number}/labels/${encodeURIComponent(labelAction.name)}`);
+  }
   if (action.kind === "wait") return;
   if (action.kind === "request-review") {
     await api.post(`/issues/${pr.number}/comments`, {
@@ -231,9 +251,6 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     return;
   }
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
-  if (action.reason === "review-stalled" && !hasLabel(pr, "autonomy-blocked")) {
-    await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
-  }
 }
 
 async function superviseTaskQueue({ api, agent, openPullRequests }) {
