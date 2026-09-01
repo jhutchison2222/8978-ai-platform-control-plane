@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 
 export const CLAUDE_LOGIN = "claude[bot]";
 export const CLAUDE_USER_ID = 209825114;
+export const SUPERVISOR_LOGIN = "github-actions[bot]";
 export const MAX_CLAUDE_REQUESTS = 3;
 export const SECOND_REQUEST_DELAY_MS = 10 * 60 * 1000;
 export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
@@ -11,7 +12,7 @@ export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const ACCEPTED_REVIEW = /\b(?:ACCEPTED|LGTM)\b|\blooks good\b/iu;
-const REJECTED_REVIEW = /\b(?:REJECTED|REQUEST_CHANGES|BLOCKING)\b/iu;
+const REJECTED_REVIEW = /^\s*(?:REJECTED|REQUEST_CHANGES)\b/imu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -28,7 +29,8 @@ export function checkState(checkRuns) {
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
   const exact = reviews
-    .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN && review.commit_id === headSha)
+    .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN &&
+      review.commit_id === headSha && review.state !== "DISMISSED")
     .sort((left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at));
   const latest = exact.at(-1);
   if (!latest) return "missing";
@@ -38,9 +40,24 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
 }
 
 export function claudeRequests(comments, headSha) {
+  const expectedPrefix = `${MARKER_PREFIX}claude-request-`;
   return comments
-    .filter((comment) => typeof comment.body === "string" && comment.body.includes("@claude") && comment.body.includes(headSha))
+    .filter((comment) => comment.user?.login === SUPERVISOR_LOGIN && typeof comment.body === "string" &&
+      comment.body.includes(expectedPrefix) && comment.body.includes(`:${headSha} -->`) && comment.body.includes("@claude"))
     .sort((left, right) => Date.parse(left.created_at) - Date.parse(right.created_at));
+}
+
+export async function runAllIsolated(items, handler, onError = console.error) {
+  const errors = [];
+  for (const item of items) {
+    try {
+      await handler(item);
+    } catch (error) {
+      errors.push(error);
+      onError(error);
+    }
+  }
+  return errors;
 }
 
 export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviews }) {
@@ -234,8 +251,16 @@ export async function runSupervisor({
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.get("/pulls?state=open&per_page=100");
-  for (const pr of pullRequests) await supervisePullRequest({ api, agent, nowMs, pr });
-  await superviseTaskQueue({ api, agent, openPullRequests: pullRequests.filter((pr) => !pr.draft) });
+  const errors = await runAllIsolated(pullRequests,
+    (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
+    (error) => console.error("Pull request supervision failed:", error));
+  try {
+    await superviseTaskQueue({ api, agent, openPullRequests: pullRequests.filter((pr) => !pr.draft) });
+  } catch (error) {
+    errors.push(error);
+    console.error("Task queue supervision failed:", error);
+  }
+  if (errors.length > 0) throw new AggregateError(errors, "One or more supervisor items failed after independent processing");
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
