@@ -7,11 +7,14 @@ import {
   EVENT_DISPATCH_FALLBACK_DELAY_MS,
   LATER_ACTION_DELAY_MS,
   SECOND_REQUEST_DELAY_MS,
+  SUPERVISOR_LOGIN,
   checkState,
+  claudeRequests,
   exactHeadClaudeVerdict,
   hasMarker,
   marker,
   nextPullRequestAction,
+  runAllIsolated,
 } from "../scripts/autonomy-supervisor.js";
 
 const HEAD = "a".repeat(40);
@@ -25,13 +28,19 @@ const review = (body, overrides = {}) => ({
   body,
   ...overrides,
 });
-const request = (createdAt) => ({ body: `@claude exact ${HEAD}`, created_at: createdAt });
+const request = (createdAt, attempt = 1, overrides = {}) => ({
+  user: { login: SUPERVISOR_LOGIN },
+  body: `${marker(`claude-request-${attempt}`, HEAD)}\n@claude exact ${HEAD}`,
+  created_at: createdAt,
+  ...overrides,
+});
 
 test("workflow is scheduled and least-privilege", async () => {
   const workflow = await readFile(".github/workflows/autonomy-supervisor.yml", "utf8");
   for (const required of [
     'cron: "*/5 * * * *"',
     "actions: read",
+    "checks: read",
     "contents: read",
     "issues: write",
     "pull-requests: write",
@@ -55,18 +64,39 @@ test("a stalled Claude check cannot hold green CI", () => {
 
 test("only an explicit exact-head Claude verdict is accepted", () => {
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but human review is still required")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
   assert.equal(exactHeadClaudeVerdict([review(`REJECTED — exact head ${HEAD}`)], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
+  assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "missing");
+});
+
+test("only supervisor-authored exact-head markers consume retry attempts", () => {
+  const valid = request("2026-09-01T17:30:00Z");
+  const arbitrary = { user: { login: "attacker" }, body: `@claude exact ${HEAD}`, created_at: "2026-09-01T17:31:00Z" };
+  const forgedMarker = { ...valid, user: { login: "attacker" } };
+  assert.deepEqual(claudeRequests([arbitrary, forgedMarker, valid], HEAD), [valid]);
+});
+
+test("one failed item cannot prevent later supervision", async () => {
+  const visited = [];
+  const reported = [];
+  const errors = await runAllIsolated([1, 2, 3], async (item) => {
+    visited.push(item);
+    if (item === 2) throw new Error("fixture failure");
+  }, (error) => reported.push(error.message));
+  assert.deepEqual(visited, [1, 2, 3]);
+  assert.equal(errors.length, 1);
+  assert.deepEqual(reported, ["fixture failure"]);
 });
 
 test("green PRs request Claude and retry on capped delays", () => {
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 1 });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [request(new Date(NOW - SECOND_REQUEST_DELAY_MS).toISOString())], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 2 });
-  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString())];
+  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 2)];
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: two, headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 3 });
-  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString())];
+  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 3)];
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: three, headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "review-stalled" });
 });
 
