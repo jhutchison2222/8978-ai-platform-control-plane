@@ -193,6 +193,9 @@ export class GitHubApi {
   post(path, body) {
     return this.request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
+  patch(path, body) {
+    return this.request(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
   delete(path) { return this.request(path, { method: "DELETE" }); }
 }
 
@@ -207,8 +210,15 @@ const REQUIRED_LABELS = [
 
 export async function ensureLabels(api) {
   const labels = await api.getAll("/labels");
-  const existing = new Set(labels.map((label) => label.name.toLowerCase()));
-  for (const label of REQUIRED_LABELS) if (!existing.has(label.name.toLowerCase())) await api.post("/labels", label);
+  const existing = new Map(labels.map((label) => [label.name.toLowerCase(), label]));
+  for (const label of REQUIRED_LABELS) {
+    const current = existing.get(label.name.toLowerCase());
+    if (!current) {
+      await api.post("/labels", label);
+    } else if (label.name === "autonomy-dispatched" && current.description === "Autonomous agent dispatch completed") {
+      await api.patch(`/labels/${encodeURIComponent(current.name)}`, { description: label.description });
+    }
+  }
 }
 
 export async function triggerWorkspaceAgent({ agentId, agentToken, conversationKey, input, idempotencyKey, fetchImpl = fetch }) {

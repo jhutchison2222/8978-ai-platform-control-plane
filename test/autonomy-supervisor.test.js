@@ -122,13 +122,20 @@ test("GitHub list requests paginate until a short page", async () => {
 
 test("required labels recognize GitHub case-insensitive matches", async () => {
   const created = [];
+  const updated = [];
   const api = {
-    getAll: async () => [{ name: "Security-Review" }],
+    getAll: async () => [
+      { name: "Security-Review", description: "custom" },
+      { name: "Autonomy-Dispatched", description: "Autonomous agent dispatch completed" },
+    ],
     post: async (_path, label) => created.push(label.name),
+    patch: async (path, label) => updated.push({ path, ...label }),
   };
   await ensureLabels(api);
   assert.equal(created.includes("security-review"), false);
-  assert.equal(created.length, 5);
+  assert.equal(created.includes("autonomy-dispatched"), false);
+  assert.equal(created.length, 4);
+  assert.deepEqual(updated, [{ path:"/labels/Autonomy-Dispatched", description:"Autonomous agent dispatch accepted" }]);
   assert.equal(hasLabel({ labels: [{ name: "AUTONOMY-BLOCKED" }] }, "autonomy-blocked"), true);
 });
 
