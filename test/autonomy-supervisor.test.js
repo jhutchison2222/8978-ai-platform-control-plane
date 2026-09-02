@@ -24,6 +24,8 @@ import {
   nextTaskDispatchAction,
   runAllIsolated,
   selectQueuedTask,
+  selectQueuedTasks,
+  superviseTaskQueue,
   taskDispatches,
 } from "../scripts/autonomy-supervisor.js";
 
@@ -155,6 +157,7 @@ test("a parallel task can bypass an older sequential task while PRs are open", (
   assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "SECURITY-REVIEW" }, { name: "autonomy-parallel" }] }], true), undefined);
   assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "autonomy-dispatched" }, { name: "autonomy-parallel" }] }], true)?.number, 2);
   assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "autonomy-blocked" }, { name: "autonomy-parallel" }] }], true), undefined);
+  assert.deepEqual(selectQueuedTasks([sequential, parallel], true), [parallel]);
 });
 
 test("accepted task dispatches retry with fresh attempts and then block", () => {
@@ -182,6 +185,90 @@ test("a linked implementation pull request pauses task redispatch", () => {
   assert.equal(hasPullRequestForTask([{ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } }], 61), true);
   assert.equal(hasPullRequestForTask([{ body: "Closes #610", head: { ref: "agent/live-test" } }], 61), false);
   assert.equal(hasPullRequestForTask([{ body: null, head: { ref: "agent/live-test" } }], 61), false);
+});
+
+test("a linked draft pull request pauses task redispatch", async () => {
+  let commentsFetched = false;
+  const api = {
+    repository: "owner/repo",
+    getAll: async (path) => {
+      if (path.startsWith("/issues?")) {
+        return [{ number: 61, labels: [{ name: "autonomy-ready" }], html_url: "https://example.test/61", title: "Task" }];
+      }
+      commentsFetched = true;
+      return [];
+    },
+    post: async () => assert.fail("linked draft task must not be mutated"),
+  };
+  await superviseTaskQueue({
+    api,
+    agent: {},
+    nowMs: NOW,
+    pullRequests: [{ draft: true, body: "Closes #61", head: { ref: "agent/issue-61" } }],
+  });
+  assert.equal(commentsFetched, false);
+});
+
+test("one task failure cannot starve a later dispatchable task", async () => {
+  const posts = [];
+  const api = {
+    repository: "owner/repo",
+    getAll: async (path) => {
+      if (path.startsWith("/issues?")) {
+        return [1, 2].map((number) => ({
+          number,
+          labels: [{ name: "autonomy-ready" }],
+          html_url: `https://example.test/${number}`,
+          title: `Task ${number}`,
+        }));
+      }
+      if (path === "/issues/1/comments") throw new Error("fixture comments failure");
+      return [];
+    },
+    post: async (path, body) => posts.push({ path, body }),
+  };
+  const agent = {
+    agentId: "agtch_fixture",
+    agentToken: "fixture",
+    fetchImpl: async () => ({ status: 202, json: async () => ({ accepted: true }) }),
+  };
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(
+      superviseTaskQueue({ api, agent, nowMs: NOW, pullRequests: [] }),
+      (error) => error instanceof AggregateError && error.errors[0].message === "fixture comments failure",
+    );
+  } finally {
+    console.error = originalError;
+  }
+  assert.deepEqual(posts.map(({ path }) => path), ["/issues/2/labels", "/issues/2/comments"]);
+});
+
+test("stall reporting is owner-visible and retryable before blocking", async () => {
+  const oldDispatches = Array.from({ length: MAX_TASK_DISPATCHES }, (_, index) => ({
+    user: { login: SUPERVISOR_LOGIN },
+    body: `${marker(`dispatch-task-ready${index === 0 ? "" : `-${index + 1}`}`, "no-head")}\nAccepted.`,
+    created_at: new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString(),
+  }));
+  const posts = [];
+  const api = {
+    repository: "owner/repo",
+    getAll: async (path) => path.startsWith("/issues?")
+      ? [{ number: 61, labels: [{ name: "autonomy-ready" }] }]
+      : oldDispatches,
+    post: async (path, body) => posts.push({ path, body }),
+  };
+  await superviseTaskQueue({ api, agent: {}, nowMs: NOW, pullRequests: [] });
+  assert.deepEqual(posts.map(({ path }) => path), ["/issues/61/comments", "/issues/61/labels"]);
+
+  posts.length = 0;
+  const stalled = { user: { login: SUPERVISOR_LOGIN }, body: marker("task-dispatch-stalled", "no-head") };
+  api.getAll = async (path) => path.startsWith("/issues?")
+    ? [{ number: 61, labels: [{ name: "autonomy-ready" }] }]
+    : [...oldDispatches, stalled];
+  await superviseTaskQueue({ api, agent: {}, nowMs: NOW, pullRequests: [] });
+  assert.deepEqual(posts.map(({ path }) => path), ["/issues/61/labels"]);
 });
 
 test("green PRs request Claude and retry on capped delays", () => {

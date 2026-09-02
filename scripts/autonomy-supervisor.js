@@ -59,10 +59,14 @@ export function blockedLabelAction(pr, action) {
   return existing ? { kind: "remove", name: existing.name } : null;
 }
 
-export function selectQueuedTask(issues, hasOpenPullRequests) {
-  return issues.find((issue) => !issue.pull_request &&
+export function selectQueuedTasks(issues, hasOpenPullRequests) {
+  return issues.filter((issue) => !issue.pull_request &&
     !["autonomy-blocked", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
     (!hasOpenPullRequests || hasLabel(issue, "autonomy-parallel")));
+}
+
+export function selectQueuedTask(issues, hasOpenPullRequests) {
+  return selectQueuedTasks(issues, hasOpenPullRequests).at(0);
 }
 
 export function hasPullRequestForTask(pullRequests, taskNumber) {
@@ -288,43 +292,53 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
 }
 
-async function superviseTaskQueue({ api, agent, nowMs, openPullRequests }) {
+export async function superviseTaskQueue({ api, agent, nowMs, pullRequests }) {
   const issues = await api.getAll("/issues?state=open&labels=autonomy-ready&sort=created&direction=asc");
-  const candidates = issues.filter((issue) => !issue.pull_request &&
-    !["autonomy-blocked", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
-    (openPullRequests.length === 0 || hasLabel(issue, "autonomy-parallel")));
+  const candidates = selectQueuedTasks(issues, pullRequests.some((pr) => !pr.draft));
+  const errors = [];
+  let dispatched = false;
   for (const task of candidates) {
-    if (hasPullRequestForTask(openPullRequests, task.number)) continue;
-    const comments = await api.getAll(`/issues/${task.number}/comments`);
-    const action = nextTaskDispatchAction({ comments, nowMs });
-    if (action.kind === "wait") continue;
-    if (action.kind === "block") {
-      await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-blocked"] });
-      await api.post(`/issues/${task.number}/comments`, {
-        body: `${marker("task-dispatch-stalled", "no-head")}\nWorkspace Agent dispatch was accepted ${MAX_TASK_DISPATCHES} times without the issue closing. Owner-visible investigation is required; no further automatic dispatch will occur.`,
+    try {
+      if (hasPullRequestForTask(pullRequests, task.number)) continue;
+      const comments = await api.getAll(`/issues/${task.number}/comments`);
+      const action = nextTaskDispatchAction({ comments, nowMs });
+      if (action.kind === "wait") continue;
+      if (action.kind === "block") {
+        if (!hasMarker(comments, "task-dispatch-stalled", "no-head")) {
+          await api.post(`/issues/${task.number}/comments`, {
+            body: `${marker("task-dispatch-stalled", "no-head")}\nWorkspace Agent dispatch was accepted ${MAX_TASK_DISPATCHES} times without the issue closing. Owner-visible investigation is required; no further automatic dispatch will occur.`,
+          });
+        }
+        await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-blocked"] });
+        continue;
+      }
+      const reason = action.attempt === 1 ? "task-ready" : `task-ready-retry-${action.attempt}`;
+      await triggerWorkspaceAgent({
+        ...agent,
+        conversationKey: `github:${api.repository}:issue:${task.number}`,
+        idempotencyKey: idempotencyKey(api.repository, `issue:${task.number}`, "no-head", reason),
+        input: {
+          source: "github.autonomy_supervisor",
+          repository: api.repository,
+          issue: { number: task.number, url: task.html_url, title: task.title },
+          reason,
+          attempt: action.attempt,
+          instruction: `Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request whose body includes \"Closes #${task.number}\" so the supervisor can detect active implementation. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.`,
+        },
       });
-      continue;
+      await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
+      await api.post(`/issues/${task.number}/comments`, {
+        body: `${marker(`dispatch-task-ready${action.attempt === 1 ? "" : `-${action.attempt}`}`, "no-head")}\nAutonomy supervisor dispatch attempt ${action.attempt} of ${MAX_TASK_DISPATCHES} was accepted for this queued task.`,
+      });
+      dispatched = true;
+      break;
+    } catch (error) {
+      errors.push(error);
+      console.error(`Task #${task.number} supervision failed:`, error);
     }
-    const reason = action.attempt === 1 ? "task-ready" : `task-ready-retry-${action.attempt}`;
-    await triggerWorkspaceAgent({
-      ...agent,
-      conversationKey: `github:${api.repository}:issue:${task.number}`,
-      idempotencyKey: idempotencyKey(api.repository, `issue:${task.number}`, "no-head", reason),
-      input: {
-        source: "github.autonomy_supervisor",
-        repository: api.repository,
-        issue: { number: task.number, url: task.html_url, title: task.title },
-        reason,
-        attempt: action.attempt,
-        instruction: `Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request whose body includes \"Closes #${task.number}\" so the supervisor can detect active implementation. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.`,
-      },
-    });
-    await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
-    await api.post(`/issues/${task.number}/comments`, {
-      body: `${marker(`dispatch-task-ready${action.attempt === 1 ? "" : `-${action.attempt}`}`, "no-head")}\nAutonomy supervisor dispatch attempt ${action.attempt} of ${MAX_TASK_DISPATCHES} was accepted for this queued task.`,
-    });
-    return;
   }
+  if (errors.length > 0) throw new AggregateError(errors,
+    `Task queue supervision failed${dispatched ? " after a later task was dispatched" : ""}`);
 }
 
 export async function runSupervisor({
@@ -343,7 +357,7 @@ export async function runSupervisor({
     (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
     (error) => console.error("Pull request supervision failed:", error));
   try {
-    await superviseTaskQueue({ api, agent, nowMs, openPullRequests: pullRequests.filter((pr) => !pr.draft) });
+    await superviseTaskQueue({ api, agent, nowMs, pullRequests });
   } catch (error) {
     errors.push(error);
     console.error("Task queue supervision failed:", error);
