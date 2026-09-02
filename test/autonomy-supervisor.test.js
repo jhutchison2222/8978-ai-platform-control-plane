@@ -6,8 +6,10 @@ import {
   CLAUDE_USER_ID,
   EVENT_DISPATCH_FALLBACK_DELAY_MS,
   LATER_ACTION_DELAY_MS,
+  MAX_TASK_DISPATCHES,
   SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
+  TASK_DISPATCH_RETRY_DELAY_MS,
   GitHubApi,
   blockedLabelAction,
   checkState,
@@ -18,8 +20,10 @@ import {
   hasMarker,
   marker,
   nextPullRequestAction,
+  nextTaskDispatchAction,
   runAllIsolated,
   selectQueuedTask,
+  taskDispatches,
 } from "../scripts/autonomy-supervisor.js";
 
 const HEAD = "a".repeat(40);
@@ -141,6 +145,27 @@ test("a parallel task can bypass an older sequential task while PRs are open", (
   assert.equal(selectQueuedTask([sequential, parallel], true), parallel);
   assert.equal(selectQueuedTask([sequential, parallel], false), sequential);
   assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "SECURITY-REVIEW" }, { name: "autonomy-parallel" }] }], true), undefined);
+  assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "autonomy-dispatched" }, { name: "autonomy-parallel" }] }], true)?.number, 2);
+  assert.equal(selectQueuedTask([{ ...parallel, labels: [{ name: "autonomy-blocked" }, { name: "autonomy-parallel" }] }], true), undefined);
+});
+
+test("accepted task dispatches retry with fresh attempts and then block", () => {
+  const dispatch = (attempt, createdAt, overrides = {}) => ({
+    user: { login: SUPERVISOR_LOGIN },
+    body: `${marker(`dispatch-task-ready${attempt === 1 ? "" : `-${attempt}`}`, "no-head")}\nAccepted.`,
+    created_at: createdAt,
+    ...overrides,
+  });
+  const first = dispatch(1, new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString());
+  assert.deepEqual(taskDispatches([{ ...first, user: { login: "attacker" } }, first]), [first]);
+  assert.deepEqual(nextTaskDispatchAction({ comments: [], nowMs: NOW }), { kind: "dispatch", attempt: 1 });
+  assert.deepEqual(nextTaskDispatchAction({ comments: [dispatch(1, new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS + 1).toISOString())], nowMs: NOW }), { kind: "wait" });
+  assert.deepEqual(nextTaskDispatchAction({ comments: [first], nowMs: NOW }), { kind: "dispatch", attempt: 2 });
+  const two = [first, dispatch(2, new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString())];
+  assert.deepEqual(nextTaskDispatchAction({ comments: two, nowMs: NOW }), { kind: "dispatch", attempt: 3 });
+  const three = [...two, dispatch(MAX_TASK_DISPATCHES, new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString())];
+  assert.deepEqual(nextTaskDispatchAction({ comments: three, nowMs: NOW }), { kind: "block" });
+  assert.deepEqual(nextTaskDispatchAction({ comments: [{ ...first, created_at: null }], nowMs: NOW }), { kind: "wait" });
 });
 
 test("green PRs request Claude and retry on capped delays", () => {
