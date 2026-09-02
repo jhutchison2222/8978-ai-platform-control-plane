@@ -181,8 +181,10 @@ test("accepted task dispatches retry with fresh attempts and then block", () => 
 
 test("a linked implementation pull request pauses task redispatch", () => {
   assert.equal(hasPullRequestForTask([{ body: "Closes #61", head: { ref: "agent/live-test" } }], 61), true);
-  assert.equal(hasPullRequestForTask([{ body: "Implements https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61), true);
+  assert.equal(hasPullRequestForTask([{ body: "Resolves https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61), true);
   assert.equal(hasPullRequestForTask([{ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } }], 61), true);
+  assert.equal(hasPullRequestForTask([{ body: "Related: #61", head: { ref: "agent/live-test" } }], 61), false);
+  assert.equal(hasPullRequestForTask([{ body: "Blocked by https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61), false);
   assert.equal(hasPullRequestForTask([{ body: "Closes #610", head: { ref: "agent/live-test" } }], 61), false);
   assert.equal(hasPullRequestForTask([{ body: null, head: { ref: "agent/live-test" } }], 61), false);
 });

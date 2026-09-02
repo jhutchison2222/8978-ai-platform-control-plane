@@ -71,7 +71,10 @@ export function selectQueuedTask(issues, hasOpenPullRequests) {
 
 export function hasPullRequestForTask(pullRequests, taskNumber) {
   const escaped = String(taskNumber).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  const bodyReference = new RegExp(`(?:#|/issues/)${escaped}\\b`, "iu");
+  const bodyReference = new RegExp(
+    `(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\s*:?\\s*(?:#${escaped}\\b|https?://github\\.com/[^/\\s]+/[^/\\s]+/issues/${escaped}\\b)`,
+    "iu",
+  );
   const branchReference = new RegExp(`(?:^|[/-])(?:issue|task)[/-]?${escaped}(?:$|[/-])`, "iu");
   return pullRequests.some((pr) => bodyReference.test(pr.body ?? "") || branchReference.test(pr.head?.ref ?? ""));
 }
