@@ -19,9 +19,11 @@ import {
   hasLabel,
   hasMarker,
   hasPullRequestForTask,
+  linkedPullRequestPausesTask,
   marker,
   nextPullRequestAction,
   nextTaskDispatchAction,
+  pullRequestForTask,
   runAllIsolated,
   selectQueuedTask,
   selectQueuedTasks,
@@ -180,13 +182,15 @@ test("accepted task dispatches retry with fresh attempts and then block", () => 
 });
 
 test("a linked implementation pull request pauses task redispatch", () => {
-  assert.equal(hasPullRequestForTask([{ body: "Closes #61", head: { ref: "agent/live-test" } }], 61), true);
-  assert.equal(hasPullRequestForTask([{ body: "Resolves https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61), true);
-  assert.equal(hasPullRequestForTask([{ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } }], 61), true);
-  assert.equal(hasPullRequestForTask([{ body: "Related: #61", head: { ref: "agent/live-test" } }], 61), false);
-  assert.equal(hasPullRequestForTask([{ body: "Blocked by https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61), false);
-  assert.equal(hasPullRequestForTask([{ body: "Closes #610", head: { ref: "agent/live-test" } }], 61), false);
-  assert.equal(hasPullRequestForTask([{ body: null, head: { ref: "agent/live-test" } }], 61), false);
+  assert.equal(hasPullRequestForTask([{ body: "Closes #61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), true);
+  assert.equal(hasPullRequestForTask([{ body: "Resolves https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), true);
+  assert.equal(hasPullRequestForTask([{ body: "Closes https://github.com/other/repo/issues/61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ body: "discloses #61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } }], 61, "owner/repo"), true);
+  assert.equal(hasPullRequestForTask([{ body: "Related: #61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ body: "Blocked by https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ body: "Closes #610", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ body: null, head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
 });
 
 test("a linked draft pull request pauses task redispatch", async () => {
@@ -206,9 +210,27 @@ test("a linked draft pull request pauses task redispatch", async () => {
     api,
     agent: {},
     nowMs: NOW,
-    pullRequests: [{ draft: true, body: "Closes #61", head: { ref: "agent/issue-61" } }],
+    pullRequests: [{
+      draft: true,
+      updated_at: new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS + 1).toISOString(),
+      body: "Closes #61",
+      head: { ref: "agent/issue-61" },
+    }],
   });
   assert.equal(commentsFetched, false);
+});
+
+test("an inactive linked draft returns to the bounded task retry path", () => {
+  const draft = {
+    draft: true,
+    updated_at: new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString(),
+    body: "Closes #61",
+    head: { ref: "agent/issue-61" },
+  };
+  const linked = pullRequestForTask([draft], 61, "owner/repo");
+  assert.equal(linked, draft);
+  assert.equal(linkedPullRequestPausesTask(linked, NOW), false);
+  assert.equal(linkedPullRequestPausesTask({ ...draft, draft: false }, NOW), true);
 });
 
 test("one task failure cannot starve a later dispatchable task", async () => {
@@ -244,7 +266,50 @@ test("one task failure cannot starve a later dispatchable task", async () => {
   } finally {
     console.error = originalError;
   }
-  assert.deepEqual(posts.map(({ path }) => path), ["/issues/2/labels", "/issues/2/comments"]);
+  assert.deepEqual(posts.map(({ path }) => path), ["/issues/2/comments", "/issues/2/labels"]);
+});
+
+test("an accepted trigger stops the run even when GitHub recording fails", async () => {
+  let triggers = 0;
+  let secondCommentsFetched = false;
+  const api = {
+    repository: "owner/repo",
+    getAll: async (path) => {
+      if (path.startsWith("/issues?")) {
+        return [1, 2].map((number) => ({
+          number,
+          labels: [{ name: "autonomy-ready" }],
+          html_url: `https://example.test/${number}`,
+          title: `Task ${number}`,
+        }));
+      }
+      if (path === "/issues/2/comments") secondCommentsFetched = true;
+      return [];
+    },
+    post: async (path) => {
+      if (path === "/issues/1/comments") throw new Error("fixture recording failure");
+    },
+  };
+  const agent = {
+    agentId: "agtch_fixture",
+    agentToken: "fixture",
+    fetchImpl: async () => {
+      triggers += 1;
+      return { status: 202, json: async () => ({ accepted: true }) };
+    },
+  };
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    await assert.rejects(
+      superviseTaskQueue({ api, agent, nowMs: NOW, pullRequests: [] }),
+      (error) => error instanceof AggregateError && error.errors[0].message === "fixture recording failure",
+    );
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(triggers, 1);
+  assert.equal(secondCommentsFetched, false);
 });
 
 test("stall reporting is owner-visible and retryable before blocking", async () => {

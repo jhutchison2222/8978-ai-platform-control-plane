@@ -69,14 +69,27 @@ export function selectQueuedTask(issues, hasOpenPullRequests) {
   return selectQueuedTasks(issues, hasOpenPullRequests).at(0);
 }
 
-export function hasPullRequestForTask(pullRequests, taskNumber) {
+export function pullRequestForTask(pullRequests, taskNumber, repository) {
   const escaped = String(taskNumber).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  const bodyReference = new RegExp(
-    `(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\s*:?\\s*(?:#${escaped}\\b|https?://github\\.com/[^/\\s]+/[^/\\s]+/issues/${escaped}\\b)`,
-    "iu",
-  );
+  const keyword = `\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\b\\s*:?\\s*`;
+  const shortReference = new RegExp(`${keyword}#${escaped}\\b`, "iu");
+  const repositoryReference = typeof repository === "string" && repository !== ""
+    ? new RegExp(`${keyword}https?://github\\.com/${repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/issues/${escaped}\\b`, "iu")
+    : null;
   const branchReference = new RegExp(`(?:^|[/-])(?:issue|task)[/-]?${escaped}(?:$|[/-])`, "iu");
-  return pullRequests.some((pr) => bodyReference.test(pr.body ?? "") || branchReference.test(pr.head?.ref ?? ""));
+  return pullRequests.find((pr) => shortReference.test(pr.body ?? "") ||
+    repositoryReference?.test(pr.body ?? "") || branchReference.test(pr.head?.ref ?? ""));
+}
+
+export function hasPullRequestForTask(pullRequests, taskNumber, repository) {
+  return Boolean(pullRequestForTask(pullRequests, taskNumber, repository));
+}
+
+export function linkedPullRequestPausesTask(pullRequest, nowMs) {
+  if (!pullRequest) return false;
+  if (!pullRequest.draft) return true;
+  const updatedAt = Date.parse(pullRequest.updated_at ?? pullRequest.created_at);
+  return Number.isFinite(updatedAt) && nowMs - updatedAt < TASK_DISPATCH_RETRY_DELAY_MS;
 }
 
 export function taskDispatches(comments) {
@@ -302,7 +315,8 @@ export async function superviseTaskQueue({ api, agent, nowMs, pullRequests }) {
   let dispatched = false;
   for (const task of candidates) {
     try {
-      if (hasPullRequestForTask(pullRequests, task.number)) continue;
+      const linkedPullRequest = pullRequestForTask(pullRequests, task.number, api.repository);
+      if (linkedPullRequestPausesTask(linkedPullRequest, nowMs)) continue;
       const comments = await api.getAll(`/issues/${task.number}/comments`);
       const action = nextTaskDispatchAction({ comments, nowMs });
       if (action.kind === "wait") continue;
@@ -329,15 +343,16 @@ export async function superviseTaskQueue({ api, agent, nowMs, pullRequests }) {
           instruction: `Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request whose body includes \"Closes #${task.number}\" so the supervisor can detect active implementation. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.`,
         },
       });
-      await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
+      dispatched = true;
       await api.post(`/issues/${task.number}/comments`, {
         body: `${marker(`dispatch-task-ready${action.attempt === 1 ? "" : `-${action.attempt}`}`, "no-head")}\nAutonomy supervisor dispatch attempt ${action.attempt} of ${MAX_TASK_DISPATCHES} was accepted for this queued task.`,
       });
-      dispatched = true;
+      await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
       break;
     } catch (error) {
       errors.push(error);
       console.error(`Task #${task.number} supervision failed:`, error);
+      if (dispatched) break;
     }
   }
   if (errors.length > 0) throw new AggregateError(errors,
