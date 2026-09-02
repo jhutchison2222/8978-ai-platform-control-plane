@@ -2,11 +2,11 @@
 
 Status: PLANNING AND VALIDATION ONLY — NON-GOVERNING, UNBOUND, AND NOT DEPLOYED
 
-PR #15 adds an inert, fail-closed preflight contract for the future development activation of the control plane. It does not create a Cloudflare resource, modify `wrangler.jsonc`, apply a migration, install a binding or secret, authorize a deployment, or enable action execution.
+PR #15 added an inert, fail-closed preflight contract for the future development activation of the control plane. The later code-only wiring candidate changes `wrangler.jsonc` but does not create or mutate a Cloudflare resource, install a remote binding or secret, authorize a deployment, or enable action execution.
 
 ## Why the manifest is separate from Wrangler
 
-Cloudflare can automatically provision some resources when a deployment config contains a binding without a resource identifier. The activation plan therefore does not add placeholder D1, Queue, or Workflow bindings to deployable configuration. `wrangler.jsonc` remains the reviewed PR #14 configuration with no D1, Workflow, Queue, service, route, or provider binding.
+Cloudflare can automatically provision some resources when a deployment config contains a binding without a resource identifier. The wiring candidate therefore uses only exact verified development resource identifiers and adds no placeholder, service, route, provider, consumer, account, or secret-value configuration. Committing the candidate does not deploy it.
 
 `deployment/development-activation-plan.json` is data for local validation only. No runtime or deployment entrypoint imports it.
 

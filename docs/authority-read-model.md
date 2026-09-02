@@ -2,7 +2,7 @@
 
 Status: DEVELOPMENT FOUNDATION ONLY — UNBOUND AND NOT DEPLOYED
 
-This module implements the first two authoritative dependencies in the policy gateway: opaque locator resolution and trusted action limits. It is a read-only D1 consumer. It does not create, update, promote, or delete authority records, and it is not connected to the development Worker in `wrangler.jsonc`.
+This module implements the first two authoritative dependencies in the policy gateway: opaque locator resolution and trusted action limits. It is a read-only D1 consumer. The code-only wiring candidate connects the verified development `AUTHORITY_DB` binding, but does not deploy the Worker or create, update, promote, or delete authority records.
 
 ## Trust boundary
 

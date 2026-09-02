@@ -18,6 +18,6 @@ Recursive key inspection rejects credential-, secret-, token-, authorization-, A
 
 ## Deliberately empty and unbound
 
-The migration creates schema only and inserts no records. The development runtime can now compose this reader from an injected `AUTHORITY_DB`, but `wrangler.jsonc` contains no D1 binding. The Worker therefore remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains unconditionally denied.
+The migration creates schema only and inserts no records. The code-only wiring candidate supplies the verified development `AUTHORITY_DB` binding so the runtime can compose this reader, but performs no deployment or D1 operation. The Worker remains `ready: false`, external writes remain disabled, and `/v1/actions/execute` remains unconditionally denied.
 
 A future authority-management PR must define authenticated promotion, conflict resolution, provenance, rollback, and independent approval before inserting any governing record. A later infrastructure PR must separately provision and bind a dedicated development authority D1 database.

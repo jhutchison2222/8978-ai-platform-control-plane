@@ -9,7 +9,7 @@ This Worker exposes the existing policy gateway behind service-to-service HMAC-S
 - `CONTROL_PLANE_MODE` must equal `development`.
 - `ALLOW_EXTERNAL_WRITES` must equal the string `false`.
 - `workers_dev` and preview URLs are disabled in `wrangler.jsonc`.
-- No D1, R2, Queue, Workflow, provider, or production binding exists in this configuration. Read-only authority and orchestrator-dispatch adapters are code-composed behind exact optional binding contracts, but `wrangler.jsonc` deliberately provides none of those bindings.
+- The code-only wiring candidate supplies the exact reviewed development authority-D1, Workflow, and Queue-producer bindings. It adds no R2, Queue consumer, route, provider, production/customer target, account identifier, or secret value.
 - The idempotency, owner-decision, and audit adapters are durable development implementations. Without injected authority and complete Workflow/Queue bindings, the remaining slots use throwing unavailable adapters.
 - `/v1/actions/execute` always returns `execution_disabled`.
 
@@ -29,7 +29,7 @@ The shown value is a shape example, not a usable secret. Requests use the `x-897
 
 ## Authenticated routes
 
-- `GET /v1/runtime/readiness` always reports `ready: false`, the disabled-write boundary, and missing dependency names. The real local Workers test runtime injects D1, Workflow, and Queue bindings and therefore exercises complete dependency composition; the checked-in deployable configuration has none of those bindings and remains unavailable.
+- `GET /v1/runtime/readiness` always reports `ready: false` and the disabled-write boundary even when the reviewed development bindings satisfy the dependency-shape checks. Binding availability never enables execution.
 - `POST /v1/actions/evaluate` parses strict JSON and calls the trusted development `PolicyGateway`.
 - `/v1/actions/execute` is present only as an explicit fail-closed denial.
 

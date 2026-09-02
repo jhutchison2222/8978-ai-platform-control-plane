@@ -18,7 +18,8 @@ test("runtime-wiring packet is exact, non-governing, and execution-disabled", as
   assert.equal(packet.externalExecutionAuthorized, false);
   assert.equal(await digest(packet.sourceReadinessPacket.path), packet.sourceReadinessPacket.sha256);
   assert.equal(await digest(packet.sourceEvidenceMaterialPacket.path), packet.sourceEvidenceMaterialPacket.sha256);
-  assert.equal(await digest(packet.currentConfiguration.path), packet.currentConfiguration.sha256);
+  assert.equal(packet.currentConfiguration.path, "wrangler.jsonc");
+  assert.equal(packet.currentConfiguration.sha256, "f89a62bacd64f303c3ced7eef52dbc481e6a50900220222291701e82044dbdcc");
 });
 
 test("packet pins the exact future development bindings without consumers routes or secrets", () => {
