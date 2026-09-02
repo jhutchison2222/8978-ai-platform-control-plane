@@ -18,6 +18,7 @@ import {
   exactHeadClaudeVerdict,
   hasLabel,
   hasMarker,
+  hasPullRequestForTask,
   marker,
   nextPullRequestAction,
   nextTaskDispatchAction,
@@ -166,6 +167,14 @@ test("accepted task dispatches retry with fresh attempts and then block", () => 
   const three = [...two, dispatch(MAX_TASK_DISPATCHES, new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString())];
   assert.deepEqual(nextTaskDispatchAction({ comments: three, nowMs: NOW }), { kind: "block" });
   assert.deepEqual(nextTaskDispatchAction({ comments: [{ ...first, created_at: null }], nowMs: NOW }), { kind: "wait" });
+});
+
+test("a linked implementation pull request pauses task redispatch", () => {
+  assert.equal(hasPullRequestForTask([{ body: "Closes #61", head: { ref: "agent/live-test" } }], 61), true);
+  assert.equal(hasPullRequestForTask([{ body: "Implements https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61), true);
+  assert.equal(hasPullRequestForTask([{ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } }], 61), true);
+  assert.equal(hasPullRequestForTask([{ body: "Closes #610", head: { ref: "agent/live-test" } }], 61), false);
+  assert.equal(hasPullRequestForTask([{ body: null, head: { ref: "agent/live-test" } }], 61), false);
 });
 
 test("green PRs request Claude and retry on capped delays", () => {

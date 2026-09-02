@@ -65,6 +65,13 @@ export function selectQueuedTask(issues, hasOpenPullRequests) {
     (!hasOpenPullRequests || hasLabel(issue, "autonomy-parallel")));
 }
 
+export function hasPullRequestForTask(pullRequests, taskNumber) {
+  const escaped = String(taskNumber).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const bodyReference = new RegExp(`(?:#|/issues/)${escaped}\\b`, "iu");
+  const branchReference = new RegExp(`(?:^|[/-])(?:issue|task)[/-]?${escaped}(?:$|[/-])`, "iu");
+  return pullRequests.some((pr) => bodyReference.test(pr.body ?? "") || branchReference.test(pr.head?.ref ?? ""));
+}
+
 export function taskDispatches(comments) {
   return comments
     .filter((comment) => comment.user?.login === SUPERVISOR_LOGIN && typeof comment.body === "string" &&
@@ -277,6 +284,7 @@ async function superviseTaskQueue({ api, agent, nowMs, openPullRequests }) {
     !["autonomy-blocked", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
     (openPullRequests.length === 0 || hasLabel(issue, "autonomy-parallel")));
   for (const task of candidates) {
+    if (hasPullRequestForTask(openPullRequests, task.number)) continue;
     const comments = await api.getAll(`/issues/${task.number}/comments`);
     const action = nextTaskDispatchAction({ comments, nowMs });
     if (action.kind === "wait") continue;
@@ -298,7 +306,7 @@ async function superviseTaskQueue({ api, agent, nowMs, openPullRequests }) {
         issue: { number: task.number, url: task.html_url, title: task.title },
         reason,
         attempt: action.attempt,
-        instruction: "Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
+        instruction: `Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request whose body includes \"Closes #${task.number}\" so the supervisor can detect active implementation. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.`,
       },
     });
     await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
