@@ -52,7 +52,12 @@ const request = (createdAt, attempt = 1, overrides = {}) => ({
 test("workflow is scheduled and least-privilege", async () => {
   const workflow = await readFile(".github/workflows/autonomy-supervisor.yml", "utf8");
   for (const required of [
-    'cron: "*/5 * * * *"',
+    'cron: "2-59/5 * * * *"',
+    'workflows: ["validate"]',
+    "pull_request_review:",
+    "types: [submitted]",
+    "issues:",
+    "types: [labeled, reopened]",
     "actions: read",
     "checks: read",
     "contents: read",

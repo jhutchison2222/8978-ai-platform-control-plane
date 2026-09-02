@@ -2,8 +2,15 @@ name: Autonomous supervisor
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "2-59/5 * * * *"
   workflow_dispatch:
+  workflow_run:
+    workflows: ["validate"]
+    types: [completed]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [labeled, reopened]
 
 concurrency:
   group: autonomy-supervisor
