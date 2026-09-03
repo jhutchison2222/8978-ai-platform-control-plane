@@ -40,6 +40,8 @@ const activationEvidenceMaterialPacketSchema = await load("schemas/development-a
 const activationEvidenceMaterialPacket = await load("deployment/development-activation-evidence-material-packet.json");
 const runtimeWiringPacketSchema = await load("schemas/development-runtime-wiring-execution-packet.schema.json");
 const runtimeWiringPacket = await load("deployment/development-runtime-wiring-execution-packet.json");
+const liveTestPacketSchema = await load("schemas/development-live-test-execution-packet.schema.json");
+const liveTestPacket = await load("deployment/development-live-test-execution-packet.json");
 const resourceCreationPacketSchema = await load("schemas/development-resource-creation-packet.schema.json");
 const resourceCreationPacket = await load("deployment/development-resource-creation-packet.json");
 const resourceCreationRecordSchema = await load("schemas/development-resource-creation-partial-execution-record.schema.json");
@@ -156,6 +158,7 @@ assertValid("development activation resource-reconciled plan", activationPlanSch
 assertValid("development activation schema-reconciled plan", activationPlanSchema, activationSchemaReconciledPlan);
 assertValid("development activation readiness packet", activationReadinessPacketSchema, activationReadinessPacket);
 assertValid("development activation evidence material packet", activationEvidenceMaterialPacketSchema, activationEvidenceMaterialPacket);
+assertValid("development live-test execution packet", liveTestPacketSchema, liveTestPacket);
 assertValid("development resource creation packet", resourceCreationPacketSchema, resourceCreationPacket);
 assertValid("development resource creation partial execution record", resourceCreationRecordSchema, resourceCreationRecord);
 assertValid("development resource creation completion record", resourceCreationCompletionSchema, resourceCreationCompletion);
@@ -377,6 +380,52 @@ if (JSON.stringify(runtimeWiringPacket.prohibitedOperations) !== JSON.stringify(
 ]) || runtimeWiringPacket.nextPermittedRepositoryAction !== "publish_code_only_wrangler_wiring_candidate") {
   throw new Error("Development runtime-wiring safety boundary drifted");
 }
+if (liveTestPacket.governing !== false || liveTestPacket.executionAuthorized !== false ||
+    liveTestPacket.workerDeploymentAuthorized !== false || liveTestPacket.secretInstallationAuthorized !== false ||
+    liveTestPacket.accessSurfaceChangeAuthorized !== false || liveTestPacket.canaryInvocationAuthorized !== false) {
+  throw new Error("Development live-test packet must remain non-governing and externally unauthorized");
+}
+for (const source of [
+  liveTestPacket.source.wranglerConfiguration, liveTestPacket.source.resourceCreationRecord,
+  liveTestPacket.source.migrationRecord, liveTestPacket.source.schemaVerificationRecord,
+]) {
+  if (createHash("sha256").update(await readFile(source.path)).digest("hex") !== source.sha256) {
+    throw new Error(`Development live-test source digest mismatch: ${source.path}`);
+  }
+}
+if (liveTestPacket.target.cloudflareAccountId !== AUTHORIZED_DEVELOPMENT_ACCOUNT_ID ||
+    liveTestPacket.target.workerName !== "8978-ai-control-plane-dev" ||
+    liveTestPacket.target.authorityDatabase.databaseId !== "741ade94-8539-4fc8-b6be-24884720dee8" ||
+    liveTestPacket.target.workflow.name !== "8978-ai-orchestrator-dev" ||
+    liveTestPacket.target.queueProducer.name !== "8978-ai-orchestrator-dev") {
+  throw new Error("Development live-test target identity drifted");
+}
+const expectedLiveTestReadOnlyCommands = [
+  "wrangler whoami",
+  "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+  "wrangler d1 info 8978-ai-authority-dev --json",
+  "wrangler queues info 8978-ai-orchestrator-dev",
+  "wrangler workflows describe 8978-ai-orchestrator-dev",
+  "wrangler secret list --name 8978-ai-control-plane-dev",
+];
+if (JSON.stringify(liveTestPacket.requiredPreflight.readOnlyCommands) !== JSON.stringify(expectedLiveTestReadOnlyCommands)) {
+  throw new Error("Development live-test preflight commands must remain the exact reviewed read-only allowlist");
+}
+if (liveTestPacket.stateDistinction.declarationDoesNotProveRemoteInstallation !== true ||
+    liveTestPacket.stateDistinction.remotelyRecorded.workflowExistence !== "UNVERIFIED" ||
+    liveTestPacket.stateDistinction.remotelyRecorded.runtimeBindingsInstalled !== "UNVERIFIED_NOT_CLAIMED" ||
+    !liveTestPacket.unresolvedOwnerDecisions.every((decision) => decision.required === true && decision.selected === null) ||
+    liveTestPacket.candidateExternalOperations.requiresNewExactReviewedHeadAfterOwnerDecisions !== true) {
+  throw new Error("Development live-test remote-state or owner-decision boundary drifted");
+}
+if (JSON.stringify(liveTestPacket.canary.boundedEffects) !== JSON.stringify({
+  authorityD1ReadsExpected:true,authorityD1WritesMaximum:0,durableReplayNonceRecordsMaximum:3,
+  queueMessagesMaximum:0,workflowInstancesMaximum:0,externalBusinessActionsMaximum:0,customerRecordsMaximum:0,
+}) || liveTestPacket.canary.maximumSequenceAttempts !== 1 ||
+    liveTestPacket.candidateExternalOperations.maximumExecutionAttempts !== 1 ||
+    Object.values(liveTestPacket.partialFailurePolicy).some((value) => value === true)) {
+  throw new Error("Development live-test effect cap or stop-only failure boundary weakened");
+}
 if (resourceCreationPacket.status !== "PLANNED" || resourceCreationPacket.governing !== false ||
     resourceCreationPacket.executionAuthorized !== false || resourceCreationPacket.account.accountId !== null ||
     resourceCreationPacket.foundationBaseline !== "ff8134db56272ba52f985f6fda7247e4e35ea90a") {
@@ -423,6 +472,7 @@ for (const source of [workerSource, developmentRuntimeSource, activationPrefligh
   if (source.includes("development-activation-readiness-packet")) throw new Error("Development activation readiness packet cannot be imported by runtime or preflight code");
   if (source.includes("development-activation-evidence-material-packet")) throw new Error("Development activation evidence material packet cannot be imported by runtime or preflight code");
   if (source.includes("development-runtime-wiring-execution-packet")) throw new Error("Development runtime-wiring execution packet cannot be imported by runtime or preflight code");
+  if (source.includes("development-live-test-execution-packet")) throw new Error("Development live-test execution packet cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-packet")) throw new Error("Development authority migration execution packet cannot be imported by runtime or preflight code");
   if (source.includes("wrangler.authority-migrations")) throw new Error("Development authority migration configuration cannot be imported by runtime or preflight code");
   if (source.includes("development-authority-migration-execution-record")) throw new Error("Development authority migration execution record contract cannot be imported by runtime or preflight code");
@@ -1498,4 +1548,4 @@ if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
-console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one independently accepted non-governing verified development schema inventory record, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one schema-reconciled 15-gate blocked successor plan, one non-executing development activation readiness packet, one non-materializing development activation evidence packet, one non-executing development runtime-wiring packet, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
+console.log(`Validated ${ids.size} policy versions, 8 discriminated resource kinds, runtime contracts, six applied authority migrations, one non-executing authority migration packet, one completed non-governing migration execution record, one prerequisite-satisfied execution-disabled schema inventory verification packet, one independently accepted non-governing verified development schema inventory record, 8 code-composed authority dependencies, one historical 20-gate blocked development activation plan, one resource-reconciled 17-gate blocked successor plan, one schema-reconciled 15-gate blocked successor plan, one non-executing development activation readiness packet, one non-materializing development activation evidence packet, one non-executing development runtime-wiring packet, one non-executing development live-test packet, one non-executing development resource-creation packet, one stopped partial resource-creation record, one completed unbound resource-creation record, one authenticated but unwired activation evidence verifier, one read-only unbound activation evidence provider, one HMAC-authenticated unbound activation evidence writer, one read-only unbound activation evidence write verifier, one unwired single-clock dual evidence-chain verifier, one unwired D1 evidence-chain composition, one unwired D1 preflight evaluator, fixtures, trust anchor, 19 non-governing Batch 1 records, 10 non-governing Batch 2 records, and 12 non-governing Batch 3 records.`);
