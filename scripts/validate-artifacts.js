@@ -400,6 +400,17 @@ if (liveTestPacket.target.cloudflareAccountId !== AUTHORIZED_DEVELOPMENT_ACCOUNT
     liveTestPacket.target.queueProducer.name !== "8978-ai-orchestrator-dev") {
   throw new Error("Development live-test target identity drifted");
 }
+const expectedLiveTestReadOnlyCommands = [
+  "wrangler whoami",
+  "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+  "wrangler d1 info 8978-ai-authority-dev --json",
+  "wrangler queues info 8978-ai-orchestrator-dev",
+  "wrangler workflows describe 8978-ai-orchestrator-dev",
+  "wrangler secret list --name 8978-ai-control-plane-dev",
+];
+if (JSON.stringify(liveTestPacket.requiredPreflight.readOnlyCommands) !== JSON.stringify(expectedLiveTestReadOnlyCommands)) {
+  throw new Error("Development live-test preflight commands must remain the exact reviewed read-only allowlist");
+}
 if (liveTestPacket.stateDistinction.declarationDoesNotProveRemoteInstallation !== true ||
     liveTestPacket.stateDistinction.remotelyRecorded.workflowExistence !== "UNVERIFIED" ||
     liveTestPacket.stateDistinction.remotelyRecorded.runtimeBindingsInstalled !== "UNVERIFIED_NOT_CLAIMED" ||
