@@ -45,6 +45,25 @@ test("packet matches the current fail-closed Wrangler configuration", () => {
   assert.equal(Object.hasOwn(wrangler.vars, "SERVICE_AUTH_KEYS_JSON"), false);
 });
 
+test("preflight commands are pinned to the exact reviewed read-only allowlist", () => {
+  assert.deepEqual(packet.requiredPreflight.readOnlyCommands, [
+    "wrangler whoami",
+    "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+    "wrangler d1 info 8978-ai-authority-dev --json",
+    "wrangler queues info 8978-ai-orchestrator-dev",
+    "wrangler workflows describe 8978-ai-orchestrator-dev",
+    "wrangler secret list --name 8978-ai-control-plane-dev",
+  ]);
+  for (const unsafeCommand of [
+    'wrangler d1 execute 8978-ai-authority-dev --remote --command "DELETE FROM authority_resources"',
+    "wrangler deploy --name 8978-ai-control-plane-dev",
+  ]) {
+    const changed = structuredClone(packet);
+    changed.requiredPreflight.readOnlyCommands[0] = unsafeCommand;
+    assert.notDeepEqual(validateSchema(schema, changed), []);
+  }
+});
+
 test("owner decisions remain unresolved and a new exact review is required", () => {
   assert.deepEqual(packet.unresolvedOwnerDecisions.map(({ id }) => id), ["development_access_surface", "development_access_policy", "access_policy_credential", "service_auth_identity"]);
   assert.equal(packet.unresolvedOwnerDecisions.every((decision) => decision.required && decision.selected === null), true);
