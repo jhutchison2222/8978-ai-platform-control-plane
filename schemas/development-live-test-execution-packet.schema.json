@@ -51,7 +51,7 @@
     },
     "requiredPreflight": {
       "type":"object","additionalProperties":false,"required":["readOnlyCommands","mustConfirm"],
-      "properties":{"readOnlyCommands":{"type":"array","minItems":6,"maxItems":6,"items":{"type":"string","minLength":1}},"mustConfirm":{"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}}}
+      "properties":{"readOnlyCommands":{"type":"array","minItems":6,"maxItems":6,"items":{"enum":["wrangler whoami","wrangler deployments status --name 8978-ai-control-plane-dev --json","wrangler d1 info 8978-ai-authority-dev --json","wrangler queues info 8978-ai-orchestrator-dev","wrangler workflows describe 8978-ai-orchestrator-dev","wrangler secret list --name 8978-ai-control-plane-dev"]}},"mustConfirm":{"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}}}
     },
     "unresolvedOwnerDecisions": {
       "type":"array","minItems":4,"maxItems":4,
