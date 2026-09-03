@@ -1,0 +1,271 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED_OWNER_DECISION_REQUIRED",
+  "governing": false,
+  "environment": "development",
+  "phase": "deploy_and_run_fail_closed_live_canary",
+  "executionAuthorized": false,
+  "workerDeploymentAuthorized": false,
+  "secretInstallationAuthorized": false,
+  "accessSurfaceChangeAuthorized": false,
+  "canaryInvocationAuthorized": false,
+  "source": {
+    "repository": "jhutchison2222/8978-ai-platform-control-plane",
+    "baselineMainCommit": "b7dffe57020f7aea9f483cdebe9eab733a517507",
+    "wranglerConfiguration": {
+      "path": "wrangler.jsonc",
+      "sha256": "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"
+    },
+    "resourceCreationRecord": {
+      "path": "deployment/development-resource-creation-completion-record.json",
+      "sha256": "98f9c0623e2240aad87d68f9fdc7b3fe895d0853308d272c9398ec6858815747"
+    },
+    "migrationRecord": {
+      "path": "deployment/development-authority-migration-execution-record.json",
+      "sha256": "627dcf833b0ba5db15729e3916c246724f4f90c2919e374a4c3e4faeafaf16f1"
+    },
+    "schemaVerificationRecord": {
+      "path": "deployment/development-authority-schema-inventory-verification-record.json",
+      "sha256": "253a4e87adbd56daed27e6b6080592544e60fb7b9d2c2a72e9d6f379601e67b6"
+    }
+  },
+  "target": {
+    "cloudflareAccountId": "de5e0273347b0b4c5f8f4e554aa2288f",
+    "workerName": "8978-ai-control-plane-dev",
+    "authorityDatabase": {
+      "binding": "AUTHORITY_DB",
+      "name": "8978-ai-authority-dev",
+      "databaseId": "741ade94-8539-4fc8-b6be-24884720dee8"
+    },
+    "workflow": {
+      "binding": "ORCHESTRATOR_WORKFLOW",
+      "name": "8978-ai-orchestrator-dev",
+      "className": "OrchestratorWorkflow"
+    },
+    "queueProducer": {
+      "binding": "ORCHESTRATOR_QUEUE",
+      "name": "8978-ai-orchestrator-dev"
+    }
+  },
+  "stateDistinction": {
+    "configurationDeclared": {
+      "authorityDatabaseBinding": true,
+      "workflowBinding": true,
+      "queueProducerBinding": true,
+      "queueConsumer": false,
+      "route": false,
+      "workersDev": false,
+      "previewUrls": false
+    },
+    "remotelyRecorded": {
+      "authorityDatabaseIdentityVerified": true,
+      "authoritySchemaVerified": true,
+      "authorityDataRowCount": 0,
+      "queueExistenceEvidence": "OWNER_ATTESTED_NOT_INDEPENDENTLY_VERIFIED",
+      "workflowExistence": "UNVERIFIED",
+      "workerDeploymentForReviewedConfiguration": "UNVERIFIED_NOT_CLAIMED",
+      "runtimeBindingsInstalled": "UNVERIFIED_NOT_CLAIMED",
+      "serviceAuthSecretInstalled": "UNVERIFIED_NOT_CLAIMED",
+      "reachableAccessSurface": "ABSENT_IN_REPOSITORY_CONFIGURATION"
+    },
+    "declarationDoesNotProveRemoteInstallation": true
+  },
+  "preservedFailClosedBoundary": {
+    "workersDev": false,
+    "previewUrls": false,
+    "routes": [],
+    "controlPlaneMode": "development",
+    "allowExternalWrites": "false",
+    "executeRouteExpectedStatus": 503,
+    "executeRouteExpectedOutcome": "execution_disabled",
+    "queueConsumerPresent": false,
+    "queuePublicationPermitted": false,
+    "workflowTriggerPermitted": false,
+    "authorityD1WritePermitted": false,
+    "productionOrCustomerOperationPermitted": false
+  },
+  "requiredPreflight": {
+    "readOnlyCommands": [
+      "wrangler whoami",
+      "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+      "wrangler d1 info 8978-ai-authority-dev --json",
+      "wrangler queues info 8978-ai-orchestrator-dev",
+      "wrangler workflows describe 8978-ai-orchestrator-dev",
+      "wrangler secret list --name 8978-ai-control-plane-dev"
+    ],
+    "mustConfirm": [
+      "authenticated Cloudflare account ID exactly matches the pinned development account",
+      "D1 name and immutable UUID exactly match and its verified six-migration schema has not drifted",
+      "Queue identity and absence of consumers are independently retrieved",
+      "Workflow identity and class association are independently retrieved",
+      "current Worker deployments bindings routes domains and secret names are inventoried without secret values",
+      "the reviewed exact head and packet digest still match",
+      "no production or customer resource is selected"
+    ]
+  },
+  "unresolvedOwnerDecisions": [
+    {
+      "id": "development_access_surface",
+      "required": true,
+      "allowedDecisionSet": [
+        "access_protected_custom_development_hostname"
+      ],
+      "selected": null,
+      "requiredExactValue": "hostname_or_preview_surface_and_expiration",
+      "reason": "workers_dev preview URLs and routes are all currently disabled so the deployed Worker is not invocable"
+    },
+    {
+      "id": "development_access_policy",
+      "required": true,
+      "allowedDecisionSet": [
+        "cloudflare_access_service_token_policy",
+        "cloudflare_access_identity_policy",
+        "other_explicit_owner_reviewed_policy"
+      ],
+      "selected": null,
+      "requiredExactValue": "policy_identity_scope_and_expiration",
+      "reason": "HMAC authenticates the service request but does not itself select or restrict the network access surface"
+    },
+    {
+      "id": "access_policy_credential",
+      "required": true,
+      "allowedDecisionSet": [
+        "existing_expiring_cloudflare_access_service_token",
+        "new_expiring_cloudflare_access_service_token"
+      ],
+      "selected": null,
+      "requiredExactValue": "service_token_identity_scope_expiration_and_credential_custodian_without_secret_values",
+      "reason": "a non-interactive canary needs an independently managed credential for the selected Cloudflare Access policy"
+    },
+    {
+      "id": "service_auth_identity",
+      "required": true,
+      "allowedDecisionSet": [
+        "new_development_only_principal_and_key"
+      ],
+      "selected": null,
+      "requiredExactValue": "principal_id_key_id_and_secret_custodian_without_secret_value",
+      "reason": "SERVICE_AUTH_KEYS_JSON is absent and must be installed as a managed secret outside repository logs and artifacts"
+    }
+  ],
+  "candidateExternalOperations": {
+    "maximumExecutionAttempts": 1,
+    "requiresNewExactReviewedHeadAfterOwnerDecisions": true,
+    "operations": [
+      "install or update exactly the SERVICE_AUTH_KEYS_JSON managed secret for the development Worker",
+      "create or select only the owner-approved expiring Cloudflare Access service token without exposing its values",
+      "create or attach exactly the owner-selected expiring development access surface and policy",
+      "deploy exactly the independently accepted Worker head with wrangler deploy --config wrangler.jsonc --strict",
+      "start sanitized observation with wrangler tail 8978-ai-control-plane-dev --format json",
+      "invoke the exact bounded canary request sequence once"
+    ]
+  },
+  "canary": {
+    "syntheticOnly": true,
+    "maximumSequenceAttempts": 1,
+    "syntheticAction": {
+      "actionId": "development-live-canary-action-1",
+      "operation": "read",
+      "requestedTarget": {
+        "locator": "live-canary://missing-resource"
+      },
+      "correlationId": "development-live-canary-correlation-1",
+      "idempotencyKey": "development-live-canary-idempotency-1",
+      "rollbackRef": "not-applicable-no-external-write",
+      "evidence": {
+        "makerAttestation": "synthetic-live-canary-maker",
+        "checkerAttestation": "synthetic-live-canary-checker"
+      },
+      "productionSensitive": false,
+      "destructiveProductionOrCustomerData": false,
+      "credentialScopeExpansion": false,
+      "newProductionExternalWriteIntegration": false,
+      "finalOwnerDecisionChange": false,
+      "legalPrivacyComplianceContractualDecision": false
+    },
+    "requests": [
+      {
+        "sequence": 1,
+        "request": "GET /v1/runtime/readiness without service-auth headers",
+        "expectedStatus": 401,
+        "expectedResult": "service_authentication_failed"
+      },
+      {
+        "sequence": 2,
+        "request": "GET /v1/runtime/readiness with a unique valid development HMAC nonce",
+        "expectedStatus": 200,
+        "expectedResult": "ready_false_mode_development_external_writes_false_no_missing_authoritative_dependencies"
+      },
+      {
+        "sequence": 3,
+        "request": "repeat the identical signed request from sequence 2 with the consumed nonce",
+        "expectedStatus": 401,
+        "expectedResult": "service_authentication_failed_replay_denied"
+      },
+      {
+        "sequence": 4,
+        "request": "POST /v1/actions/evaluate with a valid signed synthetic read action targeting live-canary://missing-resource",
+        "expectedStatus": 200,
+        "expectedResult": "authoritative_resolution_unavailable"
+      },
+      {
+        "sequence": 5,
+        "request": "POST /v1/actions/execute with valid service authentication and an empty JSON body",
+        "expectedStatus": 503,
+        "expectedResult": "execution_disabled"
+      }
+    ],
+    "boundedEffects": {
+      "authorityD1ReadsExpected": true,
+      "authorityD1WritesMaximum": 0,
+      "durableReplayNonceRecordsMaximum": 3,
+      "queueMessagesMaximum": 0,
+      "workflowInstancesMaximum": 0,
+      "externalBusinessActionsMaximum": 0,
+      "customerRecordsMaximum": 0
+    },
+    "requiredEvidence": [
+      "exact deployed version identifier and reviewed commit",
+      "sanitized binding inventory proving the exact D1 Workflow Queue and Durable Object bindings",
+      "sanitized request timestamps methods paths status codes and response bodies",
+      "proof one replay is rejected and at most three unique replay nonce records are created",
+      "proof the synthetic evaluate request performs no D1 mutation",
+      "proof no Queue message Workflow instance external action production resource or customer record is created",
+      "sanitized Worker error and invocation observations",
+      "exact last confirmed state and errors if any step stops"
+    ]
+  },
+  "stopConditions": [
+    "the authenticated Cloudflare account or any pinned resource identity does not match",
+    "the reviewed head packet digest or wrangler configuration digest does not match",
+    "the Workflow Queue consumer Worker deployment binding route domain or secret-name inventory is ambiguous",
+    "the owner has not selected the exact access surface access policy and service-auth identity",
+    "a secret private key token or signed header would enter repository logs comments or retained artifacts",
+    "ALLOW_EXTERNAL_WRITES is not the string false or the execute route is not unconditionally denied",
+    "a Queue consumer publication Workflow trigger D1 mutation production target customer target or external business action is possible",
+    "the operation would delete clean up retry restore roll back or broaden scope",
+    "any preflight canary result or post-state is partial inconsistent unexpected or unavailable"
+  ],
+  "prohibitedOperations": [
+    "execute_before_new_exact_owner_authorization",
+    "store_or_disclose_secret_value",
+    "enable_external_writes",
+    "enable_action_execution",
+    "write_or_migrate_d1",
+    "add_queue_consumer_or_publish_message",
+    "trigger_workflow",
+    "production_or_customer_operation",
+    "call_message_campaign_booking_transfer_or_payment",
+    "delete_cleanup_retry_restore_or_rollback",
+    "automatic_scope_expansion"
+  ],
+  "partialFailurePolicy": {
+    "automaticDeletion": false,
+    "automaticCleanup": false,
+    "automaticRetry": false,
+    "automaticRestore": false,
+    "automaticRollback": false,
+    "action": "stop_and_report_exact_state"
+  },
+  "requiredOwnerAuthorizationTemplate": "I authorize one development-only execution attempt for the independently accepted exact head <FULL_SHA> and packet SHA-256 <PACKET_SHA256> in Cloudflare account de5e0273347b0b4c5f8f4e554aa2288f: install or update only the managed SERVICE_AUTH_KEYS_JSON secret for principal <PRINCIPAL_ID> and key <KEY_ID> without exposing its value; configure only <EXACT_ACCESS_SURFACE> protected by <EXACT_ACCESS_POLICY> until <EXPIRATION>; create or use only <EXACT_ACCESS_SERVICE_TOKEN_IDENTITY_AND_CUSTODIAN> without exposing its credential values; deploy only Worker 8978-ai-control-plane-dev with the pinned D1 Workflow and Queue-producer bindings; run the five-request synthetic fail-closed canary once; and capture sanitized evidence. Do not write or migrate D1, publish Queue messages, trigger Workflows, enable external writes or action execution, touch production or customers, expose credentials, delete, clean up, retry, restore, or roll back. Stop on any mismatch ambiguity partial result or unexpected effect."
+}
