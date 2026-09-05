@@ -13,6 +13,7 @@ export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
+const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|LGTM|looks good)[.!]?$/iu;
 const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
@@ -77,8 +78,9 @@ export function pullRequestForTask(pullRequests, taskNumber, repository) {
     ? new RegExp(`${keyword}https?://github\\.com/${repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/issues/${escaped}\\b`, "iu")
     : null;
   const branchReference = new RegExp(`(?:^|[/-])(?:issue|task)[/-]?${escaped}(?:$|[/-])`, "iu");
-  return pullRequests.find((pr) => shortReference.test(pr.body ?? "") ||
-    repositoryReference?.test(pr.body ?? "") || branchReference.test(pr.head?.ref ?? ""));
+  return pullRequests.find((pr) => TRUSTED_PR_AUTHOR_ASSOCIATIONS.has(pr.author_association?.toUpperCase()) &&
+    (shortReference.test(pr.body ?? "") || repositoryReference?.test(pr.body ?? "") ||
+      branchReference.test(pr.head?.ref ?? "")));
 }
 
 export function hasPullRequestForTask(pullRequests, taskNumber, repository) {
