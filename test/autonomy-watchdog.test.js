@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
   isRestrictedForkSecurityStopFailure,
+  runWatchdog,
   localBoundaryViolations,
   topLevelPermissions,
 } from "../scripts/autonomy-watchdog.js";
@@ -60,4 +61,30 @@ test("only a fork pull-request read-only token defers stop creation to the sched
   assert.equal(isRestrictedForkSecurityStopFailure({ ...input, eventName: "schedule" }), false);
   assert.equal(isRestrictedForkSecurityStopFailure({ ...input, headRepository: "owner/repo" }), false);
   assert.equal(isRestrictedForkSecurityStopFailure({ ...input, error: Object.assign(new Error("server"), { status: 500 }) }), false);
+});
+
+test("fork pull-request events skip label writes before evaluating the boundary", async () => {
+  const requests = [];
+  const fetchImpl = async (url, options = {}) => {
+    requests.push({ url, method: options.method ?? "GET" });
+    if ((options.method ?? "GET") !== "GET") {
+      return { ok: false, status: 403, json: async () => ({ message: "Resource not accessible by integration" }) };
+    }
+    if (url.includes("/pulls?state=open") || url.includes("/issues?state=all&labels=autonomy-security-stop")) {
+      return { ok: true, status: 200, json: async () => [] };
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  const reasons = await runWatchdog({
+    repository: "owner/repo",
+    githubToken: "token",
+    eventName: "pull_request",
+    headRepository: "external/fork",
+    fetchImpl,
+  });
+
+  assert.deepEqual(reasons, []);
+  assert.equal(requests.some(({ url }) => url.includes("/labels")), false);
+  assert.equal(requests.every(({ method }) => method === "GET"), true);
 });
