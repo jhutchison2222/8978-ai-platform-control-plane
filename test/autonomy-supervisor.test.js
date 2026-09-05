@@ -83,6 +83,7 @@ test("a stalled Claude check cannot hold green CI", () => {
 
 test("only an explicit exact-head Claude verdict is accepted", () => {
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but human review is still required")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
