@@ -84,12 +84,23 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
   }
   for (const pr of pullRequests) {
     const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
-    const sensitive = changedFiles.filter((file) => isSensitiveAutomationPath(file.filename));
+    const sensitive = [...new Set(changedFiles.flatMap((file) =>
+      [file.filename, file.previous_filename].filter((path) => isSensitiveAutomationPath(path))))];
     if (sensitive.length > 0) {
-      reasons.push(`pull request #${pr.number} changes protected automation: ${sensitive.map((file) => file.filename).join(", ")}`);
+      reasons.push(`pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}`);
     }
   }
   return reasons;
+}
+
+export async function hydrateSecurityStops(api, issues) {
+  const stops = issues
+    .filter((issue) => !issue.pull_request && hasLabel(issue, SECURITY_STOP_LABEL))
+    .sort((left, right) => left.number - right.number);
+  if (stops.length === 0 || stops.some((issue) => issue.state === "open")) return issues;
+  const latest = stops.at(-1);
+  const detailed = await api.get(`/issues/${latest.number}`);
+  return issues.map((issue) => issue.number === latest.number ? detailed : issue);
 }
 
 export function blockedLabelAction(pr, action) {
@@ -234,7 +245,11 @@ export class GitHubApi {
         ...options.headers,
       },
     });
-    if (!response.ok) throw new Error(`GitHub ${options.method ?? "GET"} ${path} returned ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(`GitHub ${options.method ?? "GET"} ${path} returned ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
     return response.status === 204 ? null : response.json();
   }
 
@@ -435,8 +450,9 @@ export async function runSupervisor({
     api.getAll(`/issues?state=all&labels=${SECURITY_STOP_LABEL}`),
     Promise.all(pullRequests.map(async (pr) => [pr.number, await api.getAll(`/pulls/${pr.number}/files`)])),
   ]);
+  const detailedSecurityStops = await hydrateSecurityStops(api, securityStops);
   const reasons = securityStopReasons({
-    issues: securityStops,
+    issues: detailedSecurityStops,
     pullRequests,
     changedFilesByPullRequest: new Map(changedFiles),
     ownerLogin: repository.split("/", 1)[0],
