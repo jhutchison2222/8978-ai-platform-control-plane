@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { localBoundaryViolations, topLevelPermissions } from "../scripts/autonomy-watchdog.js";
+import {
+  isRestrictedForkSecurityStopFailure,
+  localBoundaryViolations,
+  topLevelPermissions,
+} from "../scripts/autonomy-watchdog.js";
 
 test("watchdog workflow is isolated from Workspace Agent credentials and dispatch", async () => {
   const workflow = await readFile(".github/workflows/autonomy-watchdog.yml", "utf8");
@@ -41,4 +45,19 @@ test("permission parsing cannot be satisfied by comments or job-level text", () 
     supervisorWorkflow: `permissions:\n  actions: read\n  checks: read\n  contents: read\n  issues: write\n  pull-requests: write`,
     watchdogWorkflow: expanded,
   }), ["the watchdog permissions do not exactly match the reviewed allowlist"]);
+});
+
+
+test("only a fork pull-request read-only token defers stop creation to the schedule", () => {
+  const error = Object.assign(new Error("forbidden"), { status: 403 });
+  const input = {
+    error,
+    eventName: "pull_request",
+    headRepository: "external/fork",
+    repository: "owner/repo",
+  };
+  assert.equal(isRestrictedForkSecurityStopFailure(input), true);
+  assert.equal(isRestrictedForkSecurityStopFailure({ ...input, eventName: "schedule" }), false);
+  assert.equal(isRestrictedForkSecurityStopFailure({ ...input, headRepository: "owner/repo" }), false);
+  assert.equal(isRestrictedForkSecurityStopFailure({ ...input, error: Object.assign(new Error("server"), { status: 500 }) }), false);
 });
