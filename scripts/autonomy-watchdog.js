@@ -8,26 +8,62 @@ import {
   securityStopReasons,
 } from "./autonomy-supervisor.js";
 
-const DISALLOWED_SUPERVISOR_PERMISSIONS = /\b(?:actions|checks|contents|deployments|id-token|packages|security-events|statuses):\s*write\b/iu;
 const WORKSPACE_AGENT_CREDENTIAL = /CHATGPT_WORKSPACE_AGENT_(?:ID|TOKEN)|AGENT_(?:ID|TOKEN)/u;
 const WORKSPACE_AGENT_TRIGGER = /api\.chatgpt\.com|triggerWorkspaceAgent/u;
 
+const EXPECTED_SUPERVISOR_PERMISSIONS = new Map([
+  ["actions", "read"],
+  ["checks", "read"],
+  ["contents", "read"],
+  ["issues", "write"],
+  ["pull-requests", "write"],
+]);
+const EXPECTED_WATCHDOG_PERMISSIONS = new Map([
+  ["contents", "read"],
+  ["issues", "write"],
+  ["pull-requests", "read"],
+]);
+
+export function topLevelPermissions(workflow) {
+  const lines = workflow.split(/\r?\n/u);
+  const start = lines.findIndex((line) => line === "permissions:");
+  if (start < 0) return null;
+  const permissions = new Map();
+  for (const line of lines.slice(start + 1)) {
+    if (line !== "" && !line.startsWith(" ")) break;
+    const match = line.match(/^  ([a-z-]+): (read|write|none)$/u);
+    if (match) permissions.set(match[1], match[2]);
+  }
+  return permissions;
+}
+
+function permissionMismatch(name, actual, expected) {
+  if (!actual || actual.size !== expected.size) return `${name} permissions do not exactly match the reviewed allowlist`;
+  for (const [scope, access] of expected) {
+    if (actual.get(scope) !== access) return `${name} permissions do not exactly match the reviewed allowlist`;
+  }
+  return null;
+}
+
 export function localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }) {
   const violations = [];
-  if (DISALLOWED_SUPERVISOR_PERMISSIONS.test(supervisorWorkflow)) {
-    violations.push("the supervisor requests a prohibited write permission");
-  }
-  for (const required of ["actions: read", "checks: read", "contents: read", "issues: write", "pull-requests: write"]) {
-    if (!supervisorWorkflow.includes(required)) violations.push(`the supervisor is missing required permission ${required}`);
-  }
+  const supervisorMismatch = permissionMismatch(
+    "the supervisor",
+    topLevelPermissions(supervisorWorkflow),
+    EXPECTED_SUPERVISOR_PERMISSIONS,
+  );
+  if (supervisorMismatch) violations.push(supervisorMismatch);
+  const watchdogMismatch = permissionMismatch(
+    "the watchdog",
+    topLevelPermissions(watchdogWorkflow),
+    EXPECTED_WATCHDOG_PERMISSIONS,
+  );
+  if (watchdogMismatch) violations.push(watchdogMismatch);
   if (WORKSPACE_AGENT_CREDENTIAL.test(watchdogWorkflow)) {
     violations.push("the watchdog workflow references a Workspace Agent credential");
   }
   if (WORKSPACE_AGENT_TRIGGER.test(watchdogWorkflow)) {
     violations.push("the watchdog workflow can reference Workspace Agent dispatch code or endpoints");
-  }
-  if (/pull-requests:\s*write|contents:\s*write|actions:\s*write/iu.test(watchdogWorkflow)) {
-    violations.push("the watchdog requests a prohibited write permission");
   }
   return violations;
 }

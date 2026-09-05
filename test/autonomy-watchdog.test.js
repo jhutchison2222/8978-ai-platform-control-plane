@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { localBoundaryViolations } from "../scripts/autonomy-watchdog.js";
+import { localBoundaryViolations, topLevelPermissions } from "../scripts/autonomy-watchdog.js";
 
 test("watchdog workflow is isolated from Workspace Agent credentials and dispatch", async () => {
   const workflow = await readFile(".github/workflows/autonomy-watchdog.yml", "utf8");
@@ -27,8 +27,18 @@ test("watchdog detects permission expansion and credential coupling", () => {
   const supervisorWorkflow = `actions: read\nchecks: read\ncontents: write\nissues: write\npull-requests: write`;
   const watchdogWorkflow = `contents: read\nissues: write\npull-requests: read\nAGENT_TOKEN: secret`;
   assert.deepEqual(localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }), [
-    "the supervisor requests a prohibited write permission",
-    "the supervisor is missing required permission contents: read",
+    "the supervisor permissions do not exactly match the reviewed allowlist",
+    "the watchdog permissions do not exactly match the reviewed allowlist",
     "the watchdog workflow references a Workspace Agent credential",
   ]);
+});
+
+test("permission parsing cannot be satisfied by comments or job-level text", () => {
+  const workflow = `# permissions:\n#   contents: read\njobs:\n  test:\n    permissions:\n      contents: read`;
+  assert.equal(topLevelPermissions(workflow), null);
+  const expanded = `permissions:\n  contents: read\n  issues: write\n  pull-requests: read\n  deployments: write`;
+  assert.deepEqual(localBoundaryViolations({
+    supervisorWorkflow: `permissions:\n  actions: read\n  checks: read\n  contents: read\n  issues: write\n  pull-requests: write`,
+    watchdogWorkflow: expanded,
+  }), ["the watchdog permissions do not exactly match the reviewed allowlist"]);
 });
