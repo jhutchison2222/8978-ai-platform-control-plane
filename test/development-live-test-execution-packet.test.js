@@ -36,7 +36,7 @@ test("packet matches the current fail-closed Wrangler configuration", () => {
   assert.deepEqual(wrangler.d1_databases.map((binding) => ({ ...binding })), [{ binding:"AUTHORITY_DB", database_name:"8978-ai-authority-dev", database_id:"741ade94-8539-4fc8-b6be-24884720dee8", migrations_dir:"migrations/authority" }]);
   assert.deepEqual(wrangler.workflows.map((binding) => ({ ...binding })), [{ binding:"ORCHESTRATOR_WORKFLOW", name:"8978-ai-orchestrator-dev", class_name:"OrchestratorWorkflow" }]);
   assert.deepEqual({ producers:wrangler.queues.producers.map((binding) => ({ ...binding })) }, { producers:[{ binding:"ORCHESTRATOR_QUEUE", queue:"8978-ai-orchestrator-dev" }] });
-  assert.equal(wrangler.workers_dev, false);
+  assert.equal(wrangler.workers_dev, true);
   assert.equal(wrangler.preview_urls, false);
   assert.equal(Object.hasOwn(wrangler, "routes"), false);
   assert.equal(Object.hasOwn(wrangler.queues, "consumers"), false);
@@ -64,15 +64,29 @@ test("preflight commands are pinned to the exact reviewed read-only allowlist", 
   }
 });
 
-test("owner decisions remain unresolved and a new exact review is required", () => {
-  assert.deepEqual(packet.unresolvedOwnerDecisions.map(({ id }) => id), ["development_access_surface", "development_access_policy", "access_policy_credential", "service_auth_identity"]);
-  assert.equal(packet.unresolvedOwnerDecisions.every((decision) => decision.required && decision.selected === null), true);
+test("owner decisions are recorded while new security identities remain unmaterialized", () => {
+  assert.deepEqual(packet.recordedOwnerDecisions.map(({ id, selected }) => ({ id, selected })), [
+    { id:"development_access_surface", selected:"access_protected_workers_dev_production_url" },
+    { id:"development_access_policy", selected:"cloudflare_access_service_token_policy" },
+  ]);
+  assert.deepEqual({ ...packet.target.accessSurface }, {
+    kind:"workers_dev_production_url",
+    url:"https://8978-ai-control-plane-dev.jhutchison.workers.dev",
+    previewUrlsEnabled:false,
+    customDomain:null,
+    cloudflareAccessRequiredBeforeDeployment:true,
+  });
+  assert.deepEqual(packet.unmaterializedSecurityIdentities.map(({ id, selectedType, materialized }) => ({ id, selectedType, materialized })), [
+    { id:"access_policy_credential", selectedType:"new_expiring_cloudflare_access_service_token", materialized:false },
+    { id:"service_auth_identity", selectedType:"new_development_only_principal_and_key", materialized:false },
+  ]);
+  assert.equal(packet.unmaterializedSecurityIdentities[0].maximumLifetimeHours, 24);
+  assert.equal(packet.unmaterializedSecurityIdentities[1].maximumScope, "8978-ai-control-plane-dev-only");
   assert.equal(packet.candidateExternalOperations.maximumExecutionAttempts, 1);
   assert.equal(packet.candidateExternalOperations.requiresNewExactReviewedHeadAfterOwnerDecisions, true);
   assert.match(packet.requiredOwnerAuthorizationTemplate, /exact head <FULL_SHA>/u);
-  assert.match(packet.requiredOwnerAuthorizationTemplate, /<EXACT_ACCESS_SURFACE>/u);
-  assert.match(packet.requiredOwnerAuthorizationTemplate, /<EXACT_ACCESS_POLICY>/u);
-  assert.match(packet.requiredOwnerAuthorizationTemplate, /<EXACT_ACCESS_SERVICE_TOKEN_IDENTITY_AND_CUSTODIAN>/u);
+  assert.match(packet.requiredOwnerAuthorizationTemplate, /Worker-level Cloudflare Access/u);
+  assert.match(packet.requiredOwnerAuthorizationTemplate, /no later than 24 hours after creation/u);
 });
 
 test("canary proves authentication, D1 reads, replay denial, and execution denial with bounded effects", () => {
@@ -93,11 +107,15 @@ test("schema rejects authorization, exposure, write, retry, and target weakening
     (value) => { value.canaryInvocationAuthorized = true; },
     (value) => { value.environment = "production"; },
     (value) => { value.target.authorityDatabase.databaseId = "wrong"; },
+    (value) => { value.preservedFailClosedBoundary.workersDev = false; },
     (value) => { value.preservedFailClosedBoundary.allowExternalWrites = "true"; },
     (value) => { value.preservedFailClosedBoundary.queuePublicationPermitted = true; },
     (value) => { value.canary.boundedEffects.authorityD1WritesMaximum = 1; },
     (value) => { value.candidateExternalOperations.maximumExecutionAttempts = 2; },
-    (value) => { value.unresolvedOwnerDecisions[0].selected = "invented"; },
+    (value) => { value.target.accessSurface.cloudflareAccessRequiredBeforeDeployment = false; },
+    (value) => { value.recordedOwnerDecisions[0].selected = "invented"; },
+    (value) => { value.unmaterializedSecurityIdentities[0].maximumLifetimeHours = 25; },
+    (value) => { value.unmaterializedSecurityIdentities[0].materialized = true; },
     (value) => { value.partialFailurePolicy.automaticRetry = true; },
     (value) => { value.unexpected = true; },
   ];

@@ -1,6 +1,6 @@
 {
-  "schemaVersion": "1.0.0",
-  "status": "PLANNED_OWNER_DECISION_REQUIRED",
+  "schemaVersion": "1.1.0",
+  "status": "PLANNED_SECURITY_MATERIAL_REQUIRED",
   "governing": false,
   "environment": "development",
   "phase": "deploy_and_run_fail_closed_live_canary",
@@ -11,10 +11,10 @@
   "canaryInvocationAuthorized": false,
   "source": {
     "repository": "jhutchison2222/8978-ai-platform-control-plane",
-    "baselineMainCommit": "b7dffe57020f7aea9f483cdebe9eab733a517507",
+    "baselineMainCommit": "aebf889f3a876b0472e23a248610f6bd972be060",
     "wranglerConfiguration": {
       "path": "wrangler.jsonc",
-      "sha256": "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"
+      "sha256": "f011600fb1835dcdf9f6491f4b27613004e58e37a1cd5ef9b2b5697859ab40a6"
     },
     "resourceCreationRecord": {
       "path": "deployment/development-resource-creation-completion-record.json",
@@ -45,6 +45,13 @@
     "queueProducer": {
       "binding": "ORCHESTRATOR_QUEUE",
       "name": "8978-ai-orchestrator-dev"
+    },
+    "accessSurface": {
+      "kind": "workers_dev_production_url",
+      "url": "https://8978-ai-control-plane-dev.jhutchison.workers.dev",
+      "previewUrlsEnabled": false,
+      "customDomain": null,
+      "cloudflareAccessRequiredBeforeDeployment": true
     }
   },
   "stateDistinction": {
@@ -54,7 +61,7 @@
       "queueProducerBinding": true,
       "queueConsumer": false,
       "route": false,
-      "workersDev": false,
+      "workersDev": true,
       "previewUrls": false
     },
     "remotelyRecorded": {
@@ -66,12 +73,12 @@
       "workerDeploymentForReviewedConfiguration": "UNVERIFIED_NOT_CLAIMED",
       "runtimeBindingsInstalled": "UNVERIFIED_NOT_CLAIMED",
       "serviceAuthSecretInstalled": "UNVERIFIED_NOT_CLAIMED",
-      "reachableAccessSurface": "ABSENT_IN_REPOSITORY_CONFIGURATION"
+      "reachableAccessSurface": "DECLARED_NOT_DEPLOYED_OR_ACCESS_PROTECTED"
     },
     "declarationDoesNotProveRemoteInstallation": true
   },
   "preservedFailClosedBoundary": {
-    "workersDev": false,
+    "workersDev": true,
     "previewUrls": false,
     "routes": [],
     "controlPlaneMode": "development",
@@ -103,48 +110,35 @@
       "no production or customer resource is selected"
     ]
   },
-  "unresolvedOwnerDecisions": [
+  "recordedOwnerDecisions": [
     {
       "id": "development_access_surface",
-      "required": true,
-      "allowedDecisionSet": [
-        "access_protected_custom_development_hostname"
-      ],
-      "selected": null,
-      "requiredExactValue": "hostname_or_preview_surface_and_expiration",
-      "reason": "workers_dev preview URLs and routes are all currently disabled so the deployed Worker is not invocable"
+      "selected": "access_protected_workers_dev_production_url",
+      "exactScope": "https://8978-ai-control-plane-dev.jhutchison.workers.dev",
+      "reason": "the owner selected protected workers.dev and no external DNS or custom domain is required"
     },
     {
       "id": "development_access_policy",
-      "required": true,
-      "allowedDecisionSet": [
-        "cloudflare_access_service_token_policy",
-        "cloudflare_access_identity_policy",
-        "other_explicit_owner_reviewed_policy"
-      ],
-      "selected": null,
-      "requiredExactValue": "policy_identity_scope_and_expiration",
-      "reason": "HMAC authenticates the service request but does not itself select or restrict the network access surface"
-    },
+      "selected": "cloudflare_access_service_token_policy",
+      "exactScope": "only https://8978-ai-control-plane-dev.jhutchison.workers.dev",
+      "reason": "Worker-level Access must deny unauthenticated traffic before workers.dev is enabled by deployment"
+    }
+  ],
+  "unmaterializedSecurityIdentities": [
     {
       "id": "access_policy_credential",
-      "required": true,
-      "allowedDecisionSet": [
-        "existing_expiring_cloudflare_access_service_token",
-        "new_expiring_cloudflare_access_service_token"
-      ],
-      "selected": null,
+      "selectedType": "new_expiring_cloudflare_access_service_token",
       "requiredExactValue": "service_token_identity_scope_expiration_and_credential_custodian_without_secret_values",
-      "reason": "a non-interactive canary needs an independently managed credential for the selected Cloudflare Access policy"
+      "maximumLifetimeHours": 24,
+      "materialized": false,
+      "reason": "the service-token identity and exact expiration do not exist until the separately reviewed Cloudflare operation"
     },
     {
       "id": "service_auth_identity",
-      "required": true,
-      "allowedDecisionSet": [
-        "new_development_only_principal_and_key"
-      ],
-      "selected": null,
+      "selectedType": "new_development_only_principal_and_key",
       "requiredExactValue": "principal_id_key_id_and_secret_custodian_without_secret_value",
+      "maximumScope": "8978-ai-control-plane-dev-only",
+      "materialized": false,
       "reason": "SERVICE_AUTH_KEYS_JSON is absent and must be installed as a managed secret outside repository logs and artifacts"
     }
   ],
@@ -154,7 +148,8 @@
     "operations": [
       "install or update exactly the SERVICE_AUTH_KEYS_JSON managed secret for the development Worker",
       "create or select only the owner-approved expiring Cloudflare Access service token without exposing its values",
-      "create or attach exactly the owner-selected expiring development access surface and policy",
+      "create and verify the Worker-level Cloudflare Access application and service-token policy for only the exact workers.dev production URL before any deployment",
+      "verify the new Access service token expires no later than 24 hours after creation without exposing its credential values",
       "deploy exactly the independently accepted Worker head with wrangler deploy --config wrangler.jsonc --strict",
       "start sanitized observation with wrangler tail 8978-ai-control-plane-dev --format json",
       "invoke the exact bounded canary request sequence once"
@@ -239,7 +234,8 @@
     "the authenticated Cloudflare account or any pinned resource identity does not match",
     "the reviewed head packet digest or wrangler configuration digest does not match",
     "the Workflow Queue consumer Worker deployment binding route domain or secret-name inventory is ambiguous",
-    "the owner has not selected the exact access surface access policy and service-auth identity",
+    "Worker-level Cloudflare Access is not independently confirmed active for the exact workers.dev production URL before deployment",
+    "the new Access service-token identity expiration or custodian or the new development-only HMAC principal key ID or custodian is absent",
     "a secret private key token or signed header would enter repository logs comments or retained artifacts",
     "ALLOW_EXTERNAL_WRITES is not the string false or the execute route is not unconditionally denied",
     "a Queue consumer publication Workflow trigger D1 mutation production target customer target or external business action is possible",
@@ -247,7 +243,7 @@
     "any preflight canary result or post-state is partial inconsistent unexpected or unavailable"
   ],
   "prohibitedOperations": [
-    "execute_before_new_exact_owner_authorization",
+    "execute_before_new_exact_reviewed_execution_record",
     "store_or_disclose_secret_value",
     "enable_external_writes",
     "enable_action_execution",
@@ -267,5 +263,5 @@
     "automaticRollback": false,
     "action": "stop_and_report_exact_state"
   },
-  "requiredOwnerAuthorizationTemplate": "I authorize one development-only execution attempt for the independently accepted exact head <FULL_SHA> and packet SHA-256 <PACKET_SHA256> in Cloudflare account de5e0273347b0b4c5f8f4e554aa2288f: install or update only the managed SERVICE_AUTH_KEYS_JSON secret for principal <PRINCIPAL_ID> and key <KEY_ID> without exposing its value; configure only <EXACT_ACCESS_SURFACE> protected by <EXACT_ACCESS_POLICY> until <EXPIRATION>; create or use only <EXACT_ACCESS_SERVICE_TOKEN_IDENTITY_AND_CUSTODIAN> without exposing its credential values; deploy only Worker 8978-ai-control-plane-dev with the pinned D1 Workflow and Queue-producer bindings; run the five-request synthetic fail-closed canary once; and capture sanitized evidence. Do not write or migrate D1, publish Queue messages, trigger Workflows, enable external writes or action execution, touch production or customers, expose credentials, delete, clean up, retry, restore, or roll back. Stop on any mismatch ambiguity partial result or unexpected effect."
+  "requiredOwnerAuthorizationTemplate": "Standing development authorization applies only after an independently accepted exact execution record materializes the new Access service-token identity, its scope, expiration no later than 24 hours after creation, and custodian, plus the new development-only HMAC principal, key ID, and custodian, without secret values. The operation must first create and verify Worker-level Cloudflare Access for only https://8978-ai-control-plane-dev.jhutchison.workers.dev, then deploy exact head <FULL_SHA> and packet SHA-256 <PACKET_SHA256> once, run the five-request synthetic fail-closed canary once, and capture sanitized evidence. Do not write or migrate D1, publish Queue messages, trigger Workflows, enable external writes or action execution, touch production or customers, expose credentials, change DNS, create a custom domain, delete, clean up, retry, restore, or roll back. Stop on any mismatch ambiguity partial result or unexpected effect."
 }
