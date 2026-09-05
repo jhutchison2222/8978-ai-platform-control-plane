@@ -10,11 +10,13 @@ import {
   SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
   TASK_DISPATCH_RETRY_DELAY_MS,
+  SECURITY_STOP_LABEL,
   GitHubApi,
   blockedLabelAction,
   checkState,
   claudeRequests,
   ensureLabels,
+  ensureSecurityStop,
   exactHeadClaudeVerdict,
   hasLabel,
   hasMarker,
@@ -25,6 +27,7 @@ import {
   nextTaskDispatchAction,
   pullRequestForTask,
   runAllIsolated,
+  securityStopReasons,
   selectQueuedTask,
   selectQueuedTasks,
   superviseTaskQueue,
@@ -63,6 +66,7 @@ test("workflow is scheduled and least-privilege", async () => {
     "contents: read",
     "issues: write",
     "pull-requests: write",
+    "group: autonomy-control",
     "node scripts/autonomy-supervisor.js",
   ]) assert.match(workflow, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
   assert.doesNotMatch(workflow, /contents:\s*write|deploy|wrangler|cloudflare/iu);
@@ -144,9 +148,69 @@ test("required labels recognize GitHub case-insensitive matches", async () => {
   await ensureLabels(api);
   assert.equal(created.includes("security-review"), false);
   assert.equal(created.includes("autonomy-dispatched"), false);
-  assert.equal(created.length, 4);
+  assert.equal(created.length, 5);
   assert.deepEqual(updated, [{ path:"/labels/Autonomy-Dispatched", description:"Autonomous agent dispatch accepted" }]);
   assert.equal(hasLabel({ labels: [{ name: "AUTONOMY-BLOCKED" }] }, "autonomy-blocked"), true);
+});
+
+test("global security stops fail closed and only the repository owner can clear them", () => {
+  const inputs = {
+    pullRequests: [],
+    changedFilesByPullRequest: new Map(),
+    ownerLogin: "owner",
+  };
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [{ number: 7, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] }],
+  }), ["open security stop #7"]);
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [{ number: 7, state: "closed", closed_by: { login: "collaborator" }, labels: [{ name: SECURITY_STOP_LABEL }] }],
+  }), ["security stop #7 was not closed by repository owner owner"]);
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [{ number: 7, state: "closed", closed_by: { login: "OWNER" }, labels: [{ name: SECURITY_STOP_LABEL }] }],
+  }), []);
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [
+      { number: 7, state: "closed", closed_by: { login: "collaborator" }, labels: [{ name: SECURITY_STOP_LABEL }] },
+      { number: 8, state: "closed", closed_by: { login: "owner" }, labels: [{ name: SECURITY_STOP_LABEL }] },
+    ],
+  }), []);
+});
+
+test("open changes to the dispatch boundary stop all autonomous dispatch", () => {
+  const pullRequests = [{ number: 62 }];
+  assert.deepEqual(securityStopReasons({
+    issues: [],
+    pullRequests,
+    changedFilesByPullRequest: new Map([[62, [
+      { filename: "README.md" },
+      { filename: "scripts/autonomy-supervisor.js" },
+    ]]]),
+    ownerLogin: "owner",
+  }), ["pull request #62 changes protected automation: scripts/autonomy-supervisor.js"]);
+});
+
+test("security stop issue creation is idempotent and never auto-closes", async () => {
+  const posts = [];
+  const existing = { number: 70, labels: [{ name: SECURITY_STOP_LABEL }] };
+  const api = {
+    getAll: async () => [existing],
+    post: async (path, body) => posts.push({ path, body }),
+  };
+  assert.equal(await ensureSecurityStop(api, ["fixture violation"]), existing);
+  assert.deepEqual(posts, []);
+
+  api.getAll = async () => [];
+  await ensureSecurityStop(api, ["fixture violation"]);
+  assert.equal(posts.length, 1);
+  assert.equal(posts[0].path, "/issues");
+  assert.deepEqual(posts[0].body.labels, [SECURITY_STOP_LABEL, "security-review"]);
+  assert.match(posts[0].body.body, /never close this issue automatically/iu);
+  assert.equal(await ensureSecurityStop(api, []), null);
+  assert.equal(posts.length, 1);
 });
 
 test("the blocked label is idempotent and clears after recovery", () => {

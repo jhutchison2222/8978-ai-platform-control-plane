@@ -10,6 +10,14 @@ export const SECOND_REQUEST_DELAY_MS = 10 * 60 * 1000;
 export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
+export const SECURITY_STOP_LABEL = "autonomy-security-stop";
+
+export const SENSITIVE_AUTOMATION_PATHS = [
+  ".github/workflows/autonomy-supervisor.yml",
+  ".github/workflows/autonomy-watchdog.yml",
+  "scripts/autonomy-supervisor.js",
+  "scripts/autonomy-watchdog.js",
+];
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
@@ -52,6 +60,36 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
 export function hasLabel(subject, name) {
   const expected = name.toLowerCase();
   return subject.labels?.some((label) => label.name?.toLowerCase() === expected) ?? false;
+}
+
+export function isSensitiveAutomationPath(path) {
+  return SENSITIVE_AUTOMATION_PATHS.includes(path);
+}
+
+export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
+  const reasons = [];
+  const stops = issues
+    .filter((issue) => !issue.pull_request && hasLabel(issue, SECURITY_STOP_LABEL))
+    .sort((left, right) => left.number - right.number);
+  const openStops = stops.filter((issue) => issue.state === "open");
+  if (openStops.length > 0) {
+    for (const issue of openStops) {
+      reasons.push(`open security stop #${issue.number}`);
+    }
+  } else {
+    const latest = stops.at(-1);
+    if (latest && latest.closed_by?.login?.toLowerCase() !== ownerLogin.toLowerCase()) {
+      reasons.push(`security stop #${latest.number} was not closed by repository owner ${ownerLogin}`);
+    }
+  }
+  for (const pr of pullRequests) {
+    const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
+    const sensitive = changedFiles.filter((file) => isSensitiveAutomationPath(file.filename));
+    if (sensitive.length > 0) {
+      reasons.push(`pull request #${pr.number} changes protected automation: ${sensitive.map((file) => file.filename).join(", ")}`);
+    }
+  }
+  return reasons;
 }
 
 export function blockedLabelAction(pr, action) {
@@ -228,6 +266,7 @@ const REQUIRED_LABELS = [
   { name: "autonomy-blocked", color: "D93F0B", description: "Automation exhausted safe retries" },
   { name: "security-review", color: "B60205", description: "Owner security authorization required" },
   { name: "major-decision", color: "FBCA04", description: "Owner decision required" },
+  { name: SECURITY_STOP_LABEL, color: "B60205", description: "Global owner-controlled stop for autonomous dispatch" },
 ];
 
 export async function ensureLabels(api) {
@@ -241,6 +280,25 @@ export async function ensureLabels(api) {
       await api.patch(`/labels/${encodeURIComponent(current.name)}`, { description: label.description });
     }
   }
+}
+
+export async function ensureSecurityStop(api, reasons) {
+  if (reasons.length === 0) return null;
+  const stops = (await api.getAll(`/issues?state=open&labels=${SECURITY_STOP_LABEL}`))
+    .filter((issue) => !issue.pull_request);
+  if (stops.length > 0) return stops.at(0);
+  return api.post("/issues", {
+    title: "Autonomous dispatch security stop",
+    labels: [SECURITY_STOP_LABEL, "security-review"],
+    body: [
+      "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
+      "",
+      "Detected conditions:",
+      ...reasons.map((reason) => `- ${reason}`),
+      "",
+      "Only the repository owner may reactivate autonomous dispatch, after reviewing and resolving every condition, by closing this issue. The supervisor and watchdog never close this issue automatically.",
+    ].join("\n"),
+  });
 }
 
 export async function triggerWorkspaceAgent({ agentId, agentToken, conversationKey, input, idempotencyKey, fetchImpl = fetch }) {
@@ -373,6 +431,21 @@ export async function runSupervisor({
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
+  const [securityStops, changedFiles] = await Promise.all([
+    api.getAll(`/issues?state=all&labels=${SECURITY_STOP_LABEL}`),
+    Promise.all(pullRequests.map(async (pr) => [pr.number, await api.getAll(`/pulls/${pr.number}/files`)])),
+  ]);
+  const reasons = securityStopReasons({
+    issues: securityStops,
+    pullRequests,
+    changedFilesByPullRequest: new Map(changedFiles),
+    ownerLogin: repository.split("/", 1)[0],
+  });
+  if (reasons.length > 0) {
+    await ensureSecurityStop(api, reasons);
+    console.error(`Autonomous dispatch stopped: ${reasons.join("; ")}`);
+    return;
+  }
   const errors = await runAllIsolated(pullRequests,
     (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
     (error) => console.error("Pull request supervision failed:", error));
