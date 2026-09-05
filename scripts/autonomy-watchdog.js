@@ -5,6 +5,7 @@ import {
   SECURITY_STOP_LABEL,
   ensureLabels,
   ensureSecurityStop,
+  hydrateSecurityStops,
   securityStopReasons,
 } from "./autonomy-supervisor.js";
 
@@ -68,9 +69,17 @@ export function localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }
   return violations;
 }
 
+export function isRestrictedForkSecurityStopFailure({ error, eventName, headRepository, repository }) {
+  return error?.status === 403 && eventName === "pull_request" &&
+    typeof headRepository === "string" && headRepository !== "" &&
+    headRepository.toLowerCase() !== repository.toLowerCase();
+}
+
 export async function runWatchdog({
   repository = process.env.GITHUB_REPOSITORY,
   githubToken = process.env.GITHUB_TOKEN,
+  eventName = process.env.GITHUB_EVENT_NAME,
+  headRepository = process.env.GITHUB_PR_HEAD_REPOSITORY,
   fetchImpl = fetch,
   readFileImpl = readFile,
 } = {}) {
@@ -82,19 +91,25 @@ export async function runWatchdog({
     readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
     readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
+  const detailedSecurityStops = await hydrateSecurityStops(api, securityStops);
   const changedFiles = await Promise.all(
     pullRequests.map(async (pr) => [pr.number, await api.getAll(`/pulls/${pr.number}/files`)]),
   );
   const reasons = [
     ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
     ...securityStopReasons({
-      issues: securityStops,
+      issues: detailedSecurityStops,
       pullRequests,
       changedFilesByPullRequest: new Map(changedFiles),
       ownerLogin: repository.split("/", 1)[0],
     }),
   ];
-  await ensureSecurityStop(api, reasons);
+  try {
+    await ensureSecurityStop(api, reasons);
+  } catch (error) {
+    if (!isRestrictedForkSecurityStopFailure({ error, eventName, headRepository, repository })) throw error;
+    console.error("Fork pull-request token is read-only; the scheduled watchdog remains the security-stop creation backstop.");
+  }
   if (reasons.length > 0) console.error(`Autonomous dispatch remains stopped: ${reasons.join("; ")}`);
   return reasons;
 }
