@@ -69,10 +69,14 @@ export function localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }
   return violations;
 }
 
-export function isRestrictedForkSecurityStopFailure({ error, eventName, headRepository, repository }) {
-  return error?.status === 403 && eventName === "pull_request" &&
+export function isRestrictedForkPullRequest({ eventName, headRepository, repository }) {
+  return eventName === "pull_request" &&
     typeof headRepository === "string" && headRepository !== "" &&
     headRepository.toLowerCase() !== repository.toLowerCase();
+}
+
+export function isRestrictedForkSecurityStopFailure({ error, ...context }) {
+  return error?.status === 403 && isRestrictedForkPullRequest(context);
 }
 
 export async function runWatchdog({
@@ -84,7 +88,8 @@ export async function runWatchdog({
   readFileImpl = readFile,
 } = {}) {
   const api = new GitHubApi({ repository, token: githubToken, fetchImpl });
-  await ensureLabels(api);
+  const restrictedForkPullRequest = isRestrictedForkPullRequest({ eventName, headRepository, repository });
+  if (!restrictedForkPullRequest) await ensureLabels(api);
   const [pullRequests, securityStops, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
     api.getAll("/pulls?state=open"),
     api.getAll(`/issues?state=all&labels=${SECURITY_STOP_LABEL}`),
