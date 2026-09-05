@@ -2,10 +2,10 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
   GitHubApi,
-  SECURITY_STOP_LABEL,
   ensureLabels,
   ensureSecurityStop,
-  hydrateSecurityStops,
+  fetchSecurityStop,
+  inspectPullRequestFiles,
   securityStopReasons,
 } from "./autonomy-supervisor.js";
 
@@ -90,27 +90,25 @@ export async function runWatchdog({
   const api = new GitHubApi({ repository, token: githubToken, fetchImpl });
   const restrictedForkPullRequest = isRestrictedForkPullRequest({ eventName, headRepository, repository });
   if (!restrictedForkPullRequest) await ensureLabels(api);
-  const [pullRequests, securityStops, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
+  const [pullRequests, securityStop, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
     api.getAll("/pulls?state=open"),
-    api.getAll(`/issues?state=all&labels=${SECURITY_STOP_LABEL}`),
+    fetchSecurityStop(api),
     readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
     readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
-  const detailedSecurityStops = await hydrateSecurityStops(api, securityStops);
-  const changedFiles = await Promise.all(
-    pullRequests.map(async (pr) => [pr.number, await api.getAll(`/pulls/${pr.number}/files`)]),
-  );
-  const reasons = [
+  const fileInspections = await inspectPullRequestFiles(api, pullRequests);
+  const persistentReasons = [
     ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
     ...securityStopReasons({
-      issues: detailedSecurityStops,
+      issues: [securityStop],
       pullRequests,
-      changedFilesByPullRequest: new Map(changedFiles),
+      changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
       ownerLogin: repository.split("/", 1)[0],
     }),
   ];
+  const reasons = [...persistentReasons, ...fileInspections.failures];
   try {
-    await ensureSecurityStop(api, reasons);
+    await ensureSecurityStop(api, persistentReasons, securityStop);
   } catch (error) {
     if (!isRestrictedForkSecurityStopFailure({ error, eventName, headRepository, repository })) throw error;
     console.error("Fork pull-request token is read-only; the scheduled watchdog remains the security-stop creation backstop.");

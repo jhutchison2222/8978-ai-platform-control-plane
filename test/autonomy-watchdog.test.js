@@ -70,8 +70,16 @@ test("fork pull-request events skip label writes before evaluating the boundary"
     if ((options.method ?? "GET") !== "GET") {
       return { ok: false, status: 403, json: async () => ({ message: "Resource not accessible by integration" }) };
     }
-    if (url.includes("/pulls?state=open") || url.includes("/issues?state=all&labels=autonomy-security-stop")) {
+    if (url.includes("/pulls?state=open")) {
       return { ok: true, status: 200, json: async () => [] };
+    }
+    if (url.endsWith("/issues/66")) {
+      return { ok: true, status: 200, json: async () => ({
+        number: 66,
+        state: "closed",
+        closed_by: { login: "owner" },
+        labels: [],
+      }) };
     }
     throw new Error(`Unexpected request: ${url}`);
   };

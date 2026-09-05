@@ -11,6 +11,7 @@ import {
   SUPERVISOR_LOGIN,
   TASK_DISPATCH_RETRY_DELAY_MS,
   SECURITY_STOP_LABEL,
+  SECURITY_STOP_ISSUE_NUMBER,
   GitHubApi,
   blockedLabelAction,
   checkState,
@@ -18,10 +19,11 @@ import {
   ensureLabels,
   ensureSecurityStop,
   exactHeadClaudeVerdict,
+  fetchSecurityStop,
   hasLabel,
   hasMarker,
   hasPullRequestForTask,
-  hydrateSecurityStops,
+  inspectPullRequestFiles,
   linkedPullRequestPausesTask,
   marker,
   nextPullRequestAction,
@@ -162,22 +164,19 @@ test("global security stops fail closed and only the repository owner can clear 
   };
   assert.deepEqual(securityStopReasons({
     ...inputs,
-    issues: [{ number: 7, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] }],
-  }), ["open security stop #7"]);
+    issues: [{ number: SECURITY_STOP_ISSUE_NUMBER, state: "open", labels: [] }],
+  }), [`open security stop #${SECURITY_STOP_ISSUE_NUMBER}`]);
   assert.deepEqual(securityStopReasons({
     ...inputs,
-    issues: [{ number: 7, state: "closed", closed_by: { login: "collaborator" }, labels: [{ name: SECURITY_STOP_LABEL }] }],
-  }), ["security stop #7 was not closed by repository owner owner"]);
+    issues: [{ number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "collaborator" }, labels: [] }],
+  }), [`security stop #${SECURITY_STOP_ISSUE_NUMBER} was not closed by repository owner owner`]);
   assert.deepEqual(securityStopReasons({
     ...inputs,
-    issues: [{ number: 7, state: "closed", closed_by: { login: "OWNER" }, labels: [{ name: SECURITY_STOP_LABEL }] }],
+    issues: [{ number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "OWNER" }, labels: [] }],
   }), []);
   assert.deepEqual(securityStopReasons({
     ...inputs,
-    issues: [
-      { number: 7, state: "closed", closed_by: { login: "collaborator" }, labels: [{ name: SECURITY_STOP_LABEL }] },
-      { number: 8, state: "closed", closed_by: { login: "owner" }, labels: [{ name: SECURITY_STOP_LABEL }] },
-    ],
+    issues: [{ number: 7, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] }],
   }), []);
 });
 
@@ -194,24 +193,34 @@ test("open changes to the dispatch boundary stop all autonomous dispatch", () =>
   }), ["pull request #62 changes protected automation: scripts/autonomy-supervisor.js"]);
 });
 
-test("security stop issue creation is idempotent and never auto-closes", async () => {
+test("canonical security stop is idempotent, label-independent, and only reopens", async () => {
   const posts = [];
-  const existing = { number: 70, labels: [{ name: SECURITY_STOP_LABEL }] };
-  const api = {
-    getAll: async () => [existing],
-    post: async (path, body) => posts.push({ path, body }),
+  const patches = [];
+  const existing = {
+    number: SECURITY_STOP_ISSUE_NUMBER,
+    state: "open",
+    labels: [{ name: SECURITY_STOP_LABEL }, { name: "security-review" }],
   };
-  assert.equal(await ensureSecurityStop(api, ["fixture violation"]), existing);
+  const api = {
+    post: async (path, body) => posts.push({ path, body }),
+    patch: async (path, body) => patches.push({ path, body }),
+  };
+  assert.equal(await ensureSecurityStop(api, ["fixture violation"], existing), existing);
   assert.deepEqual(posts, []);
+  assert.deepEqual(patches, []);
 
-  api.getAll = async () => [];
-  await ensureSecurityStop(api, ["fixture violation"]);
+  await ensureSecurityStop(api, ["fixture violation"], { ...existing, labels: [] });
   assert.equal(posts.length, 1);
-  assert.equal(posts[0].path, "/issues");
+  assert.equal(posts[0].path, `/issues/${SECURITY_STOP_ISSUE_NUMBER}/labels`);
   assert.deepEqual(posts[0].body.labels, [SECURITY_STOP_LABEL, "security-review"]);
-  assert.match(posts[0].body.body, /never close this issue automatically/iu);
+
+  await ensureSecurityStop(api, ["fixture violation"], { ...existing, state: "closed" });
+  assert.equal(patches.length, 1);
+  assert.equal(patches[0].path, `/issues/${SECURITY_STOP_ISSUE_NUMBER}`);
+  assert.equal(patches[0].body.state, "open");
+  assert.match(patches[0].body.body, /never close this issue automatically/iu);
   assert.equal(await ensureSecurityStop(api, []), null);
-  assert.equal(posts.length, 1);
+  assert.equal(patches.length, 1);
 });
 
 test("the blocked label is idempotent and clears after recovery", () => {
@@ -445,24 +454,43 @@ test("dispatch markers are exact-head idempotency records", () => {
 });
 
 
-test("closed security stops are hydrated before owner recovery is evaluated", async () => {
-  const listed = [{ number: 7, state: "closed", labels: [{ name: SECURITY_STOP_LABEL }] }];
-  const detailed = { ...listed[0], closed_by: { login: "owner" } };
+test("the canonical security stop is fetched directly and cannot vanish with its label", async () => {
+  const detailed = { number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] };
   const requested = [];
-  const hydrated = await hydrateSecurityStops({
+  const stop = await fetchSecurityStop({
     get: async (path) => {
       requested.push(path);
       return detailed;
     },
-  }, listed);
-  assert.deepEqual(requested, ["/issues/7"]);
-  assert.equal(hydrated[0], detailed);
+  });
+  assert.deepEqual(requested, [`/issues/${SECURITY_STOP_ISSUE_NUMBER}`]);
+  assert.equal(stop, detailed);
   assert.deepEqual(securityStopReasons({
-    issues: hydrated,
+    issues: [stop],
     pullRequests: [],
     changedFilesByPullRequest: new Map(),
     ownerLogin: "owner",
   }), []);
+});
+
+test("changed-file inspection isolates failures and preserves other PR results", async () => {
+  const inspected = await inspectPullRequestFiles({
+    getAll: async (path) => {
+      if (path === "/pulls/1/files") throw new Error("transient fixture failure");
+      return [{ filename: "scripts/autonomy-watchdog.js" }];
+    },
+  }, [{ number: 1 }, { number: 2 }]);
+  assert.deepEqual(inspected.changedFilesByPullRequest.get(1), []);
+  assert.deepEqual(inspected.changedFilesByPullRequest.get(2), [{ filename: "scripts/autonomy-watchdog.js" }]);
+  assert.deepEqual(inspected.failures, [
+    "pull request #1 changed files could not be inspected; dispatch is deferred for this cycle",
+  ]);
+  assert.deepEqual(securityStopReasons({
+    issues: [],
+    pullRequests: [{ number: 1 }, { number: 2 }],
+    changedFilesByPullRequest: inspected.changedFilesByPullRequest,
+    ownerLogin: "owner",
+  }), ["pull request #2 changes protected automation: scripts/autonomy-watchdog.js"]);
 });
 
 test("protected automation renames trigger the security stop using the previous path", () => {

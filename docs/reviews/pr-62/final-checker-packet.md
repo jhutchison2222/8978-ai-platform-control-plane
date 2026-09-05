@@ -5,8 +5,8 @@ Review the complete current pull-request head against `main`. This packet govern
 1. Confirm the diff is limited to GitHub repository coordination: the autonomous supervisor and independent watchdog workflows, their implementation, tests, documentation, and this checker packet.
 2. Confirm the supervisor permissions are exactly least-privilege for its behavior: `actions:read`, `checks:read`, `contents:read`, `issues:write`, and `pull-requests:write`; no contents write or Cloudflare credential is introduced.
 3. Confirm the separate watchdog has only `contents:read`, `issues:write`, and `pull-requests:read`; it receives no Workspace Agent ID/token and cannot dispatch, modify code, review, or merge.
-4. Confirm an open `autonomy-security-stop` issue blocks every new Workspace Agent dispatch, and an open PR changing either automation workflow or dispatch-boundary script creates that persistent stop.
-5. Confirm the supervisor and watchdog never close the stop issue, and only a closure by the exact repository owner reactivates dispatch; an unauthorized closure creates another stop without causing a permanent poison state after a later owner closure.
+4. Confirm canonical security-stop issue `#66` blocks every new Workspace Agent dispatch while open regardless of label removal, and an open PR changing either automation workflow or dispatch-boundary script reopens that persistent stop.
+5. Confirm the supervisor and watchdog never close canonical issue `#66`, and only a closure by the exact repository owner reactivates dispatch; an unauthorized closure reopens the same stop without causing a permanent poison state after a later owner closure.
 6. Confirm one PR/task failure cannot abort supervision of other PRs or queued tasks.
 7. Confirm only genuine exact-head Claude reviews are accepted; dismissed reviews, ambiguous prose, untrusted comments, and stale-head reviews cannot satisfy the merge gate.
 8. Confirm retry markers are authenticated by the workflow’s own deterministic marker format, limited to three review requests and three task dispatches, and cannot be inflated by arbitrary commenters.

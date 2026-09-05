@@ -11,6 +11,7 @@ export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 export const SECURITY_STOP_LABEL = "autonomy-security-stop";
+export const SECURITY_STOP_ISSUE_NUMBER = 66;
 
 export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
@@ -69,8 +70,7 @@ export function isSensitiveAutomationPath(path) {
 export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
   const reasons = [];
   const stops = issues
-    .filter((issue) => !issue.pull_request && hasLabel(issue, SECURITY_STOP_LABEL))
-    .sort((left, right) => left.number - right.number);
+    .filter((issue) => !issue.pull_request && issue.number === SECURITY_STOP_ISSUE_NUMBER);
   const openStops = stops.filter((issue) => issue.state === "open");
   if (openStops.length > 0) {
     for (const issue of openStops) {
@@ -93,14 +93,30 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
   return reasons;
 }
 
-export async function hydrateSecurityStops(api, issues) {
-  const stops = issues
-    .filter((issue) => !issue.pull_request && hasLabel(issue, SECURITY_STOP_LABEL))
-    .sort((left, right) => left.number - right.number);
-  if (stops.length === 0 || stops.some((issue) => issue.state === "open")) return issues;
-  const latest = stops.at(-1);
-  const detailed = await api.get(`/issues/${latest.number}`);
-  return issues.map((issue) => issue.number === latest.number ? detailed : issue);
+export async function fetchSecurityStop(api) {
+  const issue = await api.get(`/issues/${SECURITY_STOP_ISSUE_NUMBER}`);
+  if (issue.number !== SECURITY_STOP_ISSUE_NUMBER || issue.pull_request) {
+    throw new Error(`Canonical security stop #${SECURITY_STOP_ISSUE_NUMBER} is unavailable`);
+  }
+  return issue;
+}
+
+export async function inspectPullRequestFiles(api, pullRequests) {
+  const inspections = await Promise.all(pullRequests.map(async (pr) => {
+    try {
+      return { number: pr.number, files: await api.getAll(`/pulls/${pr.number}/files`) };
+    } catch {
+      return {
+        number: pr.number,
+        files: [],
+        failure: `pull request #${pr.number} changed files could not be inspected; dispatch is deferred for this cycle`,
+      };
+    }
+  }));
+  return {
+    changedFilesByPullRequest: new Map(inspections.map(({ number, files }) => [number, files])),
+    failures: inspections.flatMap(({ failure }) => failure ? [failure] : []),
+  };
 }
 
 export function blockedLabelAction(pr, action) {
@@ -297,14 +313,20 @@ export async function ensureLabels(api) {
   }
 }
 
-export async function ensureSecurityStop(api, reasons) {
+export async function ensureSecurityStop(api, reasons, knownStop) {
   if (reasons.length === 0) return null;
-  const stops = (await api.getAll(`/issues?state=open&labels=${SECURITY_STOP_LABEL}`))
-    .filter((issue) => !issue.pull_request);
-  if (stops.length > 0) return stops.at(0);
-  return api.post("/issues", {
+  const stop = knownStop ?? await fetchSecurityStop(api);
+  const labels = [SECURITY_STOP_LABEL, "security-review"];
+  if (stop.state === "open") {
+    if (!labels.every((label) => hasLabel(stop, label))) {
+      await api.post(`/issues/${SECURITY_STOP_ISSUE_NUMBER}/labels`, { labels });
+    }
+    return stop;
+  }
+  return api.patch(`/issues/${SECURITY_STOP_ISSUE_NUMBER}`, {
+    state: "open",
     title: "Autonomous dispatch security stop",
-    labels: [SECURITY_STOP_LABEL, "security-review"],
+    labels,
     body: [
       "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
       "",
@@ -446,19 +468,19 @@ export async function runSupervisor({
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
-  const [securityStops, changedFiles] = await Promise.all([
-    api.getAll(`/issues?state=all&labels=${SECURITY_STOP_LABEL}`),
-    Promise.all(pullRequests.map(async (pr) => [pr.number, await api.getAll(`/pulls/${pr.number}/files`)])),
+  const [securityStop, fileInspections] = await Promise.all([
+    fetchSecurityStop(api),
+    inspectPullRequestFiles(api, pullRequests),
   ]);
-  const detailedSecurityStops = await hydrateSecurityStops(api, securityStops);
-  const reasons = securityStopReasons({
-    issues: detailedSecurityStops,
+  const persistentReasons = securityStopReasons({
+    issues: [securityStop],
     pullRequests,
-    changedFilesByPullRequest: new Map(changedFiles),
+    changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
     ownerLogin: repository.split("/", 1)[0],
   });
+  const reasons = [...persistentReasons, ...fileInspections.failures];
   if (reasons.length > 0) {
-    await ensureSecurityStop(api, reasons);
+    await ensureSecurityStop(api, persistentReasons, securityStop);
     console.error(`Autonomous dispatch stopped: ${reasons.join("; ")}`);
     return;
   }
