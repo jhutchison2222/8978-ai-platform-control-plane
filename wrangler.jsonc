@@ -4,7 +4,7 @@
   "main": "src/control-plane-worker.js",
   "compatibility_date": "2026-08-12",
   "compatibility_flags": ["nodejs_compat"],
-  "workers_dev": false,
+  "workers_dev": true,
   "preview_urls": false,
   "vars": {
     "CONTROL_PLANE_MODE": "development",

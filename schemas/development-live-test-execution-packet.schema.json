@@ -3,10 +3,10 @@
   "$id": "https://8978.ai/schemas/development-live-test-execution-packet.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion","status","governing","environment","phase","executionAuthorized","workerDeploymentAuthorized","secretInstallationAuthorized","accessSurfaceChangeAuthorized","canaryInvocationAuthorized","source","target","stateDistinction","preservedFailClosedBoundary","requiredPreflight","unresolvedOwnerDecisions","candidateExternalOperations","canary","stopConditions","prohibitedOperations","partialFailurePolicy","requiredOwnerAuthorizationTemplate"],
+  "required": ["schemaVersion","status","governing","environment","phase","executionAuthorized","workerDeploymentAuthorized","secretInstallationAuthorized","accessSurfaceChangeAuthorized","canaryInvocationAuthorized","source","target","stateDistinction","preservedFailClosedBoundary","requiredPreflight","recordedOwnerDecisions","unmaterializedSecurityIdentities","candidateExternalOperations","canary","stopConditions","prohibitedOperations","partialFailurePolicy","requiredOwnerAuthorizationTemplate"],
   "properties": {
-    "schemaVersion": {"const":"1.0.0"},
-    "status": {"const":"PLANNED_OWNER_DECISION_REQUIRED"},
+    "schemaVersion": {"const":"1.1.0"},
+    "status": {"const":"PLANNED_SECURITY_MATERIAL_REQUIRED"},
     "governing": {"const":false},
     "environment": {"const":"development"},
     "phase": {"const":"deploy_and_run_fail_closed_live_canary"},
@@ -20,7 +20,7 @@
       "required":["repository","baselineMainCommit","wranglerConfiguration","resourceCreationRecord","migrationRecord","schemaVerificationRecord"],
       "properties": {
         "repository":{"const":"jhutchison2222/8978-ai-platform-control-plane"},
-        "baselineMainCommit":{"const":"b7dffe57020f7aea9f483cdebe9eab733a517507"},
+        "baselineMainCommit":{"const":"aebf889f3a876b0472e23a248610f6bd972be060"},
         "wranglerConfiguration":{"$ref":"#/$defs/sourceFile"},
         "resourceCreationRecord":{"$ref":"#/$defs/sourceFile"},
         "migrationRecord":{"$ref":"#/$defs/sourceFile"},
@@ -28,38 +28,49 @@
       }
     },
     "target": {
-      "type":"object","additionalProperties":false,"required":["cloudflareAccountId","workerName","authorityDatabase","workflow","queueProducer"],
+      "type":"object","additionalProperties":false,"required":["cloudflareAccountId","workerName","authorityDatabase","workflow","queueProducer","accessSurface"],
       "properties": {
         "cloudflareAccountId":{"const":"de5e0273347b0b4c5f8f4e554aa2288f"},
         "workerName":{"const":"8978-ai-control-plane-dev"},
         "authorityDatabase":{"type":"object","additionalProperties":false,"required":["binding","name","databaseId"],"properties":{"binding":{"const":"AUTHORITY_DB"},"name":{"const":"8978-ai-authority-dev"},"databaseId":{"const":"741ade94-8539-4fc8-b6be-24884720dee8"}}},
         "workflow":{"type":"object","additionalProperties":false,"required":["binding","name","className"],"properties":{"binding":{"const":"ORCHESTRATOR_WORKFLOW"},"name":{"const":"8978-ai-orchestrator-dev"},"className":{"const":"OrchestratorWorkflow"}}},
-        "queueProducer":{"type":"object","additionalProperties":false,"required":["binding","name"],"properties":{"binding":{"const":"ORCHESTRATOR_QUEUE"},"name":{"const":"8978-ai-orchestrator-dev"}}}
+        "queueProducer":{"type":"object","additionalProperties":false,"required":["binding","name"],"properties":{"binding":{"const":"ORCHESTRATOR_QUEUE"},"name":{"const":"8978-ai-orchestrator-dev"}}},
+        "accessSurface":{"type":"object","additionalProperties":false,"required":["kind","url","previewUrlsEnabled","customDomain","cloudflareAccessRequiredBeforeDeployment"],"properties":{"kind":{"const":"workers_dev_production_url"},"url":{"const":"https://8978-ai-control-plane-dev.jhutchison.workers.dev"},"previewUrlsEnabled":{"const":false},"customDomain":{"type":"null"},"cloudflareAccessRequiredBeforeDeployment":{"const":true}}}
       }
     },
     "stateDistinction": {
       "type":"object","additionalProperties":false,"required":["configurationDeclared","remotelyRecorded","declarationDoesNotProveRemoteInstallation"],
       "properties": {
-        "configurationDeclared":{"type":"object","additionalProperties":false,"required":["authorityDatabaseBinding","workflowBinding","queueProducerBinding","queueConsumer","route","workersDev","previewUrls"],"properties":{"authorityDatabaseBinding":{"const":true},"workflowBinding":{"const":true},"queueProducerBinding":{"const":true},"queueConsumer":{"const":false},"route":{"const":false},"workersDev":{"const":false},"previewUrls":{"const":false}}},
-        "remotelyRecorded":{"type":"object","additionalProperties":false,"required":["authorityDatabaseIdentityVerified","authoritySchemaVerified","authorityDataRowCount","queueExistenceEvidence","workflowExistence","workerDeploymentForReviewedConfiguration","runtimeBindingsInstalled","serviceAuthSecretInstalled","reachableAccessSurface"],"properties":{"authorityDatabaseIdentityVerified":{"const":true},"authoritySchemaVerified":{"const":true},"authorityDataRowCount":{"const":0},"queueExistenceEvidence":{"const":"OWNER_ATTESTED_NOT_INDEPENDENTLY_VERIFIED"},"workflowExistence":{"const":"UNVERIFIED"},"workerDeploymentForReviewedConfiguration":{"const":"UNVERIFIED_NOT_CLAIMED"},"runtimeBindingsInstalled":{"const":"UNVERIFIED_NOT_CLAIMED"},"serviceAuthSecretInstalled":{"const":"UNVERIFIED_NOT_CLAIMED"},"reachableAccessSurface":{"const":"ABSENT_IN_REPOSITORY_CONFIGURATION"}}},
+        "configurationDeclared":{"type":"object","additionalProperties":false,"required":["authorityDatabaseBinding","workflowBinding","queueProducerBinding","queueConsumer","route","workersDev","previewUrls"],"properties":{"authorityDatabaseBinding":{"const":true},"workflowBinding":{"const":true},"queueProducerBinding":{"const":true},"queueConsumer":{"const":false},"route":{"const":false},"workersDev":{"const":true},"previewUrls":{"const":false}}},
+        "remotelyRecorded":{"type":"object","additionalProperties":false,"required":["authorityDatabaseIdentityVerified","authoritySchemaVerified","authorityDataRowCount","queueExistenceEvidence","workflowExistence","workerDeploymentForReviewedConfiguration","runtimeBindingsInstalled","serviceAuthSecretInstalled","reachableAccessSurface"],"properties":{"authorityDatabaseIdentityVerified":{"const":true},"authoritySchemaVerified":{"const":true},"authorityDataRowCount":{"const":0},"queueExistenceEvidence":{"const":"OWNER_ATTESTED_NOT_INDEPENDENTLY_VERIFIED"},"workflowExistence":{"const":"UNVERIFIED"},"workerDeploymentForReviewedConfiguration":{"const":"UNVERIFIED_NOT_CLAIMED"},"runtimeBindingsInstalled":{"const":"UNVERIFIED_NOT_CLAIMED"},"serviceAuthSecretInstalled":{"const":"UNVERIFIED_NOT_CLAIMED"},"reachableAccessSurface":{"const":"DECLARED_NOT_DEPLOYED_OR_ACCESS_PROTECTED"}}},
         "declarationDoesNotProveRemoteInstallation":{"const":true}
       }
     },
     "preservedFailClosedBoundary": {
       "type":"object","additionalProperties":false,"required":["workersDev","previewUrls","routes","controlPlaneMode","allowExternalWrites","executeRouteExpectedStatus","executeRouteExpectedOutcome","queueConsumerPresent","queuePublicationPermitted","workflowTriggerPermitted","authorityD1WritePermitted","productionOrCustomerOperationPermitted"],
-      "properties":{"workersDev":{"const":false},"previewUrls":{"const":false},"routes":{"type":"array","maxItems":0},"controlPlaneMode":{"const":"development"},"allowExternalWrites":{"const":"false"},"executeRouteExpectedStatus":{"const":503},"executeRouteExpectedOutcome":{"const":"execution_disabled"},"queueConsumerPresent":{"const":false},"queuePublicationPermitted":{"const":false},"workflowTriggerPermitted":{"const":false},"authorityD1WritePermitted":{"const":false},"productionOrCustomerOperationPermitted":{"const":false}}
+      "properties":{"workersDev":{"const":true},"previewUrls":{"const":false},"routes":{"type":"array","maxItems":0},"controlPlaneMode":{"const":"development"},"allowExternalWrites":{"const":"false"},"executeRouteExpectedStatus":{"const":503},"executeRouteExpectedOutcome":{"const":"execution_disabled"},"queueConsumerPresent":{"const":false},"queuePublicationPermitted":{"const":false},"workflowTriggerPermitted":{"const":false},"authorityD1WritePermitted":{"const":false},"productionOrCustomerOperationPermitted":{"const":false}}
     },
     "requiredPreflight": {
       "type":"object","additionalProperties":false,"required":["readOnlyCommands","mustConfirm"],
       "properties":{"readOnlyCommands":{"type":"array","minItems":6,"maxItems":6,"items":{"enum":["wrangler whoami","wrangler deployments status --name 8978-ai-control-plane-dev --json","wrangler d1 info 8978-ai-authority-dev --json","wrangler queues info 8978-ai-orchestrator-dev","wrangler workflows describe 8978-ai-orchestrator-dev","wrangler secret list --name 8978-ai-control-plane-dev"]}},"mustConfirm":{"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}}}
     },
-    "unresolvedOwnerDecisions": {
-      "type":"array","minItems":4,"maxItems":4,
-      "items":{"type":"object","additionalProperties":false,"required":["id","required","allowedDecisionSet","selected","requiredExactValue","reason"],"properties":{"id":{"enum":["development_access_surface","development_access_policy","access_policy_credential","service_auth_identity"]},"required":{"const":true},"allowedDecisionSet":{"type":"array","minItems":1,"items":{"type":"string","minLength":1}},"selected":{"type":"null"},"requiredExactValue":{"type":"string","minLength":1},"reason":{"type":"string","minLength":1}}}
+    "recordedOwnerDecisions": {
+      "type":"array","minItems":2,"maxItems":2,
+      "items":{"oneOf":[
+        {"type":"object","additionalProperties":false,"required":["id","selected","exactScope","reason"],"properties":{"id":{"const":"development_access_surface"},"selected":{"const":"access_protected_workers_dev_production_url"},"exactScope":{"const":"https://8978-ai-control-plane-dev.jhutchison.workers.dev"},"reason":{"type":"string","minLength":1}}},
+        {"type":"object","additionalProperties":false,"required":["id","selected","exactScope","reason"],"properties":{"id":{"const":"development_access_policy"},"selected":{"const":"cloudflare_access_service_token_policy"},"exactScope":{"const":"only https://8978-ai-control-plane-dev.jhutchison.workers.dev"},"reason":{"type":"string","minLength":1}}}
+      ]}
+    },
+    "unmaterializedSecurityIdentities": {
+      "type":"array","minItems":2,"maxItems":2,
+      "items":{"oneOf":[
+        {"type":"object","additionalProperties":false,"required":["id","selectedType","requiredExactValue","maximumLifetimeHours","materialized","reason"],"properties":{"id":{"const":"access_policy_credential"},"selectedType":{"const":"new_expiring_cloudflare_access_service_token"},"requiredExactValue":{"type":"string","minLength":1},"maximumLifetimeHours":{"const":24},"materialized":{"const":false},"reason":{"type":"string","minLength":1}}},
+        {"type":"object","additionalProperties":false,"required":["id","selectedType","requiredExactValue","maximumScope","materialized","reason"],"properties":{"id":{"const":"service_auth_identity"},"selectedType":{"const":"new_development_only_principal_and_key"},"requiredExactValue":{"type":"string","minLength":1},"maximumScope":{"const":"8978-ai-control-plane-dev-only"},"materialized":{"const":false},"reason":{"type":"string","minLength":1}}}
+      ]}
     },
     "candidateExternalOperations": {
       "type":"object","additionalProperties":false,"required":["maximumExecutionAttempts","requiresNewExactReviewedHeadAfterOwnerDecisions","operations"],
-      "properties":{"maximumExecutionAttempts":{"const":1},"requiresNewExactReviewedHeadAfterOwnerDecisions":{"const":true},"operations":{"type":"array","minItems":6,"maxItems":6,"items":{"type":"string","minLength":1}}}
+      "properties":{"maximumExecutionAttempts":{"const":1},"requiresNewExactReviewedHeadAfterOwnerDecisions":{"const":true},"operations":{"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}}}
     },
     "canary": {
       "type":"object","additionalProperties":false,"required":["syntheticOnly","maximumSequenceAttempts","syntheticAction","requests","boundedEffects","requiredEvidence"],
@@ -72,7 +83,7 @@
         "requiredEvidence":{"type":"array","minItems":8,"maxItems":8,"items":{"type":"string","minLength":1}}
       }
     },
-    "stopConditions":{"type":"array","minItems":9,"maxItems":9,"items":{"type":"string","minLength":1}},
+    "stopConditions":{"type":"array","minItems":10,"maxItems":10,"items":{"type":"string","minLength":1}},
     "prohibitedOperations":{"type":"array","minItems":11,"maxItems":11,"items":{"type":"string","minLength":1}},
     "partialFailurePolicy":{"type":"object","additionalProperties":false,"required":["automaticDeletion","automaticCleanup","automaticRetry","automaticRestore","automaticRollback","action"],"properties":{"automaticDeletion":{"const":false},"automaticCleanup":{"const":false},"automaticRetry":{"const":false},"automaticRestore":{"const":false},"automaticRollback":{"const":false},"action":{"const":"stop_and_report_exact_state"}}},
     "requiredOwnerAuthorizationTemplate":{"type":"string","minLength":200}

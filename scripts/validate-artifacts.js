@@ -397,7 +397,11 @@ if (liveTestPacket.target.cloudflareAccountId !== AUTHORIZED_DEVELOPMENT_ACCOUNT
     liveTestPacket.target.workerName !== "8978-ai-control-plane-dev" ||
     liveTestPacket.target.authorityDatabase.databaseId !== "741ade94-8539-4fc8-b6be-24884720dee8" ||
     liveTestPacket.target.workflow.name !== "8978-ai-orchestrator-dev" ||
-    liveTestPacket.target.queueProducer.name !== "8978-ai-orchestrator-dev") {
+    liveTestPacket.target.queueProducer.name !== "8978-ai-orchestrator-dev" ||
+    JSON.stringify(liveTestPacket.target.accessSurface) !== JSON.stringify({
+      kind:"workers_dev_production_url",url:"https://8978-ai-control-plane-dev.jhutchison.workers.dev",
+      previewUrlsEnabled:false,customDomain:null,cloudflareAccessRequiredBeforeDeployment:true,
+    })) {
   throw new Error("Development live-test target identity drifted");
 }
 const expectedLiveTestReadOnlyCommands = [
@@ -414,10 +418,44 @@ if (JSON.stringify(liveTestPacket.requiredPreflight.readOnlyCommands) !== JSON.s
 if (liveTestPacket.stateDistinction.declarationDoesNotProveRemoteInstallation !== true ||
     liveTestPacket.stateDistinction.remotelyRecorded.workflowExistence !== "UNVERIFIED" ||
     liveTestPacket.stateDistinction.remotelyRecorded.runtimeBindingsInstalled !== "UNVERIFIED_NOT_CLAIMED" ||
-    !liveTestPacket.unresolvedOwnerDecisions.every((decision) => decision.required === true && decision.selected === null) ||
+    liveTestPacket.stateDistinction.remotelyRecorded.reachableAccessSurface !== "DECLARED_NOT_DEPLOYED_OR_ACCESS_PROTECTED" ||
+    JSON.stringify(liveTestPacket.recordedOwnerDecisions.map(({ id, selected, exactScope }) => ({ id, selected, exactScope }))) !== JSON.stringify([
+      {id:"development_access_surface",selected:"access_protected_workers_dev_production_url",exactScope:"https://8978-ai-control-plane-dev.jhutchison.workers.dev"},
+      {id:"development_access_policy",selected:"cloudflare_access_service_token_policy",exactScope:"only https://8978-ai-control-plane-dev.jhutchison.workers.dev"},
+    ]) ||
+    liveTestPacket.unmaterializedSecurityIdentities.length !== 2 ||
+    liveTestPacket.unmaterializedSecurityIdentities.some((identity) => identity.materialized !== false) ||
+    liveTestPacket.unmaterializedSecurityIdentities[0].maximumLifetimeHours !== 24 ||
+    liveTestPacket.unmaterializedSecurityIdentities[1].maximumScope !== "8978-ai-control-plane-dev-only" ||
     liveTestPacket.candidateExternalOperations.requiresNewExactReviewedHeadAfterOwnerDecisions !== true) {
   throw new Error("Development live-test remote-state or owner-decision boundary drifted");
 }
+if (JSON.stringify(liveTestPacket.candidateExternalOperations.operations) !== JSON.stringify([
+  "install or update exactly the SERVICE_AUTH_KEYS_JSON managed secret for the development Worker",
+  "create or select only the owner-approved expiring Cloudflare Access service token without exposing its values",
+  "create and verify the Worker-level Cloudflare Access application and service-token policy for only the exact workers.dev production URL before any deployment",
+  "verify the new Access service token expires no later than 24 hours after creation without exposing its credential values",
+  "deploy exactly the independently accepted Worker head with wrangler deploy --config wrangler.jsonc --strict",
+  "start sanitized observation with wrangler tail 8978-ai-control-plane-dev --format json",
+  "invoke the exact bounded canary request sequence once",
+])) throw new Error("Development live-test operation order or Access-before-deployment boundary drifted");
+if (JSON.stringify(liveTestPacket.stopConditions) !== JSON.stringify([
+  "the authenticated Cloudflare account or any pinned resource identity does not match",
+  "the reviewed head packet digest or wrangler configuration digest does not match",
+  "the Workflow Queue consumer Worker deployment binding route domain or secret-name inventory is ambiguous",
+  "Worker-level Cloudflare Access is not independently confirmed active for the exact workers.dev production URL before deployment",
+  "the new Access service-token identity expiration or custodian or the new development-only HMAC principal key ID or custodian is absent",
+  "a secret private key token or signed header would enter repository logs comments or retained artifacts",
+  "ALLOW_EXTERNAL_WRITES is not the string false or the execute route is not unconditionally denied",
+  "a Queue consumer publication Workflow trigger D1 mutation production target customer target or external business action is possible",
+  "the operation would delete clean up retry restore roll back or broaden scope",
+  "any preflight canary result or post-state is partial inconsistent unexpected or unavailable",
+]) || JSON.stringify(liveTestPacket.prohibitedOperations) !== JSON.stringify([
+  "execute_before_new_exact_reviewed_execution_record","store_or_disclose_secret_value","enable_external_writes",
+  "enable_action_execution","write_or_migrate_d1","add_queue_consumer_or_publish_message","trigger_workflow",
+  "production_or_customer_operation","call_message_campaign_booking_transfer_or_payment",
+  "delete_cleanup_retry_restore_or_rollback","automatic_scope_expansion",
+])) throw new Error("Development live-test stop or prohibited-operation boundary drifted");
 if (JSON.stringify(liveTestPacket.canary.boundedEffects) !== JSON.stringify({
   authorityD1ReadsExpected:true,authorityD1WritesMaximum:0,durableReplayNonceRecordsMaximum:3,
   queueMessagesMaximum:0,workflowInstancesMaximum:0,externalBusinessActionsMaximum:0,customerRecordsMaximum:0,
@@ -902,7 +940,7 @@ if (JSON.stringify(Object.keys(wrangler).sort()) !== JSON.stringify(expectedWran
 }
 if (wrangler.name !== "8978-ai-control-plane-dev" || wrangler.main !== "src/control-plane-worker.js") throw new Error("Worker must remain development-scoped with the reviewed entry point");
 if (wrangler.compatibility_date !== "2026-08-12" || !wrangler.compatibility_flags?.includes("nodejs_compat")) throw new Error("Worker compatibility configuration changed without review");
-if (wrangler.workers_dev !== false || wrangler.preview_urls !== false) throw new Error("Development Worker cannot expose workers.dev or preview URLs");
+if (wrangler.workers_dev !== true || wrangler.preview_urls !== false) throw new Error("Development Worker must declare only the reviewed workers.dev production URL and keep preview URLs disabled");
 if (wrangler.vars?.CONTROL_PLANE_MODE !== "development" || wrangler.vars?.ALLOW_EXTERNAL_WRITES !== "false") throw new Error("Worker external-write boundary must remain fail closed");
 if (Object.hasOwn(wrangler.vars ?? {}, "SERVICE_AUTH_KEYS_JSON")) throw new Error("Service-auth keys must be secret bindings, never plaintext vars");
 if (JSON.stringify(wrangler.d1_databases) !== JSON.stringify([runtimeWiringPacket.reviewCandidate.authorityDatabase]) ||
