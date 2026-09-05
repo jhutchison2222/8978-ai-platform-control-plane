@@ -186,16 +186,21 @@ test("accepted task dispatches retry with fresh attempts and then block", () => 
   assert.deepEqual(nextTaskDispatchAction({ comments: [{ ...first, created_at: null }], nowMs: NOW }), { kind: "wait" });
 });
 
-test("a linked implementation pull request pauses task redispatch", () => {
-  assert.equal(hasPullRequestForTask([{ body: "Closes #61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), true);
-  assert.equal(hasPullRequestForTask([{ body: "Resolves https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), true);
-  assert.equal(hasPullRequestForTask([{ body: "Closes https://github.com/other/repo/issues/61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
-  assert.equal(hasPullRequestForTask([{ body: "discloses #61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
-  assert.equal(hasPullRequestForTask([{ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } }], 61, "owner/repo"), true);
-  assert.equal(hasPullRequestForTask([{ body: "Related: #61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
-  assert.equal(hasPullRequestForTask([{ body: "Blocked by https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
-  assert.equal(hasPullRequestForTask([{ body: "Closes #610", head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
-  assert.equal(hasPullRequestForTask([{ body: null, head: { ref: "agent/live-test" } }], 61, "owner/repo"), false);
+test("only trusted linked implementation pull requests pause task redispatch", () => {
+  const trusted = (overrides) => ({ author_association: "OWNER", ...overrides });
+  assert.equal(hasPullRequestForTask([trusted({ body: "Closes #61", head: { ref: "agent/live-test" } })], 61, "owner/repo"), true);
+  assert.equal(hasPullRequestForTask([trusted({ body: "Resolves https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } })], 61, "owner/repo"), true);
+  assert.equal(hasPullRequestForTask([trusted({ body: "Closes https://github.com/other/repo/issues/61", head: { ref: "agent/live-test" } })], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([trusted({ body: "discloses #61", head: { ref: "agent/live-test" } })], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([trusted({ body: "No issue reference", head: { ref: "agent/issue-61-live-test" } })], 61, "owner/repo"), true);
+  assert.equal(hasPullRequestForTask([trusted({ body: "Related: #61", head: { ref: "agent/live-test" } })], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([trusted({ body: "Blocked by https://github.com/owner/repo/issues/61", head: { ref: "agent/live-test" } })], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([trusted({ body: "Closes #610", head: { ref: "agent/live-test" } })], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([trusted({ body: null, head: { ref: "agent/live-test" } })], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ author_association: "NONE", body: "Closes #61", head: { ref: "attacker/issue-61" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ author_association: "CONTRIBUTOR", body: "Closes #61", head: { ref: "attacker/issue-61" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ body: "Closes #61", head: { ref: "attacker/issue-61" } }], 61, "owner/repo"), false);
+  assert.equal(hasPullRequestForTask([{ author_association: "collaborator", body: "Closes #61", head: { ref: "agent/issue-61" } }], 61, "owner/repo"), true);
 });
 
 test("a linked draft pull request pauses task redispatch", async () => {
@@ -216,6 +221,7 @@ test("a linked draft pull request pauses task redispatch", async () => {
     agent: {},
     nowMs: NOW,
     pullRequests: [{
+      author_association: "OWNER",
       draft: true,
       updated_at: new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS + 1).toISOString(),
       body: "Closes #61",
@@ -227,6 +233,7 @@ test("a linked draft pull request pauses task redispatch", async () => {
 
 test("an inactive linked draft returns to the bounded task retry path", () => {
   const draft = {
+    author_association: "OWNER",
     draft: true,
     updated_at: new Date(NOW - TASK_DISPATCH_RETRY_DELAY_MS).toISOString(),
     body: "Closes #61",
