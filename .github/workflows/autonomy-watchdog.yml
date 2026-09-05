@@ -30,4 +30,5 @@ jobs:
       - name: Enforce autonomous dispatch boundary
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: node scripts/autonomy-watchdog.js
