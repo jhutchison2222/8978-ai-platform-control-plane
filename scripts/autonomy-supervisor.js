@@ -5,13 +5,16 @@ export const CLAUDE_LOGIN = "claude[bot]";
 export const CLAUDE_USER_ID = 209825114;
 export const SUPERVISOR_LOGIN = "github-actions[bot]";
 export const MAX_CLAUDE_REQUESTS = 3;
+export const MAX_TASK_DISPATCHES = 3;
 export const SECOND_REQUEST_DELAY_MS = 10 * 60 * 1000;
 export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
+export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
-const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|LGTM|looks good)[.!]?$/iu;
+const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40})(?:\s*[—:-]\s*no surviving actionable findings)?)?|LGTM|looks good)[.!]?$/iu;
 const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
@@ -57,10 +60,54 @@ export function blockedLabelAction(pr, action) {
   return existing ? { kind: "remove", name: existing.name } : null;
 }
 
-export function selectQueuedTask(issues, hasOpenPullRequests) {
-  return issues.find((issue) => !issue.pull_request &&
-    !["autonomy-dispatched", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
+export function selectQueuedTasks(issues, hasOpenPullRequests) {
+  return issues.filter((issue) => !issue.pull_request &&
+    !["autonomy-blocked", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
     (!hasOpenPullRequests || hasLabel(issue, "autonomy-parallel")));
+}
+
+export function selectQueuedTask(issues, hasOpenPullRequests) {
+  return selectQueuedTasks(issues, hasOpenPullRequests).at(0);
+}
+
+export function pullRequestForTask(pullRequests, taskNumber, repository) {
+  const escaped = String(taskNumber).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const keyword = `\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\b\\s*:?\\s*`;
+  const shortReference = new RegExp(`${keyword}#${escaped}\\b`, "iu");
+  const repositoryReference = typeof repository === "string" && repository !== ""
+    ? new RegExp(`${keyword}https?://github\\.com/${repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/issues/${escaped}\\b`, "iu")
+    : null;
+  const branchReference = new RegExp(`(?:^|[/-])(?:issue|task)[/-]?${escaped}(?:$|[/-])`, "iu");
+  return pullRequests.find((pr) => TRUSTED_PR_AUTHOR_ASSOCIATIONS.has(pr.author_association?.toUpperCase()) &&
+    (shortReference.test(pr.body ?? "") || repositoryReference?.test(pr.body ?? "") ||
+      branchReference.test(pr.head?.ref ?? "")));
+}
+
+export function hasPullRequestForTask(pullRequests, taskNumber, repository) {
+  return Boolean(pullRequestForTask(pullRequests, taskNumber, repository));
+}
+
+export function linkedPullRequestPausesTask(pullRequest, nowMs) {
+  if (!pullRequest) return false;
+  if (!pullRequest.draft) return true;
+  const updatedAt = Date.parse(pullRequest.updated_at ?? pullRequest.created_at);
+  return Number.isFinite(updatedAt) && nowMs - updatedAt < TASK_DISPATCH_RETRY_DELAY_MS;
+}
+
+export function taskDispatches(comments) {
+  return comments
+    .filter((comment) => comment.user?.login === SUPERVISOR_LOGIN && typeof comment.body === "string" &&
+      /<!-- autonomy-supervisor:dispatch-task-ready(?:-\d+)?:no-head -->/u.test(comment.body))
+    .sort((left, right) => Date.parse(left.created_at) - Date.parse(right.created_at));
+}
+
+export function nextTaskDispatchAction({ comments, nowMs }) {
+  const dispatches = taskDispatches(comments);
+  if (dispatches.length === 0) return { kind: "dispatch", attempt: 1 };
+  const elapsed = nowMs - Date.parse(dispatches.at(-1).created_at);
+  if (!Number.isFinite(elapsed) || elapsed < TASK_DISPATCH_RETRY_DELAY_MS) return { kind: "wait" };
+  if (dispatches.length < MAX_TASK_DISPATCHES) return { kind: "dispatch", attempt: dispatches.length + 1 };
+  return { kind: "block" };
 }
 
 export function claudeRequests(comments, headSha) {
@@ -168,12 +215,15 @@ export class GitHubApi {
   post(path, body) {
     return this.request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
+  patch(path, body) {
+    return this.request(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
   delete(path) { return this.request(path, { method: "DELETE" }); }
 }
 
 const REQUIRED_LABELS = [
   { name: "autonomy-ready", color: "0E8A16", description: "Queued for autonomous implementation" },
-  { name: "autonomy-dispatched", color: "1D76DB", description: "Autonomous agent dispatch completed" },
+  { name: "autonomy-dispatched", color: "1D76DB", description: "Autonomous agent dispatch accepted" },
   { name: "autonomy-parallel", color: "5319E7", description: "May run while another pull request is open" },
   { name: "autonomy-blocked", color: "D93F0B", description: "Automation exhausted safe retries" },
   { name: "security-review", color: "B60205", description: "Owner security authorization required" },
@@ -182,8 +232,15 @@ const REQUIRED_LABELS = [
 
 export async function ensureLabels(api) {
   const labels = await api.getAll("/labels");
-  const existing = new Set(labels.map((label) => label.name.toLowerCase()));
-  for (const label of REQUIRED_LABELS) if (!existing.has(label.name.toLowerCase())) await api.post("/labels", label);
+  const existing = new Map(labels.map((label) => [label.name.toLowerCase(), label]));
+  for (const label of REQUIRED_LABELS) {
+    const current = existing.get(label.name.toLowerCase());
+    if (!current) {
+      await api.post("/labels", label);
+    } else if (label.name === "autonomy-dispatched" && current.description === "Autonomous agent dispatch completed") {
+      await api.patch(`/labels/${encodeURIComponent(current.name)}`, { description: label.description });
+    }
+  }
 }
 
 export async function triggerWorkspaceAgent({ agentId, agentToken, conversationKey, input, idempotencyKey, fetchImpl = fetch }) {
@@ -253,27 +310,55 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
 }
 
-async function superviseTaskQueue({ api, agent, openPullRequests }) {
+export async function superviseTaskQueue({ api, agent, nowMs, pullRequests }) {
   const issues = await api.getAll("/issues?state=open&labels=autonomy-ready&sort=created&direction=asc");
-  const task = selectQueuedTask(issues, openPullRequests.length > 0);
-  if (!task) return;
-  const reason = "task-ready";
-  await triggerWorkspaceAgent({
-    ...agent,
-    conversationKey: `github:${api.repository}:issue:${task.number}`,
-    idempotencyKey: idempotencyKey(api.repository, `issue:${task.number}`, "no-head", reason),
-    input: {
-      source: "github.autonomy_supervisor",
-      repository: api.repository,
-      issue: { number: task.number, url: task.html_url, title: task.title },
-      reason,
-      instruction: "Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
-    },
-  });
-  await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
-  await api.post(`/issues/${task.number}/comments`, {
-    body: `${marker("dispatch-task-ready", "no-head")}\nAutonomy supervisor dispatched the Workspace Agent for this queued task.`,
-  });
+  const candidates = selectQueuedTasks(issues, pullRequests.some((pr) => !pr.draft));
+  const errors = [];
+  let dispatched = false;
+  for (const task of candidates) {
+    try {
+      const linkedPullRequest = pullRequestForTask(pullRequests, task.number, api.repository);
+      if (linkedPullRequestPausesTask(linkedPullRequest, nowMs)) continue;
+      const comments = await api.getAll(`/issues/${task.number}/comments`);
+      const action = nextTaskDispatchAction({ comments, nowMs });
+      if (action.kind === "wait") continue;
+      if (action.kind === "block") {
+        if (!hasMarker(comments, "task-dispatch-stalled", "no-head")) {
+          await api.post(`/issues/${task.number}/comments`, {
+            body: `${marker("task-dispatch-stalled", "no-head")}\nWorkspace Agent dispatch was accepted ${MAX_TASK_DISPATCHES} times without the issue closing. Owner-visible investigation is required; no further automatic dispatch will occur.`,
+          });
+        }
+        await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-blocked"] });
+        continue;
+      }
+      const reason = action.attempt === 1 ? "task-ready" : `task-ready-retry-${action.attempt}`;
+      await triggerWorkspaceAgent({
+        ...agent,
+        conversationKey: `github:${api.repository}:issue:${task.number}`,
+        idempotencyKey: idempotencyKey(api.repository, `issue:${task.number}`, "no-head", reason),
+        input: {
+          source: "github.autonomy_supervisor",
+          repository: api.repository,
+          issue: { number: task.number, url: task.html_url, title: task.title },
+          reason,
+          attempt: action.attempt,
+          instruction: `Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request whose body includes \"Closes #${task.number}\" so the supervisor can detect active implementation. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.`,
+        },
+      });
+      dispatched = true;
+      await api.post(`/issues/${task.number}/comments`, {
+        body: `${marker(`dispatch-task-ready${action.attempt === 1 ? "" : `-${action.attempt}`}`, "no-head")}\nAutonomy supervisor dispatch attempt ${action.attempt} of ${MAX_TASK_DISPATCHES} was accepted for this queued task.`,
+      });
+      await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
+      break;
+    } catch (error) {
+      errors.push(error);
+      console.error(`Task #${task.number} supervision failed:`, error);
+      if (dispatched) break;
+    }
+  }
+  if (errors.length > 0) throw new AggregateError(errors,
+    `Task queue supervision failed${dispatched ? " after a later task was dispatched" : ""}`);
 }
 
 export async function runSupervisor({
@@ -292,7 +377,7 @@ export async function runSupervisor({
     (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
     (error) => console.error("Pull request supervision failed:", error));
   try {
-    await superviseTaskQueue({ api, agent, openPullRequests: pullRequests.filter((pr) => !pr.draft) });
+    await superviseTaskQueue({ api, agent, nowMs, pullRequests });
   } catch (error) {
     errors.push(error);
     console.error("Task queue supervision failed:", error);
