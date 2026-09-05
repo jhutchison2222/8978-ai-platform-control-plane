@@ -21,6 +21,7 @@ import {
   hasLabel,
   hasMarker,
   hasPullRequestForTask,
+  hydrateSecurityStops,
   linkedPullRequestPausesTask,
   marker,
   nextPullRequestAction,
@@ -441,4 +442,38 @@ test("dispatch markers are exact-head idempotency records", () => {
   const body = `${marker("dispatch-merge-ready", HEAD)}\nDispatched.`;
   assert.equal(hasMarker([{ body }], "dispatch-merge-ready", HEAD), true);
   assert.equal(hasMarker([{ body }], "dispatch-merge-ready", "b".repeat(40)), false);
+});
+
+
+test("closed security stops are hydrated before owner recovery is evaluated", async () => {
+  const listed = [{ number: 7, state: "closed", labels: [{ name: SECURITY_STOP_LABEL }] }];
+  const detailed = { ...listed[0], closed_by: { login: "owner" } };
+  const requested = [];
+  const hydrated = await hydrateSecurityStops({
+    get: async (path) => {
+      requested.push(path);
+      return detailed;
+    },
+  }, listed);
+  assert.deepEqual(requested, ["/issues/7"]);
+  assert.equal(hydrated[0], detailed);
+  assert.deepEqual(securityStopReasons({
+    issues: hydrated,
+    pullRequests: [],
+    changedFilesByPullRequest: new Map(),
+    ownerLogin: "owner",
+  }), []);
+});
+
+test("protected automation renames trigger the security stop using the previous path", () => {
+  assert.deepEqual(securityStopReasons({
+    issues: [],
+    pullRequests: [{ number: 62 }],
+    changedFilesByPullRequest: new Map([[62, [{
+      filename: "archive/old-watchdog.js",
+      previous_filename: "scripts/autonomy-watchdog.js",
+      status: "renamed",
+    }]]]),
+    ownerLogin: "owner",
+  }), ["pull request #62 changes protected automation: scripts/autonomy-watchdog.js"]);
 });
