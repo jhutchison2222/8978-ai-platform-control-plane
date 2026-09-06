@@ -453,7 +453,7 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (action.kind === "wait") return;
   if (action.kind === "request-review") {
     await api.post(`/issues/${pr.number}/comments`, {
-      body: `${marker(`claude-request-${action.attempt}`, headSha)}\n@claude Review exact head \`${headSha}\`. Return one explicit final verdict: \`ACCEPTED — exact head ${headSha}\` with no surviving findings, or \`REJECTED — exact head ${headSha}\` with each blocking finding. This is automated attempt ${action.attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+      body: `${marker(`claude-request-${action.attempt}`, headSha)}\n@claude Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${action.attempt} of ${MAX_CLAUDE_REQUESTS}.`,
     });
     return;
   }
