@@ -8,7 +8,7 @@ Review the complete current pull-request head against `main`. This packet govern
 4. Confirm canonical security-stop issue `#66` blocks every new Workspace Agent dispatch while open regardless of label removal, and an open PR changing either automation workflow or dispatch-boundary script reopens that persistent stop.
 5. Confirm the supervisor and watchdog never close canonical issue `#66`, and only a closure by the exact repository owner reactivates dispatch; an unauthorized closure reopens the same stop without causing a permanent poison state after a later owner closure.
 6. Confirm one PR/task failure cannot abort supervision of other PRs or queued tasks.
-7. Confirm only genuine exact-head Claude reviews are accepted. An explicit acceptance or an unambiguous no-finding summary such as “nothing new to post” may provide technical clearance only after exact-head CI passes and every review thread is resolved. Explicit rejection, actionable findings, dismissed reviews, untrusted comments, stale-head reviews, failed/pending CI, and unresolved threads remain fail-closed. Owner authorization remains separate from technical clearance.
+7. Confirm only a genuine exact-head Claude review containing the exact required `ACCEPTED — exact head <FULL_SHA> — no surviving actionable findings.` verdict provides technical clearance, and only after exact-head CI passes and every review thread is resolved. “Nothing new to post,” `LGTM`, “looks good,” no-finding summaries, silence, optional-only prose, deferral, explicit rejection, actionable findings, dismissed reviews, untrusted comments, stale-head reviews, failed/pending CI, and unresolved threads remain fail-closed. Owner authorization remains separate from technical clearance.
 8. Confirm retry markers are authenticated by the workflow’s own deterministic marker format, limited to three review requests and three task dispatches, and cannot be inflated by arbitrary commenters.
 9. Confirm at most one accepted Workspace Agent task dispatch occurs per supervisor cycle.
 10. Confirm an accepted HTTP 202 trigger is recorded as dispatch acceptance, not task completion; stalled tasks retry only after 15 minutes and stop after the cap.
@@ -28,4 +28,4 @@ or
 
 followed by every surviving actionable finding.
 
-Prefer the exact verdict above. The supervisor may independently recognize an unambiguous no-finding summary as technical clearance under item 7, but that does not replace owner authorization for consequential activation.
+The exact verdict above is required. No free-text no-finding summary substitutes for it, and technical clearance never replaces owner authorization for consequential activation.
