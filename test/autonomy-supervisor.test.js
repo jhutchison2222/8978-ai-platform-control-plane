@@ -94,8 +94,8 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("ACCEPTED")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("APPROVED")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("", { state: "APPROVED" })], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("LGTM")], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("looks good")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("LGTM")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("looks good")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("**Code review found no issues**\n\nNo high-confidence issues detected in this change.\n\n<!-- bhrv:abc123 -->")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("No blocking issues found.")], HEAD), "accepted");
