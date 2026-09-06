@@ -41,6 +41,22 @@ export function checkState(checkRuns) {
   return ciRuns.every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion)) ? "passed" : "failed";
 }
 
+function acceptedReview(review) {
+  if (!review || review.state === "CHANGES_REQUESTED") return false;
+  if (review.state === "APPROVED") return true;
+  const commitId = review.commit_id?.toLowerCase();
+  const verdicts = (review.body ?? "").split(/\r?\n/u).flatMap((line) => {
+    const text = line.trim();
+    const rejected = text.match(REJECTED_REVIEW);
+    if (rejected && rejected[1].toLowerCase() === commitId) return ["rejected"];
+    const accepted = text.match(ACCEPTED_REVIEW);
+    if (accepted && accepted[1].toLowerCase() === commitId) return ["accepted"];
+    return [];
+  });
+  if (verdicts.length > 0) return verdicts.at(-1) === "accepted";
+  return CLEAR_INITIAL_REVIEW.test(review.body ?? "");
+}
+
 export function exactHeadClaudeVerdict(reviews, headSha) {
   const genuine = reviews
     .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN &&
@@ -54,16 +70,17 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
   const verdicts = (latest.body ?? "").split(/\r?\n/u).flatMap((line) => {
     const text = line.trim();
     const rejected = text.match(REJECTED_REVIEW);
-    if (rejected && (!rejected[1] || rejected[1].toLowerCase() === headSha.toLowerCase())) return ["rejected"];
+    if (rejected && rejected[1].toLowerCase() === headSha.toLowerCase()) return ["rejected"];
     const accepted = text.match(ACCEPTED_REVIEW);
-    if (accepted && (!accepted[1] || accepted[1].toLowerCase() === headSha.toLowerCase())) return ["accepted"];
+    if (accepted && accepted[1].toLowerCase() === headSha.toLowerCase()) return ["accepted"];
     return [];
   });
   if (verdicts.length > 0) return verdicts.at(-1);
   const body = latest.body ?? "";
   if (CLEAR_INITIAL_REVIEW.test(body)) return "accepted";
   const latestIndex = genuine.indexOf(latest);
-  if (latestIndex > 0 && CLEAR_REREVIEW.test(body)) return "accepted";
+  const previous = genuine.at(latestIndex - 1);
+  if (latestIndex > 0 && acceptedReview(previous) && CLEAR_REREVIEW.test(body)) return "accepted";
   return "inconclusive";
 }
 
