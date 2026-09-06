@@ -88,15 +88,55 @@ test("a stalled Claude check cannot hold green CI", () => {
   assert.equal(checkState([...checks, stalledClaude]), "passed");
 });
 
-test("exact-head Claude verdicts require explicit acceptance or rejection", () => {
+test("exact-head Claude verdicts accept bounded initial and re-review clearance", () => {
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("ACCEPTED")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("APPROVED")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("", { state: "APPROVED" })], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("LGTM")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("looks good")], HEAD), "inconclusive");
-  assert.equal(exactHeadClaudeVerdict([review("**Code review completed**\n\nNothing new to post: everything this review found is already covered by existing comments on this pull request or didn't merit a separate one.\n\n<!-- bhrv:abc123 -->")], HEAD), "inconclusive");
-  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "inconclusive");
-  assert.equal(exactHeadClaudeVerdict([review("No blocking issues found.")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("**Code review found no issues**\n\nNo high-confidence issues detected in this change.\n\n<!-- bhrv:abc123 -->")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("No blocking issues found.")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("Nothing new to post")], HEAD), "inconclusive");
+  const priorReview = review("File A needs repair", { commit_id: "b".repeat(40), submitted_at: "2026-09-01T17:40:00Z" });
+  const nothingNew = review("**Code review completed**\n\nNothing new to post: everything this review found is already covered by existing comments on this pull request or didn't merit a separate one.\n\n<!-- bhrv:abc123 -->");
+  assert.equal(exactHeadClaudeVerdict([priorReview, nothingNew], HEAD), "inconclusive");
+  const priorAccepted = review("No issues found.", { commit_id: "b".repeat(40), submitted_at: "2026-09-01T17:40:00Z" });
+  assert.equal(exactHeadClaudeVerdict([priorAccepted, nothingNew], HEAD), "accepted");
+  const olderAccepted = review("APPROVED", { commit_id: "c".repeat(40), submitted_at: "2026-09-01T17:30:00Z" });
+  assert.equal(exactHeadClaudeVerdict([olderAccepted, priorReview, nothingNew], HEAD), "inconclusive");
+  const dismissedRejection = review(`REJECTED — exact head ${"b".repeat(40)}`, {
+    commit_id: "b".repeat(40),
+    state: "DISMISSED",
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([olderAccepted, dismissedRejection, nothingNew], HEAD), "inconclusive");
+  const sameHeadAccepted = review("No issues found.", { submitted_at: "2026-09-01T17:30:00Z" });
+  const sameHeadDismissedRejection = review(`REJECTED — exact head ${HEAD}`, {
+    state: "DISMISSED",
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([sameHeadAccepted, sameHeadDismissedRejection], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([sameHeadAccepted, sameHeadDismissedRejection, nothingNew], HEAD), "inconclusive");
+  const unrelatedAccepted = review("No issues found.", {
+    commit_id: "d".repeat(40),
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  const sameHeadRejection = review("blocking", {
+    state: "CHANGES_REQUESTED",
+    submitted_at: "2026-09-01T17:30:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([sameHeadRejection, unrelatedAccepted, nothingNew], HEAD), "inconclusive");
+  const firstNothingNew = review("Nothing new to post", {
+    commit_id: "b".repeat(40),
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([olderAccepted, firstNothingNew, nothingNew], HEAD), "accepted");
+  const untrustedPrior = review("File A needs repair", { user: { id: 7, login: "attacker" }, commit_id: "b".repeat(40), submitted_at: "2026-09-01T17:40:00Z" });
+  assert.equal(exactHeadClaudeVerdict([untrustedPrior, review("Nothing new to post")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("prior", { commit_id: "b".repeat(40), state: "DISMISSED", submitted_at: "2026-09-01T17:40:00Z" }), review("Nothing new to post")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("Nothing new to post, but token handling carries a moderate risk that should be addressed before merge.")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but a blocking finding remains and must be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but there is a moderate risk in token handling that should be addressed before merge")], HEAD), "inconclusive");
@@ -108,7 +148,8 @@ test("exact-head Claude verdicts require explicit acceptance or rejection", () =
   assert.equal(exactHeadClaudeVerdict([review("File A looks good, but File B has SQL injection; do not merge")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.\nREQUEST_CHANGES was the prior status`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
-  assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "missing");
+  assert.equal(exactHeadClaudeVerdict([review("approved, but token handling should be fixed")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "inconclusive");
 });
 
 test("only supervisor-authored exact-head markers consume retry attempts", () => {
