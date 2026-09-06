@@ -25,8 +25,7 @@ const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40})(?:\s*[—:-]\s*no surviving actionable findings)?)?|LGTM|looks good)[.!]?$/iu;
 const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
-const CLEAR_REVIEW_SUMMARY = /(?:^|\n)\s*(?:\*\*code review completed\*\*\s*\n+\s*)?(?:nothing new to post\b|i reviewed this pr and (?:did not|didn't) find any bugs\b|no (?:new |surviving )?(?:bugs|actionable findings|blocking issues) (?:were )?found\b)/iu;
-const ACTIONABLE_REVIEW_SIGNAL = /(?:🔴|\b(?:do not merge|must be fixed|security vulnerability|actionable finding(?:s)? remain|blocking finding(?:s)? remain)\b)/iu;
+const CLEAR_REVIEW_SUMMARY = /^\s*(?:\*\*code review completed\*\*\s*)?(?:nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?|i reviewed this pr and (?:did not|didn['’]t) find any bugs|no (?:new |surviving )?(?:bugs|actionable findings|blocking issues) (?:were )?found)[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -59,7 +58,7 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
   });
   if (verdicts.length > 0) return verdicts.at(-1);
   const body = latest.body ?? "";
-  return CLEAR_REVIEW_SUMMARY.test(body) && !ACTIONABLE_REVIEW_SIGNAL.test(body) ? "accepted" : "inconclusive";
+  return CLEAR_REVIEW_SUMMARY.test(body) ? "accepted" : "inconclusive";
 }
 
 export function hasLabel(subject, name) {
