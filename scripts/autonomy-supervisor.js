@@ -23,9 +23,8 @@ export const SENSITIVE_AUTOMATION_PATHS = [
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
-const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40})(?:\s*[—:-]\s*no surviving actionable findings)?)?|LGTM|looks good)[.!]?$/iu;
-const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
-const CLEAR_REVIEW_SUMMARY = /^\s*(?:\*\*code review completed\*\*\s*)?(?:nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?|i reviewed this pr and (?:did not|didn['’]t) find any bugs|no (?:new |surviving )?(?:bugs|actionable findings|blocking issues) (?:were )?found)[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
+const ACCEPTED_REVIEW = /^ACCEPTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})\s*[—:-]\s*no surviving actionable findings[.]?$/iu;
+const REJECTED_REVIEW = /^REJECTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})[.]?$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -57,8 +56,7 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
     return [];
   });
   if (verdicts.length > 0) return verdicts.at(-1);
-  const body = latest.body ?? "";
-  return CLEAR_REVIEW_SUMMARY.test(body) ? "accepted" : "inconclusive";
+  return "inconclusive";
 }
 
 export function hasLabel(subject, name) {
@@ -428,7 +426,7 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
       repository: api.repository,
       pull_request: { number: pr.number, url: pr.html_url, head_sha: headSha, base_ref: pr.base.ref },
       reason,
-      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Treat genuine exact-head Claude technical clearance as satisfied only by an explicit acceptance or an unambiguous no-finding review, with green exact-head checks and no unresolved review threads. Keep explicit rejection, actionable findings, deferral without technical clearance, and owner security decisions fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
+      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Treat genuine exact-head Claude technical clearance as satisfied only by the exact ACCEPTED verdict required by the checker packet and bound to the current full head, with green exact-head checks and no unresolved review threads. Treat silence, 'Nothing new to post', LGTM, 'looks good', summaries without the exact verdict, rejection, actionable findings, deferral, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
     },
   });
   await api.post(`/issues/${pr.number}/comments`, {
@@ -455,7 +453,7 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (action.kind === "wait") return;
   if (action.kind === "request-review") {
     await api.post(`/issues/${pr.number}/comments`, {
-      body: `${marker(`claude-request-${action.attempt}`, headSha)}\n@claude Review exact head \`${headSha}\`. Return one explicit final verdict: \`ACCEPTED — exact head ${headSha}\` with no surviving findings, or \`REJECTED — exact head ${headSha}\` with each blocking finding. This is automated attempt ${action.attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+      body: `${marker(`claude-request-${action.attempt}`, headSha)}\n@claude Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${action.attempt} of ${MAX_CLAUDE_REQUESTS}.`,
     });
     return;
   }

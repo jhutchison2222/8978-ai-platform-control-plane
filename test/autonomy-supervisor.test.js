@@ -88,21 +88,25 @@ test("a stalled Claude check cannot hold green CI", () => {
   assert.equal(checkState([...checks, stalledClaude]), "passed");
 });
 
-test("exact-head Claude verdicts accept explicit or unambiguous no-finding summaries", () => {
-  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
+test("exact-head Claude verdicts require explicit acceptance or rejection", () => {
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("**Code review completed**\n\nNothing new to post: everything this review found is already covered by existing comments on this pull request or didn't merit a separate one.\n\n<!-- bhrv:abc123 -->")], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("LGTM")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("looks good")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("**Code review completed**\n\nNothing new to post: everything this review found is already covered by existing comments on this pull request or didn't merit a separate one.\n\n<!-- bhrv:abc123 -->")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("No blocking issues found.")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("Nothing new to post, but token handling carries a moderate risk that should be addressed before merge.")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but a blocking finding remains and must be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but there is a moderate risk in token handling that should be addressed before merge")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs — human authorization is still required")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
-  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${"b".repeat(40)}`)], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${"b".repeat(40)} — no surviving actionable findings.`)], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review(`REJECTED — exact head ${HEAD}`)], HEAD), "rejected");
+  assert.equal(exactHeadClaudeVerdict([review("REJECTED")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("File A looks good, but File B has SQL injection; do not merge")], HEAD), "inconclusive");
-  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}\nREQUEST_CHANGES was the prior status`)], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.\nREQUEST_CHANGES was the prior status`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "missing");
 });
@@ -464,22 +468,22 @@ test("green PRs request Claude and retry on capped delays", () => {
 
 test("checks and verdicts route to the Workspace Agent", () => {
   assert.deepEqual(nextPullRequestAction({ checkRuns: [{ name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() }], comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "checks-failed" });
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review("LGTM")] }), { kind: "dispatch", reason: "merge-ready" });
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review("REJECTED")] }), { kind: "dispatch", reason: "review-rejected" });
+  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)] }), { kind: "dispatch", reason: "merge-ready" });
+  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review(`REJECTED — exact head ${HEAD}`)] }), { kind: "dispatch", reason: "review-rejected" });
   assert.deepEqual(nextPullRequestAction({
     checkRuns: checks,
     comments: [],
     headSha: HEAD,
     nowMs: NOW,
     reviewThreads: [{ id: "unresolved", isResolved: false }],
-    reviews: [review("Nothing new to post")],
+    reviews: [review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)],
   }), { kind: "dispatch", reason: "review-rejected" });
 });
 
 test("event-triggered dispatch receives a ten-minute head start", () => {
   const recentFailure = [{ name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() }];
   assert.deepEqual(nextPullRequestAction({ checkRuns: recentFailure, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "wait", reason: "event-dispatch-fallback-delay" });
-  const recentAcceptance = review("LGTM", { submitted_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() });
+  const recentAcceptance = review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`, { submitted_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [recentAcceptance] }), { kind: "wait", reason: "event-dispatch-fallback-delay" });
 });
 
