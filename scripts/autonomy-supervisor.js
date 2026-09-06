@@ -25,6 +25,8 @@ const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const ACCEPTED_REVIEW = /^ACCEPTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})\s*[—:-]\s*no surviving actionable findings[.]?$/iu;
 const REJECTED_REVIEW = /^REJECTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})[.]?$/iu;
+const CLEAR_INITIAL_REVIEW = /^\s*(?:ACCEPTED|APPROVED|LGTM|looks good|\*\*code review found no issues\*\*\s*no high-confidence issues detected in this change|no (?:high-confidence |actionable |blocking )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: in this change)?|i reviewed this pr and (?:did not|didn['’]t) find any (?:issues|errors|bugs))[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
+const CLEAR_REREVIEW = /^\s*(?:\*\*code review completed\*\*\s*)?nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -40,13 +42,15 @@ export function checkState(checkRuns) {
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
-  const exact = reviews
+  const genuine = reviews
     .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN &&
-      review.commit_id === headSha && review.state !== "DISMISSED")
+      review.state !== "DISMISSED")
     .sort((left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at));
+  const exact = genuine.filter((review) => review.commit_id === headSha);
   const latest = exact.at(-1);
   if (!latest) return "missing";
   if (latest.state === "CHANGES_REQUESTED") return "rejected";
+  if (latest.state === "APPROVED") return "accepted";
   const verdicts = (latest.body ?? "").split(/\r?\n/u).flatMap((line) => {
     const text = line.trim();
     const rejected = text.match(REJECTED_REVIEW);
@@ -56,6 +60,10 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
     return [];
   });
   if (verdicts.length > 0) return verdicts.at(-1);
+  const body = latest.body ?? "";
+  if (CLEAR_INITIAL_REVIEW.test(body)) return "accepted";
+  const latestIndex = genuine.indexOf(latest);
+  if (latestIndex > 0 && CLEAR_REREVIEW.test(body)) return "accepted";
   return "inconclusive";
 }
 
@@ -426,7 +434,7 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
       repository: api.repository,
       pull_request: { number: pr.number, url: pr.html_url, head_sha: headSha, base_ref: pr.base.ref },
       reason,
-      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Treat genuine exact-head Claude technical clearance as satisfied only by the exact ACCEPTED verdict required by the checker packet and bound to the current full head, with green exact-head checks and no unresolved review threads. Treat silence, 'Nothing new to post', LGTM, 'looks good', summaries without the exact verdict, rejection, actionable findings, deferral, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
+      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. Require green exact-head checks and no unresolved review threads. Treat mixed or caveated wording, stale reviews, rejection, actionable findings, deferral, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
     },
   });
   await api.post(`/issues/${pr.number}/comments`, {

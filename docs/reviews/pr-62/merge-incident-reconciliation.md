@@ -17,6 +17,13 @@ to the exact head and containing the exact checker-packet `ACCEPTED` verdict may
 provide technical clearance. `LGTM`, “looks good,” and a no-finding summary
 without that exact verdict remain inconclusive.
 
+On `2026-09-06`, the repository owner subsequently clarified that an
+unambiguous genuine exact-head initial review stating acceptance, approval, or
+no issues/errors is acceptable, and that a genuine exact-head re-review saying
+“Nothing new to post” is also acceptable after prior findings are resolved.
+The bounded whole-review allowlist implements that superseding decision while
+keeping mixed or caveated language fail-closed.
+
 Security stops #66 and #67 must remain open while this correction is reviewed.
 Neither this record nor the correction authorizes Workspace Agent dispatch,
 automated merge, stop closure, rollback, Cloudflare access, deployment, secrets,
