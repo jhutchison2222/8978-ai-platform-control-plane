@@ -59,31 +59,45 @@ function acceptedReview(review, previousAccepted = false) {
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
+  const expectedHead = headSha.toLowerCase();
   const genuine = reviews
     .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN)
     .sort((left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at));
-  const exact = genuine.filter((review) => review.commit_id === headSha && review.state !== "DISMISSED");
+  const exact = genuine.filter((review) => review.commit_id?.toLowerCase() === expectedHead);
   const latest = exact.at(-1);
   if (!latest) return "missing";
+  if (latest.state === "DISMISSED") return "inconclusive";
   if (latest.state === "CHANGES_REQUESTED") return "rejected";
   if (latest.state === "APPROVED") return "accepted";
   const verdicts = (latest.body ?? "").split(/\r?\n/u).flatMap((line) => {
     const text = line.trim();
     const rejected = text.match(REJECTED_REVIEW);
-    if (rejected && rejected[1].toLowerCase() === headSha.toLowerCase()) return ["rejected"];
+    if (rejected && rejected[1].toLowerCase() === expectedHead) return ["rejected"];
     const accepted = text.match(ACCEPTED_REVIEW);
-    if (accepted && accepted[1].toLowerCase() === headSha.toLowerCase()) return ["accepted"];
+    if (accepted && accepted[1].toLowerCase() === expectedHead) return ["accepted"];
     return [];
   });
   if (verdicts.length > 0) return verdicts.at(-1);
   const body = latest.body ?? "";
   if (CLEAR_INITIAL_REVIEW.test(body)) return "accepted";
+  if (!CLEAR_REREVIEW.test(body)) return "inconclusive";
+
   let previousAccepted = false;
+  let previousCommit = null;
+  const seenCommits = new Set();
   for (const review of genuine) {
-    if (review === latest) {
-      if (previousAccepted && CLEAR_REREVIEW.test(body)) return "accepted";
-      break;
+    const commitId = review.commit_id?.toLowerCase();
+    if (!commitId) {
+      previousAccepted = false;
+      previousCommit = null;
+      continue;
     }
+    if (commitId !== previousCommit) {
+      if (seenCommits.has(commitId)) return "inconclusive";
+      seenCommits.add(commitId);
+      previousCommit = commitId;
+    }
+    if (review === latest) return previousAccepted ? "accepted" : "inconclusive";
     previousAccepted = acceptedReview(review, previousAccepted);
   }
   return "inconclusive";
