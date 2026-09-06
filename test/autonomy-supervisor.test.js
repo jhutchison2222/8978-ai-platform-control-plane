@@ -92,9 +92,12 @@ test("exact-head Claude verdicts accept explicit or unambiguous no-finding summa
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("**Code review completed**\n\nNothing new to post: prior findings are already covered.")], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs — human authorization is still required")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("**Code review completed**\n\nNothing new to post: everything this review found is already covered by existing comments on this pull request or didn't merit a separate one.\n\n<!-- bhrv:abc123 -->")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("Nothing new to post, but token handling carries a moderate risk that should be addressed before merge.")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but a blocking finding remains and must be fixed")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("No bugs found, but there is a moderate risk in token handling that should be addressed before merge")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs — human authorization is still required")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${"b".repeat(40)}`)], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review(`REJECTED — exact head ${HEAD}`)], HEAD), "rejected");
