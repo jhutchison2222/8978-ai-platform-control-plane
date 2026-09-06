@@ -17,12 +17,12 @@ test("development bindings match the independently reviewed wiring packet", () =
   assert.deepEqual({ ...wrangler.queues }, { producers:[packet.reviewCandidate.queueProducer] });
 });
 
-test("wiring adds no route consumer account or secret value", () => {
+test("successor access-surface change adds no route consumer account or secret value", () => {
   assert.deepEqual(Object.keys(wrangler).sort(), [
     "$schema", "compatibility_date", "compatibility_flags", "d1_databases", "durable_objects", "main", "migrations",
     "name", "observability", "preview_urls", "queues", "vars", "workers_dev", "workflows",
   ]);
-  assert.equal(wrangler.workers_dev, false);
+  assert.equal(wrangler.workers_dev, true);
   assert.equal(wrangler.preview_urls, false);
   assert.equal(wrangler.vars.CONTROL_PLANE_MODE, "development");
   assert.equal(wrangler.vars.ALLOW_EXTERNAL_WRITES, "false");

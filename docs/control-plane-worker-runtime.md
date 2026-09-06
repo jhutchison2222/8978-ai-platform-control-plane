@@ -8,7 +8,7 @@ This Worker exposes the existing policy gateway behind service-to-service HMAC-S
 
 - `CONTROL_PLANE_MODE` must equal `development`.
 - `ALLOW_EXTERNAL_WRITES` must equal the string `false`.
-- `workers_dev` and preview URLs are disabled in `wrangler.jsonc`.
+- `workers_dev` is enabled only for the selected development canary URL; preview URLs, routes, and custom domains remain disabled. Deployment must stop unless Worker-level Cloudflare Access is independently verified active for that exact URL first.
 - The code-only wiring candidate supplies the exact reviewed development authority-D1, Workflow, and Queue-producer bindings. It adds no R2, Queue consumer, route, provider, production/customer target, account identifier, or secret value.
 - The idempotency, owner-decision, and audit adapters are durable development implementations. Without injected authority and complete Workflow/Queue bindings, the remaining slots use throwing unavailable adapters.
 - `/v1/actions/execute` always returns `execution_disabled`.
@@ -46,4 +46,4 @@ npm run cf:dry-run
 
 The Worker tests run inside Cloudflare's Vitest Workers pool and exercise the actual SQLite Durable Object replay, lease, single-use decision, concurrent audit-chain paths, and the local D1 authority migration/read path. The dry run bundles and validates configuration but does not deploy.
 
-Before any deployment, replace every unavailable adapter with a verified durable implementation, add an explicit development account/route decision, provision the secret through Wrangler, obtain independent checker acceptance, and obtain owner authorization.
+Before any deployment, replace every unavailable adapter with a verified durable implementation, independently verify the pinned development account and Worker-level Access policy, provision the secret through Wrangler, obtain independent checker acceptance, and obtain owner authorization.
