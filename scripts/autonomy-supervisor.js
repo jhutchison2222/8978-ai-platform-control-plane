@@ -41,8 +41,8 @@ export function checkState(checkRuns) {
   return ciRuns.every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion)) ? "passed" : "failed";
 }
 
-function acceptedReview(review) {
-  if (!review || review.state === "CHANGES_REQUESTED") return false;
+function acceptedReview(review, previousAccepted = false) {
+  if (!review || review.state === "CHANGES_REQUESTED" || review.state === "DISMISSED") return false;
   if (review.state === "APPROVED") return true;
   const commitId = review.commit_id?.toLowerCase();
   const verdicts = (review.body ?? "").split(/\r?\n/u).flatMap((line) => {
@@ -54,15 +54,15 @@ function acceptedReview(review) {
     return [];
   });
   if (verdicts.length > 0) return verdicts.at(-1) === "accepted";
-  return CLEAR_INITIAL_REVIEW.test(review.body ?? "");
+  if (CLEAR_INITIAL_REVIEW.test(review.body ?? "")) return true;
+  return previousAccepted && CLEAR_REREVIEW.test(review.body ?? "");
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
   const genuine = reviews
-    .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN &&
-      review.state !== "DISMISSED")
+    .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN)
     .sort((left, right) => Date.parse(left.submitted_at) - Date.parse(right.submitted_at));
-  const exact = genuine.filter((review) => review.commit_id === headSha);
+  const exact = genuine.filter((review) => review.commit_id === headSha && review.state !== "DISMISSED");
   const latest = exact.at(-1);
   if (!latest) return "missing";
   if (latest.state === "CHANGES_REQUESTED") return "rejected";
@@ -78,9 +78,14 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
   if (verdicts.length > 0) return verdicts.at(-1);
   const body = latest.body ?? "";
   if (CLEAR_INITIAL_REVIEW.test(body)) return "accepted";
-  const latestIndex = genuine.indexOf(latest);
-  const previous = genuine.at(latestIndex - 1);
-  if (latestIndex > 0 && acceptedReview(previous) && CLEAR_REREVIEW.test(body)) return "accepted";
+  let previousAccepted = false;
+  for (const review of genuine) {
+    if (review === latest) {
+      if (previousAccepted && CLEAR_REREVIEW.test(body)) return "accepted";
+      break;
+    }
+    previousAccepted = acceptedReview(review, previousAccepted);
+  }
   return "inconclusive";
 }
 
