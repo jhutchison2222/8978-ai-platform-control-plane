@@ -113,6 +113,22 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
     submitted_at: "2026-09-01T17:40:00Z",
   });
   assert.equal(exactHeadClaudeVerdict([olderAccepted, dismissedRejection, nothingNew], HEAD), "inconclusive");
+  const sameHeadAccepted = review("No issues found.", { submitted_at: "2026-09-01T17:30:00Z" });
+  const sameHeadDismissedRejection = review(`REJECTED — exact head ${HEAD}`, {
+    state: "DISMISSED",
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([sameHeadAccepted, sameHeadDismissedRejection], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([sameHeadAccepted, sameHeadDismissedRejection, nothingNew], HEAD), "inconclusive");
+  const unrelatedAccepted = review("No issues found.", {
+    commit_id: "d".repeat(40),
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  const sameHeadRejection = review("blocking", {
+    state: "CHANGES_REQUESTED",
+    submitted_at: "2026-09-01T17:30:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([sameHeadRejection, unrelatedAccepted, nothingNew], HEAD), "inconclusive");
   const firstNothingNew = review("Nothing new to post", {
     commit_id: "b".repeat(40),
     submitted_at: "2026-09-01T17:40:00Z",
@@ -133,7 +149,7 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.\nREQUEST_CHANGES was the prior status`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("approved, but token handling should be fixed")], HEAD), "inconclusive");
-  assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "missing");
+  assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "inconclusive");
 });
 
 test("only supervisor-authored exact-head markers consume retry attempts", () => {
