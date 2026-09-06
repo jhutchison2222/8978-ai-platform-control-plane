@@ -107,6 +107,17 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([priorAccepted, nothingNew], HEAD), "accepted");
   const olderAccepted = review("APPROVED", { commit_id: "c".repeat(40), submitted_at: "2026-09-01T17:30:00Z" });
   assert.equal(exactHeadClaudeVerdict([olderAccepted, priorReview, nothingNew], HEAD), "inconclusive");
+  const dismissedRejection = review(`REJECTED — exact head ${"b".repeat(40)}`, {
+    commit_id: "b".repeat(40),
+    state: "DISMISSED",
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([olderAccepted, dismissedRejection, nothingNew], HEAD), "inconclusive");
+  const firstNothingNew = review("Nothing new to post", {
+    commit_id: "b".repeat(40),
+    submitted_at: "2026-09-01T17:40:00Z",
+  });
+  assert.equal(exactHeadClaudeVerdict([olderAccepted, firstNothingNew, nothingNew], HEAD), "accepted");
   const untrustedPrior = review("File A needs repair", { user: { id: 7, login: "attacker" }, commit_id: "b".repeat(40), submitted_at: "2026-09-01T17:40:00Z" });
   assert.equal(exactHeadClaudeVerdict([untrustedPrior, review("Nothing new to post")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("prior", { commit_id: "b".repeat(40), state: "DISMISSED", submitted_at: "2026-09-01T17:40:00Z" }), review("Nothing new to post")], HEAD), "inconclusive");
