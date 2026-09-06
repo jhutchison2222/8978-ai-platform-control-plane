@@ -5,14 +5,27 @@ export const CLAUDE_LOGIN = "claude[bot]";
 export const CLAUDE_USER_ID = 209825114;
 export const SUPERVISOR_LOGIN = "github-actions[bot]";
 export const MAX_CLAUDE_REQUESTS = 3;
+export const MAX_TASK_DISPATCHES = 3;
 export const SECOND_REQUEST_DELAY_MS = 10 * 60 * 1000;
 export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
+export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
+export const SECURITY_STOP_LABEL = "autonomy-security-stop";
+export const SECURITY_STOP_ISSUE_NUMBER = 66;
+
+export const SENSITIVE_AUTOMATION_PATHS = [
+  ".github/workflows/autonomy-supervisor.yml",
+  ".github/workflows/autonomy-watchdog.yml",
+  "scripts/autonomy-supervisor.js",
+  "scripts/autonomy-watchdog.js",
+];
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
 const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
-const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|LGTM|looks good)[.!]?$/iu;
+const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40})(?:\s*[—:-]\s*no surviving actionable findings)?)?|LGTM|looks good)[.!]?$/iu;
 const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
+const CLEAR_REVIEW_SUMMARY = /^\s*(?:\*\*code review completed\*\*\s*)?(?:nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?|i reviewed this pr and (?:did not|didn['’]t) find any bugs|no (?:new |surviving )?(?:bugs|actionable findings|blocking issues) (?:were )?found)[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -43,12 +56,70 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
     if (accepted && (!accepted[1] || accepted[1].toLowerCase() === headSha.toLowerCase())) return ["accepted"];
     return [];
   });
-  return verdicts.at(-1) ?? "inconclusive";
+  if (verdicts.length > 0) return verdicts.at(-1);
+  const body = latest.body ?? "";
+  return CLEAR_REVIEW_SUMMARY.test(body) ? "accepted" : "inconclusive";
 }
 
 export function hasLabel(subject, name) {
   const expected = name.toLowerCase();
   return subject.labels?.some((label) => label.name?.toLowerCase() === expected) ?? false;
+}
+
+export function isSensitiveAutomationPath(path) {
+  return SENSITIVE_AUTOMATION_PATHS.includes(path);
+}
+
+export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
+  const reasons = [];
+  const stops = issues
+    .filter((issue) => !issue.pull_request && issue.number === SECURITY_STOP_ISSUE_NUMBER);
+  const openStops = stops.filter((issue) => issue.state === "open");
+  if (openStops.length > 0) {
+    for (const issue of openStops) {
+      reasons.push(`open security stop #${issue.number}`);
+    }
+  } else {
+    const latest = stops.at(-1);
+    if (latest && latest.closed_by?.login?.toLowerCase() !== ownerLogin.toLowerCase()) {
+      reasons.push(`security stop #${latest.number} was not closed by repository owner ${ownerLogin}`);
+    }
+  }
+  for (const pr of pullRequests) {
+    const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
+    const sensitive = [...new Set(changedFiles.flatMap((file) =>
+      [file.filename, file.previous_filename].filter((path) => isSensitiveAutomationPath(path))))];
+    if (sensitive.length > 0) {
+      reasons.push(`pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}`);
+    }
+  }
+  return reasons;
+}
+
+export async function fetchSecurityStop(api) {
+  const issue = await api.get(`/issues/${SECURITY_STOP_ISSUE_NUMBER}`);
+  if (issue.number !== SECURITY_STOP_ISSUE_NUMBER || issue.pull_request) {
+    throw new Error(`Canonical security stop #${SECURITY_STOP_ISSUE_NUMBER} is unavailable`);
+  }
+  return issue;
+}
+
+export async function inspectPullRequestFiles(api, pullRequests) {
+  const inspections = await Promise.all(pullRequests.map(async (pr) => {
+    try {
+      return { number: pr.number, files: await api.getAll(`/pulls/${pr.number}/files`) };
+    } catch {
+      return {
+        number: pr.number,
+        files: [],
+        failure: `pull request #${pr.number} changed files could not be inspected; dispatch is deferred for this cycle`,
+      };
+    }
+  }));
+  return {
+    changedFilesByPullRequest: new Map(inspections.map(({ number, files }) => [number, files])),
+    failures: inspections.flatMap(({ failure }) => failure ? [failure] : []),
+  };
 }
 
 export function blockedLabelAction(pr, action) {
@@ -57,10 +128,54 @@ export function blockedLabelAction(pr, action) {
   return existing ? { kind: "remove", name: existing.name } : null;
 }
 
-export function selectQueuedTask(issues, hasOpenPullRequests) {
-  return issues.find((issue) => !issue.pull_request &&
-    !["autonomy-dispatched", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
+export function selectQueuedTasks(issues, hasOpenPullRequests) {
+  return issues.filter((issue) => !issue.pull_request &&
+    !["autonomy-blocked", "security-review", "major-decision"].some((name) => hasLabel(issue, name)) &&
     (!hasOpenPullRequests || hasLabel(issue, "autonomy-parallel")));
+}
+
+export function selectQueuedTask(issues, hasOpenPullRequests) {
+  return selectQueuedTasks(issues, hasOpenPullRequests).at(0);
+}
+
+export function pullRequestForTask(pullRequests, taskNumber, repository) {
+  const escaped = String(taskNumber).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const keyword = `\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\b\\s*:?\\s*`;
+  const shortReference = new RegExp(`${keyword}#${escaped}\\b`, "iu");
+  const repositoryReference = typeof repository === "string" && repository !== ""
+    ? new RegExp(`${keyword}https?://github\\.com/${repository.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}/issues/${escaped}\\b`, "iu")
+    : null;
+  const branchReference = new RegExp(`(?:^|[/-])(?:issue|task)[/-]?${escaped}(?:$|[/-])`, "iu");
+  return pullRequests.find((pr) => TRUSTED_PR_AUTHOR_ASSOCIATIONS.has(pr.author_association?.toUpperCase()) &&
+    (shortReference.test(pr.body ?? "") || repositoryReference?.test(pr.body ?? "") ||
+      branchReference.test(pr.head?.ref ?? "")));
+}
+
+export function hasPullRequestForTask(pullRequests, taskNumber, repository) {
+  return Boolean(pullRequestForTask(pullRequests, taskNumber, repository));
+}
+
+export function linkedPullRequestPausesTask(pullRequest, nowMs) {
+  if (!pullRequest) return false;
+  if (!pullRequest.draft) return true;
+  const updatedAt = Date.parse(pullRequest.updated_at ?? pullRequest.created_at);
+  return Number.isFinite(updatedAt) && nowMs - updatedAt < TASK_DISPATCH_RETRY_DELAY_MS;
+}
+
+export function taskDispatches(comments) {
+  return comments
+    .filter((comment) => comment.user?.login === SUPERVISOR_LOGIN && typeof comment.body === "string" &&
+      /<!-- autonomy-supervisor:dispatch-task-ready(?:-\d+)?:no-head -->/u.test(comment.body))
+    .sort((left, right) => Date.parse(left.created_at) - Date.parse(right.created_at));
+}
+
+export function nextTaskDispatchAction({ comments, nowMs }) {
+  const dispatches = taskDispatches(comments);
+  if (dispatches.length === 0) return { kind: "dispatch", attempt: 1 };
+  const elapsed = nowMs - Date.parse(dispatches.at(-1).created_at);
+  if (!Number.isFinite(elapsed) || elapsed < TASK_DISPATCH_RETRY_DELAY_MS) return { kind: "wait" };
+  if (dispatches.length < MAX_TASK_DISPATCHES) return { kind: "dispatch", attempt: dispatches.length + 1 };
+  return { kind: "block" };
 }
 
 export function claudeRequests(comments, headSha) {
@@ -84,7 +199,7 @@ export async function runAllIsolated(items, handler, onError = console.error) {
   return errors;
 }
 
-export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviews }) {
+export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed") {
@@ -98,6 +213,9 @@ export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, rev
 
   const verdict = exactHeadClaudeVerdict(reviews, headSha);
   if (verdict === "accepted") {
+    if (reviewThreads.some((thread) => !thread.isResolved)) {
+      return { kind: "dispatch", reason: "review-rejected" };
+    }
     const latestAcceptance = Math.max(...reviews
       .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN && review.commit_id === headSha)
       .map((review) => Date.parse(review.submitted_at)));
@@ -149,7 +267,11 @@ export class GitHubApi {
         ...options.headers,
       },
     });
-    if (!response.ok) throw new Error(`GitHub ${options.method ?? "GET"} ${path} returned ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(`GitHub ${options.method ?? "GET"} ${path} returned ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
     return response.status === 204 ? null : response.json();
   }
 
@@ -168,22 +290,108 @@ export class GitHubApi {
   post(path, body) {
     return this.request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
+  patch(path, body) {
+    return this.request(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
   delete(path) { return this.request(path, { method: "DELETE" }); }
+
+  async graphql(query, variables) {
+    const response = await this.fetch(process.env.GITHUB_GRAPHQL_URL ?? "https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${this.token}`,
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!response.ok) throw new Error(`GitHub GraphQL request returned ${response.status}`);
+    const payload = await response.json();
+    if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+      throw new Error("GitHub GraphQL request returned errors");
+    }
+    return payload.data;
+  }
+
+  async reviewThreads(pullRequestNumber) {
+    const [owner, name, extra] = this.repository.split("/");
+    if (!owner || !name || extra) throw new Error("GITHUB_REPOSITORY must use owner/name format");
+    const threads = [];
+    let cursor = null;
+    do {
+      const data = await this.graphql(`
+        query ReviewThreads($owner: String!, $name: String!, $number: Int!, $cursor: String) {
+          repository(owner: $owner, name: $name) {
+            pullRequest(number: $number) {
+              reviewThreads(first: 100, after: $cursor) {
+                nodes { id isResolved }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+          }
+        }
+      `, { owner, name, number: pullRequestNumber, cursor });
+      const connection = data?.repository?.pullRequest?.reviewThreads;
+      if (!connection || !Array.isArray(connection.nodes)) {
+        throw new Error(`Pull request #${pullRequestNumber} review threads are unavailable`);
+      }
+      threads.push(...connection.nodes);
+      cursor = connection.pageInfo?.hasNextPage ? connection.pageInfo.endCursor : null;
+      if (connection.pageInfo?.hasNextPage && !cursor) {
+        throw new Error(`Pull request #${pullRequestNumber} review thread pagination is invalid`);
+      }
+    } while (cursor);
+    return threads;
+  }
 }
 
 const REQUIRED_LABELS = [
   { name: "autonomy-ready", color: "0E8A16", description: "Queued for autonomous implementation" },
-  { name: "autonomy-dispatched", color: "1D76DB", description: "Autonomous agent dispatch completed" },
+  { name: "autonomy-dispatched", color: "1D76DB", description: "Autonomous agent dispatch accepted" },
   { name: "autonomy-parallel", color: "5319E7", description: "May run while another pull request is open" },
   { name: "autonomy-blocked", color: "D93F0B", description: "Automation exhausted safe retries" },
   { name: "security-review", color: "B60205", description: "Owner security authorization required" },
   { name: "major-decision", color: "FBCA04", description: "Owner decision required" },
+  { name: SECURITY_STOP_LABEL, color: "B60205", description: "Global owner-controlled stop for autonomous dispatch" },
 ];
 
 export async function ensureLabels(api) {
   const labels = await api.getAll("/labels");
-  const existing = new Set(labels.map((label) => label.name.toLowerCase()));
-  for (const label of REQUIRED_LABELS) if (!existing.has(label.name.toLowerCase())) await api.post("/labels", label);
+  const existing = new Map(labels.map((label) => [label.name.toLowerCase(), label]));
+  for (const label of REQUIRED_LABELS) {
+    const current = existing.get(label.name.toLowerCase());
+    if (!current) {
+      await api.post("/labels", label);
+    } else if (label.name === "autonomy-dispatched" && current.description === "Autonomous agent dispatch completed") {
+      await api.patch(`/labels/${encodeURIComponent(current.name)}`, { description: label.description });
+    }
+  }
+}
+
+export async function ensureSecurityStop(api, reasons, knownStop) {
+  if (reasons.length === 0) return null;
+  const stop = knownStop ?? await fetchSecurityStop(api);
+  const labels = [SECURITY_STOP_LABEL, "security-review"];
+  if (stop.state === "open") {
+    if (!labels.every((label) => hasLabel(stop, label))) {
+      await api.post(`/issues/${SECURITY_STOP_ISSUE_NUMBER}/labels`, { labels });
+    }
+    return stop;
+  }
+  return api.patch(`/issues/${SECURITY_STOP_ISSUE_NUMBER}`, {
+    state: "open",
+    title: "Autonomous dispatch security stop",
+    labels,
+    body: [
+      "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
+      "",
+      "Detected conditions:",
+      ...reasons.map((reason) => `- ${reason}`),
+      "",
+      "Only the repository owner may reactivate autonomous dispatch, after reviewing and resolving every condition, by closing this issue. The supervisor and watchdog never close this issue automatically.",
+    ].join("\n"),
+  });
 }
 
 export async function triggerWorkspaceAgent({ agentId, agentToken, conversationKey, input, idempotencyKey, fetchImpl = fetch }) {
@@ -220,7 +428,7 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
       repository: api.repository,
       pull_request: { number: pr.number, url: pr.html_url, head_sha: headSha, base_ref: pr.base.ref },
       reason,
-      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Merge only after green required checks and an explicit independent Claude acceptance bound to the exact head. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
+      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Treat genuine exact-head Claude technical clearance as satisfied only by an explicit acceptance or an unambiguous no-finding review, with green exact-head checks and no unresolved review threads. Keep explicit rejection, actionable findings, deferral without technical clearance, and owner security decisions fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
     },
   });
   await api.post(`/issues/${pr.number}/comments`, {
@@ -231,12 +439,13 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
 async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (pr.draft) return;
   const headSha = pr.head.sha;
-  const [checkData, reviews, comments] = await Promise.all([
+  const [checkData, reviews, comments, reviewThreads] = await Promise.all([
     api.getAll(`/commits/${headSha}/check-runs`, "check_runs"),
     api.getAll(`/pulls/${pr.number}/reviews`),
     api.getAll(`/issues/${pr.number}/comments`),
+    api.reviewThreads(pr.number),
   ]);
-  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviews });
+  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviewThreads, reviews });
   const labelAction = blockedLabelAction(pr, action);
   if (labelAction?.kind === "add") {
     await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
@@ -253,27 +462,55 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
 }
 
-async function superviseTaskQueue({ api, agent, openPullRequests }) {
+export async function superviseTaskQueue({ api, agent, nowMs, pullRequests }) {
   const issues = await api.getAll("/issues?state=open&labels=autonomy-ready&sort=created&direction=asc");
-  const task = selectQueuedTask(issues, openPullRequests.length > 0);
-  if (!task) return;
-  const reason = "task-ready";
-  await triggerWorkspaceAgent({
-    ...agent,
-    conversationKey: `github:${api.repository}:issue:${task.number}`,
-    idempotencyKey: idempotencyKey(api.repository, `issue:${task.number}`, "no-head", reason),
-    input: {
-      source: "github.autonomy_supervisor",
-      repository: api.repository,
-      issue: { number: task.number, url: task.html_url, title: task.title },
-      reason,
-      instruction: "Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
-    },
-  });
-  await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
-  await api.post(`/issues/${task.number}/comments`, {
-    body: `${marker("dispatch-task-ready", "no-head")}\nAutonomy supervisor dispatched the Workspace Agent for this queued task.`,
-  });
+  const candidates = selectQueuedTasks(issues, pullRequests.some((pr) => !pr.draft));
+  const errors = [];
+  let dispatched = false;
+  for (const task of candidates) {
+    try {
+      const linkedPullRequest = pullRequestForTask(pullRequests, task.number, api.repository);
+      if (linkedPullRequestPausesTask(linkedPullRequest, nowMs)) continue;
+      const comments = await api.getAll(`/issues/${task.number}/comments`);
+      const action = nextTaskDispatchAction({ comments, nowMs });
+      if (action.kind === "wait") continue;
+      if (action.kind === "block") {
+        if (!hasMarker(comments, "task-dispatch-stalled", "no-head")) {
+          await api.post(`/issues/${task.number}/comments`, {
+            body: `${marker("task-dispatch-stalled", "no-head")}\nWorkspace Agent dispatch was accepted ${MAX_TASK_DISPATCHES} times without the issue closing. Owner-visible investigation is required; no further automatic dispatch will occur.`,
+          });
+        }
+        await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-blocked"] });
+        continue;
+      }
+      const reason = action.attempt === 1 ? "task-ready" : `task-ready-retry-${action.attempt}`;
+      await triggerWorkspaceAgent({
+        ...agent,
+        conversationKey: `github:${api.repository}:issue:${task.number}`,
+        idempotencyKey: idempotencyKey(api.repository, `issue:${task.number}`, "no-head", reason),
+        input: {
+          source: "github.autonomy_supervisor",
+          repository: api.repository,
+          issue: { number: task.number, url: task.html_url, title: task.title },
+          reason,
+          attempt: action.attempt,
+          instruction: `Retrieve the issue and fresh repository evidence, then continue the task autonomously within the owner's standing code-only authorization. Use a branch and pull request whose body includes \"Closes #${task.number}\" so the supervisor can detect active implementation. If an earlier run stalled, resume or repair it. Escalate security issues or major decisions; do not perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.`,
+        },
+      });
+      dispatched = true;
+      await api.post(`/issues/${task.number}/comments`, {
+        body: `${marker(`dispatch-task-ready${action.attempt === 1 ? "" : `-${action.attempt}`}`, "no-head")}\nAutonomy supervisor dispatch attempt ${action.attempt} of ${MAX_TASK_DISPATCHES} was accepted for this queued task.`,
+      });
+      await api.post(`/issues/${task.number}/labels`, { labels: ["autonomy-dispatched"] });
+      break;
+    } catch (error) {
+      errors.push(error);
+      console.error(`Task #${task.number} supervision failed:`, error);
+      if (dispatched) break;
+    }
+  }
+  if (errors.length > 0) throw new AggregateError(errors,
+    `Task queue supervision failed${dispatched ? " after a later task was dispatched" : ""}`);
 }
 
 export async function runSupervisor({
@@ -288,11 +525,27 @@ export async function runSupervisor({
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
+  const [securityStop, fileInspections] = await Promise.all([
+    fetchSecurityStop(api),
+    inspectPullRequestFiles(api, pullRequests),
+  ]);
+  const persistentReasons = securityStopReasons({
+    issues: [securityStop],
+    pullRequests,
+    changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
+    ownerLogin: repository.split("/", 1)[0],
+  });
+  const reasons = [...persistentReasons, ...fileInspections.failures];
+  if (reasons.length > 0) {
+    await ensureSecurityStop(api, persistentReasons, securityStop);
+    console.error(`Autonomous dispatch stopped: ${reasons.join("; ")}`);
+    return;
+  }
   const errors = await runAllIsolated(pullRequests,
     (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
     (error) => console.error("Pull request supervision failed:", error));
   try {
-    await superviseTaskQueue({ api, agent, openPullRequests: pullRequests.filter((pr) => !pr.draft) });
+    await superviseTaskQueue({ api, agent, nowMs, pullRequests });
   } catch (error) {
     errors.push(error);
     console.error("Task queue supervision failed:", error);
