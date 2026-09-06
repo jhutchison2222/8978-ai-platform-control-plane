@@ -25,6 +25,8 @@ const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const ACCEPTED_REVIEW = /^(?:ACCEPTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40})(?:\s*[—:-]\s*no surviving actionable findings)?)?|LGTM|looks good)[.!]?$/iu;
 const REJECTED_REVIEW = /^(?:REJECTED(?:\s*[—:-]\s*exact head\s+([0-9a-f]{40}))?|REQUEST_CHANGES)[.!]?$/iu;
+const CLEAR_REVIEW_SUMMARY = /(?:^|\n)\s*(?:\*\*code review completed\*\*\s*\n+\s*)?(?:nothing new to post\b|i reviewed this pr and (?:did not|didn't) find any bugs\b|no (?:new |surviving )?(?:bugs|actionable findings|blocking issues) (?:were )?found\b)/iu;
+const ACTIONABLE_REVIEW_SIGNAL = /(?:🔴|\b(?:do not merge|must be fixed|security vulnerability|actionable finding(?:s)? remain|blocking finding(?:s)? remain)\b)/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -55,7 +57,9 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
     if (accepted && (!accepted[1] || accepted[1].toLowerCase() === headSha.toLowerCase())) return ["accepted"];
     return [];
   });
-  return verdicts.at(-1) ?? "inconclusive";
+  if (verdicts.length > 0) return verdicts.at(-1);
+  const body = latest.body ?? "";
+  return CLEAR_REVIEW_SUMMARY.test(body) && !ACTIONABLE_REVIEW_SIGNAL.test(body) ? "accepted" : "inconclusive";
 }
 
 export function hasLabel(subject, name) {
@@ -196,7 +200,7 @@ export async function runAllIsolated(items, handler, onError = console.error) {
   return errors;
 }
 
-export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviews }) {
+export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed") {
@@ -210,6 +214,9 @@ export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, rev
 
   const verdict = exactHeadClaudeVerdict(reviews, headSha);
   if (verdict === "accepted") {
+    if (reviewThreads.some((thread) => !thread.isResolved)) {
+      return { kind: "dispatch", reason: "review-rejected" };
+    }
     const latestAcceptance = Math.max(...reviews
       .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN && review.commit_id === headSha)
       .map((review) => Date.parse(review.submitted_at)));
@@ -288,6 +295,56 @@ export class GitHubApi {
     return this.request(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
   delete(path) { return this.request(path, { method: "DELETE" }); }
+
+  async graphql(query, variables) {
+    const response = await this.fetch(process.env.GITHUB_GRAPHQL_URL ?? "https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${this.token}`,
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+    if (!response.ok) throw new Error(`GitHub GraphQL request returned ${response.status}`);
+    const payload = await response.json();
+    if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+      throw new Error("GitHub GraphQL request returned errors");
+    }
+    return payload.data;
+  }
+
+  async reviewThreads(pullRequestNumber) {
+    const [owner, name, extra] = this.repository.split("/");
+    if (!owner || !name || extra) throw new Error("GITHUB_REPOSITORY must use owner/name format");
+    const threads = [];
+    let cursor = null;
+    do {
+      const data = await this.graphql(`
+        query ReviewThreads($owner: String!, $name: String!, $number: Int!, $cursor: String) {
+          repository(owner: $owner, name: $name) {
+            pullRequest(number: $number) {
+              reviewThreads(first: 100, after: $cursor) {
+                nodes { id isResolved }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+          }
+        }
+      `, { owner, name, number: pullRequestNumber, cursor });
+      const connection = data?.repository?.pullRequest?.reviewThreads;
+      if (!connection || !Array.isArray(connection.nodes)) {
+        throw new Error(`Pull request #${pullRequestNumber} review threads are unavailable`);
+      }
+      threads.push(...connection.nodes);
+      cursor = connection.pageInfo?.hasNextPage ? connection.pageInfo.endCursor : null;
+      if (connection.pageInfo?.hasNextPage && !cursor) {
+        throw new Error(`Pull request #${pullRequestNumber} review thread pagination is invalid`);
+      }
+    } while (cursor);
+    return threads;
+  }
 }
 
 const REQUIRED_LABELS = [
@@ -372,7 +429,7 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
       repository: api.repository,
       pull_request: { number: pr.number, url: pr.html_url, head_sha: headSha, base_ref: pr.base.ref },
       reason,
-      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Merge only after green required checks and an explicit independent Claude acceptance bound to the exact head. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
+      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. Treat genuine exact-head Claude technical clearance as satisfied only by an explicit acceptance or an unambiguous no-finding review, with green exact-head checks and no unresolved review threads. Keep explicit rejection, actionable findings, deferral without technical clearance, and owner security decisions fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
     },
   });
   await api.post(`/issues/${pr.number}/comments`, {
@@ -383,12 +440,13 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
 async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (pr.draft) return;
   const headSha = pr.head.sha;
-  const [checkData, reviews, comments] = await Promise.all([
+  const [checkData, reviews, comments, reviewThreads] = await Promise.all([
     api.getAll(`/commits/${headSha}/check-runs`, "check_runs"),
     api.getAll(`/pulls/${pr.number}/reviews`),
     api.getAll(`/issues/${pr.number}/comments`),
+    api.reviewThreads(pr.number),
   ]);
-  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviews });
+  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviewThreads, reviews });
   const labelAction = blockedLabelAction(pr, action);
   if (labelAction?.kind === "add") {
     await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });

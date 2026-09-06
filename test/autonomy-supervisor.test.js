@@ -88,11 +88,13 @@ test("a stalled Claude check cannot hold green CI", () => {
   assert.equal(checkState([...checks, stalledClaude]), "passed");
 });
 
-test("only an explicit exact-head Claude verdict is accepted", () => {
+test("exact-head Claude verdicts accept explicit or unambiguous no-finding summaries", () => {
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review(`No blocking issues found.\nACCEPTED — exact head ${HEAD}`)], HEAD), "accepted");
-  assert.equal(exactHeadClaudeVerdict([review("No bugs found, but human review is still required")], HEAD), "inconclusive");
+  assert.equal(exactHeadClaudeVerdict([review("**Code review completed**\n\nNothing new to post: prior findings are already covered.")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs — human authorization is still required")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("No bugs found, but a blocking finding remains and must be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${"b".repeat(40)}`)], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review(`REJECTED — exact head ${HEAD}`)], HEAD), "rejected");
@@ -135,6 +137,29 @@ test("GitHub list requests paginate until a short page", async () => {
   assert.equal(calls.length, 2);
   assert.match(calls[0], /state=open&per_page=100&page=1$/u);
   assert.match(calls[1], /state=open&per_page=100&page=2$/u);
+});
+
+test("GitHub review-thread requests paginate and preserve resolved state", async () => {
+  const cursors = [];
+  const fetchImpl = async (_url, options) => {
+    const { variables } = JSON.parse(options.body);
+    cursors.push(variables.cursor);
+    const first = variables.cursor === null;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ data: { repository: { pullRequest: { reviewThreads: {
+        nodes: [{ id: first ? "first" : "second", isResolved: !first }],
+        pageInfo: { hasNextPage: first, endCursor: first ? "cursor-1" : null },
+      } } } } }),
+    };
+  };
+  const api = new GitHubApi({ repository: "owner/repo", token: "fixture", fetchImpl });
+  assert.deepEqual(await api.reviewThreads(62), [
+    { id: "first", isResolved: false },
+    { id: "second", isResolved: true },
+  ]);
+  assert.deepEqual(cursors, [null, "cursor-1"]);
 });
 
 test("required labels recognize GitHub case-insensitive matches", async () => {
@@ -438,6 +463,14 @@ test("checks and verdicts route to the Workspace Agent", () => {
   assert.deepEqual(nextPullRequestAction({ checkRuns: [{ name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() }], comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "checks-failed" });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review("LGTM")] }), { kind: "dispatch", reason: "merge-ready" });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [review("REJECTED")] }), { kind: "dispatch", reason: "review-rejected" });
+  assert.deepEqual(nextPullRequestAction({
+    checkRuns: checks,
+    comments: [],
+    headSha: HEAD,
+    nowMs: NOW,
+    reviewThreads: [{ id: "unresolved", isResolved: false }],
+    reviews: [review("Nothing new to post")],
+  }), { kind: "dispatch", reason: "review-rejected" });
 });
 
 test("event-triggered dispatch receives a ten-minute head start", () => {
