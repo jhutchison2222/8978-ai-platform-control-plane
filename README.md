@@ -6,7 +6,11 @@ The gateway is built around trusted runtime construction. Models request intent;
 
 Only the control-plane GitHub repository policy is enabled. Cloudflare, GHL, and ai-employees.net policies remain disabled until every required account and runtime identifier is authoritatively resolved. Production is not authorized.
 
-Security properties and unresolved identifiers are documented in [docs/policy-gateway.md](docs/policy-gateway.md). Validate with:
+Security properties and unresolved identifiers are documented in [docs/policy-gateway.md](docs/policy-gateway.md).
+
+The separate, code-only Cloudflare Admin OAuth v7 activation bridge is documented in [docs/cloudflare-admin-v7.md](docs/cloudflare-admin-v7.md). It is not deployed and grants no execution authority by itself.
+
+Validate with:
 
 ```bash
 npm test
