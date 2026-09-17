@@ -93,7 +93,7 @@ export class CloudflareAdminV7Api {
   }
 
   async getLatestWorkerVersion() {
-    return this.#request("GET", this.#accountPath(`/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`));
+    return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`));
   }
 
   async createWorkerDeployment(versionId, reviewedCommit) {
@@ -161,7 +161,7 @@ export class CloudflareAdminV7Api {
   }
 
   async createServiceAuthVersion(secretJson, reviewedCommit, configurationSha256) {
-    return this.#request("PATCH", this.#accountPath(`/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
+    return this.#request("PATCH", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
       contentType: "application/merge-patch+json",
       body: {
         env: {

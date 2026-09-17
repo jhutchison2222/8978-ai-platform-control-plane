@@ -38,12 +38,19 @@ test("Cloudflare API adapter pins account and exposes only fixed operations with
   });
   assert.equal("request" in api, false);
   assert.equal("accountPath" in api, false);
+  const latestVersionUrl =
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`;
   await api.listWorkerSecrets();
   assert.equal(requests[0].init.redirect, "error");
   assert.equal(requests[0].url.includes(CLOUDFLARE_ADMIN_V7.accountId), true);
+  await api.getLatestWorkerVersion();
+  assert.equal(requests[1].init.method, "GET");
+  assert.equal(requests[1].url, latestVersionUrl);
   await api.createServiceAuthVersion("{}", "a".repeat(40), "b".repeat(64));
-  assert.equal(requests[1].init.method, "PATCH");
-  assert.equal(requests[1].init.headers.get("content-type"), "application/merge-patch+json");
+  assert.equal(requests[2].url, latestVersionUrl);
+  assert.equal(requests[2].init.method, "PATCH");
+  assert.equal(requests[2].init.headers.get("content-type"), "application/merge-patch+json");
+  assert.equal(requests.some(({ url }) => url.includes("/workers/workers/")), false);
 });
 
 test("secret metadata and nested responses are redacted", () => {
