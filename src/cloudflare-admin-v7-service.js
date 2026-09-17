@@ -11,6 +11,7 @@ import { createServiceAuthHeaders, digestServiceBody } from "./service-auth.js";
 function asList(result) {
   if (Array.isArray(result)) return result;
   if (Array.isArray(result?.result)) return result.result;
+  if (Array.isArray(result?.deployments)) return result.deployments;
   return [];
 }
 
@@ -101,9 +102,23 @@ export class CloudflareAdminV7Service {
       throw new Error("Pinned Workflow class or Worker association mismatch");
     }
     const bindings = Array.isArray(workerSettings?.bindings) ? workerSettings.bindings : [];
-    exactOne(bindings, ({ name, type }) => name === "AUTHORITY_DB" && type === "d1", "AUTHORITY_DB binding");
-    exactOne(bindings, ({ name, type }) => name === "ORCHESTRATOR_QUEUE" && type === "queue", "ORCHESTRATOR_QUEUE binding");
-    exactOne(bindings, ({ name, type }) => name === "ORCHESTRATOR_WORKFLOW" && type === "workflow", "ORCHESTRATOR_WORKFLOW binding");
+    exactOne(bindings, (binding) =>
+      binding?.name === "AUTHORITY_DB" &&
+      binding?.type === "d1" &&
+      (binding?.id ?? binding?.database_id) === CLOUDFLARE_ADMIN_V7.d1Id,
+    "AUTHORITY_DB binding");
+    exactOne(bindings, (binding) =>
+      binding?.name === "ORCHESTRATOR_QUEUE" &&
+      binding?.type === "queue" &&
+      binding?.queue_name === CLOUDFLARE_ADMIN_V7.queueName,
+    "ORCHESTRATOR_QUEUE binding");
+    exactOne(bindings, (binding) =>
+      binding?.name === "ORCHESTRATOR_WORKFLOW" &&
+      binding?.type === "workflow" &&
+      binding?.workflow_name === CLOUDFLARE_ADMIN_V7.workflowName &&
+      binding?.class_name === CLOUDFLARE_ADMIN_V7.workflowClass &&
+      binding?.script_name === CLOUDFLARE_ADMIN_V7.workerName,
+    "ORCHESTRATOR_WORKFLOW binding");
     return {
       ok: true,
       mode: "development-read-only",

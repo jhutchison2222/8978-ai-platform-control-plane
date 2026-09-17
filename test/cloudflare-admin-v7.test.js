@@ -57,6 +57,13 @@ test("secret metadata and nested responses are redacted", () => {
     secretMetadata: [{ name: "SERVICE_AUTH_KEYS_JSON", type: "secret_text" }],
     reviewedCommit: "a".repeat(40),
   });
+  assert.deepEqual(redactSensitive({ bindings: [
+    { name: "CONTROL_PLANE_MODE", type: "plain_text", text: "development" },
+    { name: "SERVICE_AUTH_KEYS_JSON", type: "secret_text", text: "must-not-escape" },
+  ] }), { bindings: [
+    { name: "CONTROL_PLANE_MODE", type: "plain_text", text: "development" },
+    { name: "SERVICE_AUTH_KEYS_JSON", type: "secret_text", text: "[REDACTED]" },
+  ] });
 });
 
 test("preflight proves exact resource identities, no Queue consumer, and required bindings", async () => {
@@ -67,10 +74,19 @@ test("preflight proves exact resource identities, no Queue consumer, and require
       async getWorkerSettings() { return { bindings: [
         { name: "AUTHORITY_DB", type: "d1", id: CLOUDFLARE_ADMIN_V7.d1Id },
         { name: "ORCHESTRATOR_QUEUE", type: "queue", queue_name: CLOUDFLARE_ADMIN_V7.queueName },
-        { name: "ORCHESTRATOR_WORKFLOW", type: "workflow", workflow_name: CLOUDFLARE_ADMIN_V7.workflowName },
+        {
+          name: "ORCHESTRATOR_WORKFLOW",
+          type: "workflow",
+          workflow_name: CLOUDFLARE_ADMIN_V7.workflowName,
+          class_name: CLOUDFLARE_ADMIN_V7.workflowClass,
+          script_name: CLOUDFLARE_ADMIN_V7.workerName,
+        },
+        { name: "CONTROL_PLANE_MODE", type: "plain_text", text: "development" },
         { name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text", text: "not-returned" },
       ] }; },
-      async listWorkerDeployments() { return []; },
+      async listWorkerDeployments() { return { deployments: [
+        { id: "deployment-id", created_on: "2026-09-17T20:00:00Z", author_email: "operator@example.invalid", source: "api" },
+      ], latest: { id: "deployment-id" } }; },
       async listQueues() { return [{ queue_id: "queue-id", queue_name: CLOUDFLARE_ADMIN_V7.queueName, consumers_total_count: 0 }]; },
       async listWorkflows() { return [{ id: "workflow-id", name: CLOUDFLARE_ADMIN_V7.workflowName, class_name: CLOUDFLARE_ADMIN_V7.workflowClass, script_name: CLOUDFLARE_ADMIN_V7.workerName }]; },
       async listAccessApplications() { return []; },
@@ -81,7 +97,55 @@ test("preflight proves exact resource identities, no Queue consumer, and require
   assert.equal(result.target.workflow.name, CLOUDFLARE_ADMIN_V7.workflowName);
   assert.equal(result.target.queue.id, "queue-id");
   assert.equal(result.worker.bindings.some(({ type }) => type === "secret_text"), false);
+  assert.equal(result.worker.bindings.find(({ name }) => name === "CONTROL_PLANE_MODE").text, "development");
+  assert.deepEqual(result.worker.deployments, [{
+    id: "deployment-id",
+    created_on: "2026-09-17T20:00:00Z",
+    author_email: "operator@example.invalid",
+    source: "api",
+  }]);
   assert.deepEqual(result.worker.secretMetadata, [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }]);
+});
+
+test("preflight rejects drifted Worker binding targets", async () => {
+  const validBindings = [
+    { name: "AUTHORITY_DB", type: "d1", id: CLOUDFLARE_ADMIN_V7.d1Id },
+    { name: "ORCHESTRATOR_QUEUE", type: "queue", queue_name: CLOUDFLARE_ADMIN_V7.queueName },
+    {
+      name: "ORCHESTRATOR_WORKFLOW",
+      type: "workflow",
+      workflow_name: CLOUDFLARE_ADMIN_V7.workflowName,
+      class_name: CLOUDFLARE_ADMIN_V7.workflowClass,
+      script_name: CLOUDFLARE_ADMIN_V7.workerName,
+    },
+  ];
+  let bindings = validBindings;
+  const api = {
+    async verifyIdentity() { return {}; },
+    async getD1Database() { return { uuid: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name }; },
+    async getWorkerSettings() { return { bindings }; },
+    async listWorkerDeployments() { return { deployments: [] }; },
+    async listQueues() { return [{ queue_name: CLOUDFLARE_ADMIN_V7.queueName, consumers_total_count: 0 }]; },
+    async listWorkflows() { return [{
+      name: CLOUDFLARE_ADMIN_V7.workflowName,
+      class_name: CLOUDFLARE_ADMIN_V7.workflowClass,
+      script_name: CLOUDFLARE_ADMIN_V7.workerName,
+    }]; },
+    async listAccessApplications() { return []; },
+    async listWorkerSecrets() { return []; },
+  };
+  const service = new CloudflareAdminV7Service({ api });
+  const driftCases = [
+    ["AUTHORITY_DB", { id: "wrong-database-id" }],
+    ["ORCHESTRATOR_QUEUE", { queue_name: "wrong-queue" }],
+    ["ORCHESTRATOR_WORKFLOW", { workflow_name: "wrong-workflow" }],
+    ["ORCHESTRATOR_WORKFLOW", { class_name: "WrongWorkflowClass" }],
+    ["ORCHESTRATOR_WORKFLOW", { script_name: "wrong-worker" }],
+  ];
+  for (const [name, drift] of driftCases) {
+    bindings = validBindings.map((binding) => binding.name === name ? { ...binding, ...drift } : binding);
+    await assert.rejects(() => service.preflight(), new RegExp(`${name} binding identity is missing`));
+  }
 });
 
 test("preflight stops on a Queue consumer or Workflow association drift", async () => {
@@ -188,6 +252,37 @@ test("managed-secret custodian stores the Access credential without returning it
   env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = installed;
   assert.deepEqual(await custodian.readAccessCredential(receipt.receiptId), { clientId: "client-fixture", clientSecret: "secret-fixture" });
   await assert.rejects(() => custodian.readAccessCredential("managed-secret:WRONG"), /pinned managed secret/);
+});
+
+test("activation unwraps the Cloudflare deployment envelope and refuses an already deployed reviewed version", async () => {
+  const reviewed = {
+    reviewedCommit: "a".repeat(40),
+    configurationSha256: "b".repeat(64),
+    versionId: "12345678-1234-1234-1234-123456789abc",
+  };
+  let laterReads = 0;
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: reviewed,
+    api: {
+      async listWorkerDeployments() {
+        return {
+          deployments: [{ id: "deployment-id", versions: [{ version_id: reviewed.versionId, percentage: 100 }] }],
+          latest: { id: "deployment-id" },
+        };
+      },
+      async getWorkerVersion() { laterReads += 1; },
+      async getLatestWorkerVersion() { laterReads += 1; },
+    },
+    custodian: { async readAccessCredential() { laterReads += 1; } },
+  });
+  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary({
+    installApproval: WRITE_APPROVALS.installServiceAuth,
+    deployApproval: WRITE_APPROVALS.deployReviewedWorker,
+    canaryApproval: WRITE_APPROVALS.runCanary,
+    accessCredentialReceiptId: "receipt-123",
+    ...reviewed,
+  }), /already deployed/);
+  assert.equal(laterReads, 0);
 });
 
 test("one-shot activation derives a secret-bearing version, deploys it, and validates five exact responses", async () => {

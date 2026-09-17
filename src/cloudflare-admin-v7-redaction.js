@@ -2,14 +2,15 @@ const SECRET_KEY = /^(?:authorization|api[_-]?token|apiToken|access[_-]?token|ac
 const BEARER_VALUE = /\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi;
 const EMBEDDED_SECRET = /\b(client[_-]?secret|api[_-]?token|access[_-]?token)=([^\s&]+)/gi;
 
-export function redactSensitive(value, key = "") {
-  if (SECRET_KEY.test(key)) return "[REDACTED]";
+export function redactSensitive(value, key = "", parent = null) {
+  const visiblePlainText = /^text$/i.test(key) && parent?.type === "plain_text";
+  if (SECRET_KEY.test(key) && !visiblePlainText) return "[REDACTED]";
   if (typeof value === "string") return value.replace(BEARER_VALUE, "Bearer [REDACTED]").replace(EMBEDDED_SECRET, "$1=[REDACTED]");
   if (Array.isArray(value)) return value.map((entry) => redactSensitive(entry));
   if (value && typeof value === "object") {
     return Object.fromEntries(Object.entries(value).map(([childKey, child]) => [
       childKey,
-      redactSensitive(child, childKey),
+      redactSensitive(child, childKey, value),
     ]));
   }
   return value;
