@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "8978-cloudflare-admin-v7",
+  "main": "src/cloudflare-admin-v7-worker.js",
+  "compatibility_date": "2026-09-16",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "routes": [],
+  "observability": {
+    "enabled": false
+  },
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+  "vars": {
+    "ALLOWED_GITHUB_LOGIN": "jhutchison2222",
+    "REVIEWED_COMMIT": "REPLACE_WITH_EXACT_40_CHARACTER_REVIEWED_COMMIT",
+    "REVIEWED_CONFIGURATION_SHA256": "REPLACE_WITH_EXACT_WRANGLER_JSONC_SHA256",
+    "REVIEWED_WORKER_VERSION_ID": "REPLACE_WITH_PREUPLOADED_REVIEWED_WORKER_VERSION_UUID"
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  }
+}
