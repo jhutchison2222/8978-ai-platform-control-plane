@@ -12,6 +12,7 @@ export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 export const SECURITY_STOP_LABEL = "autonomy-security-stop";
 export const SECURITY_STOP_ISSUE_NUMBER = 66;
+export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. After actionable findings are remediated, a genuine exact-head re-review may clear when it expressly states both that no new issues, errors, bugs, or findings were found and that all prior findings were fixed, even if it recommends or defers to optional human review solely because the change is security-sensitive. Require green exact-head checks and no unresolved review threads. Treat stale reviews, rejection, surviving actionable or blocking risks, required correction, requested changes, do-not-merge language, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.";
 
 export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
@@ -485,7 +486,7 @@ async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
       repository: api.repository,
       pull_request: { number: pr.number, url: pr.html_url, head_sha: headSha, base_ref: pr.base.ref },
       reason,
-      instruction: "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. Require green exact-head checks and no unresolved review threads. Treat mixed or caveated wording, stale reviews, rejection, actionable findings, deferral, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.",
+      instruction: PULL_REQUEST_DISPATCH_INSTRUCTION,
     },
   });
   await api.post(`/issues/${pr.number}/comments`, {
