@@ -141,6 +141,12 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but a blocking finding remains and must be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("No bugs found, but there is a moderate risk in token handling that should be addressed before merge")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs — human authorization is still required")], HEAD), "inconclusive");
+  const remediatedSecurityReview = review(`Automated review ran and found no new bugs on this push. The two commits since my last review fix all three issues I flagged previously, each with new regression tests. No new issues were found this round, but given this still touches OAuth authentication and credential handling, a human review is still worthwhile before merge. I am deferring rather than approving solely because this is security-sensitive code.`);
+  assert.equal(exactHeadClaudeVerdict([priorReview, remediatedSecurityReview], HEAD), "accepted");
+  const remediatedWithBlockingCaveat = review(`Automated review ran and found no new bugs on this push. The two commits fix all three issues I flagged previously. However, a high risk remains and should be addressed before merge.`);
+  assert.equal(exactHeadClaudeVerdict([priorReview, remediatedWithBlockingCaveat], HEAD), "inconclusive");
+  const noPriorFixConfirmation = review("Automated review ran and found no new bugs on this push. Human review is still worthwhile before merge because this is security-sensitive code.");
+  assert.equal(exactHeadClaudeVerdict([noPriorFixConfirmation], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { commit_id: "b".repeat(40) })], HEAD), "missing");
   assert.equal(exactHeadClaudeVerdict([review(`ACCEPTED — exact head ${"b".repeat(40)} — no surviving actionable findings.`)], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review(`REJECTED — exact head ${HEAD}`)], HEAD), "rejected");
