@@ -27,6 +27,13 @@ const ACCEPTED_REVIEW = /^ACCEPTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})\s*[�
 const REJECTED_REVIEW = /^REJECTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})[.]?$/iu;
 const CLEAR_INITIAL_REVIEW = /^\s*(?:ACCEPTED|APPROVED|\*\*code review found no issues\*\*\s*no high-confidence issues detected in this change|no (?:high-confidence |actionable |blocking )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: in this change)?|i reviewed this pr and (?:did not|didn['’]t) find any (?:issues|errors|bugs))[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
 const CLEAR_REREVIEW = /^\s*(?:\*\*code review completed\*\*\s*)?nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
+const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
+const PRIOR_FINDINGS_FIXED = [
+  /\b(?:fix(?:es|ed)?|address(?:es|ed)?|resolv(?:es|ed)?) all (?:the )?(?:previously[- ](?:reported|flagged) )?(?:\w+ )*(?:issues|errors|bugs|findings)\b/iu,
+  /\ball (?:\w+ )*(?:issues|errors|bugs|findings) (?:are|were|have been) (?:now )?(?:fixed|addressed|resolved)\b/iu,
+  /\ball (?:three|four|five|six|seven|eight|nine|ten) are now (?:fixed|addressed|resolved)\b/iu,
+];
+const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 function required(name, value) {
@@ -55,7 +62,14 @@ function acceptedReview(review, previousAccepted = false) {
   });
   if (verdicts.length > 0) return verdicts.at(-1) === "accepted";
   if (CLEAR_INITIAL_REVIEW.test(review.body ?? "")) return true;
+  if (clearRemediationRereview(review.body ?? "")) return true;
   return previousAccepted && CLEAR_REREVIEW.test(review.body ?? "");
+}
+
+function clearRemediationRereview(body) {
+  return CLEAR_REMEDIATION_REREVIEW.test(body) &&
+    PRIOR_FINDINGS_FIXED.some((pattern) => pattern.test(body)) &&
+    !SURVIVING_ACTIONABLE_CAVEAT.test(body);
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
@@ -80,6 +94,7 @@ export function exactHeadClaudeVerdict(reviews, headSha) {
   if (verdicts.length > 0) return verdicts.at(-1);
   const body = latest.body ?? "";
   if (CLEAR_INITIAL_REVIEW.test(body)) return "accepted";
+  if (clearRemediationRereview(body)) return "accepted";
   if (!CLEAR_REREVIEW.test(body)) return "inconclusive";
 
   let previousAccepted = false;
