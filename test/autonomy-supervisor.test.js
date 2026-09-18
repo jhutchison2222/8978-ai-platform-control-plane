@@ -7,6 +7,7 @@ import {
   EVENT_DISPATCH_FALLBACK_DELAY_MS,
   LATER_ACTION_DELAY_MS,
   MAX_TASK_DISPATCHES,
+  PULL_REQUEST_DISPATCH_INSTRUCTION,
   SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
   TASK_DISPATCH_RETRY_DELAY_MS,
@@ -156,6 +157,21 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("approved, but token handling should be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "inconclusive");
+});
+
+test("merge dispatch preserves bounded remediation clearance without weakening blockers", () => {
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /no new issues, errors, bugs, or findings were found/iu);
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /all prior findings were fixed/iu);
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /optional human review solely because the change is security-sensitive/iu);
+  for (const blocker of [
+    "stale reviews",
+    "surviving actionable or blocking risks",
+    "required correction",
+    "requested changes",
+    "do-not-merge language",
+    "owner security decisions",
+  ]) assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, new RegExp(blocker, "iu"));
+  assert.doesNotMatch(PULL_REQUEST_DISPATCH_INSTRUCTION, /mixed or caveated wording.*deferral.*fail-closed/iu);
 });
 
 test("only supervisor-authored exact-head markers consume retry attempts", () => {
