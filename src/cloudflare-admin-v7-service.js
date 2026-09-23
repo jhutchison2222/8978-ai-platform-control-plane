@@ -2,6 +2,7 @@ import {
   CLOUDFLARE_ADMIN_V7,
   assertPinnedTarget,
   requireExactApproval,
+  requireImmutableWorkerId,
   requireReviewedCommit,
   requireSha256,
 } from "./cloudflare-admin-v7-contracts.js";
@@ -27,6 +28,14 @@ function randomSecret(bytes = 32) {
   let binary = "";
   for (const byte of value) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function activeDeployment(deployments) {
+  const list = asList(deployments);
+  const explicit = list.filter((item) => item?.is_active === true || item?.active === true);
+  if (explicit.length === 1) return explicit[0];
+  if (explicit.length > 1) throw new Error("Active deployment state is ambiguous");
+  return list.length > 0 ? list[0] : null;
 }
 
 function versionAnnotations(version) {
@@ -62,6 +71,43 @@ function assertOnlyServiceSecretChanged(base, activated) {
   }
 }
 
+function assertSubdomainState(state, expected, stage) {
+  if (!state || typeof state !== "object") throw new Error(`Worker subdomain state is unavailable at ${stage}`);
+  if (state.enabled !== expected.enabled || state.previews_enabled !== expected.previews_enabled) {
+    throw new Error(
+      `Worker subdomain state at ${stage} is enabled=${String(state.enabled)} previews_enabled=${String(state.previews_enabled)}, ` +
+      `expected enabled=${String(expected.enabled)} previews_enabled=${String(expected.previews_enabled)}`,
+    );
+  }
+  return state;
+}
+
+function assertAccessApplicationShape(application, workerId) {
+  if (application?.type !== "self_hosted") throw new Error("Access application type is not self_hosted");
+  if (application?.name !== CLOUDFLARE_ADMIN_V7.accessApplicationName) throw new Error("Access application name does not match the pinned development contract");
+  const destinations = Array.isArray(application?.destinations) ? application.destinations : [];
+  if (destinations.length !== 1) throw new Error("Access application must declare exactly one destination");
+  if (destinations[0]?.type !== "worker") throw new Error("Access application destination type must be worker");
+  if (destinations[0]?.worker_id !== workerId) throw new Error("Access application destination does not pin the verified immutable Worker ID");
+  return application;
+}
+
+function assertAccessPolicyShape(policies, serviceTokenId) {
+  const list = asList(policies);
+  if (list.length !== 1) throw new Error("Access application must carry exactly one Service Auth policy");
+  const policy = list[0];
+  if (policy?.decision !== "non_identity") throw new Error("Access policy decision must be the non_identity Service Auth action");
+  const include = Array.isArray(policy?.include) ? policy.include : [];
+  if (include.length !== 1 || include[0]?.service_token?.token_id !== serviceTokenId) {
+    throw new Error("Access policy must include exactly the pinned development service token");
+  }
+  if ((Array.isArray(policy?.exclude) ? policy.exclude : []).length !== 0 ||
+      (Array.isArray(policy?.require) ? policy.require : []).length !== 0) {
+    throw new Error("Access policy must declare no additional exclude or require rules");
+  }
+  return policy;
+}
+
 async function jsonBody(response) {
   try {
     return await response.json();
@@ -80,27 +126,74 @@ export class CloudflareAdminV7Service {
     this.now = now;
   }
 
+  async #resolveImmutableWorkerId() {
+    const matches = asList(await this.api.listWorkers()).filter((item) => item?.name === CLOUDFLARE_ADMIN_V7.workerName);
+    if (matches.length > 1) throw new Error("Immutable Worker identity is ambiguous");
+    if (matches.length === 0) return null;
+    const workerId = matches[0]?.id;
+    requireImmutableWorkerId(workerId, "immutable Worker ID");
+    const confirmed = await this.api.getWorkerById(workerId);
+    if (confirmed?.id !== workerId || confirmed?.name !== CLOUDFLARE_ADMIN_V7.workerName) {
+      throw new Error("Immutable Worker ID confirmation did not return the pinned Worker identity");
+    }
+    const scripts = asList(await this.api.listWorkerScripts())
+      .filter((item) => (item?.id ?? item?.name) === CLOUDFLARE_ADMIN_V7.workerName);
+    if (scripts.length !== 1) throw new Error("Worker script identity is missing or ambiguous");
+    if (scripts[0]?.tag !== workerId) {
+      throw new Error("Immutable Worker ID does not match the stable Worker script tag");
+    }
+    return workerId;
+  }
+
   async preflight({ target = {} } = {}) {
     assertPinnedTarget(target);
-    const [identity, d1, workerSettings, deployments, queues, workflows, accessApplications, secrets] = await Promise.all([
+    const [identity, d1, queues, workflows, accessApplications] = await Promise.all([
       this.api.verifyIdentity(),
       this.api.getD1Database(),
-      this.api.getWorkerSettings(),
-      this.api.listWorkerDeployments(),
       this.api.listQueues(),
       this.api.listWorkflows(),
       this.api.listAccessApplications(),
-      this.api.listWorkerSecrets(),
     ]);
     if (d1?.uuid !== CLOUDFLARE_ADMIN_V7.d1Id && d1?.id !== CLOUDFLARE_ADMIN_V7.d1Id) throw new Error("Pinned D1 UUID mismatch");
     if (d1?.name !== CLOUDFLARE_ADMIN_V7.d1Name) throw new Error("Pinned D1 name mismatch");
     const queue = exactOne(queues, (item) => item?.queue_name === CLOUDFLARE_ADMIN_V7.queueName || item?.name === CLOUDFLARE_ADMIN_V7.queueName, "Pinned Queue");
-    const workflow = exactOne(workflows, (item) => item?.name === CLOUDFLARE_ADMIN_V7.workflowName, "Pinned Workflow");
     const queueHasNoConsumers = queue.consumers_total_count === 0 || (Array.isArray(queue.consumers) && queue.consumers.length === 0);
     if (!queueHasNoConsumers) throw new Error("Pinned Queue consumer state is non-empty or unavailable");
+    const workerId = await this.#resolveImmutableWorkerId();
+    const access = asList(accessApplications).map(({ id, name, type, destinations }) => ({ id, name, type, destinations }));
+
+    if (workerId === null) {
+      return {
+        ok: true,
+        mode: "development-read-only",
+        phase: "pre_bootstrap",
+        workerExists: false,
+        identity,
+        target: {
+          accountId: CLOUDFLARE_ADMIN_V7.accountId,
+          workerName: CLOUDFLARE_ADMIN_V7.workerName,
+          workerUrl: CLOUDFLARE_ADMIN_V7.workerUrl,
+          workerId: null,
+          d1: { id: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name },
+          queue: { id: queue.id ?? queue.queue_id ?? null, name: CLOUDFLARE_ADMIN_V7.queueName },
+          workflow: { id: null, name: CLOUDFLARE_ADMIN_V7.workflowName, exists: false },
+        },
+        worker: { bindings: [], deployments: [], secretMetadata: [], subdomain: null, customDomains: [] },
+        access,
+      };
+    }
+
+    const workflow = exactOne(workflows, (item) => item?.name === CLOUDFLARE_ADMIN_V7.workflowName, "Pinned Workflow");
     if (workflow.class_name !== CLOUDFLARE_ADMIN_V7.workflowClass || workflow.script_name !== CLOUDFLARE_ADMIN_V7.workerName) {
       throw new Error("Pinned Workflow class or Worker association mismatch");
     }
+    const [workerSettings, deployments, secrets, subdomain, domains] = await Promise.all([
+      this.api.getWorkerSettings(),
+      this.api.listWorkerDeployments(),
+      this.api.listWorkerSecrets(),
+      this.api.getWorkerSubdomain(),
+      this.api.listWorkerDomains(),
+    ]);
     const bindings = Array.isArray(workerSettings?.bindings) ? workerSettings.bindings : [];
     exactOne(bindings, (binding) =>
       binding?.name === "AUTHORITY_DB" &&
@@ -119,24 +212,31 @@ export class CloudflareAdminV7Service {
       binding?.class_name === CLOUDFLARE_ADMIN_V7.workflowClass &&
       binding?.script_name === CLOUDFLARE_ADMIN_V7.workerName,
     "ORCHESTRATOR_WORKFLOW binding");
+    const customDomains = asList(domains).filter((record) => record?.service === CLOUDFLARE_ADMIN_V7.workerName);
+    if (customDomains.length !== 0) throw new Error("A Custom Domain is attached to the pinned development Worker");
     return {
       ok: true,
       mode: "development-read-only",
+      phase: "post_bootstrap",
+      workerExists: true,
       identity,
       target: {
         accountId: CLOUDFLARE_ADMIN_V7.accountId,
         workerName: CLOUDFLARE_ADMIN_V7.workerName,
         workerUrl: CLOUDFLARE_ADMIN_V7.workerUrl,
+        workerId,
         d1: { id: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name },
         queue: { id: queue.id ?? queue.queue_id ?? null, name: CLOUDFLARE_ADMIN_V7.queueName },
-        workflow: { id: workflow.id ?? null, name: CLOUDFLARE_ADMIN_V7.workflowName },
+        workflow: { id: workflow.id ?? null, name: CLOUDFLARE_ADMIN_V7.workflowName, exists: true },
       },
       worker: {
         bindings: bindings.filter(({ type }) => type !== "secret_text" && type !== "secret_key"),
         deployments: asList(deployments).map(({ id, created_on, author_email, source }) => ({ id, created_on, author_email, source })),
         secretMetadata: secretMetadataOnly(secrets),
+        subdomain: { enabled: subdomain?.enabled ?? null, previews_enabled: subdomain?.previews_enabled ?? null },
+        customDomains: [],
       },
-      access: asList(accessApplications).map(({ id, name, domain, type }) => ({ id, name, domain, type })),
+      access,
     };
   }
 
@@ -171,45 +271,63 @@ export class CloudflareAdminV7Service {
     };
   }
 
-  async ensureAccessProtection({ approval, serviceTokenId, target = {} } = {}) {
+  async #verifiedAccessProtection(serviceTokenId, workerId) {
+    const application = exactOne(
+      await this.api.listAccessApplications(),
+      (item) => Array.isArray(item?.destinations) &&
+        item.destinations.some((destination) => destination?.type === "worker" && destination?.worker_id === workerId),
+      "Worker-level Access application",
+    );
+    assertAccessApplicationShape(application, workerId);
+    const policy = assertAccessPolicyShape(await this.api.listAccessApplicationPolicies(application.id), serviceTokenId);
+    return { application, policy };
+  }
+
+  async ensureAccessProtection({ approval, serviceTokenId, workerId, target = {} } = {}) {
     assertPinnedTarget(target);
     requireExactApproval("ensureAccess", approval);
+    requireImmutableWorkerId(workerId, "workerId");
+    const resolved = await this.#resolveImmutableWorkerId();
+    if (resolved !== workerId) throw new Error("Supplied Worker ID does not match the independently resolved immutable Worker ID");
     const token = exactOne(
       await this.api.listAccessServiceTokens(),
       ({ id, name }) => id === serviceTokenId && name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName,
       "Pinned development Access service token",
     );
-    const applications = asList(await this.api.listAccessApplications());
-    const hostname = new URL(CLOUDFLARE_ADMIN_V7.workerUrl).hostname;
-    let application = exactOne(applications, ({ domain }) => domain === hostname, "Development Access application", { allowNone: true });
-    if (application && (application.name !== CLOUDFLARE_ADMIN_V7.accessApplicationName || application.type !== "self_hosted")) {
-      throw new Error("Existing Access application does not match the pinned development contract");
+    const existing = asList(await this.api.listAccessApplications()).filter((item) =>
+      Array.isArray(item?.destinations) &&
+      item.destinations.some((destination) => destination?.type === "worker" && destination?.worker_id === workerId));
+    if (existing.length > 1) throw new Error("Worker-level Access application state is ambiguous");
+    if (existing.length === 1) {
+      const verified = await this.#verifiedAccessProtection(token.id, workerId);
+      return {
+        ok: true,
+        created: false,
+        workerId,
+        application: { id: verified.application.id, name: verified.application.name, destinations: verified.application.destinations },
+        policy: { id: verified.policy.id ?? null, decision: "non_identity" },
+      };
     }
-    const createdApplication = !application;
-    if (!application) application = await this.api.createAccessApplication();
+    const application = await this.api.createAccessApplication(workerId);
     if (!application?.id) throw new Error("Cloudflare did not return an Access application ID; stop without retry");
-    if (!createdApplication) {
-      const policies = asList(await this.api.listAccessApplicationPolicies(application.id));
-      const matches = policies.filter((policy) => policy?.decision === "non_identity" && Array.isArray(policy?.include) &&
-        policy.include.some((rule) => rule?.service_token?.token_id === token.id));
-      if (matches.length === 1 && policies.length === 1) {
-        return { ok: true, created: false, application: { id: application.id, name: application.name, domain: application.domain }, policy: { id: matches[0].id ?? null, decision: "non_identity" } };
-      }
-      if (policies.length > 0) throw new Error("Existing Access policy state is ambiguous or broader than the pinned service-token-only contract");
-    }
     try {
-      const policy = await this.api.createAccessServiceTokenPolicy(application.id, token.id);
-      return { ok: true, created: true, application: { id: application.id, name: application.name, domain: application.domain }, policy: { id: policy?.id ?? null, decision: policy?.decision ?? "non_identity" } };
+      await this.api.createAccessServiceTokenPolicy(application.id, token.id);
     } catch {
-      throw new Error(`${createdApplication ? "Access application" : "Access protection"} may be partially configured; stop without retry or cleanup`);
+      throw new Error("Access application was created but its service-token policy may be partially configured; stop without retry or cleanup");
     }
+    const verified = await this.#verifiedAccessProtection(token.id, workerId);
+    return {
+      ok: true,
+      created: true,
+      workerId,
+      application: { id: verified.application.id, name: verified.application.name, destinations: verified.application.destinations },
+      policy: { id: verified.policy.id ?? null, decision: "non_identity" },
+    };
   }
 
-  async activateReviewedWorkerAndRunCanary({
+  async activateReviewedWorker({
     installApproval,
     deployApproval,
-    canaryApproval,
-    accessCredentialReceiptId,
     reviewedCommit,
     configurationSha256,
     versionId,
@@ -218,14 +336,17 @@ export class CloudflareAdminV7Service {
     assertPinnedTarget(target);
     requireExactApproval("installServiceAuth", installApproval);
     requireExactApproval("deployReviewedWorker", deployApproval);
-    requireExactApproval("runCanary", canaryApproval);
     requireReviewedCommit(reviewedCommit);
     requireSha256(configurationSha256, "configurationSha256");
-    if (!this.custodian) throw new Error("Credential custodian is required for the bounded canary");
+    if (!this.custodian) throw new Error("Credential custodian is required before installing service authentication");
     const pinned = this.reviewedDeployment;
     if (!pinned || reviewedCommit !== pinned.reviewedCommit || configurationSha256 !== pinned.configurationSha256 || versionId !== pinned.versionId) {
       throw new Error("Activation inputs do not match the independently reviewed and pinned Worker version");
     }
+    if (reviewedCommit !== CLOUDFLARE_ADMIN_V7.targetWorkerCommit || configurationSha256 !== CLOUDFLARE_ADMIN_V7.targetConfigurationSha256) {
+      throw new Error("Activation inputs do not match the pinned target Worker provenance");
+    }
+    assertSubdomainState(await this.api.getWorkerSubdomain(), CLOUDFLARE_ADMIN_V7.subdomainBeforeEnablement, "activation start");
     const deployments = asList(await this.api.listWorkerDeployments());
     if (deployments.some(({ versions }) => Array.isArray(versions) && versions.some(({ version_id }) => version_id === versionId))) {
       throw new Error("Reviewed Worker version was already deployed; automatic activation is prohibited");
@@ -235,7 +356,7 @@ export class CloudflareAdminV7Service {
       this.api.getLatestWorkerVersion(),
     ]);
     if (version?.id !== versionId) throw new Error("Cloudflare did not return the pinned reviewed Worker version");
-    if (latest?.id !== versionId || versionAnnotations(latest)["workers/message"] !== `8978-reviewed:${reviewedCommit}:${configurationSha256}`) {
+    if (latest?.id !== versionId || versionAnnotations(latest)["workers/message"] !== `${CLOUDFLARE_ADMIN_V7.reviewedAnnotationPrefix}:${reviewedCommit}:${configurationSha256}`) {
       throw new Error("The pinned reviewed Worker version is not the unmodified latest version");
     }
     const existing = secretMetadataOnly(await this.api.listWorkerSecrets());
@@ -244,10 +365,22 @@ export class CloudflareAdminV7Service {
         latestBindings.some(({ name }) => name === CLOUDFLARE_ADMIN_V7.serviceAuthSecretName)) {
       throw new Error("SERVICE_AUTH_KEYS_JSON already exists; canary retry or overwrite is prohibited");
     }
-    const access = await this.custodian.readAccessCredential(accessCredentialReceiptId);
-    const principalId = "development-canary-v1";
+    const workerId = await this.#resolveImmutableWorkerId();
+    if (workerId === null) throw new Error("Target Worker does not exist; authorized bootstrap creation must precede activation");
+    const principalId = CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId;
     const keyId = `canary-${this.now().toISOString().slice(0, 10)}`;
     const secret = randomSecret();
+    let custodyReceipt;
+    try {
+      custodyReceipt = await this.custodian.store("service-auth-principal", { principalId, keyId, secret, workerId });
+      await this.custodian.confirmCustody("service-auth-principal");
+    } catch (error) {
+      throw new Error(
+        `Service-auth principal custody was not confirmed: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        "the secret-bearing version was not created and nothing was deployed; " +
+        "no retry, cleanup, rollback, or restore was attempted",
+      );
+    }
     let activationVersion;
     try {
       activationVersion = await this.api.createServiceAuthVersion(
@@ -263,7 +396,7 @@ export class CloudflareAdminV7Service {
         this.api.getLatestWorkerVersion(),
       ]);
       if (activatedDetail?.id !== activationVersion.id || activatedLatest?.id !== activationVersion.id ||
-          versionAnnotations(activatedLatest)["workers/message"] !== `8978-activated:${reviewedCommit}:${configurationSha256}`) {
+          versionAnnotations(activatedLatest)["workers/message"] !== `${CLOUDFLARE_ADMIN_V7.activatedAnnotationPrefix}:${reviewedCommit}:${configurationSha256}`) {
         throw new Error("Cloudflare did not preserve the identity and annotation of the secret-bearing activation version");
       }
       assertOnlyServiceSecretChanged(version, activatedDetail);
@@ -272,11 +405,18 @@ export class CloudflareAdminV7Service {
           deployed.versions[0]?.version_id !== activationVersion.id || deployed.versions[0]?.percentage !== 100) {
         throw new Error("Cloudflare returned an ambiguous or partial deployment result");
       }
-      const evidence = await this.#runCanary({ access, principalId, keyId, secret });
+      const subdomain = assertSubdomainState(
+        await this.api.getWorkerSubdomain(),
+        CLOUDFLARE_ADMIN_V7.subdomainBeforeEnablement,
+        "post-deployment",
+      );
       return {
         ok: true,
         attempts: 1,
+        reachable: false,
+        workerId,
         installedSecret: { name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, principalId, keyId },
+        serviceAuthCredential: custodyReceipt,
         deployment: {
           id: deployed.id,
           createdOn: deployed.created_on ?? null,
@@ -286,7 +426,7 @@ export class CloudflareAdminV7Service {
           configurationSha256,
           percentage: 100,
         },
-        evidence,
+        subdomain: { enabled: subdomain.enabled, previews_enabled: subdomain.previews_enabled },
       };
     } catch (error) {
       const state = activationVersion?.id
@@ -294,6 +434,95 @@ export class CloudflareAdminV7Service {
         : "secret-bearing Worker version creation may have partially completed";
       throw new Error(`Activation stopped after ${state}: ${error instanceof Error ? error.message : "unknown failure"}; no retry, cleanup, rollback, or restore was attempted`);
     }
+  }
+
+  async #readBackSubdomain() {
+    try {
+      const state = await this.api.getWorkerSubdomain();
+      if (!state || typeof state !== "object" || typeof state.enabled !== "boolean" || typeof state.previews_enabled !== "boolean") {
+        throw new Error("subdomain read-back shape is ambiguous");
+      }
+      return state;
+    } catch (error) {
+      throw new Error(
+        `Subdomain read-back failed or is ambiguous after exactly one enablement POST: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        "reachability may exist, the canary was not run, and no retry, cleanup, rollback, or restore was attempted",
+      );
+    }
+  }
+
+  async enableSubdomainAndRunCanary({
+    enableApproval,
+    canaryApproval,
+    accessCredentialReceiptId,
+    serviceAuthReceiptId,
+    serviceTokenId,
+    workerId,
+    keyId,
+    activatedVersionId,
+    target = {},
+  } = {}) {
+    assertPinnedTarget(target);
+    requireExactApproval("enableSubdomain", enableApproval);
+    requireExactApproval("runCanary", canaryApproval);
+    requireImmutableWorkerId(workerId, "workerId");
+    if (typeof keyId !== "string" || keyId.length === 0) throw new Error("Exact service-auth key ID is required before subdomain enablement");
+    if (!this.custodian) throw new Error("Credential custodian is required for the bounded canary");
+
+    const resolvedWorkerId = await this.#resolveImmutableWorkerId();
+    if (resolvedWorkerId !== workerId) throw new Error("Supplied Worker ID does not match the independently resolved immutable Worker ID");
+    assertSubdomainState(await this.api.getWorkerSubdomain(), CLOUDFLARE_ADMIN_V7.subdomainBeforeEnablement, "pre-enablement");
+    const active = activeDeployment(await this.api.listWorkerDeployments());
+    if (!active || !Array.isArray(active.versions) || active.versions.length !== 1 ||
+        active.versions[0]?.percentage !== 100 || active.versions[0]?.version_id !== activatedVersionId) {
+      throw new Error("Active deployment does not allocate 100 percent to exactly the expected activated version");
+    }
+    await this.#verifiedAccessProtection(serviceTokenId, workerId);
+
+    let posted;
+    try {
+      posted = await this.api.setWorkerSubdomain({ enabled: true, previews_enabled: false });
+    } catch (error) {
+      const readBack = await this.#readBackSubdomain();
+      throw new Error(
+        `Subdomain enablement POST failed and was not repeated: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        `read-back reports enabled=${String(readBack.enabled)} previews_enabled=${String(readBack.previews_enabled)}; ` +
+        `${readBack.enabled === false ? "the Worker remains unreachable" : "the Worker may be reachable and remains Access-protected"}; ` +
+        "no retry, cleanup, rollback, or restore was attempted",
+      );
+    }
+    if (posted?.enabled !== true || posted?.previews_enabled !== false) {
+      const readBack = await this.#readBackSubdomain();
+      throw new Error(
+        "Subdomain enablement POST returned an ambiguous result and was not repeated; " +
+        `read-back reports enabled=${String(readBack.enabled)} previews_enabled=${String(readBack.previews_enabled)}; ` +
+        "the canary was not run and no retry, cleanup, rollback, or restore was attempted",
+      );
+    }
+    const readBack = await this.#readBackSubdomain();
+    if (readBack.previews_enabled !== false) {
+      throw new Error("Subdomain read-back reports an unexpected preview surface; security stop before any canary request");
+    }
+    if (readBack.enabled !== true) {
+      throw new Error("Subdomain read-back does not confirm enablement; the canary was not run and the POST was not repeated");
+    }
+
+    const access = await this.custodian.readAccessCredential(accessCredentialReceiptId);
+    const principal = await this.custodian.readServiceAuthPrincipal(serviceAuthReceiptId, { workerId, keyId });
+    const evidence = await this.#runCanary({
+      access,
+      principalId: principal.principalId,
+      keyId: principal.keyId,
+      secret: principal.secret,
+    });
+    return {
+      ok: true,
+      attempts: 1,
+      workerId,
+      subdomainPosts: 1,
+      subdomain: { enabled: readBack.enabled, previews_enabled: readBack.previews_enabled },
+      evidence,
+    };
   }
 
   async #runCanary({ access, principalId, keyId, secret }) {

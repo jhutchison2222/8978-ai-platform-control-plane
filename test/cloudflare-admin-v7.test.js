@@ -18,6 +18,24 @@ function response(result, status = 200) {
   });
 }
 
+const WORKER_ID = "7d8fe11595134e5980a2c888a805ff03";
+const TARGET_COMMIT = CLOUDFLARE_ADMIN_V7.targetWorkerCommit;
+const TARGET_CONFIG_SHA = CLOUDFLARE_ADMIN_V7.targetConfigurationSha256;
+
+// Worker identity and zero-surface reads every post-bootstrap mock needs.
+const workerIdentityMocks = {
+  async listWorkers() { return [{ name: CLOUDFLARE_ADMIN_V7.workerName, id: WORKER_ID }]; },
+  async getWorkerById() { return { id: WORKER_ID, name: CLOUDFLARE_ADMIN_V7.workerName }; },
+  async listWorkerScripts() { return [{ id: CLOUDFLARE_ADMIN_V7.workerName, tag: WORKER_ID }]; },
+  async getWorkerSubdomain() { return { enabled: false, previews_enabled: false }; },
+  async listWorkerDomains() { return []; },
+};
+
+const custodyMocks = {
+  async store() { return { receiptId: "managed-secret:" + CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName, custodian: "connector" }; },
+  async confirmCustody() { return { confirmed: true }; },
+};
+
 test("v7 target contract rejects arbitrary and production targets", () => {
   assert.equal(assertPinnedTarget({ workerName: CLOUDFLARE_ADMIN_V7.workerName }).workerName, CLOUDFLARE_ADMIN_V7.workerName);
   assert.throws(() => assertPinnedTarget({ workerName: "8978-ai-control-plane-prod" }), /Pinned target mismatch/);
@@ -76,6 +94,7 @@ test("secret metadata and nested responses are redacted", () => {
 test("preflight proves exact resource identities, no Queue consumer, and required bindings", async () => {
   const service = new CloudflareAdminV7Service({
     api: {
+      ...workerIdentityMocks,
       async verifyIdentity() { return { tokenStatus: "active", account: { id: CLOUDFLARE_ADMIN_V7.accountId } }; },
       async getD1Database() { return { uuid: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name }; },
       async getWorkerSettings() { return { bindings: [
@@ -128,6 +147,7 @@ test("preflight rejects drifted Worker binding targets", async () => {
   ];
   let bindings = validBindings;
   const api = {
+    ...workerIdentityMocks,
     async verifyIdentity() { return {}; },
     async getD1Database() { return { uuid: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name }; },
     async getWorkerSettings() { return { bindings }; },
@@ -157,6 +177,7 @@ test("preflight rejects drifted Worker binding targets", async () => {
 
 test("preflight stops on a Queue consumer or Workflow association drift", async () => {
   const base = {
+    ...workerIdentityMocks,
     async verifyIdentity() { return {}; },
     async getD1Database() { return { uuid: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name }; },
     async getWorkerSettings() { return { bindings: [
@@ -180,6 +201,7 @@ test("service-token creation requires exact approval, refuses duplicates, and ne
   let created = false;
   let custodyInput;
   const api = {
+    ...workerIdentityMocks,
     async listAccessServiceTokens() { return []; },
     async createAccessServiceToken(hours) {
       created = true;
@@ -202,10 +224,11 @@ test("service-token creation requires exact approval, refuses duplicates, and ne
 test("service-token partial custody failure stops without exposing the returned secret", async () => {
   const service = new CloudflareAdminV7Service({
     api: {
+      ...workerIdentityMocks,
       async listAccessServiceTokens() { return []; },
       async createAccessServiceToken() { return { id: "token-id", client_id: "client-" + "fixture", client_secret: "secret-" + "fixture" }; },
     },
-    custodian: { async store() { throw new Error("storage failed with secret fixture"); } },
+    custodian: { ...custodyMocks, async store() { throw new Error("storage failed with secret fixture"); } },
   });
   await assert.rejects(
     () => service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }),
@@ -213,40 +236,70 @@ test("service-token partial custody failure stops without exposing the returned 
   );
 });
 
-test("Access protection verifies exact pre-existing service token and exact hostname", async () => {
+test("Access protection creates a Worker-level application pinned to the immutable Worker ID", async () => {
   let policyInput;
+  let created = null;
+  const token = { id: "12345678-1234-1234-1234-123456789abc", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName };
   const service = new CloudflareAdminV7Service({
     api: {
-      async listAccessServiceTokens() { return [{ id: "12345678-1234-1234-1234-123456789abc", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }]; },
-      async listAccessApplications() { return []; },
-      async createAccessApplication() { return { id: "abcdefab-1234-1234-1234-abcdefabcdef", name: CLOUDFLARE_ADMIN_V7.accessApplicationName, domain: new URL(CLOUDFLARE_ADMIN_V7.workerUrl).hostname, type: "self_hosted" }; },
+      ...workerIdentityMocks,
+      async listAccessServiceTokens() { return [token]; },
+      async listAccessApplications() { return created ? [created] : []; },
+      async createAccessApplication(workerId) {
+        created = {
+          id: "abcdefab-1234-1234-1234-abcdefabcdef",
+          name: CLOUDFLARE_ADMIN_V7.accessApplicationName,
+          type: "self_hosted",
+          destinations: [{ type: "worker", worker_id: workerId }],
+        };
+        return created;
+      },
       async createAccessServiceTokenPolicy(appId, tokenId) { policyInput = { appId, tokenId }; return { id: "policy-id", decision: "non_identity" }; },
+      async listAccessApplicationPolicies() {
+        return [{ id: "policy-id", decision: "non_identity", include: [{ service_token: { token_id: token.id } }], exclude: [], require: [] }];
+      },
     },
   });
   const result = await service.ensureAccessProtection({
     approval: WRITE_APPROVALS.ensureAccess,
-    serviceTokenId: "12345678-1234-1234-1234-123456789abc",
+    serviceTokenId: token.id,
+    workerId: WORKER_ID,
   });
   assert.equal(result.ok, true);
-  assert.deepEqual(policyInput, { appId: "abcdefab-1234-1234-1234-abcdefabcdef", tokenId: "12345678-1234-1234-1234-123456789abc" });
+  assert.equal(result.created, true);
+  assert.equal(result.workerId, WORKER_ID);
+  // The destination pins the Worker itself, never a single hostname.
+  assert.deepEqual(result.application.destinations, [{ type: "worker", worker_id: WORKER_ID }]);
+  assert.deepEqual(policyInput, { appId: "abcdefab-1234-1234-1234-abcdefabcdef", tokenId: token.id });
 });
 
-test("Access protection confirms one exact existing policy and rejects broader policy state", async () => {
-  const app = { id: "abcdefab-1234-1234-1234-abcdefabcdef", name: CLOUDFLARE_ADMIN_V7.accessApplicationName, domain: new URL(CLOUDFLARE_ADMIN_V7.workerUrl).hostname, type: "self_hosted" };
+test("Access protection confirms one exact Service Auth policy and rejects a broader policy state", async () => {
   const token = { id: "12345678-1234-1234-1234-123456789abc", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName };
+  const app = {
+    id: "abcdefab-1234-1234-1234-abcdefabcdef",
+    name: CLOUDFLARE_ADMIN_V7.accessApplicationName,
+    type: "self_hosted",
+    destinations: [{ type: "worker", worker_id: WORKER_ID }],
+  };
   const api = {
+    ...workerIdentityMocks,
     async listAccessServiceTokens() { return [token]; },
     async listAccessApplications() { return [app]; },
-    async listAccessApplicationPolicies() { return [{ id: "policy", decision: "non_identity", include: [{ service_token: { token_id: token.id } }] }]; },
+    async listAccessApplicationPolicies() {
+      return [{ id: "policy", decision: "non_identity", include: [{ service_token: { token_id: token.id } }], exclude: [], require: [] }];
+    },
   };
   const service = new CloudflareAdminV7Service({ api });
-  const confirmed = await service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: token.id });
+  const confirmed = await service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: token.id, workerId: WORKER_ID });
   assert.equal(confirmed.created, false);
   api.listAccessApplicationPolicies = async () => [
-    { id: "policy", decision: "non_identity", include: [{ service_token: { token_id: token.id } }] },
+    { id: "policy", decision: "non_identity", include: [{ service_token: { token_id: token.id } }], exclude: [], require: [] },
     { id: "broader", decision: "allow", include: [{ everyone: {} }] },
   ];
-  await assert.rejects(() => service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: token.id }), /ambiguous or broader/);
+  await assert.rejects(
+    () => service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: token.id, workerId: WORKER_ID }),
+    /exactly one Service Auth policy/,
+  );
 });
 
 test("managed-secret custodian stores the Access credential without returning it", async () => {
@@ -263,14 +316,15 @@ test("managed-secret custodian stores the Access credential without returning it
 
 test("activation unwraps the Cloudflare deployment envelope and refuses an already deployed reviewed version", async () => {
   const reviewed = {
-    reviewedCommit: "a".repeat(40),
-    configurationSha256: "b".repeat(64),
+    reviewedCommit: TARGET_COMMIT,
+    configurationSha256: TARGET_CONFIG_SHA,
     versionId: "12345678-1234-1234-1234-123456789abc",
   };
   let laterReads = 0;
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: reviewed,
     api: {
+      ...workerIdentityMocks,
       async listWorkerDeployments() {
         return {
           deployments: [{ id: "deployment-id", versions: [{ version_id: reviewed.versionId, percentage: 100 }] }],
@@ -280,20 +334,18 @@ test("activation unwraps the Cloudflare deployment envelope and refuses an alrea
       async getWorkerVersion() { laterReads += 1; },
       async getLatestWorkerVersion() { laterReads += 1; },
     },
-    custodian: { async readAccessCredential() { laterReads += 1; } },
+    custodian: { ...custodyMocks, async readAccessCredential() { laterReads += 1; } },
   });
-  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary({
+  await assert.rejects(() => service.activateReviewedWorker({
     installApproval: WRITE_APPROVALS.installServiceAuth,
     deployApproval: WRITE_APPROVALS.deployReviewedWorker,
-    canaryApproval: WRITE_APPROVALS.runCanary,
-    accessCredentialReceiptId: "receipt-123",
     ...reviewed,
   }), /already deployed/);
   assert.equal(laterReads, 0);
 });
 
 test("one-shot activation derives a secret-bearing version, deploys it, and validates five exact responses", async () => {
-  const reviewed = { reviewedCommit: "a".repeat(40), configurationSha256: "b".repeat(64), versionId: "12345678-1234-1234-1234-123456789abc" };
+  const reviewed = { reviewedCommit: TARGET_COMMIT, configurationSha256: TARGET_CONFIG_SHA, versionId: "12345678-1234-1234-1234-123456789abc" };
   const activatedVersionId = "abcdefab-1234-1234-1234-abcdefabcdef";
   const baseResources = {
     bindings: [{ name: "AUTHORITY_DB", type: "d1", id: CLOUDFLARE_ADMIN_V7.d1Id }],
@@ -304,6 +356,8 @@ test("one-shot activation derives a secret-bearing version, deploys it, and vali
   let deployed;
   let activated = false;
   let requestIndex = 0;
+  let subdomainEnabled = false;
+  let subdomainPosts = 0;
   const replies = [
     [401, { outcome: "denied", reason: "service_authentication_failed" }],
     [200, { ready: false, mode: "development", externalWritesEnabled: false, missingAuthoritativeDependencies: [] }],
@@ -314,7 +368,24 @@ test("one-shot activation derives a secret-bearing version, deploys it, and vali
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: reviewed,
     api: {
-      async listWorkerDeployments() { return []; },
+      ...workerIdentityMocks,
+      async getWorkerSubdomain() { return { enabled: subdomainEnabled, previews_enabled: false }; },
+      async setWorkerSubdomain() { subdomainPosts += 1; subdomainEnabled = true; return { enabled: true, previews_enabled: false }; },
+      async listAccessServiceTokens() { return [{ id: "12345678-1234-1234-1234-123456789abc", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }]; },
+      async listAccessApplications() {
+        return [{
+          id: "app-id",
+          name: CLOUDFLARE_ADMIN_V7.accessApplicationName,
+          type: "self_hosted",
+          destinations: [{ type: "worker", worker_id: WORKER_ID }],
+        }];
+      },
+      async listAccessApplicationPolicies() {
+        return [{ id: "policy", decision: "non_identity", include: [{ service_token: { token_id: "12345678-1234-1234-1234-123456789abc" } }], exclude: [], require: [] }];
+      },
+      async listWorkerDeployments() {
+        return deployed ? [{ id: "deployment-id", is_active: true, versions: [{ version_id: activatedVersionId, percentage: 100 }] }] : [];
+      },
       async getWorkerVersion(id) {
         return id === reviewed.versionId
           ? { id, resources: baseResources }
@@ -338,7 +409,14 @@ test("one-shot activation derives a secret-bearing version, deploys it, and vali
         return { id: "deployment-id", created_on: "2026-09-16T20:00:00Z", versions: [{ version_id: id, percentage: 100 }] };
       },
     },
-    custodian: { async readAccessCredential() { return { clientId: "access-" + "client", clientSecret: "access-" + "secret" }; } },
+    custodian: {
+      ...custodyMocks,
+      async readAccessCredential() { return { clientId: "access-" + "client", clientSecret: "access-" + "secret" }; },
+      async readServiceAuthPrincipal() {
+        const parsed = JSON.parse(installed);
+        return { principalId: "development-canary-v1", keyId: "canary-2026-09-16", secret: parsed["development-canary-v1"]["canary-2026-09-16"] };
+      },
+    },
     canaryFetch: async (request) => {
       assert.equal(request.headers.get("cf-access-client-id"), "access-client");
       assert.equal(request.headers.get("cf-access-client-secret"), "access-secret");
@@ -347,82 +425,125 @@ test("one-shot activation derives a secret-bearing version, deploys it, and vali
     },
     now: () => new Date("2026-09-16T20:00:00Z"),
   });
-  const result = await service.activateReviewedWorkerAndRunCanary({
+  const activation = await service.activateReviewedWorker({
     installApproval: WRITE_APPROVALS.installServiceAuth,
     deployApproval: WRITE_APPROVALS.deployReviewedWorker,
-    canaryApproval: WRITE_APPROVALS.runCanary,
-    accessCredentialReceiptId: "receipt-123",
     ...reviewed,
+  });
+  // Phase 7 ends unreachable: deployed at 100% with workers.dev and previews still disabled.
+  assert.equal(requestIndex, 0);
+  assert.equal(activation.reachable, false);
+  assert.deepEqual(activation.subdomain, { enabled: false, previews_enabled: false });
+  assert.deepEqual(deployed, { id: activatedVersionId, commit: reviewed.reviewedCommit });
+  assert.equal(activation.deployment.baseReviewedVersionId, reviewed.versionId);
+  assert.equal(activation.deployment.activatedVersionId, activatedVersionId);
+
+  // Phase 8-10: one enablement POST, one read-back, then the five exact canary responses.
+  const result = await service.enableSubdomainAndRunCanary({
+    enableApproval: WRITE_APPROVALS.enableSubdomain,
+    canaryApproval: WRITE_APPROVALS.runCanary,
+    accessCredentialReceiptId: "managed-secret:" + CLOUDFLARE_ADMIN_V7.accessCredentialSecretName,
+    serviceAuthReceiptId: "managed-secret:" + CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName,
+    serviceTokenId: "12345678-1234-1234-1234-123456789abc",
+    workerId: WORKER_ID,
+    keyId: "canary-2026-09-16",
+    activatedVersionId,
   });
   assert.equal(requestIndex, 5);
   assert.equal(result.evidence.length, 5);
-  assert.deepEqual(deployed, { id: activatedVersionId, commit: reviewed.reviewedCommit });
-  assert.equal(result.deployment.baseReviewedVersionId, reviewed.versionId);
-  assert.equal(result.deployment.activatedVersionId, activatedVersionId);
+  assert.equal(result.subdomainPosts, 1);
+  assert.deepEqual(result.subdomain, { enabled: true, previews_enabled: false });
   const secret = JSON.parse(installed)["development-canary-v1"]["canary-2026-09-16"];
   assert.doesNotMatch(JSON.stringify(result), new RegExp(secret));
+  assert.doesNotMatch(JSON.stringify(activation), new RegExp(secret));
   assert.doesNotMatch(JSON.stringify(result), /access-client|access-secret/);
 });
 
 test("canary stops after the first unexpected result and does not retry", async () => {
-  const reviewed = { reviewedCommit: "a".repeat(40), configurationSha256: "b".repeat(64), versionId: "12345678-1234-1234-1234-123456789abc" };
+  const reviewed = { reviewedCommit: TARGET_COMMIT, configurationSha256: TARGET_CONFIG_SHA, versionId: "12345678-1234-1234-1234-123456789abc" };
   const activatedVersionId = "abcdefab-1234-1234-1234-abcdefabcdef";
   const baseResources = { bindings: [], script: { etag: "etag" }, script_runtime: { compatibility_date: "2026-09-16" } };
   let calls = 0;
   let activated = false;
+  let deployedOnce = false;
+  let subdomainEnabled = false;
+  let subdomainPosts = 0;
+  const tokenId = "12345678-1234-1234-1234-123456789abc";
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: reviewed,
     api: {
-      async listWorkerDeployments() { return []; },
+      ...workerIdentityMocks,
+      async getWorkerSubdomain() { return { enabled: subdomainEnabled, previews_enabled: false }; },
+      async setWorkerSubdomain() { subdomainPosts += 1; subdomainEnabled = true; return { enabled: true, previews_enabled: false }; },
+      async listAccessServiceTokens() { return [{ id: tokenId, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }]; },
+      async listAccessApplications() { return [{ id: "app-id", name: CLOUDFLARE_ADMIN_V7.accessApplicationName, type: "self_hosted", destinations: [{ type: "worker", worker_id: WORKER_ID }] }]; },
+      async listAccessApplicationPolicies() { return [{ id: "policy", decision: "non_identity", include: [{ service_token: { token_id: tokenId } }], exclude: [], require: [] }]; },
+      async listWorkerDeployments() { return deployedOnce ? [{ id: "deployment-id", is_active: true, versions: [{ version_id: activatedVersionId, percentage: 100 }] }] : []; },
       async getWorkerVersion(id) { return { id, resources: { ...baseResources, bindings: id === reviewed.versionId ? [] : [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }] } }; },
       async getLatestWorkerVersion() { return activated
         ? { id: activatedVersionId, annotations: { "workers/message": `8978-activated:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` } }
         : { id: reviewed.versionId, annotations: { "workers/message": `8978-reviewed:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` }, resources: baseResources }; },
       async listWorkerSecrets() { return []; },
       async createServiceAuthVersion() { activated = true; return { id: activatedVersionId }; },
-      async createWorkerDeployment() { return { id: "deployment-id", versions: [{ version_id: activatedVersionId, percentage: 100 }] }; },
+      async createWorkerDeployment() { deployedOnce = true; return { id: "deployment-id", versions: [{ version_id: activatedVersionId, percentage: 100 }] }; },
     },
-    custodian: { async readAccessCredential() { return { clientId: "client", clientSecret: "secret" }; } },
+    custodian: {
+      ...custodyMocks,
+      async readAccessCredential() { return { clientId: "client", clientSecret: "secret" }; },
+      async readServiceAuthPrincipal() { return { principalId: "development-canary-v1", keyId: "canary-2026-09-16", secret: "s".repeat(43) }; },
+    },
     canaryFetch: async () => { calls += 1; return Response.json({ unexpected: true }, { status: 500 }); },
+    now: () => new Date("2026-09-16T20:00:00Z"),
   });
-  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary({
+  await service.activateReviewedWorker({
     installApproval: WRITE_APPROVALS.installServiceAuth,
     deployApproval: WRITE_APPROVALS.deployReviewedWorker,
-    canaryApproval: WRITE_APPROVALS.runCanary,
-    accessCredentialReceiptId: "receipt-123",
     ...reviewed,
-  }), /no retry, cleanup, rollback, or restore was attempted/);
+  });
+  assert.equal(calls, 0, "activation alone must never reach the canary");
+  await assert.rejects(() => service.enableSubdomainAndRunCanary({
+    enableApproval: WRITE_APPROVALS.enableSubdomain,
+    canaryApproval: WRITE_APPROVALS.runCanary,
+    accessCredentialReceiptId: "managed-secret:" + CLOUDFLARE_ADMIN_V7.accessCredentialSecretName,
+    serviceAuthReceiptId: "managed-secret:" + CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName,
+    serviceTokenId: tokenId,
+    workerId: WORKER_ID,
+    keyId: "canary-2026-09-16",
+    activatedVersionId,
+  }), /canary sequence 1 returned HTTP 500/);
+  // One canary request, one enablement POST, and no retry of either.
   assert.equal(calls, 1);
+  assert.equal(subdomainPosts, 1);
 });
 
 test("canary refuses to overwrite existing service authentication before any request", async () => {
-  const reviewed = { reviewedCommit: "a".repeat(40), configurationSha256: "b".repeat(64), versionId: "12345678-1234-1234-1234-123456789abc" };
+  const reviewed = { reviewedCommit: TARGET_COMMIT, configurationSha256: TARGET_CONFIG_SHA, versionId: "12345678-1234-1234-1234-123456789abc" };
   let calls = 0;
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: reviewed,
     api: {
+      ...workerIdentityMocks,
       async listWorkerDeployments() { return []; },
       async getWorkerVersion() { return { id: reviewed.versionId, resources: { bindings: [], script: { etag: "etag" }, script_runtime: {} } }; },
       async getLatestWorkerVersion() { return { id: reviewed.versionId, annotations: { "workers/message": `8978-reviewed:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` }, resources: { bindings: [] } }; },
       async listWorkerSecrets() { return [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }]; },
     },
-    custodian: { async readAccessCredential() { throw new Error("must not read"); } },
+    custodian: { ...custodyMocks, async readAccessCredential() { throw new Error("must not read"); } },
     canaryFetch: async () => { calls += 1; return Response.json({}); },
   });
-  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary({
+  await assert.rejects(() => service.activateReviewedWorker({
     installApproval: WRITE_APPROVALS.installServiceAuth,
     deployApproval: WRITE_APPROVALS.deployReviewedWorker,
-    canaryApproval: WRITE_APPROVALS.runCanary,
-    accessCredentialReceiptId: "receipt-123",
     ...reviewed,
   }), /retry or overwrite is prohibited/);
   assert.equal(calls, 0);
 });
 
 test("activation refuses caller-selected or no-longer-latest reviewed versions before mutation", async () => {
-  const reviewed = { reviewedCommit: "a".repeat(40), configurationSha256: "b".repeat(64), versionId: "12345678-1234-1234-1234-123456789abc" };
+  const reviewed = { reviewedCommit: TARGET_COMMIT, configurationSha256: TARGET_CONFIG_SHA, versionId: "12345678-1234-1234-1234-123456789abc" };
   let mutations = 0;
   const api = {
+    ...workerIdentityMocks,
     async listWorkerDeployments() { return []; },
     async getWorkerVersion() { return { id: reviewed.versionId, resources: { bindings: [], script: { etag: "etag" }, script_runtime: {} } }; },
     async getLatestWorkerVersion() { return { id: "abcdefab-1234-1234-1234-abcdefabcdef", annotations: {} }; },
@@ -433,17 +554,15 @@ test("activation refuses caller-selected or no-longer-latest reviewed versions b
   const approved = {
     installApproval: WRITE_APPROVALS.installServiceAuth,
     deployApproval: WRITE_APPROVALS.deployReviewedWorker,
-    canaryApproval: WRITE_APPROVALS.runCanary,
-    accessCredentialReceiptId: "receipt-123",
     ...reviewed,
   };
-  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary({ ...approved, versionId: "abcdefab-1234-1234-1234-abcdefabcdef" }), /do not match/);
-  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary(approved), /not the unmodified latest version/);
+  await assert.rejects(() => service.activateReviewedWorker({ ...approved, versionId: "abcdefab-1234-1234-1234-abcdefabcdef" }), /do not match/);
+  await assert.rejects(() => service.activateReviewedWorker(approved), /not the unmodified latest version/);
   assert.equal(mutations, 0);
 });
 
 test("activation refuses a secret-derived version that changed reviewed code before deployment", async () => {
-  const reviewed = { reviewedCommit: "a".repeat(40), configurationSha256: "b".repeat(64), versionId: "12345678-1234-1234-1234-123456789abc" };
+  const reviewed = { reviewedCommit: TARGET_COMMIT, configurationSha256: TARGET_CONFIG_SHA, versionId: "12345678-1234-1234-1234-123456789abc" };
   const activatedVersionId = "abcdefab-1234-1234-1234-abcdefabcdef";
   let activated = false;
   let deployments = 0;
@@ -451,6 +570,7 @@ test("activation refuses a secret-derived version that changed reviewed code bef
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: reviewed,
     api: {
+      ...workerIdentityMocks,
       async listWorkerDeployments() { return []; },
       async getWorkerVersion(id) { return { id, resources: id === reviewed.versionId ? baseResources : {
         ...baseResources,
@@ -464,13 +584,11 @@ test("activation refuses a secret-derived version that changed reviewed code bef
       async createServiceAuthVersion() { activated = true; return { id: activatedVersionId }; },
       async createWorkerDeployment() { deployments += 1; },
     },
-    custodian: { async readAccessCredential() { return { clientId: "client", clientSecret: "secret" }; } },
+    custodian: { ...custodyMocks, async readAccessCredential() { return { clientId: "client", clientSecret: "secret" }; } },
   });
-  await assert.rejects(() => service.activateReviewedWorkerAndRunCanary({
+  await assert.rejects(() => service.activateReviewedWorker({
     installApproval: WRITE_APPROVALS.installServiceAuth,
     deployApproval: WRITE_APPROVALS.deployReviewedWorker,
-    canaryApproval: WRITE_APPROVALS.runCanary,
-    accessCredentialReceiptId: "receipt-123",
     ...reviewed,
   }), /changed reviewed code or configuration/);
   assert.equal(deployments, 0);

@@ -107,6 +107,7 @@ test("public MCP inventory is exact and unauthenticated execution returns an MCP
     "create_development_access_service_token",
     "ensure_development_access_protection",
     "activate_exact_reviewed_development_worker",
+    "enable_development_worker_subdomain_and_run_canary",
   ]);
   assert.equal(listed.result.tools.every(({ annotations }) => annotations.destructiveHint === false), true);
   const called = await sseJson(await handleCloudflareAdminV7Mcp(mcpRequest({

@@ -35,9 +35,9 @@ function service(env) {
     api,
     custodian: new ManagedSecretCredentialCustodian(api, env),
     reviewedDeployment: {
-      reviewedCommit: env.REVIEWED_COMMIT,
-      configurationSha256: env.REVIEWED_CONFIGURATION_SHA256,
-      versionId: env.REVIEWED_WORKER_VERSION_ID,
+      reviewedCommit: env.TARGET_WORKER_COMMIT,
+      configurationSha256: env.TARGET_CONFIGURATION_SHA256,
+      versionId: env.TARGET_WORKER_VERSION_ID,
     },
   });
 }
@@ -65,20 +65,22 @@ export function createCloudflareAdminV7Server(env) {
     return denied ?? result(await service(env).createServiceToken(input));
   });
   server.registerTool("ensure_development_access_protection", {
-    description: "Create or confirm a self-hosted Access application and service-token-only policy for the one pinned workers.dev hostname.",
-    inputSchema: { approval: z.literal(WRITE_APPROVALS.ensureAccess), serviceTokenId: z.string().uuid() },
+    description: "Create or confirm a self-hosted Worker-level Access application and exactly one service-token-only Service Auth policy for the pinned immutable Worker ID.",
+    inputSchema: {
+      approval: z.literal(WRITE_APPROVALS.ensureAccess),
+      serviceTokenId: z.string().uuid(),
+      workerId: z.string().regex(/^[a-f0-9]{32}$/),
+    },
     annotations: annotations("Ensure Development Access Protection", false),
   }, async (input) => {
     const denied = authorize(CLOUDFLARE_ADMIN_V7.oauthScopeWrite);
     return denied ?? result(await service(env).ensureAccessProtection(input));
   });
   server.registerTool("activate_exact_reviewed_development_worker", {
-    description: "Derive a secret-bearing version from the exact latest reviewed Worker version, deploy it at 100%, and immediately run the exact five-request fail-closed canary once. Secret values are never returned or retained by this connector.",
+    description: "Derive a secret-bearing version from the exact latest reviewed Worker version and deploy it at 100% while workers.dev and preview URLs remain disabled. No canary is run and the Worker remains unreachable. Secret values are never returned or retained by this connector.",
     inputSchema: {
       installApproval: z.literal(WRITE_APPROVALS.installServiceAuth),
       deployApproval: z.literal(WRITE_APPROVALS.deployReviewedWorker),
-      canaryApproval: z.literal(WRITE_APPROVALS.runCanary),
-      accessCredentialReceiptId: z.string().regex(/^[A-Za-z0-9._:-]{8,200}$/),
       reviewedCommit: z.string().regex(/^[a-f0-9]{40}$/),
       configurationSha256: z.string().regex(/^[a-f0-9]{64}$/),
       versionId: z.string().uuid(),
@@ -86,7 +88,24 @@ export function createCloudflareAdminV7Server(env) {
     annotations: annotations("Activate Exact Reviewed Development Worker", false),
   }, async (input) => {
     const denied = authorize(CLOUDFLARE_ADMIN_V7.oauthScopeWrite);
-    return denied ?? result(await service(env).activateReviewedWorkerAndRunCanary(input));
+    return denied ?? result(await service(env).activateReviewedWorker(input));
+  });
+  server.registerTool("enable_development_worker_subdomain_and_run_canary", {
+    description: "Reverify Worker-level Access, make exactly one workers.dev subdomain enablement request with preview URLs disabled, read the state back exactly once, and only then run the exact five-request fail-closed canary once. Makes no second attempt and reverses nothing.",
+    inputSchema: {
+      enableApproval: z.literal(WRITE_APPROVALS.enableSubdomain),
+      canaryApproval: z.literal(WRITE_APPROVALS.runCanary),
+      accessCredentialReceiptId: z.string().regex(/^[A-Za-z0-9._:-]{8,200}$/),
+      serviceAuthReceiptId: z.string().regex(/^[A-Za-z0-9._:-]{8,200}$/),
+      serviceTokenId: z.string().uuid(),
+      workerId: z.string().regex(/^[a-f0-9]{32}$/),
+      keyId: z.string().regex(/^[A-Za-z0-9._:-]{1,200}$/),
+      activatedVersionId: z.string().uuid(),
+    },
+    annotations: annotations("Enable Development Worker Subdomain And Run Canary", false),
+  }, async (input) => {
+    const denied = authorize(CLOUDFLARE_ADMIN_V7.oauthScopeWrite);
+    return denied ?? result(await service(env).enableSubdomainAndRunCanary(input));
   });
   return server;
 }

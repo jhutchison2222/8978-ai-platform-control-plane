@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-worker-bootstrap-creation-packet.schema.json",
+  "title": "Development Worker bootstrap creation packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "status", "governing", "environment", "phase", "requiresWorkerExists",
+    "executionAuthorized", "workerDeploymentAuthorized", "subdomainEnablementAuthorized",
+    "secretInstallationAuthorized", "canaryInvocationAuthorized",
+    "targetWorkerCommit", "targetConfigurationSha256", "bootstrapConfiguration",
+    "remediationCommit", "remediationCommitBinding", "target", "bootstrapSurface",
+    "preBootstrapRouteAudit", "authorizedCommands", "credentialBoundaries",
+    "prohibitedOperations", "stopConditions", "partialFailurePolicy",
+    "requiredOwnerAuthorizationTemplate"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "minLength": 1 },
+    "status": { "const": "PLANNED_BOOTSTRAP_NOT_EXECUTED" },
+    "governing": { "const": false },
+    "environment": { "const": "development" },
+    "phase": { "const": "create_zero_surface_development_worker" },
+    "requiresWorkerExists": { "const": false },
+    "executionAuthorized": { "const": false },
+    "workerDeploymentAuthorized": { "const": false },
+    "subdomainEnablementAuthorized": { "const": false },
+    "secretInstallationAuthorized": { "const": false },
+    "canaryInvocationAuthorized": { "const": false },
+    "targetWorkerCommit": { "const": "371b02d797528f175e9e6075aef6fc92757dfd52" },
+    "targetConfigurationSha256": { "const": "f011600fb1835dcdf9f6491f4b27613004e58e37a1cd5ef9b2b5697859ab40a6" },
+    "bootstrapConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "differsFromTargetOnlyBy"],
+      "properties": {
+        "path": { "const": "wrangler.bootstrap.jsonc" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "differsFromTargetOnlyBy": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "const": "workers_dev" }
+        }
+      }
+    },
+    "remediationCommit": { "const": null },
+    "remediationCommitBinding": { "const": "supplied_externally_in_owner_authorization_never_written_to_reviewed_tree" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cloudflareAccountId", "workerName", "authorityDatabaseId", "workflowName", "queueName"],
+      "properties": {
+        "cloudflareAccountId": { "const": "de5e0273347b0b4c5f8f4e554aa2288f" },
+        "workerName": { "const": "8978-ai-control-plane-dev" },
+        "authorityDatabaseId": { "const": "741ade94-8539-4fc8-b6be-24884720dee8" },
+        "workflowName": { "const": "8978-ai-orchestrator-dev" },
+        "queueName": { "const": "8978-ai-orchestrator-dev" }
+      }
+    },
+    "bootstrapSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workersDev", "previewUrls", "routes", "customDomains", "migrationTags", "publicSurface"],
+      "properties": {
+        "workersDev": { "const": false },
+        "previewUrls": { "const": false },
+        "routes": { "type": "array", "maxItems": 0, "items": { "type": "string" } },
+        "customDomains": { "type": "array", "maxItems": 0, "items": { "type": "string" } },
+        "migrationTags": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "publicSurface": { "const": "none" }
+      }
+    },
+    "preBootstrapRouteAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required", "credential", "requiredPermissions", "prohibitedPermissions",
+        "permittedMethods", "permittedEndpoints", "requiredOutcome", "requiredOwnerAuthorizationTemplate"
+      ],
+      "properties": {
+        "required": { "const": true },
+        "credential": { "const": "separate_temporary_read_only_zone_credential" },
+        "requiredPermissions": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "enum": ["Zone Read", "Workers Routes Read"] }
+        },
+        "prohibitedPermissions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "permittedMethods": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "const": "GET" }
+        },
+        "permittedEndpoints": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "requiredOutcome": { "const": "zero_routes_targeting_the_pinned_worker" },
+        "requiredOwnerAuthorizationTemplate": { "type": "string", "minLength": 80 }
+      }
+    },
+    "authorizedCommands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routeAudit", "bootstrapDeploy", "bootstrapVerification", "maximumAttempts"],
+      "properties": {
+        "routeAudit": { "type": "string", "minLength": 10 },
+        "bootstrapDeploy": { "type": "string", "minLength": 10 },
+        "bootstrapVerification": { "type": "string", "minLength": 10 },
+        "maximumAttempts": { "const": 1 }
+      }
+    },
+    "credentialBoundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["credentialKinds", "connectorRouteAccess", "runtimeTokenZonePermissions", "crossInvocationCustodyRequired"],
+      "properties": {
+        "credentialKinds": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "enum": ["access-service-token", "service-auth-principal"] }
+        },
+        "connectorRouteAccess": { "const": false },
+        "runtimeTokenZonePermissions": { "const": false },
+        "crossInvocationCustodyRequired": { "const": true }
+      }
+    },
+    "prohibitedOperations": { "type": "array", "minItems": 8, "items": { "type": "string", "minLength": 1 } },
+    "stopConditions": { "type": "array", "minItems": 6, "items": { "type": "string", "minLength": 1 } },
+    "partialFailurePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automaticDeletion", "automaticCleanup", "automaticRetry", "automaticRestore", "automaticRollback", "action"],
+      "properties": {
+        "automaticDeletion": { "const": false },
+        "automaticCleanup": { "const": false },
+        "automaticRetry": { "const": false },
+        "automaticRestore": { "const": false },
+        "automaticRollback": { "const": false },
+        "action": { "const": "stop_and_report_exact_sanitized_state" }
+      }
+    },
+    "requiredOwnerAuthorizationTemplate": { "type": "string", "minLength": 120 }
+  }
+}

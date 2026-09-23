@@ -18,18 +18,33 @@ export const CLOUDFLARE_ADMIN_V7 = Object.freeze({
   accessApplicationName: "8978 AI Control Plane Development Worker",
   accessServiceTokenName: "8978-ai-control-plane-dev-canary",
   accessCredentialSecretName: "CANARY_ACCESS_CREDENTIAL_JSON",
+  serviceAuthPrincipalSecretName: "CANARY_SERVICE_AUTH_PRINCIPAL_JSON",
+  serviceAuthPrincipalId: "development-canary-v1",
   maximumAccessTokenHours: 24,
+  targetWorkerCommit: "371b02d797528f175e9e6075aef6fc92757dfd52",
+  targetConfigurationSha256: "f011600fb1835dcdf9f6491f4b27613004e58e37a1cd5ef9b2b5697859ab40a6",
+  bootstrapConfigurationSha256: "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d",
+  bootstrapConfigurationPath: "wrangler.bootstrap.jsonc",
+  bootstrapAnnotationPrefix: "8978-bootstrap",
+  reviewedAnnotationPrefix: "8978-reviewed",
+  activatedAnnotationPrefix: "8978-activated",
+  expectedMigrationTag: "v2",
+  subdomainBeforeEnablement: Object.freeze({ enabled: false, previews_enabled: false }),
+  subdomainAfterEnablement: Object.freeze({ enabled: true, previews_enabled: false }),
+  workerIdPattern: "^[a-f0-9]{32}$",
 });
 
 export const WRITE_APPROVALS = Object.freeze({
   ensureAccess:
-    "APPROVE ACCESS PROTECTION FOR 8978-ai-control-plane-dev.jhutchison.workers.dev",
+    "APPROVE WORKER-LEVEL ACCESS PROTECTION FOR 8978-ai-control-plane-dev",
   createServiceToken:
     "APPROVE ONE ACCESS TOKEN UP TO 24 HOURS FOR 8978-ai-control-plane-dev",
   installServiceAuth:
     "APPROVE SERVICE_AUTH_KEYS_JSON FOR 8978-ai-control-plane-dev",
   deployReviewedWorker:
     "APPROVE EXACT REVIEWED COMMIT DEPLOYMENT TO 8978-ai-control-plane-dev",
+  enableSubdomain:
+    "APPROVE WORKERS.DEV SUBDOMAIN ENABLEMENT FOR 8978-ai-control-plane-dev",
   runCanary:
     "APPROVE ONE FIVE-REQUEST CANARY FOR 8978-ai-control-plane-dev",
 });
@@ -50,6 +65,13 @@ export function requireReviewedCommit(value) {
 export function requireSha256(value, name = "sha256") {
   if (typeof value !== "string" || !/^[a-f0-9]{64}$/.test(value)) {
     throw new TypeError(`${name} must be an exact lowercase SHA-256 digest`);
+  }
+  return value;
+}
+
+export function requireImmutableWorkerId(value, name = "workerId") {
+  if (typeof value !== "string" || !/^[a-f0-9]{32}$/.test(value)) {
+    throw new TypeError(`${name} must be an exact 32-character lowercase immutable Cloudflare Worker ID`);
   }
   return value;
 }

@@ -72,22 +72,58 @@ Scope the token to account `de5e0273347b0b4c5f8f4e554aa2288f` only. Grant only:
 - Access: Apps and Policies Read and Write
 - Access: Service Tokens Read and Write
 
-Workers Scripts Write is required only to install the two named managed secrets and deploy the pinned version. No zone permission, DNS permission, account-token administration, or unrelated product permission is required.
+Workers Scripts Write is required only to install the named managed secrets, deploy the pinned version, and make the single `workers.dev` subdomain enablement request. Worker-level Access uses the Access permissions above. No zone permission, DNS permission, account-token administration, or unrelated product permission is required.
+
+The pre-bootstrap route audit (phase 0) is the one operation that needs zone scope. It uses a **separate temporary** credential with `Zone Read` and `Workers Routes Read` only, never `Workers Routes Write`. That credential is never given to this connector, and no zone permission is added to this token.
 
 ## Manual owner checklist after merge
 
 None of these actions is authorized by this code-only issue. Perform them only under a separately reviewed execution authorization.
 
-1. Create a dedicated GitHub OAuth application. Set its callback to `https://8978-cloudflare-admin-v7.jhutchison.workers.dev/callback`.
-2. Create a dedicated OAuth KV namespace and replace the placeholder in `wrangler.cloudflare-admin-v7.example.jsonc`.
-3. Create the dedicated least-privilege Cloudflare API token described above. Do not reuse a GHL/HighLevel credential.
-4. Install `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `CLOUDFLARE_ADMIN_API_TOKEN` as connector Worker secrets. Do not create `CANARY_ACCESS_CREDENTIAL_JSON`; the bounded token tool creates it.
-5. Copy the example configuration to an execution-only reviewed configuration. Pin the accepted commit and SHA-256 of `wrangler.jsonc`.
-6. Upload, but do not deploy, the reviewed control-plane Worker version with message `8978-reviewed:<commit>:<configuration-sha256>`. Pin the returned version UUID as `REVIEWED_WORKER_VERSION_ID`.
-7. Run local tests, artifact validation, secret scan, connector dry run, and one independent exact-head review.
-8. Deploy only the connector Worker, reconnect the MCP endpoint at `/mcp-8978-admin-v7`, and complete GitHub OAuth with the allowlisted account.
-9. Run the read-only preflight first. Stop on any missing, ambiguous, or mismatched resource.
-10. Obtain fresh explicit approval for each write operation. Run each tool at most once and retain only sanitized evidence. The final activation tool consumes the three separate literal approvals for secret installation, exact deployment, and the single canary in one call.
+`8978-ai-control-plane-dev` does not yet exist. The ordering below is bootstrap-safe: no public
+surface exists at any point before Worker-level Access is installed. See
+[the bootstrap creation doc](development-worker-bootstrap-creation.md),
+[the route audit doc](development-worker-route-audit.md), and
+[the subdomain enablement doc](development-worker-subdomain-enablement.md).
+
+0. Run the read-only all-zone route audit with a **separate temporary** `Zone Read` +
+   `Workers Routes Read` credential: `node scripts/audit-development-worker-routes.js`. Require zero
+   routes targeting the Worker. Never grant `Workers Routes Write`, and never add zone permission to
+   the runtime or connector token.
+1. Deploy the bootstrap Worker once, with no public surface:
+   `npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:<target-commit>:<bootstrap-sha256>"`.
+   This creates the Worker, applies Durable Object migrations `v1` and `v2`, and registers the
+   Workflow, with `workers_dev` and `preview_urls` both `false`.
+2. Resolve and pin the immutable Worker ID from `GET /accounts/{account_id}/workers/workers`,
+   requiring an exact single name match, a 32-hex id, confirmation through
+   `GET /accounts/{account_id}/workers/workers/{worker_id}`, and agreement with the stable Worker
+   script `tag`. The legacy script endpoint returns the name as its `id` and is never the source.
+3. Run the owner-run local verifier — not Admin v7 —
+   `node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_SHA>`.
+   It is GET-only and writes no record.
+4. From an LF-exact checkout of the target commit, upload but do not deploy the reviewed version with
+   message `8978-reviewed:<target-commit>:<configuration-sha256>`. Pin the returned UUID as
+   `TARGET_WORKER_VERSION_ID`. No remediation file may be copied into that tree.
+5. Create a dedicated GitHub OAuth application with callback
+   `https://8978-cloudflare-admin-v7.jhutchison.workers.dev/callback`, a dedicated OAuth KV
+   namespace, and the least-privilege Cloudflare API token described above. Do not reuse a
+   GHL/HighLevel credential.
+6. Install `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `CLOUDFLARE_ADMIN_API_TOKEN` as connector
+   Worker secrets. Do not create `CANARY_ACCESS_CREDENTIAL_JSON` or
+   `CANARY_SERVICE_AUTH_PRINCIPAL_JSON`; the bounded tools create them in their own distinct slots.
+7. Deploy only the connector Worker, reconnect the MCP endpoint at `/mcp-8978-admin-v7`, and complete
+   GitHub OAuth with the allowlisted account. Run local tests, artifact validation, secret scan,
+   target-runtime closure verification, connector dry run, and one independent exact-head review.
+8. Run the read-only preflight. It is satisfiable before and after bootstrap and stops on any
+   missing, ambiguous, or mismatched resource.
+9. Under their own literal approvals, create the bounded Access service token and the Worker-level
+   Access application with exactly one service-token-only Service Auth policy, while `workers.dev`
+   remains disabled. Then, under two further literal approvals, create the secret-bearing version and
+   deploy it at 100%; the Worker stays unreachable and the call reports `reachable: false`.
+10. Under its own literal approval, make exactly one subdomain enablement request
+    (`enabled: true`, `previews_enabled: false`), read the state back exactly once, and only then run
+    the five-request canary once. Retain only sanitized evidence. No step retries, disables, cleans
+    up, restores, or rolls back.
 
 Do not enter a credential value into GitHub, source, fixtures, logs, comments, MCP parameters, or retained evidence.
 

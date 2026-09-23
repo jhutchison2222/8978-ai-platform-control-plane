@@ -1,4 +1,4 @@
-import { CLOUDFLARE_ADMIN_V7 } from "./cloudflare-admin-v7-contracts.js";
+import { CLOUDFLARE_ADMIN_V7, requireImmutableWorkerId } from "./cloudflare-admin-v7-contracts.js";
 import { redactSensitive } from "./cloudflare-admin-v7-redaction.js";
 
 const API_ORIGIN = "https://api.cloudflare.com/client/v4";
@@ -29,9 +29,10 @@ export class CloudflareAdminV7Api {
     return `/accounts/${this.accountId}${path}`;
   }
 
-  async #request(method, path, { body, contentType = "application/json", expected = [200] } = {}) {
+  async #request(method, path, { body, contentType = "application/json", expected = [200], headers: extraHeaders } = {}) {
     if (!new Set(["GET", "POST", "PUT", "PATCH"]).has(method)) throw new Error(`Cloudflare API method is prohibited: ${method}`);
     const headers = new Headers({ Accept: "application/json", Authorization: `Bearer ${this.apiToken}` });
+    for (const [name, value] of Object.entries(extraHeaders ?? {})) headers.set(name, value);
     let payload;
     if (body !== undefined) {
       headers.set("Content-Type", contentType);
@@ -110,6 +111,51 @@ export class CloudflareAdminV7Api {
     });
   }
 
+  async listWorkers() {
+    const collected = [];
+    let cursor;
+    for (let page = 0; page < 50; page += 1) {
+      const query = cursor ? `?per_page=100&cursor=${encodeURIComponent(cursor)}` : "?per_page=100";
+      const result = await this.#request("GET", this.#accountPath(`/workers/workers${query}`));
+      const items = Array.isArray(result) ? result : Array.isArray(result?.result) ? result.result : [];
+      collected.push(...items);
+      cursor = result?.result_info?.cursor ?? result?.cursor;
+      if (!cursor || items.length === 0) return collected;
+    }
+    throw new Error("Worker listing pagination did not terminate; state is ambiguous");
+  }
+
+  async getWorkerById(workerId) {
+    requireImmutableWorkerId(workerId);
+    return this.#request("GET", this.#accountPath(`/workers/workers/${workerId}`));
+  }
+
+  async listWorkerScripts() {
+    return this.#request("GET", this.#accountPath("/workers/scripts"));
+  }
+
+  async getWorkerService() {
+    return this.#request("GET", this.#accountPath(`/workers/services/${CLOUDFLARE_ADMIN_V7.workerName}`));
+  }
+
+  async getWorkerSubdomain() {
+    return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/subdomain`));
+  }
+
+  async setWorkerSubdomain({ enabled, previews_enabled: previewsEnabled } = {}) {
+    if (enabled !== true || previewsEnabled !== false) {
+      throw new Error("Only the reviewed subdomain transition enabled:true previews_enabled:false may be requested");
+    }
+    return this.#request("POST", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/subdomain`), {
+      body: { enabled: true, previews_enabled: false },
+      headers: { "Cloudflare-Workers-Script-Api-Date": "2025-08-01" },
+    });
+  }
+
+  async listWorkerDomains() {
+    return this.#request("GET", this.#accountPath("/workers/domains"));
+  }
+
   async listQueues() {
     return this.#request("GET", this.#accountPath(`/queues?name=${encodeURIComponent(CLOUDFLARE_ADMIN_V7.queueName)}`));
   }
@@ -119,20 +165,20 @@ export class CloudflareAdminV7Api {
   }
 
   async listAccessApplications() {
-    const domain = new URL(CLOUDFLARE_ADMIN_V7.workerUrl).hostname;
-    return this.#request("GET", this.#accountPath(`/access/apps?domain=${encodeURIComponent(domain)}`));
+    return this.#request("GET", this.#accountPath("/access/apps"));
   }
 
   async listAccessServiceTokens() {
     return this.#request("GET", this.#accountPath("/access/service_tokens"));
   }
 
-  async createAccessApplication() {
+  async createAccessApplication(workerId) {
+    requireImmutableWorkerId(workerId);
     return this.#request("POST", this.#accountPath("/access/apps"), {
       body: {
         name: CLOUDFLARE_ADMIN_V7.accessApplicationName,
-        domain: new URL(CLOUDFLARE_ADMIN_V7.workerUrl).hostname,
         type: "self_hosted",
+        destinations: [{ type: "worker", worker_id: workerId }],
         session_duration: "24h",
         app_launcher_visible: false,
         auto_redirect_to_identity: false,
@@ -171,6 +217,16 @@ export class CloudflareAdminV7Api {
           "workers/message": `8978-activated:${reviewedCommit}:${configurationSha256}`,
         },
       },
+    });
+  }
+
+  async listConnectorSecrets() {
+    return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.connectorWorkerName}/secrets`));
+  }
+
+  async installConnectorServiceAuthPrincipal(secretJson) {
+    return this.#request("PUT", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.connectorWorkerName}/secrets`), {
+      body: { name: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName, text: secretJson, type: "secret_text" },
     });
   }
 

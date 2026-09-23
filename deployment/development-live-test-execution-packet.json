@@ -92,13 +92,16 @@
     "productionOrCustomerOperationPermitted": false
   },
   "requiredPreflight": {
-    "readOnlyCommands": [
+    "zeroStatePreflight": [
       "wrangler whoami",
-      "wrangler deployments status --name 8978-ai-control-plane-dev --json",
       "wrangler d1 info 8978-ai-authority-dev --json",
-      "wrangler queues info 8978-ai-orchestrator-dev",
+      "wrangler queues info 8978-ai-orchestrator-dev"
+    ],
+    "postBootstrapPreflight": [
       "wrangler workflows describe 8978-ai-orchestrator-dev",
-      "wrangler secret list --name 8978-ai-control-plane-dev"
+      "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+      "wrangler secret list --name 8978-ai-control-plane-dev",
+      "wrangler subdomain status --name 8978-ai-control-plane-dev"
     ],
     "mustConfirm": [
       "authenticated Cloudflare account ID exactly matches the pinned development account",
@@ -107,7 +110,10 @@
       "Workflow identity and class association are independently retrieved",
       "current Worker deployments bindings routes domains and secret names are inventoried without secret values",
       "the reviewed exact head and packet digest still match",
-      "no production or customer resource is selected"
+      "no production or customer resource is selected",
+      "the bootstrapped Worker subdomain reports enabled false and previews_enabled false before any enablement request",
+      "the immutable Worker ID from the Workers list is confirmed and equals the stable Worker script tag",
+      "no account Worker domain record names the pinned development Worker"
     ]
   },
   "recordedOwnerDecisions": [
@@ -263,5 +269,20 @@
     "automaticRollback": false,
     "action": "stop_and_report_exact_state"
   },
-  "requiredOwnerAuthorizationTemplate": "Standing development authorization applies only after an independently accepted exact execution record materializes the new Access service-token identity, its scope, expiration no later than 24 hours after creation, and custodian, plus the new development-only HMAC principal, key ID, and custodian, without secret values. The operation must first create and verify Worker-level Cloudflare Access for only https://8978-ai-control-plane-dev.jhutchison.workers.dev, then deploy exact head <FULL_SHA> and packet SHA-256 <PACKET_SHA256> once, run the five-request synthetic fail-closed canary once, and capture sanitized evidence. Do not write or migrate D1, publish Queue messages, trigger Workflows, enable external writes or action execution, touch production or customers, expose credentials, change DNS, create a custom domain, delete, clean up, retry, restore, or roll back. Stop on any mismatch ambiguity partial result or unexpected effect."
+  "requiredOwnerAuthorizationTemplate": "Standing development authorization applies only after an independently accepted exact execution record materializes the new Access service-token identity, its scope, expiration no later than 24 hours after creation, and custodian, plus the new development-only HMAC principal, key ID, and custodian, without secret values. The operation must first create and verify Worker-level Cloudflare Access for only https://8978-ai-control-plane-dev.jhutchison.workers.dev, then deploy exact head <FULL_SHA> and packet SHA-256 <PACKET_SHA256> once, run the five-request synthetic fail-closed canary once, and capture sanitized evidence. Do not write or migrate D1, publish Queue messages, trigger Workflows, enable external writes or action execution, touch production or customers, expose credentials, change DNS, create a custom domain, delete, clean up, retry, restore, or roll back. Stop on any mismatch ambiguity partial result or unexpected effect.",
+  "requiresWorkerExists": true,
+  "requiresBootstrapRecord": true,
+  "subdomainTransition": {
+    "beforeEnablement": {
+      "enabled": false,
+      "previews_enabled": false
+    },
+    "afterEnablement": {
+      "enabled": true,
+      "previews_enabled": false
+    },
+    "maximumEnablementPosts": 1,
+    "readBackGetsAfterPost": 1,
+    "canaryPermittedOnlyAfterExactReadBack": true
+  }
 }
