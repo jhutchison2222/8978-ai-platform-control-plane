@@ -998,39 +998,141 @@ const INVALID_EXPIRIES = [
   ["exactly now", "2026-09-25T00:00:00Z"],
 ];
 
-// Service-token creation harness: a stateful listing, a recording custodian, and exposure counters.
-function creationHarness(expiresAt, { hasExpiry = true } = {}) {
-  const api = baseApi();
-  let created = null;
-  let createCalls = 0;
-  api.listAccessServiceTokens = async () => (created ? [{ id: created.id, name: created.name }] : []);
-  api.createAccessServiceToken = async () => {
-    createCalls += 1;
-    created = { id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "cid", client_secret: "csecret", duration: "24h" };
-    if (hasExpiry) created.expires_at = expiresAt;
-    return created;
+// Service-token creation harness. The documented creation response carries no expires_at; the
+// exact-token read (GET /access/service_tokens/{id}) does. Every adapter call is recorded so the
+// tests prove there is exactly one write (the creation POST) and nothing else.
+const CREATED_CLIENT_ID = "cid-fixture";
+const CREATED_SECRET = "csecret-fixture-value";
+const createResponse = (overrides = {}) => ({
+  id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: CREATED_CLIENT_ID, client_secret: CREATED_SECRET,
+  duration: "24h", enabled: true, created_at: "2026-09-25T00:00:00Z", updated_at: "2026-09-25T00:00:00Z", ...overrides,
+});
+const exactToken = (overrides = {}) => ({
+  id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: CREATED_CLIENT_ID, enabled: true,
+  duration: "24h", expires_at: "2026-09-26T00:00:00Z", ...overrides,
+});
+
+function creationHarness({ create = createResponse(), exact = () => exactToken(), listAfter = null, listAfterStore = null, custodyFails = false, listErrorAfterCreate = null } = {}) {
+  const writes = [];
+  let created = false;
+  let stored = false;
+  const listing = () => {
+    if (!created) return [];
+    if (listErrorAfterCreate) throw new Error(listErrorAfterCreate);
+    if (stored && listAfterStore) return listAfterStore;
+    return listAfter ?? [{ id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: CREATED_CLIENT_ID }];
   };
-  const stored = [];
-  const custodian = { async store(kind, value) { stored.push({ kind, value }); return { receiptId: ACCESS_RECEIPT }; } };
+  const target = {
+    ...baseApi(),
+    async listAccessServiceTokens() { return listing(); },
+    async createAccessServiceToken() { created = true; return typeof create === "function" ? create() : create; },
+    async getAccessServiceToken(id) { assert.equal(id, TOKEN_ID); return exact(); },
+  };
+  const api = new Proxy(target, {
+    get(object, property, receiver) {
+      const value = Reflect.get(object, property, receiver);
+      if (typeof value !== "function") return value;
+      return (...args) => {
+        if (!/^(get|list|verify)[A-Z]/u.test(String(property))) writes.push(String(property));
+        return value.apply(object, args);
+      };
+    },
+  });
+  const custody = [];
+  const custodian = {
+    async store(kind, value) {
+      custody.push({ kind, value });
+      if (custodyFails) throw new Error(`storage failed for ${value.clientSecret}`);
+      stored = true;
+      return { receiptId: ACCESS_RECEIPT };
+    },
+  };
   let canaryCalls = 0;
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: REVIEWED, api, custodian, now: clock,
     canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); },
   });
-  return { api, service, stored, get createCalls() { return createCalls; }, get canaryCalls() { return canaryCalls; } };
+  const run = () => service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then((value) => ({ value }), (error) => ({ error }));
+  return { run, writes, custody, calls: target.calls, get canaryCalls() { return canaryCalls; } };
+}
+
+// After any stop following creation: one POST only, no retry, cleanup, Access installation,
+// subdomain POST, or canary, and no secret in the error.
+function assertStoppedAfterSingleCreate(harness, outcome, pattern, { stored = false } = {}) {
+  assert.ok(outcome.error instanceof Error, "creation must stop");
+  assert.match(outcome.error.message, pattern);
+  assert.ok(!outcome.error.message.includes(CREATED_SECRET), "no secret value may appear in an error");
+  assert.deepEqual(harness.writes, ["createAccessServiceToken"], "exactly one write: the creation POST, with no retry, cleanup, deletion, or Access installation");
+  assert.equal(harness.calls.setWorkerSubdomain, 0);
+  assert.equal(harness.canaryCalls, 0);
+  if (!stored) assert.equal(harness.custody.length, 0, "no unverified credential may be stored");
+}
+
+test("a documented creation response without expires_at, followed by a valid read-back, succeeds", async () => {
+  const harness = creationHarness();
+  const outcome = await harness.run();
+  assert.equal(outcome.error, undefined);
+  assert.equal(outcome.value.created, true);
+  assert.equal(harness.custody.length, 1);
+  assert.deepEqual(harness.custody[0].value, {
+    target: CLOUDFLARE_ADMIN_V7.workerUrl, tokenId: TOKEN_ID, clientId: CREATED_CLIENT_ID, clientSecret: CREATED_SECRET, expiresAt: "2026-09-26T00:00:00Z",
+  });
+  assert.equal(outcome.value.token.expiresAt, "2026-09-26T00:00:00Z", "the stored expiry is the one read back, not taken from the creation response");
+  assert.deepEqual(harness.writes, ["createAccessServiceToken"]);
+  assert.equal(harness.calls.setWorkerSubdomain, 0);
+  assert.equal(harness.canaryCalls, 0);
+  assert.ok(!JSON.stringify(outcome.value).includes(CREATED_SECRET));
+  assert.ok(!JSON.stringify(outcome.value).includes(CREATED_CLIENT_ID));
+});
+
+test("a read-back without an enabled field still succeeds when every documented identity matches", async () => {
+  const harness = creationHarness({ exact: () => { const token = exactToken(); delete token.enabled; return token; } });
+  const outcome = await harness.run();
+  assert.equal(outcome.error, undefined);
+  assert.equal(harness.custody.length, 1);
+});
+
+const PARTIAL_CREATION = /partial or mismatched Access service-token creation result; the credential was not stored; stop without retry or cleanup; partial state requires owner review/u;
+for (const [label, create] of [
+  ["no token ID", createResponse({ id: undefined })],
+  ["an empty token ID", createResponse({ id: "" })],
+  ["no client ID", createResponse({ client_id: undefined })],
+  ["no client secret", createResponse({ client_secret: undefined })],
+  ["an empty client secret", createResponse({ client_secret: "" })],
+  ["a different name", createResponse({ name: "another-token" })],
+  ["no name", createResponse({ name: undefined })],
+  ["a disabled token", createResponse({ enabled: false })],
+  ["a null result", null],
+]) {
+  test(`token creation stops when the creation response has ${label}`, async () => {
+    const harness = creationHarness({ create });
+    assertStoppedAfterSingleCreate(harness, await harness.run(), PARTIAL_CREATION);
+  });
+}
+
+const READ_BACK_STOP = (reason) => new RegExp(`created but read-back did not verify it: ${reason}; the credential was not stored; stop without retry or cleanup; partial state requires owner review`, "u");
+const exactReadFailures = [
+  ["a missing exact token", () => null, "the exact token read returned no token"],
+  ["an exact token with the wrong ID", () => exactToken({ id: "99999999-1234-1234-1234-abcdefabcdef" }), "the exact token read does not carry the created immutable ID"],
+  ["an exact token with the wrong name", () => exactToken({ name: "another-token" }), "the exact token read does not carry the pinned name"],
+  ["an exact token with the wrong client ID", () => exactToken({ client_id: "other-client" }), "the exact token read does not carry the created client ID"],
+  ["an exact token that is disabled", () => exactToken({ enabled: false }), "the exact token read reports the token is not enabled"],
+  ["an exact token read that fails", () => { throw new Error("Cloudflare API request failed"); }, "Cloudflare API request failed"],
+];
+for (const [label, exact, reason] of exactReadFailures) {
+  test(`token creation stops before custody on ${label}`, async () => {
+    const harness = creationHarness({ exact });
+    assertStoppedAfterSingleCreate(harness, await harness.run(), READ_BACK_STOP(reason));
+  });
 }
 
 for (const [label, value] of INVALID_EXPIRIES) {
-  test(`token creation stores nothing when Cloudflare returns a ${label} expires_at`, async () => {
-    const harness = creationHarness(value, { hasExpiry: label !== "missing" });
-    const error = await harness.service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then(() => null, (caught) => caught);
-    assert.ok(error instanceof Error);
-    assert.match(error.message, /without a valid future expires_at; the credential was not stored/u);
-    assert.ok(!error.message.includes("csecret"), "no secret value may appear in an error");
-    assert.equal(harness.createCalls, 1, "creation is never repeated");
-    assert.equal(harness.stored.length, 0, "no credential with an invalid expiry may be stored");
-    assert.equal(harness.api.calls.setWorkerSubdomain, 0);
-    assert.equal(harness.canaryCalls, 0);
+  test(`token creation stops before custody when the read-back has a ${label} expires_at`, async () => {
+    const harness = creationHarness({ exact: () => { const token = exactToken({ expires_at: value }); if (label === "missing") delete token.expires_at; return token; } });
+    const reason = /already expired|exactly now/u.test(label)
+      ? "the exact token read reports an expires_at that is not later than the current time"
+      : "the exact token read does not carry a strict RFC 3339 expires_at";
+    assertStoppedAfterSingleCreate(harness, await harness.run(), READ_BACK_STOP(reason));
   });
 
   test(`the managed-secret custodian refuses to store a ${label} expiry`, async () => {
@@ -1046,14 +1148,47 @@ for (const [label, value] of INVALID_EXPIRIES) {
   });
 }
 
-test("token creation with a valid future expires_at stores exactly that expiry and confirms the token by read-back", async () => {
-  const harness = creationHarness("2026-09-26T00:00:00Z");
-  const result = await harness.service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken });
-  assert.equal(result.created, true);
-  assert.equal(harness.stored.length, 1);
-  assert.equal(harness.stored[0].value.expiresAt, "2026-09-26T00:00:00Z");
-  assert.equal(result.token.expiresAt, "2026-09-26T00:00:00Z");
-  assert.ok(!JSON.stringify(result).includes("csecret"));
+for (const [label, listAfter, reason] of [
+  ["a duplicate same-name token", [{ id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }, { id: "99999999-1234-1234-1234-abcdefabcdef", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }], "Pinned development Access service token identity is ambiguous"],
+  ["no same-name token", [], "Pinned development Access service token identity is missing"],
+  ["only a different same-name token", [{ id: "99999999-1234-1234-1234-abcdefabcdef", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }], "Pinned development Access service token does not carry the expected immutable ID"],
+  ["a listed token with a different client ID", [{ id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "other-client" }], "the pinned-name listing does not carry the created client ID"],
+]) {
+  test(`token creation stops before custody when the complete listing shows ${label}`, async () => {
+    const harness = creationHarness({ listAfter });
+    assertStoppedAfterSingleCreate(harness, await harness.run(), READ_BACK_STOP(reason));
+  });
+}
+
+test("token creation stops before custody when the complete read-back listing is incomplete", async () => {
+  const harness = creationHarness({ listErrorAfterCreate: "Access service-token listing page 1 is truncated before the final page; completeness cannot be proven" });
+  assertStoppedAfterSingleCreate(harness, await harness.run(), READ_BACK_STOP("Access service-token listing page 1 is truncated before the final page; completeness cannot be proven"));
+});
+
+test("a custody failure after a verified read-back stops as owner-review partial state without exposing the secret", async () => {
+  const harness = creationHarness({ custodyFails: true });
+  const outcome = await harness.run();
+  assertStoppedAfterSingleCreate(harness, outcome, /created but credential custody was not confirmed; partial state requires owner review/u, { stored: true });
+  assert.equal(harness.custody.length, 1, "custody is attempted once, only after the read-back verified the token");
+  assert.equal(harness.custody[0].value.expiresAt, "2026-09-26T00:00:00Z");
+});
+
+test("a read-back failure after custody stops as owner-review partial state with no further action", async () => {
+  const harness = creationHarness({ listAfterStore: [] });
+  const outcome = await harness.run();
+  assertStoppedAfterSingleCreate(harness, outcome,
+    /created and its credential stored, but read-back did not confirm it: Pinned development Access service token identity is missing; stop without retry or cleanup; partial state requires owner review/u,
+    { stored: true });
+  assert.equal(harness.custody.length, 1);
+});
+
+test("a later invocation after any partial state detects the created token and never creates a second one", async () => {
+  const harness = creationHarness({ exact: () => exactToken({ expires_at: null }) });
+  assertStoppedAfterSingleCreate(harness, await harness.run(), READ_BACK_STOP("the exact token read does not carry a strict RFC 3339 expires_at"));
+  const retry = await harness.run();
+  assert.match(retry.error.message, /already exists or is ambiguous; automatic retry is prohibited/u);
+  assert.deepEqual(harness.writes, ["createAccessServiceToken"], "the second invocation made no POST");
+  assert.equal(harness.custody.length, 0);
 });
 
 const storedExpiryFailures = [
@@ -1164,24 +1299,27 @@ test("token creation refuses when a same-name token exists on a later page or th
 
 test("token creation stops when read-back does not show exactly the created token", async () => {
   for (const [after, pattern] of [
-    [[tokenItem(TOKEN_ID), tokenItem(OTHER_TOKEN_ID)], /read-back did not confirm it: Pinned development Access service token identity is ambiguous/u],
-    [[tokenItem(OTHER_TOKEN_ID)], /read-back did not confirm it: .*does not carry the expected immutable ID/u],
-    [[], /read-back did not confirm it: Pinned development Access service token identity is missing/u],
+    [[tokenItem(TOKEN_ID), tokenItem(OTHER_TOKEN_ID)], /read-back did not verify it: Pinned development Access service token identity is ambiguous; the credential was not stored/u],
+    [[tokenItem(OTHER_TOKEN_ID)], /read-back did not verify it: .*does not carry the expected immutable ID; the credential was not stored/u],
+    [[], /read-back did not verify it: Pinned development Access service token identity is missing; the credential was not stored/u],
   ]) {
     let created = false;
+    let stores = 0;
     const service = new CloudflareAdminV7Service({
       api: {
         ...baseApi(),
         async listAccessServiceTokens() { return created ? after : []; },
-        async createAccessServiceToken() { created = true; return { id: TOKEN_ID, name: TOKEN_NAME, client_id: "cid", client_secret: "csecret", expires_at: "2026-09-26T00:00:00Z" }; },
+        async createAccessServiceToken() { created = true; return { id: TOKEN_ID, name: TOKEN_NAME, client_id: "cid", client_secret: "csecret" }; },
+        async getAccessServiceToken() { return { id: TOKEN_ID, name: TOKEN_NAME, client_id: "cid", enabled: true, expires_at: "2026-09-26T00:00:00Z" }; },
       },
-      custodian: { async store() { return { receiptId: ACCESS_RECEIPT }; } },
+      custodian: { async store() { stores += 1; return { receiptId: ACCESS_RECEIPT }; } },
       now: clock,
     });
     const error = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then(() => null, (caught) => caught);
     assert.ok(error instanceof Error);
     assert.match(error.message, pattern);
     assert.ok(!error.message.includes("csecret"));
+    assert.equal(stores, 0, "an unverified credential is never stored");
   }
 });
 

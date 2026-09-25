@@ -337,16 +337,27 @@ export class CloudflareAdminV7Service {
     if (!this.custodian) throw new Error("Credential custodian is required before creating a service token");
     const existing = await this.#pinnedNameServiceTokens();
     if (existing.length > 0) throw new Error("Development Access service-token state already exists or is ambiguous; automatic retry is prohibited");
+    // Exactly one creation POST. The client secret stays in this request-local value only.
     const created = await this.api.createAccessServiceToken(durationHours);
-    if (!created?.id || !created?.client_id || !created?.client_secret) {
-      throw new Error("Cloudflare returned a partial Access service-token result; stop without retry or cleanup");
-    }
-    // The expiry is mandatory and must be a strict future date-time before anything is stored.
-    const expiresAt = parseStrictTimestamp(created.expires_at);
-    if (Number.isNaN(expiresAt) || expiresAt <= this.now().getTime()) {
+    const isText = (value) => typeof value === "string" && value.length > 0;
+    if (!isText(created?.id) || !isText(created?.client_id) || !isText(created?.client_secret) ||
+        created?.name !== CLOUDFLARE_ADMIN_V7.accessServiceTokenName ||
+        (created?.enabled !== undefined && created.enabled !== true)) {
       throw new Error(
-        "Cloudflare returned an Access service token without a valid future expires_at; the credential was not stored; " +
+        "Cloudflare returned a partial or mismatched Access service-token creation result; the credential was not stored; " +
         "stop without retry or cleanup; partial state requires owner review",
+      );
+    }
+    // The documented creation response carries no expires_at, so the created token is read back
+    // before custody: the exact token by ID supplies the verified expiry, and the complete listing
+    // proves it is the only pinned-name token.
+    let verified;
+    try {
+      verified = await this.#verifiedCreatedServiceToken(created.id, created.client_id);
+    } catch (error) {
+      throw new Error(
+        `Access service token was created but read-back did not verify it: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        "the credential was not stored; stop without retry or cleanup; partial state requires owner review",
       );
     }
     let receipt;
@@ -356,12 +367,12 @@ export class CloudflareAdminV7Service {
         tokenId: created.id,
         clientId: created.client_id,
         clientSecret: created.client_secret,
-        expiresAt: created.expires_at,
+        expiresAt: verified.expiresAt,
       });
     } catch {
       throw new Error("Access service token was created but credential custody was not confirmed; partial state requires owner review");
     }
-    // Read-back: the complete listing must now show exactly one pinned-name token, the one created.
+    // Read-back after custody: the complete listing must still show exactly one pinned-name token, the one created.
     try {
       await this.#exactPinnedServiceToken(created.id);
     } catch (error) {
@@ -373,9 +384,29 @@ export class CloudflareAdminV7Service {
     return {
       ok: true,
       created: true,
-      token: { id: created.id, name: created.name, duration: created.duration, expiresAt: created.expires_at },
+      token: { id: created.id, name: created.name, duration: created.duration, expiresAt: verified.expiresAt },
       credential: receipt,
     };
+  }
+
+  // Read-only verification of a just-created token. The exact token must carry the created ID, the
+  // pinned name, the created client ID, an enabled state if reported, and a strict future expires_at;
+  // the complete pinned-name listing must contain exactly that one token. Messages carry no values.
+  async #verifiedCreatedServiceToken(serviceTokenId, clientId) {
+    const exact = await this.api.getAccessServiceToken(serviceTokenId);
+    if (!exact || typeof exact !== "object" || Array.isArray(exact)) throw new Error("the exact token read returned no token");
+    if (exact.id !== serviceTokenId) throw new Error("the exact token read does not carry the created immutable ID");
+    if (exact.name !== CLOUDFLARE_ADMIN_V7.accessServiceTokenName) throw new Error("the exact token read does not carry the pinned name");
+    if (exact.client_id !== clientId) throw new Error("the exact token read does not carry the created client ID");
+    if (exact.enabled !== undefined && exact.enabled !== true) throw new Error("the exact token read reports the token is not enabled");
+    const expiresAt = parseStrictTimestamp(exact.expires_at);
+    if (Number.isNaN(expiresAt)) throw new Error("the exact token read does not carry a strict RFC 3339 expires_at");
+    if (expiresAt <= this.now().getTime()) throw new Error("the exact token read reports an expires_at that is not later than the current time");
+    const listed = await this.#exactPinnedServiceToken(serviceTokenId);
+    if (listed.client_id !== undefined && listed.client_id !== clientId) {
+      throw new Error("the pinned-name listing does not carry the created client ID");
+    }
+    return { expiresAt: exact.expires_at };
   }
 
   // Every token carrying the pinned name, from the complete paginated name-filtered listing. The

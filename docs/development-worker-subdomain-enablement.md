@@ -28,18 +28,40 @@ secrets that can never alias or overwrite each other:
 Every other kind is refused. The custodian has no list-all, export, reveal, delete, rotation, or
 fallback-lookup capability, and the Access credential is never reusable as service authentication.
 
-The Access credential's expiry is mandatory. At creation the Cloudflare response must carry
-`expires_at` as a strict RFC 3339 date-time later than the current time, or nothing is stored; the
-custodian re-checks the same rule before writing the slot. At retrieval a null, missing, empty,
-numeric, malformed, or expired `expiresAt` is refused — an unknown expiry is never treated as
-unexpiring.
+The Access credential's expiry is mandatory. Cloudflare's documented creation response
+(`POST /accounts/{account_id}/access/service_tokens`) does not carry `expires_at`, so the expiry is
+taken only from a read-back of the created token and must be a strict RFC 3339 date-time later than
+the current time, or nothing is stored; the custodian re-checks the same rule before writing the
+slot. At retrieval a null, missing, empty, numeric, malformed, or expired `expiresAt` is refused —
+an unknown expiry is never treated as unexpiring.
 
 Access service tokens are enumerated completely with the documented `name` filter and
 `page`/`per_page` pagination, failing closed on missing, inconsistent, repeated, or truncated
-metadata. Creation requires zero tokens with the pinned name on every page; after creation a
-read-back must show exactly one pinned-name token carrying the created ID. Access protection and
-phase 8 require exactly one pinned-name token, and it must carry the exact supplied and
-custody-bound token ID.
+metadata. Access protection and phase 8 require exactly one pinned-name token, and it must carry
+the exact supplied and custody-bound token ID.
+
+Service-token creation runs in this order, with exactly one POST:
+
+1. The complete pinned-name listing must show zero tokens; otherwise creation is refused.
+2. One creation POST. The returned client secret is held only in request-local memory. The response
+   must carry a non-empty token ID, client ID, and client secret, the exact pinned name, and, if
+   reported, `enabled: true`.
+3. Read-only verification before custody: `GET /accounts/{account_id}/access/service_tokens/{id}`
+   must return the created ID, the pinned name, the created client ID, `enabled: true` if reported,
+   and a strict future `expires_at`; the complete pinned-name listing must contain exactly that one
+   token (and, if it reports a client ID, the created one).
+4. Only then does the custodian store the client ID, client secret, and the read-back `expiresAt`.
+5. After custody, the complete listing must still show exactly that one pinned-name token.
+
+**Partial state requiring owner review.** Any failure after step 2 — a partial or mismatched
+creation response, a failed or mismatched read-back, an invalid expiry, a duplicate or missing
+pinned-name token, a custody failure, or a failed post-custody read-back — leaves a created service
+token in Cloudflare. The call stops with an error ending in `partial state requires owner review`
+and states whether the credential was stored. It never retries, creates a second token, stores an
+unverified credential, deletes or cleans up the token, installs Access, enables the subdomain, or
+runs the canary, and no error contains the client secret. A later invocation finds the existing
+pinned-name token and refuses to create another; the owner resolves the token in the Cloudflare
+dashboard before any further attempt.
 
 The stored principal is bound to the account, the Worker name, the verified immutable Worker ID, the
 exact `SERVICE_AUTH_KEYS_JSON` key ID, and the development activation-canary purpose. Retrieval

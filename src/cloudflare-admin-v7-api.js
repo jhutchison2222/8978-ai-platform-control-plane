@@ -180,6 +180,13 @@ export class CloudflareAdminV7Api {
     );
   }
 
+  // Documented exact read of one service token by its immutable ID; it carries expires_at, which the
+  // creation response does not.
+  async getAccessServiceToken(serviceTokenId) {
+    if (!/^[0-9a-f-]{32,36}$/i.test(String(serviceTokenId))) throw new Error("Access service-token ID is invalid");
+    return this.#request("GET", this.#accountPath(`/access/service_tokens/${serviceTokenId}`));
+  }
+
   async createAccessApplication(workerId) {
     requireImmutableWorkerId(workerId);
     return this.#request("POST", this.#accountPath("/access/apps"), {

@@ -382,11 +382,15 @@ test("service-token creation requires exact approval, refuses duplicates, and ne
   let custodyInput;
   const api = {
     ...workerIdentityMocks,
-    async listAccessServiceTokens() { return created ? [created] : []; },
+    async listAccessServiceTokens() { return created ? [{ id: created.id, name: created.name }] : []; },
+    // The documented creation response carries no expires_at.
     async createAccessServiceToken(hours) {
       assert.equal(hours, 24);
-      created = { id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "client-" + "fixture", client_secret: "secret-" + "fixture", duration: "24h", expires_at: FUTURE_EXPIRY };
+      created = { id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "client-" + "fixture", client_secret: "secret-" + "fixture", duration: "24h", enabled: true };
       return created;
+    },
+    async getAccessServiceToken(id) {
+      return { id, name: created.name, client_id: created.client_id, enabled: true, duration: "24h", expires_at: FUTURE_EXPIRY };
     },
   };
   const custodian = { async store(kind, value) { custodyInput = { kind, value }; return { receiptId: "receipt-123", custodian: "managed" }; } };
@@ -403,19 +407,42 @@ test("service-token creation requires exact approval, refuses duplicates, and ne
 });
 
 test("service-token partial custody failure stops without exposing the returned secret", async () => {
+  let created = false;
   const service = new CloudflareAdminV7Service({
     now: CLOCK,
     api: {
       ...workerIdentityMocks,
-      async listAccessServiceTokens() { return []; },
-      async createAccessServiceToken() { return { id: "token-id", client_id: "client-" + "fixture", client_secret: "secret-" + "fixture", expires_at: FUTURE_EXPIRY }; },
+      async listAccessServiceTokens() { return created ? [{ id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }] : []; },
+      async createAccessServiceToken() {
+        created = true;
+        return { id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "client-" + "fixture", client_secret: "secret-" + "fixture" };
+      },
+      async getAccessServiceToken() {
+        return { id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "client-" + "fixture", enabled: true, expires_at: FUTURE_EXPIRY };
+      },
     },
-    custodian: { ...custodyMocks, async store() { throw new Error("storage failed with secret fixture"); } },
+    custodian: { ...custodyMocks, async store() { throw new Error("storage failed with secret-fixture"); } },
   });
   await assert.rejects(
     () => service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }),
-    (error) => /partial state requires owner review/.test(error.message) && !/sensitive/.test(error.message),
+    (error) => /credential custody was not confirmed; partial state requires owner review/.test(error.message) && !/secret-fixture/.test(error.message),
   );
+});
+
+test("the exact service-token read uses the documented GET by immutable ID", async () => {
+  const requests = [];
+  const token = { id: "12345678-1234-1234-1234-123456789abc", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "c", enabled: true, expires_at: FUTURE_EXPIRY };
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url, init) => {
+      requests.push({ url: String(url), method: init.method });
+      return new Response(JSON.stringify({ success: true, errors: [], messages: [], result: token }), { status: 200 });
+    },
+  });
+  assert.deepEqual(await api.getAccessServiceToken(token.id), token);
+  assert.deepEqual(requests, [{ url: `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/access/service_tokens/${token.id}`, method: "GET" }]);
+  await assert.rejects(() => api.getAccessServiceToken("../apps"), /service-token ID is invalid/u);
+  assert.equal(requests.length, 1);
 });
 
 test("Access protection creates a Worker-level application pinned to the immutable Worker ID", async () => {
