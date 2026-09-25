@@ -191,7 +191,7 @@ export function assertServiceAuthSecretAbsent(secrets) {
   return names;
 }
 
-// The connector's fail-closed zero-Custom-Domain rule, applied to the complete filtered envelope.
+// The connector's fail-closed zero-Custom-Domain rule, applied to the single documented filtered response.
 export function assertNoCustomDomains(envelope) {
   try {
     return assertNoWorkerCustomDomains(envelope, WORKER_NAME);
@@ -200,7 +200,7 @@ export function assertNoCustomDomains(envelope) {
   }
 }
 
-// Documented service=<workerName> filter; the full envelope is read so result_info can prove absence.
+// Documented service=<workerName> filter; the endpoint is a single response, read as the full envelope.
 export async function readTargetCustomDomains(requestGet) {
   return requestGet(`/accounts/${ACCOUNT_ID}/workers/domains?service=${encodeURIComponent(WORKER_NAME)}`, { envelope: true });
 }

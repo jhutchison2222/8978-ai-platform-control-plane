@@ -138,33 +138,59 @@ test("preflight proves exact resource identities, no Queue consumer, and require
   assert.deepEqual(result.worker.secretMetadata, [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }]);
 });
 
-// ---------------------------------------- Review B3: complete zero-Custom-Domain proof ---
+// ------------------------------------ Review B3-C: documented single-response Custom Domains ---
+// GET /accounts/{account_id}/workers/domains?service=<workerName> is documented as one response with
+// no page parameters; result_info is optional and total_count may be unfiltered.
 
 const DOMAIN_INFO = { page: 1, per_page: 20, count: 0, total_count: 0, total_pages: 0 };
-const domainEnvelope = (result, info = DOMAIN_INFO) => ({ success: true, result, result_info: info });
+const domainEnvelope = (result, info = DOMAIN_INFO) => ({ success: true, errors: [], messages: [], result, result_info: info });
+const bareEnvelope = (result) => ({ success: true, errors: [], messages: [], result });
 const targetDomain = { id: "domain-1", hostname: "x.example.com", service: CLOUDFLARE_ADMIN_V7.workerName };
 const unrelatedDomain = { id: "domain-2", hostname: "y.example.com", service: "another-worker" };
 
 // Every decision the shared rule makes: [label, envelope, expected error or null for acceptance].
 const DOMAIN_CASES = [
-  ["zero filtered domains with valid completion metadata", domainEnvelope([]), null],
-  ["zero filtered domains with total_pages 1", domainEnvelope([], { ...DOMAIN_INFO, total_pages: 1 }), null],
-  ["zero filtered domains without total_pages", domainEnvelope([], { page: 1, per_page: 20, count: 0, total_count: 0 }), null],
-  ["a target domain returned directly", domainEnvelope([targetDomain], { ...DOMAIN_INFO, count: 1, total_count: 1, total_pages: 1 }), /Custom Domain is attached/u],
-  ["a target domain alongside an unrelated one", domainEnvelope([unrelatedDomain, targetDomain], { ...DOMAIN_INFO, count: 2, total_count: 2, total_pages: 1 }), /Custom Domain is attached/u],
-  ["an unrelated domain returned because the filter was not honored", domainEnvelope([unrelatedDomain], { ...DOMAIN_INFO, count: 1, total_count: 1, total_pages: 1 }), /service filter was not honored/u],
-  ["an empty result with nonzero total_count", domainEnvelope([], { ...DOMAIN_INFO, total_count: 1, total_pages: 1 }), /omitted results/u],
-  ["an empty first page when a later page exists", domainEnvelope([], { ...DOMAIN_INFO, total_count: 21, total_pages: 2 }), /omitted results/u],
-  ["a truncated result whose count disagrees with the returned records", domainEnvelope([], { ...DOMAIN_INFO, count: 1, total_count: 1, total_pages: 1 }), /omitted results/u],
-  ["additional pages reported for an empty result", domainEnvelope([], { ...DOMAIN_INFO, total_pages: 2 }), /additional pages/u],
-  ["missing result_info", { success: true, result: [] }, /did not return pagination metadata/u],
-  ["result_info as a list", domainEnvelope([], []), /did not return pagination metadata/u],
-  ["a page other than 1", domainEnvelope([], { ...DOMAIN_INFO, page: 2 }), /instead of page 1/u],
-  ["an invalid per_page", domainEnvelope([], { ...DOMAIN_INFO, per_page: 0 }), /invalid per_page/u],
-  ["a missing count", domainEnvelope([], { page: 1, per_page: 20, total_count: 0 }), /valid count and total_count/u],
-  ["a missing total_count", domainEnvelope([], { page: 1, per_page: 20, count: 0 }), /valid count and total_count/u],
-  ["a string total_count", domainEnvelope([], { ...DOMAIN_INFO, total_count: "0" }), /valid count and total_count/u],
-  ["a missing result list", { success: true, result_info: DOMAIN_INFO }, /did not return a result list/u],
+  // Legitimate no-result responses are accepted.
+  ["an empty result with no result_info", bareEnvelope([]), null],
+  ["an empty result with only success and result", { success: true, result: [] }, null],
+  ["an empty result with internally consistent result_info", domainEnvelope([]), null],
+  ["an empty result with nonzero total_count but count 0", domainEnvelope([], { page: 1, per_page: 20, count: 0, total_count: 2000, total_pages: 100 }), null],
+  ["an empty result with an empty result_info object", domainEnvelope([], {}), null],
+  ["an empty result with count only", domainEnvelope([], { count: 0 }), null],
+  // Every non-empty result is refused.
+  ["a target-Worker domain returned", domainEnvelope([targetDomain], { ...DOMAIN_INFO, count: 1 }), /Custom Domain is attached/u],
+  ["a target-Worker domain returned without result_info", bareEnvelope([targetDomain]), /Custom Domain is attached/u],
+  ["a target-Worker domain alongside another Worker's", domainEnvelope([unrelatedDomain, targetDomain], { ...DOMAIN_INFO, count: 2 }), /Custom Domain is attached/u],
+  ["another Worker's domain returned despite the filter", domainEnvelope([unrelatedDomain], { ...DOMAIN_INFO, count: 1 }), /service filter was not honored/u],
+  ["another Worker's domain returned without result_info", bareEnvelope([unrelatedDomain]), /service filter was not honored/u],
+  ["a record without a service returned", bareEnvelope([{ id: "domain-4", hostname: "w.example.com" }]), /service filter was not honored/u],
+  // Malformed or contradictory envelopes are refused.
+  ["a missing result", { success: true, errors: [], messages: [], result_info: DOMAIN_INFO }, /did not return a result list/u],
+  ["a result that is not an array", { ...bareEnvelope([]), result: { service: "another-worker" } }, /did not return a result list/u],
+  ["a null result", { ...bareEnvelope([]), result: null }, /did not return a result list/u],
+  ["success false", { ...bareEnvelope([]), success: false }, /did not report success/u],
+  ["a missing success flag", { result: [] }, /did not report success/u],
+  ["a string success flag", { ...bareEnvelope([]), success: "true" }, /did not report success/u],
+  ["success alongside errors", { ...bareEnvelope([]), errors: [{ code: 1000, message: "failure" }] }, /alongside errors/u],
+  ["malformed errors", { ...bareEnvelope([]), errors: "none" }, /alongside errors/u],
+  ["an envelope that is a list", [], /did not return a response envelope/u],
+  ["a null envelope", null, /did not return a response envelope/u],
+  ["result_info as a list", domainEnvelope([], []), /result_info that is not an object/u],
+  ["result_info as null", domainEnvelope([], null), /result_info that is not an object/u],
+  ["result_info as a string", domainEnvelope([], "page 1"), /result_info that is not an object/u],
+  ["a string count", domainEnvelope([], { ...DOMAIN_INFO, count: "0" }), /reported count 0 for 0 returned records/u],
+  ["a fractional count", domainEnvelope([], { ...DOMAIN_INFO, count: 0.5 }), /reported count 0\.5 for 0 returned records/u],
+  ["a negative count", domainEnvelope([], { ...DOMAIN_INFO, count: -1 }), /reported count -1 for 0 returned records/u],
+  ["a null count", domainEnvelope([], { ...DOMAIN_INFO, count: null }), /reported count null for 0 returned records/u],
+  ["a count that does not equal the returned records", domainEnvelope([], { ...DOMAIN_INFO, count: 1 }), /reported count 1 for 0 returned records/u],
+  ["a page other than 1", domainEnvelope([], { ...DOMAIN_INFO, page: 2 }), /reported page 2 for a single-response listing/u],
+  ["a string page", domainEnvelope([], { ...DOMAIN_INFO, page: "1" }), /reported page 1 for a single-response listing/u],
+  ["a zero per_page", domainEnvelope([], { ...DOMAIN_INFO, per_page: 0 }), /malformed per_page/u],
+  ["a string per_page", domainEnvelope([], { ...DOMAIN_INFO, per_page: "20" }), /malformed per_page/u],
+  ["a string total_count", domainEnvelope([], { ...DOMAIN_INFO, total_count: "0" }), /malformed total_count/u],
+  ["a negative total_count", domainEnvelope([], { ...DOMAIN_INFO, total_count: -1 }), /malformed total_count/u],
+  ["a fractional total_pages", domainEnvelope([], { ...DOMAIN_INFO, total_pages: 1.5 }), /malformed total_pages/u],
+  ["a null total_pages", domainEnvelope([], { ...DOMAIN_INFO, total_pages: null }), /malformed total_pages/u],
 ];
 
 function preflightApi(domains) {
@@ -216,18 +242,73 @@ test("unrelated domains cause no false positive when the service filter is honor
   assert.deepEqual(result.worker.customDomains, []);
 });
 
+test("the real adapter accepts documented zero-result bodies without result_info or with an unfiltered total_count", async () => {
+  const dataset = [unrelatedDomain, { id: "domain-3", hostname: "z.example.com", service: "third-worker" }];
+  const bodies = {
+    "no result_info": (result) => bareEnvelope(result),
+    "unfiltered total_count": (result) => domainEnvelope(result, { page: 1, per_page: 20, count: result.length, total_count: dataset.length, total_pages: 1 }),
+  };
+  for (const [label, shape] of Object.entries(bodies)) {
+    const requests = [];
+    const api = new CloudflareAdminV7Api({
+      apiToken: "x".repeat(30),
+      fetchImpl: async (url, init) => {
+        requests.push({ url: String(url), method: init.method });
+        const result = dataset.filter((record) => record.service === new URL(url).searchParams.get("service"));
+        return new Response(JSON.stringify(shape(result)), { status: 200 });
+      },
+    });
+    const result = await new CloudflareAdminV7Service({ api: { ...preflightApi(null), listWorkerDomains: () => api.listWorkerDomains() } }).preflight();
+    assert.equal(result.mode, "development-read-only", label);
+    assert.deepEqual(requests, [{
+      url: `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/domains?service=${CLOUDFLARE_ADMIN_V7.workerName}`,
+      method: "GET",
+    }], `${label}: exactly one filtered GET, with no invented pagination parameters`);
+  }
+});
+
+test("the real adapter fails closed when Cloudflare ignores the service filter", async () => {
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async () => new Response(JSON.stringify(bareEnvelope([unrelatedDomain])), { status: 200 }),
+  });
+  await assert.rejects(
+    () => new CloudflareAdminV7Service({ api: { ...preflightApi(null), listWorkerDomains: () => api.listWorkerDomains() } }).preflight(),
+    /service filter was not honored/u,
+  );
+});
+
+// Records every adapter method the preflight calls, so acceptance is proven to be read-only.
+function recordingPreflightApi(domains) {
+  const called = [];
+  const api = new Proxy(preflightApi(domains), {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver);
+      if (typeof value !== "function") return value;
+      return (...args) => { called.push(String(property)); return value.apply(target, args); };
+    },
+  });
+  return { api, called };
+}
+
 for (const [label, domains, expected] of DOMAIN_CASES) {
   test(`connector preflight and bootstrap verifier decide identically on ${label}`, async () => {
-    const service = new CloudflareAdminV7Service({ api: preflightApi(domains) });
-    const connector = await service.preflight().then(() => null, (error) => error);
-    const verifier = (() => { try { assertNoCustomDomains(domains); return null; } catch (error) { return error; } })();
+    const { api, called } = recordingPreflightApi(domains);
+    const service = new CloudflareAdminV7Service({ api });
+    const connector = await service.preflight().then((value) => ({ value }), (error) => ({ error }));
+    const verifier = (() => { try { return { value: assertNoCustomDomains(domains) }; } catch (error) { return { error }; } })();
+    assert.ok(called.includes("listWorkerDomains"), "the decision is made on the Custom Domain listing");
+    assert.ok(called.every((name) => /^(get|list|verify)[A-Z]/u.test(name)), `preflight called only read methods: ${called.join(", ")}`);
     if (expected === null) {
-      assert.equal(connector, null);
-      assert.equal(verifier, null);
+      assert.equal(connector.error, undefined);
+      assert.equal(connector.value.ok, true);
+      assert.equal(connector.value.mode, "development-read-only");
+      assert.equal(verifier.error, undefined);
+      assert.equal(verifier.value, 0);
     } else {
-      assert.match(connector?.message ?? "", expected);
-      assert.ok(verifier instanceof BootstrapVerificationStop);
-      assert.equal(verifier.message, connector.message, "the verifier and connector must share one fail-closed rule");
+      assert.match(connector.error?.message ?? "", expected);
+      assert.ok(verifier.error instanceof BootstrapVerificationStop);
+      assert.equal(verifier.error.message, connector.error.message, "the verifier and connector must share one fail-closed rule");
     }
   });
 }

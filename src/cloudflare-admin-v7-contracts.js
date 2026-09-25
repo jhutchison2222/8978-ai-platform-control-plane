@@ -171,34 +171,45 @@ export function parseStrictTimestamp(value) {
 }
 
 // Zero-Custom-Domain proof for one Worker. The listing must be requested with the documented
-// service=<workerName> filter. The documented listing has no page parameters, so only a complete,
-// internally consistent, empty filtered envelope proves absence: result_info must report page 1,
-// a valid per_page, and count and total_count both zero. Any record for the Worker is a conflict,
-// and any record for another Worker means the filter was not honored.
+// service=<workerName> filter. Cloudflare documents this endpoint as a single response with no
+// page parameters, so that one successful response is the complete filtered answer: an empty
+// result proves absence even when result_info is omitted. Any record for the Worker is a conflict,
+// and any record for another Worker means the filter was not honored. result_info is optional;
+// when present it must be internally consistent with the result, but total_count and total_pages
+// are never required to be zero because Cloudflare documents total_count as potentially unfiltered.
 export function assertNoWorkerCustomDomains(envelope, workerName = CLOUDFLARE_ADMIN_V7.workerName) {
-  const items = envelope?.result;
-  const info = envelope?.result_info;
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
+    throw new Error("Custom Domain listing did not return a response envelope; absence cannot be proven");
+  }
+  if (envelope.success !== true) throw new Error("Custom Domain listing did not report success; absence cannot be proven");
+  if (envelope.errors !== undefined && (!Array.isArray(envelope.errors) || envelope.errors.length !== 0)) {
+    throw new Error("Custom Domain listing reported success alongside errors; the response is contradictory and absence cannot be proven");
+  }
+  const items = envelope.result;
   if (!Array.isArray(items)) throw new Error("Custom Domain listing did not return a result list; absence cannot be proven");
   if (items.some((record) => record?.service === workerName)) throw new Error("A Custom Domain is attached to the pinned development Worker");
   if (items.length !== 0) {
     throw new Error("Custom Domain listing returned records for another Worker; the service filter was not honored and absence cannot be proven");
   }
+  if (envelope.result_info === undefined) return 0;
+  const info = envelope.result_info;
   if (!info || typeof info !== "object" || Array.isArray(info)) {
-    throw new Error("Custom Domain listing did not return pagination metadata; absence cannot be proven");
+    throw new Error("Custom Domain listing returned result_info that is not an object; the response is malformed");
   }
-  if (info.page !== 1) throw new Error(`Custom Domain listing reported page ${String(info.page)} instead of page 1; absence cannot be proven`);
-  if (!isPositiveInteger(info.per_page)) throw new Error("Custom Domain listing reported an invalid per_page; absence cannot be proven");
-  if (!isNonNegativeInteger(info.count) || !isNonNegativeInteger(info.total_count)) {
-    throw new Error("Custom Domain listing did not report a valid count and total_count; absence cannot be proven");
+  if (info.count !== undefined && (!isNonNegativeInteger(info.count) || info.count !== items.length)) {
+    throw new Error(`Custom Domain listing reported count ${String(info.count)} for ${items.length} returned records; the response is contradictory`);
   }
-  if (info.count !== 0 || info.total_count !== 0) {
-    throw new Error(
-      `Custom Domain listing returned no records but reports count ${info.count} and total_count ${info.total_count}; ` +
-      "omitted results make absence unprovable",
-    );
+  if (info.page !== undefined && info.page !== 1) {
+    throw new Error(`Custom Domain listing reported page ${String(info.page)} for a single-response listing; the response is contradictory`);
   }
-  if (info.total_pages !== undefined && info.total_pages !== 0 && info.total_pages !== 1) {
-    throw new Error("Custom Domain listing reported additional pages for an empty result; absence cannot be proven");
+  if (info.per_page !== undefined && !isPositiveInteger(info.per_page)) {
+    throw new Error("Custom Domain listing reported a malformed per_page; the response is malformed");
+  }
+  if (info.total_count !== undefined && !isNonNegativeInteger(info.total_count)) {
+    throw new Error("Custom Domain listing reported a malformed total_count; the response is malformed");
+  }
+  if (info.total_pages !== undefined && !isNonNegativeInteger(info.total_pages)) {
+    throw new Error("Custom Domain listing reported a malformed total_pages; the response is malformed");
   }
   return 0;
 }

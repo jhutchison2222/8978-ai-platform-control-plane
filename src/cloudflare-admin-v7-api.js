@@ -150,7 +150,7 @@ export class CloudflareAdminV7Api {
     });
   }
 
-  // Documented service filter; the complete envelope is returned so result_info can prove absence.
+  // Documented service filter on a single-response listing; the complete envelope is returned for the shared rule.
   async listWorkerDomains() {
     const service = encodeURIComponent(CLOUDFLARE_ADMIN_V7.workerName);
     return this.#request("GET", this.#accountPath(`/workers/domains?service=${service}`), { envelope: true });

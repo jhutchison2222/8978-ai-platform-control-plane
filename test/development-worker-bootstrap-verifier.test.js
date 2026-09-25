@@ -122,23 +122,23 @@ test("migration tag must be exactly v2 before the reviewed version upload", () =
 test("SERVICE_AUTH_KEYS_JSON must be absent by name and no Custom Domain may target the Worker", () => {
   assert.deepEqual(assertServiceAuthSecretAbsent([{ name: "OTHER" }]), ["OTHER"]);
   assert.throws(() => assertServiceAuthSecretAbsent([{ name: "SERVICE_AUTH_KEYS_JSON" }]), /already installed/u);
-  const info = { page: 1, per_page: 20, count: 0, total_count: 0, total_pages: 0 };
-  assert.equal(assertNoCustomDomains({ success: true, result: [], result_info: info }), 0);
+  assert.equal(assertNoCustomDomains({ success: true, result: [] }), 0);
   assert.throws(
-    () => assertNoCustomDomains({ success: true, result: [{ service: "8978-ai-control-plane-dev", hostname: "x.example" }], result_info: { ...info, count: 1, total_count: 1 } }),
+    () => assertNoCustomDomains({ success: true, result: [{ service: "8978-ai-control-plane-dev", hostname: "x.example" }] }),
     (error) => error instanceof BootstrapVerificationStop && /Custom Domain is attached/u.test(error.message),
   );
 });
 
-// ------------------------------------------- Review B3: zero-Custom-Domain proof ---
+// ------------------------ Review B3-C: documented single-response Custom Domains proof ---
 
-function domainRequester(dataset, info = {}) {
+// Serves the documented single response; shape(result, dataset) builds the envelope. By default
+// result_info is omitted, which Cloudflare's contract permits for this endpoint.
+function domainRequester(dataset, shape = (result) => ({ success: true, errors: [], messages: [], result })) {
   const calls = [];
   const requestGet = async (path, options = {}) => {
     calls.push({ path, options });
     const service = new URL(`https://x${path}`).searchParams.get("service");
-    const result = dataset.filter((record) => record.service === service);
-    return { success: true, result, result_info: { page: 1, per_page: 20, count: result.length, total_count: result.length, total_pages: result.length === 0 ? 0 : 1, ...info } };
+    return shape(dataset.filter((record) => record.service === service), dataset);
   };
   return { requestGet, calls };
 }
@@ -156,17 +156,40 @@ test("unrelated domains cause no false positive in the verifier when the service
   assert.equal(assertNoCustomDomains(await readTargetCustomDomains(requestGet)), 0);
 });
 
-test("the verifier's zero-Custom-Domain proof fails closed on a target domain, omitted results, or missing metadata", async () => {
+test("the verifier accepts legitimate documented zero-result responses", async () => {
+  const dataset = [{ service: "another-worker", hostname: "y.example" }];
+  const shapes = [
+    (result) => ({ success: true, errors: [], messages: [], result }),
+    (result) => ({ success: true, result }),
+    (result) => ({ success: true, errors: [], messages: [], result, result_info: { page: 1, per_page: 20, count: result.length, total_count: result.length, total_pages: 0 } }),
+    // Cloudflare documents total_count as potentially unfiltered; count still describes the filtered result.
+    (result, all) => ({ success: true, errors: [], messages: [], result, result_info: { page: 1, per_page: 20, count: result.length, total_count: all.length, total_pages: 1 } }),
+  ];
+  for (const shape of shapes) {
+    const { requestGet, calls } = domainRequester(dataset, shape);
+    assert.equal(assertNoCustomDomains(await readTargetCustomDomains(requestGet)), 0);
+    assert.equal(calls.length, 1, "exactly one request; the endpoint has no pagination to follow");
+  }
+});
+
+test("the verifier's zero-Custom-Domain proof fails closed on non-empty, filter-violating, malformed, or contradictory responses", async () => {
   const stops = (envelope, pattern) => assert.throws(() => assertNoCustomDomains(envelope), (error) => error instanceof BootstrapVerificationStop && pattern.test(error.message));
   const { requestGet: withTarget } = domainRequester([{ service: "8978-ai-control-plane-dev", hostname: "x.example" }]);
   stops(await readTargetCustomDomains(withTarget), /Custom Domain is attached/u);
-  const { requestGet: hidden } = domainRequester([], { total_count: 21, total_pages: 2 });
-  stops(await readTargetCustomDomains(hidden), /omitted results/u);
-  stops({ success: true, result: [], result_info: { page: 1, per_page: 20, count: 1, total_count: 1 } }, /omitted results/u);
-  stops({ success: true, result: [] }, /did not return pagination metadata/u);
-  stops({ success: true, result: [], result_info: { page: 1, per_page: 20, total_count: 0 } }, /valid count and total_count/u);
-  stops({ success: true, result: [{ service: "another-worker" }], result_info: { page: 1, per_page: 20, count: 1, total_count: 1 } }, /service filter was not honored/u);
-  stops([], /did not return a result list/u);
+  const { requestGet: unfiltered } = domainRequester([{ service: "another-worker", hostname: "y.example" }], (_result, all) => ({ success: true, result: all }));
+  stops(await readTargetCustomDomains(unfiltered), /service filter was not honored/u);
+  stops({ success: true, result: [], result_info: { page: 1, per_page: 20, count: 1, total_count: 1 } }, /reported count 1 for 0 returned records/u);
+  stops({ success: true, result: [], result_info: { count: "0" } }, /reported count 0 for 0 returned records/u);
+  stops({ success: true, result: [], result_info: { page: 2 } }, /reported page 2 for a single-response listing/u);
+  stops({ success: true, result: [], result_info: [] }, /result_info that is not an object/u);
+  stops({ success: true, result: [], result_info: { per_page: 0 } }, /malformed per_page/u);
+  stops({ success: true, result: [], result_info: { total_count: "0" } }, /malformed total_count/u);
+  stops({ success: true, result: [], result_info: { total_pages: -1 } }, /malformed total_pages/u);
+  stops({ success: true, result: {} }, /did not return a result list/u);
+  stops({ success: true }, /did not return a result list/u);
+  stops({ success: false, result: [] }, /did not report success/u);
+  stops({ success: true, errors: [{ code: 1 }], result: [] }, /alongside errors/u);
+  stops([], /did not return a response envelope/u);
 });
 
 test("the exact reviewed bindings are required", () => {

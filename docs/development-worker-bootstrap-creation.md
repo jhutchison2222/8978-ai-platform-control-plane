@@ -94,10 +94,15 @@ version, the exact bootstrap annotation, the D1 / Queue / Workflow / four Durabl
 Queue consumers, and `enabled: false` / `previews_enabled: false`.
 
 Zero Custom Domains is proven with the connector's shared fail-closed rule: the listing is requested
-with the documented `service=8978-ai-control-plane-dev` filter, and only an empty result whose
-`result_info` reports page 1, a valid `per_page`, and `count` and `total_count` both zero is accepted.
-A record for the Worker, a record for another Worker (the filter was not honored), missing or
-contradictory metadata, or a nonzero `total_count` behind an empty result stops verification.
+with the documented `service=8978-ai-control-plane-dev` filter. Cloudflare documents this endpoint as
+a single response with no page parameters, so one successful envelope whose `result` is an empty
+list is the complete proof, with or without `result_info`. A record for the Worker, a record for
+another Worker (the filter was not honored), an unsuccessful or error-bearing envelope, or a missing
+or non-list `result` stops verification. When `result_info` is present it must be an object, any
+`count` must be a non-negative integer equal to the number of returned records, any `page` must be
+exactly 1, and `per_page`, `total_count`, and `total_pages` must be well-formed if supplied.
+`total_count` and `total_pages` are not required to be zero, because Cloudflare documents
+`total_count` as potentially counting results without the filter.
 
 It writes no record. The owner authors it against
 `schemas/development-worker-bootstrap-verification-record.schema.json`.
