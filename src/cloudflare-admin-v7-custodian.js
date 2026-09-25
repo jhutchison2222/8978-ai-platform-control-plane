@@ -1,4 +1,4 @@
-import { CLOUDFLARE_ADMIN_V7, requireImmutableWorkerId } from "./cloudflare-admin-v7-contracts.js";
+import { CLOUDFLARE_ADMIN_V7, parseStrictTimestamp, requireImmutableWorkerId } from "./cloudflare-admin-v7-contracts.js";
 
 // Exactly two permitted credential kinds, each bound to its own managed-secret slot.
 // The slots are distinct constants and are never aliased, shared, or derived from caller input,
@@ -50,25 +50,41 @@ function assertAccessCredentialBinding(credential, { tokenId, now } = {}) {
       typeof credential.clientSecret !== "string" || credential.clientSecret.length === 0) {
     throw new Error("Managed Access credential material is unavailable or malformed");
   }
-  if (credential.expiresAt !== null && credential.expiresAt !== undefined) {
-    const expiresAt = typeof credential.expiresAt === "string" ? Date.parse(credential.expiresAt) : Number.NaN;
-    if (Number.isNaN(expiresAt)) throw new Error("Managed Access credential expiry is malformed");
-    if (!(now instanceof Date) || Number.isNaN(now.getTime())) throw new Error("Access credential retrieval requires a valid current time");
-    if (expiresAt <= now.getTime()) throw new Error("Managed Access credential has expired and is stale");
+  // Expiry is mandatory: a null, missing, empty, or non-string value is never treated as unexpiring.
+  if (typeof credential.expiresAt !== "string" || credential.expiresAt.length === 0) {
+    throw new Error("Managed Access credential expiry is missing; an unknown or unexpiring credential is refused");
   }
+  const expiresAt = parseStrictTimestamp(credential.expiresAt);
+  if (Number.isNaN(expiresAt)) throw new Error("Managed Access credential expiry is malformed");
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) throw new Error("Access credential retrieval requires a valid current time");
+  if (expiresAt <= now.getTime()) throw new Error("Managed Access credential has expired and is stale");
   return credential;
 }
 
+// The expiry that may be stored: a strict date-time string later than the custodian clock.
+function requireStorableExpiry(value, now) {
+  const expiresAt = parseStrictTimestamp(value);
+  if (typeof value !== "string" || value.length === 0 || Number.isNaN(expiresAt)) {
+    throw new Error("Access service-token expiry is missing or malformed; the credential is not stored");
+  }
+  if (!(now instanceof Date) || Number.isNaN(now.getTime()) || expiresAt <= now.getTime()) {
+    throw new Error("Access service-token expiry is not later than the current time; the credential is not stored");
+  }
+  return value;
+}
+
 export class ManagedSecretCredentialCustodian {
-  constructor(api, env) {
+  constructor(api, env, { now = () => new Date() } = {}) {
     if (!api) throw new Error("Cloudflare API adapter is unavailable");
     this.api = api;
     this.env = env;
+    this.now = now;
   }
 
   async store(kind, credential) {
     const slot = slotFor(kind);
     if (kind === "access-service-token") {
+      requireStorableExpiry(credential?.expiresAt, this.now());
       await this.api.installConnectorAccessCredential(JSON.stringify({
         accountId: CLOUDFLARE_ADMIN_V7.accountId,
         workerName: CLOUDFLARE_ADMIN_V7.workerName,

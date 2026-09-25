@@ -583,9 +583,9 @@ function custodianApi() {
 
 test("the two credential kinds use distinct slots and cannot overwrite each other", async () => {
   const api = custodianApi();
-  const custodian = new ManagedSecretCredentialCustodian(api, {});
+  const custodian = new ManagedSecretCredentialCustodian(api, {}, { now: () => new Date("2026-09-25T00:00:00Z") });
   const accessReceipt = await custodian.store("access-service-token", {
-    tokenId: TOKEN_ID, target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "cid", clientSecret: "csecret", expiresAt: null,
+    tokenId: TOKEN_ID, target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "cid", clientSecret: "csecret", expiresAt: "2099-01-01T00:00:00Z",
   });
   const principalReceipt = await custodian.store("service-auth-principal", {
     principalId: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId, keyId: KEY_ID, secret: "s".repeat(43), workerId: WORKER_ID,
@@ -595,7 +595,7 @@ test("the two credential kinds use distinct slots and cannot overwrite each othe
   assert.equal(Object.keys(api.stored).length, 2);
   // Storing either kind again leaves the other slot byte-identical.
   const beforePrincipal = api.stored[CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName];
-  await custodian.store("access-service-token", { tokenId: TOKEN_ID, target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "c2", clientSecret: "s2", expiresAt: null });
+  await custodian.store("access-service-token", { tokenId: TOKEN_ID, target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "c2", clientSecret: "s2", expiresAt: "2099-01-01T00:00:00Z" });
   assert.equal(api.stored[CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName], beforePrincipal);
   const beforeAccess = api.stored[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName];
   await custodian.store("service-auth-principal", { principalId: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId, keyId: "canary-2", secret: "t".repeat(43), workerId: WORKER_ID });
@@ -608,7 +608,7 @@ test("retrieving one kind can never return the other", async () => {
   const custodian = new ManagedSecretCredentialCustodian(api, env);
   env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = JSON.stringify({
     accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName, target: CLOUDFLARE_ADMIN_V7.workerUrl,
-    tokenId: TOKEN_ID, clientId: "cid", clientSecret: "csecret", expiresAt: null,
+    tokenId: TOKEN_ID, clientId: "cid", clientSecret: "csecret", expiresAt: "2099-01-01T00:00:00Z",
   });
   env[CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName] = JSON.stringify({
     accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName, workerId: WORKER_ID,
@@ -979,3 +979,260 @@ test("phase 8 stops before any exposure when the deployment changes during the p
   const newerLatest = baseApi({ async getLatestWorkerVersion() { latestReads += 1; return latestReads === 1 ? activatedVersion() : activatedVersion({ id: "abababab-2222-3333-4444-555555555555" }); } });
   await assertPhase8StopsWithoutExposure({ api: newerLatest }, /versions\/latest does not identify exactly the activated Worker version/u);
 });
+
+// ============================================================================
+// Review B1: the Access-credential expiry is mandatory at storage and at retrieval.
+// ============================================================================
+
+const CLOCK_NOW = new Date("2026-09-25T00:00:00Z");
+const clock = () => CLOCK_NOW;
+const INVALID_EXPIRIES = [
+  ["missing", undefined],
+  ["null", null],
+  ["empty", ""],
+  ["numeric", 4102444800000],
+  ["malformed", "tomorrow"],
+  ["impossible calendar date", "2099-02-30T00:00:00Z"],
+  ["offset-less", "2099-01-01T00:00:00"],
+  ["already expired", "2026-09-24T23:59:59Z"],
+  ["exactly now", "2026-09-25T00:00:00Z"],
+];
+
+// Service-token creation harness: a stateful listing, a recording custodian, and exposure counters.
+function creationHarness(expiresAt, { hasExpiry = true } = {}) {
+  const api = baseApi();
+  let created = null;
+  let createCalls = 0;
+  api.listAccessServiceTokens = async () => (created ? [{ id: created.id, name: created.name }] : []);
+  api.createAccessServiceToken = async () => {
+    createCalls += 1;
+    created = { id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "cid", client_secret: "csecret", duration: "24h" };
+    if (hasExpiry) created.expires_at = expiresAt;
+    return created;
+  };
+  const stored = [];
+  const custodian = { async store(kind, value) { stored.push({ kind, value }); return { receiptId: ACCESS_RECEIPT }; } };
+  let canaryCalls = 0;
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: REVIEWED, api, custodian, now: clock,
+    canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); },
+  });
+  return { api, service, stored, get createCalls() { return createCalls; }, get canaryCalls() { return canaryCalls; } };
+}
+
+for (const [label, value] of INVALID_EXPIRIES) {
+  test(`token creation stores nothing when Cloudflare returns a ${label} expires_at`, async () => {
+    const harness = creationHarness(value, { hasExpiry: label !== "missing" });
+    const error = await harness.service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then(() => null, (caught) => caught);
+    assert.ok(error instanceof Error);
+    assert.match(error.message, /without a valid future expires_at; the credential was not stored/u);
+    assert.ok(!error.message.includes("csecret"), "no secret value may appear in an error");
+    assert.equal(harness.createCalls, 1, "creation is never repeated");
+    assert.equal(harness.stored.length, 0, "no credential with an invalid expiry may be stored");
+    assert.equal(harness.api.calls.setWorkerSubdomain, 0);
+    assert.equal(harness.canaryCalls, 0);
+  });
+
+  test(`the managed-secret custodian refuses to store a ${label} expiry`, async () => {
+    let installs = 0;
+    const custodian = new ManagedSecretCredentialCustodian({ async installConnectorAccessCredential() { installs += 1; } }, {}, { now: clock });
+    const credential = { tokenId: TOKEN_ID, target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "cid", clientSecret: "csecret" };
+    if (label !== "missing") credential.expiresAt = value;
+    const error = await custodian.store("access-service-token", credential).then(() => null, (caught) => caught);
+    assert.ok(error instanceof Error);
+    assert.match(error.message, /the credential is not stored/u);
+    assert.ok(!error.message.includes("csecret"));
+    assert.equal(installs, 0);
+  });
+}
+
+test("token creation with a valid future expires_at stores exactly that expiry and confirms the token by read-back", async () => {
+  const harness = creationHarness("2026-09-26T00:00:00Z");
+  const result = await harness.service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken });
+  assert.equal(result.created, true);
+  assert.equal(harness.stored.length, 1);
+  assert.equal(harness.stored[0].value.expiresAt, "2026-09-26T00:00:00Z");
+  assert.equal(result.token.expiresAt, "2026-09-26T00:00:00Z");
+  assert.ok(!JSON.stringify(result).includes("csecret"));
+});
+
+const storedExpiryFailures = [
+  ["missing stored expiresAt", accessCustody({ expiresAt: undefined }), /expiry is missing/u],
+  ["null stored expiresAt", accessCustody({ expiresAt: null }), /expiry is missing/u],
+  ["empty stored expiresAt", accessCustody({ expiresAt: "" }), /expiry is missing/u],
+  ["numeric stored expiresAt", accessCustody({ expiresAt: 4102444800000 }), /expiry is missing/u],
+  ["malformed stored expiresAt", accessCustody({ expiresAt: "next week" }), /expiry is malformed/u],
+  ["impossible stored calendar date", accessCustody({ expiresAt: "2099-02-30T00:00:00Z" }), /expiry is malformed/u],
+  ["offset-less stored expiresAt", accessCustody({ expiresAt: "2099-01-01T00:00:00" }), /expiry is malformed/u],
+  ["expired stored expiresAt", accessCustody({ expiresAt: "2026-09-24T23:59:59Z" }), /expired and is stale/u],
+  ["stored expiresAt equal to now", accessCustody({ expiresAt: "2026-09-25T00:00:00Z" }), /expired and is stale/u],
+];
+
+for (const [label, access, pattern] of storedExpiryFailures) {
+  test(`phase 8 stops before any exposure on a ${label}`, async () => {
+    await assertPhase8StopsWithoutExposure({ custodian: realCustodian({ access }) }, pattern);
+  });
+}
+
+test("a valid future stored expiry reaches exactly one POST, one read-back, and the canary", async () => {
+  const api = baseApi();
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: REVIEWED, api, custodian: realCustodian({ access: accessCustody({ expiresAt: "2026-09-25T00:00:01Z" }) }),
+    canaryFetch: async () => { throw new Error("canary reached"); }, now: clock,
+  });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+  assert.equal(api.calls.setWorkerSubdomain, 1);
+  assert.equal(api.calls.getWorkerSubdomain, 2);
+});
+
+// ============================================================================
+// Review B2: Access service tokens are enumerated completely before any decision.
+// ============================================================================
+
+const TOKEN_NAME = CLOUDFLARE_ADMIN_V7.accessServiceTokenName;
+const OTHER_TOKEN_ID = "99999999-1234-1234-1234-abcdefabcdef";
+const tokenItem = (id, name = TOKEN_NAME) => ({ id, name });
+const fillerTokens = (count, prefix) => Array.from({ length: count }, (_, index) => tokenItem(`${prefix}${index}`, `${TOKEN_NAME}-lookalike-${prefix}${index}`));
+
+// A real adapter serving the given service-token pages, wired into the service mock.
+async function tokenListing(pages) {
+  const { api, requested } = await pagedApi(pages, /\/access\/service_tokens\?/u);
+  return { listAccessServiceTokens: () => api.listAccessServiceTokens(), requested };
+}
+
+test("the service-token listing uses the documented name filter and page/per_page on every page", async () => {
+  const { listAccessServiceTokens, requested } = await tokenListing([
+    appPage(fillerTokens(2, "a"), 1, 2, 3),
+    appPage([tokenItem(TOKEN_ID)], 2, 2, 3),
+  ]);
+  const tokens = await listAccessServiceTokens();
+  assert.equal(tokens.length, 3);
+  assert.deepEqual(requested.map(({ url }) => new URL(url).search), [
+    `?name=${encodeURIComponent(TOKEN_NAME)}&page=1&per_page=50`,
+    `?name=${encodeURIComponent(TOKEN_NAME)}&page=2&per_page=50`,
+  ]);
+  assert.ok(requested.every(({ method }) => method === "GET"));
+});
+
+test("phase 8 finds the pinned token on a later page and proceeds only with exactly one match", async () => {
+  const { listAccessServiceTokens } = await tokenListing([appPage(fillerTokens(2, "a"), 1, 2, 3), appPage([tokenItem(TOKEN_ID)], 2, 2, 3)]);
+  const api = baseApi({ listAccessServiceTokens });
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: REVIEWED, api, custodian: realCustodian(), now: clock,
+    canaryFetch: async () => { throw new Error("canary reached"); },
+  });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+  assert.equal(api.calls.setWorkerSubdomain, 1);
+});
+
+const tokenListingFailures = [
+  ["a same-name duplicate on a later page", [appPage([tokenItem(TOKEN_ID), tokenItem("p1b", "unrelated")], 1, 2, 3), appPage([tokenItem(OTHER_TOKEN_ID)], 2, 2, 3)], /service token identity is ambiguous/u],
+  ["the only same-name token carrying a different ID", [appPage([tokenItem(OTHER_TOKEN_ID)], 1, 1, 1)], /does not carry the expected immutable ID/u],
+  ["no same-name token on any page", [appPage(fillerTokens(2, "a"), 1, 2, 3), appPage(fillerTokens(1, "b"), 2, 2, 3)], /service token identity is missing/u],
+  ["missing pagination metadata", [{ success: true, result: [tokenItem(TOKEN_ID)] }], /did not return pagination metadata/u],
+  ["a truncated page before the final page", [appPage([tokenItem(TOKEN_ID)], 1, 2, 3), appPage([tokenItem("b0", "x")], 2, 2, 3)], /truncated before the final page/u],
+  ["an incomplete listing", [appPage([tokenItem(TOKEN_ID), tokenItem("a1", "x")], 1, 2, 4), appPage([tokenItem("b0", "x")], 2, 2, 4)], /collected 3 items but total_count is 4/u],
+  ["a repeated token across pages", [appPage([tokenItem(TOKEN_ID), tokenItem("a1", "x")], 1, 2, 3), appPage([tokenItem(TOKEN_ID)], 2, 2, 3)], /more than once/u],
+  ["changing totals between pages", [appPage([tokenItem(TOKEN_ID), tokenItem("a1", "x")], 1, 2, 3), appPage([tokenItem("b0", "x"), tokenItem("b1", "x")], 2, 2, 4)], /totals changed between pages/u],
+  ["a malformed total_count", [envelope([tokenItem(TOKEN_ID)], { page: 1, per_page: 50, total_count: "1" })], /invalid total_count/u],
+];
+
+for (const [label, pages, pattern] of tokenListingFailures) {
+  test(`phase 8 stops before any exposure on ${label} in the service-token listing`, async () => {
+    const { listAccessServiceTokens } = await tokenListing(pages);
+    await assertPhase8StopsWithoutExposure({ api: baseApi({ listAccessServiceTokens }) }, pattern);
+  });
+}
+
+test("token creation refuses when a same-name token exists on a later page or the listing is incomplete", async () => {
+  for (const [pages, pattern] of [
+    [[appPage(fillerTokens(2, "a"), 1, 2, 3), appPage([tokenItem(OTHER_TOKEN_ID)], 2, 2, 3)], /automatic retry is prohibited/u],
+    [[{ success: true, result: [] }], /did not return pagination metadata/u],
+    [[appPage(fillerTokens(1, "a"), 1, 2, 3), appPage(fillerTokens(1, "b"), 2, 2, 3)], /truncated before the final page/u],
+  ]) {
+    const { listAccessServiceTokens } = await tokenListing(pages);
+    let createCalls = 0;
+    const service = new CloudflareAdminV7Service({
+      api: { ...baseApi(), listAccessServiceTokens, async createAccessServiceToken() { createCalls += 1; return {}; } },
+      custodian: { async store() { throw new Error("must not store"); } },
+      now: clock,
+    });
+    await assert.rejects(() => service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }), pattern);
+    assert.equal(createCalls, 0, "an incomplete or non-empty listing may never authorize creation");
+  }
+});
+
+test("token creation stops when read-back does not show exactly the created token", async () => {
+  for (const [after, pattern] of [
+    [[tokenItem(TOKEN_ID), tokenItem(OTHER_TOKEN_ID)], /read-back did not confirm it: Pinned development Access service token identity is ambiguous/u],
+    [[tokenItem(OTHER_TOKEN_ID)], /read-back did not confirm it: .*does not carry the expected immutable ID/u],
+    [[], /read-back did not confirm it: Pinned development Access service token identity is missing/u],
+  ]) {
+    let created = false;
+    const service = new CloudflareAdminV7Service({
+      api: {
+        ...baseApi(),
+        async listAccessServiceTokens() { return created ? after : []; },
+        async createAccessServiceToken() { created = true; return { id: TOKEN_ID, name: TOKEN_NAME, client_id: "cid", client_secret: "csecret", expires_at: "2026-09-26T00:00:00Z" }; },
+      },
+      custodian: { async store() { return { receiptId: ACCESS_RECEIPT }; } },
+      now: clock,
+    });
+    const error = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then(() => null, (caught) => caught);
+    assert.ok(error instanceof Error);
+    assert.match(error.message, pattern);
+    assert.ok(!error.message.includes("csecret"));
+  }
+});
+
+test("Access protection requires exactly one same-name token carrying the supplied ID", async () => {
+  for (const [tokens, pattern] of [
+    [[tokenItem(TOKEN_ID), tokenItem(OTHER_TOKEN_ID)], /identity is ambiguous/u],
+    [[tokenItem(OTHER_TOKEN_ID)], /does not carry the expected immutable ID/u],
+  ]) {
+    let creates = 0;
+    const service = new CloudflareAdminV7Service({
+      api: { ...baseApi(), async listAccessServiceTokens() { return tokens; }, async createAccessApplication() { creates += 1; return {}; } },
+    });
+    await assert.rejects(() => service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: TOKEN_ID, workerId: WORKER_ID }), pattern);
+    assert.equal(creates, 0);
+  }
+});
+
+// ============================================================================
+// Additional hardening: Access policies are enumerated completely.
+// ============================================================================
+
+async function policyListing(pages) {
+  const { api, requested } = await pagedApi(pages, new RegExp(`/access/apps/${TOKEN_ID}/policies\\?`, "u"));
+  return { listAccessApplicationPolicies: (id) => api.listAccessApplicationPolicies(id), requested };
+}
+
+const exactPolicy = accessPolicy()[0];
+
+test("the Access policy listing uses page/per_page and accepts exactly one policy across all pages", async () => {
+  const { listAccessApplicationPolicies, requested } = await policyListing([appPage([exactPolicy], 1, 1, 1)]);
+  const api = baseApi({ listAccessApplicationPolicies });
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: REVIEWED, api, custodian: realCustodian(), now: clock,
+    canaryFetch: async () => { throw new Error("canary reached"); },
+  });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+  assert.equal(api.calls.setWorkerSubdomain, 1);
+  assert.equal(new URL(requested[0].url).search, "?page=1&per_page=50");
+});
+
+const policyListingFailures = [
+  ["a second policy on a later page", [appPage([exactPolicy], 1, 2, 2, 1), appPage([{ id: "p2", decision: "allow", include: [{ everyone: {} }] }], 2, 2, 2, 1)], /exactly one Service Auth policy/u],
+  ["a duplicate policy across pages", [appPage([exactPolicy], 1, 2, 2, 1), appPage([exactPolicy], 2, 2, 2, 1)], /more than once/u],
+  ["no policy", [appPage([], 1, 0, 0)], /exactly one Service Auth policy/u],
+  ["missing pagination metadata", [{ success: true, result: [exactPolicy] }], /did not return pagination metadata/u],
+  ["an incomplete policy listing", [appPage([exactPolicy], 1, 1, 2)], /conflicts with 1 derived|collected 1 items but total_count is 2/u],
+];
+
+for (const [label, pages, pattern] of policyListingFailures) {
+  test(`phase 8 stops before any exposure on ${label} in the Access policy listing`, async () => {
+    const { listAccessApplicationPolicies } = await policyListing(pages);
+    await assertPhase8StopsWithoutExposure({ api: baseApi({ listAccessApplicationPolicies }) }, pattern);
+  });
+}

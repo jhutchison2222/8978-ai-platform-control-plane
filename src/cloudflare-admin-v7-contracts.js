@@ -150,6 +150,59 @@ export async function collectPagedResults(fetchPage, label, { maximumPages = MAX
   throw new Error(`${label} pagination did not terminate within ${maximumPages} pages; completeness cannot be proven`);
 }
 
+// Strict RFC 3339 date-time parsing: the exact textual form with valid calendar and clock ranges.
+// Returns epoch milliseconds, or NaN for anything that is not such a string. No loose Date.parse
+// fallback, numeric value, or empty string is ever accepted.
+const RFC3339_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(?:Z|([+-])(\d{2}):(\d{2}))$/u;
+
+export function parseStrictTimestamp(value) {
+  if (typeof value !== "string") return Number.NaN;
+  const match = RFC3339_DATE_TIME.exec(value);
+  if (!match) return Number.NaN;
+  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
+  const offsetHour = match[8] === undefined ? 0 : Number(match[8]);
+  const offsetMinute = match[9] === undefined ? 0 : Number(match[9]);
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth || hour > 23 || minute > 59 || second > 59 ||
+      offsetHour > 23 || offsetMinute > 59) {
+    return Number.NaN;
+  }
+  return Date.parse(value);
+}
+
+// Zero-Custom-Domain proof for one Worker. The listing must be requested with the documented
+// service=<workerName> filter. The documented listing has no page parameters, so only a complete,
+// internally consistent, empty filtered envelope proves absence: result_info must report page 1,
+// a valid per_page, and count and total_count both zero. Any record for the Worker is a conflict,
+// and any record for another Worker means the filter was not honored.
+export function assertNoWorkerCustomDomains(envelope, workerName = CLOUDFLARE_ADMIN_V7.workerName) {
+  const items = envelope?.result;
+  const info = envelope?.result_info;
+  if (!Array.isArray(items)) throw new Error("Custom Domain listing did not return a result list; absence cannot be proven");
+  if (items.some((record) => record?.service === workerName)) throw new Error("A Custom Domain is attached to the pinned development Worker");
+  if (items.length !== 0) {
+    throw new Error("Custom Domain listing returned records for another Worker; the service filter was not honored and absence cannot be proven");
+  }
+  if (!info || typeof info !== "object" || Array.isArray(info)) {
+    throw new Error("Custom Domain listing did not return pagination metadata; absence cannot be proven");
+  }
+  if (info.page !== 1) throw new Error(`Custom Domain listing reported page ${String(info.page)} instead of page 1; absence cannot be proven`);
+  if (!isPositiveInteger(info.per_page)) throw new Error("Custom Domain listing reported an invalid per_page; absence cannot be proven");
+  if (!isNonNegativeInteger(info.count) || !isNonNegativeInteger(info.total_count)) {
+    throw new Error("Custom Domain listing did not report a valid count and total_count; absence cannot be proven");
+  }
+  if (info.count !== 0 || info.total_count !== 0) {
+    throw new Error(
+      `Custom Domain listing returned no records but reports count ${info.count} and total_count ${info.total_count}; ` +
+      "omitted results make absence unprovable",
+    );
+  }
+  if (info.total_pages !== undefined && info.total_pages !== 0 && info.total_pages !== 1) {
+    throw new Error("Custom Domain listing reported additional pages for an empty result; absence cannot be proven");
+  }
+  return 0;
+}
+
 // Conservative Access coverage test. Any hostname-like declaration whose host part equals the
 // target, or whose wildcard pattern could match it, is treated as covering the target at any
 // path. Declarations that cannot be parsed unambiguously are also treated as covering.

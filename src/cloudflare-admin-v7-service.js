@@ -1,7 +1,9 @@
 import {
   CLOUDFLARE_ADMIN_V7,
+  assertNoWorkerCustomDomains,
   assertPinnedTarget,
   declarationCoversHostname,
+  parseStrictTimestamp,
   requireExactApproval,
   requireImmutableWorkerId,
   requireReviewedCommit,
@@ -302,8 +304,7 @@ export class CloudflareAdminV7Service {
       binding?.class_name === CLOUDFLARE_ADMIN_V7.workflowClass &&
       binding?.script_name === CLOUDFLARE_ADMIN_V7.workerName,
     "ORCHESTRATOR_WORKFLOW binding");
-    const customDomains = asList(domains).filter((record) => record?.service === CLOUDFLARE_ADMIN_V7.workerName);
-    if (customDomains.length !== 0) throw new Error("A Custom Domain is attached to the pinned development Worker");
+    assertNoWorkerCustomDomains(domains, CLOUDFLARE_ADMIN_V7.workerName);
     return {
       ok: true,
       mode: "development-read-only",
@@ -334,12 +335,19 @@ export class CloudflareAdminV7Service {
     assertPinnedTarget(target);
     requireExactApproval("createServiceToken", approval);
     if (!this.custodian) throw new Error("Credential custodian is required before creating a service token");
-    const existing = asList(await this.api.listAccessServiceTokens())
-      .filter(({ name }) => name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName);
+    const existing = await this.#pinnedNameServiceTokens();
     if (existing.length > 0) throw new Error("Development Access service-token state already exists or is ambiguous; automatic retry is prohibited");
     const created = await this.api.createAccessServiceToken(durationHours);
     if (!created?.id || !created?.client_id || !created?.client_secret) {
       throw new Error("Cloudflare returned a partial Access service-token result; stop without retry or cleanup");
+    }
+    // The expiry is mandatory and must be a strict future date-time before anything is stored.
+    const expiresAt = parseStrictTimestamp(created.expires_at);
+    if (Number.isNaN(expiresAt) || expiresAt <= this.now().getTime()) {
+      throw new Error(
+        "Cloudflare returned an Access service token without a valid future expires_at; the credential was not stored; " +
+        "stop without retry or cleanup; partial state requires owner review",
+      );
     }
     let receipt;
     try {
@@ -348,17 +356,41 @@ export class CloudflareAdminV7Service {
         tokenId: created.id,
         clientId: created.client_id,
         clientSecret: created.client_secret,
-        expiresAt: created.expires_at ?? null,
+        expiresAt: created.expires_at,
       });
     } catch {
       throw new Error("Access service token was created but credential custody was not confirmed; partial state requires owner review");
     }
+    // Read-back: the complete listing must now show exactly one pinned-name token, the one created.
+    try {
+      await this.#exactPinnedServiceToken(created.id);
+    } catch (error) {
+      throw new Error(
+        `Access service token was created and its credential stored, but read-back did not confirm it: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        "stop without retry or cleanup; partial state requires owner review",
+      );
+    }
     return {
       ok: true,
       created: true,
-      token: { id: created.id, name: created.name, duration: created.duration, expiresAt: created.expires_at ?? null },
+      token: { id: created.id, name: created.name, duration: created.duration, expiresAt: created.expires_at },
       credential: receipt,
     };
+  }
+
+  // Every token carrying the pinned name, from the complete paginated name-filtered listing. The
+  // exact name is re-applied, so a looser server-side match can never widen the result.
+  async #pinnedNameServiceTokens() {
+    return asList(await this.api.listAccessServiceTokens()).filter((token) => token?.name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName);
+  }
+
+  // Exactly one token carries the pinned name, and it has the expected immutable ID.
+  async #exactPinnedServiceToken(serviceTokenId) {
+    if (typeof serviceTokenId !== "string" || serviceTokenId.length === 0) throw new Error("Exact Access service-token ID is required");
+    const tokens = await this.#pinnedNameServiceTokens();
+    if (tokens.length !== 1) throw new Error(`Pinned development Access service token identity is ${tokens.length === 0 ? "missing" : "ambiguous"}`);
+    if (tokens[0]?.id !== serviceTokenId) throw new Error("Pinned development Access service token does not carry the expected immutable ID");
+    return tokens[0];
   }
 
   async #verifiedAccessProtection(serviceTokenId, workerId) {
@@ -411,11 +443,7 @@ export class CloudflareAdminV7Service {
     requireImmutableWorkerId(workerId, "workerId");
     const resolved = await this.#resolveImmutableWorkerId();
     if (resolved !== workerId) throw new Error("Supplied Worker ID does not match the independently resolved immutable Worker ID");
-    const token = exactOne(
-      await this.api.listAccessServiceTokens(),
-      ({ id, name }) => id === serviceTokenId && name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName,
-      "Pinned development Access service token",
-    );
+    const token = await this.#exactPinnedServiceToken(serviceTokenId);
     const existing = asList(await this.api.listAccessApplications()).filter((item) =>
       Array.isArray(item?.destinations) &&
       item.destinations.some((destination) => destination?.type === "worker" && destination?.worker_id === workerId));
@@ -646,11 +674,7 @@ export class CloudflareAdminV7Service {
     await this.#verifiedActivatedProvenance(provenance, activatedVersionId);
     const targetHostname = await this.#verifiedTargetHostname();
     await this.#verifiedAccessIsolation(serviceTokenId, workerId, targetHostname);
-    exactOne(
-      await this.api.listAccessServiceTokens(),
-      ({ id, name }) => id === serviceTokenId && name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName,
-      "Pinned development Access service token",
-    );
+    await this.#exactPinnedServiceToken(serviceTokenId);
 
     // 2. Both custody values, retrieved and bound to the exact phase-8 inputs, before any exposure.
     let access;

@@ -28,6 +28,19 @@ secrets that can never alias or overwrite each other:
 Every other kind is refused. The custodian has no list-all, export, reveal, delete, rotation, or
 fallback-lookup capability, and the Access credential is never reusable as service authentication.
 
+The Access credential's expiry is mandatory. At creation the Cloudflare response must carry
+`expires_at` as a strict RFC 3339 date-time later than the current time, or nothing is stored; the
+custodian re-checks the same rule before writing the slot. At retrieval a null, missing, empty,
+numeric, malformed, or expired `expiresAt` is refused — an unknown expiry is never treated as
+unexpiring.
+
+Access service tokens are enumerated completely with the documented `name` filter and
+`page`/`per_page` pagination, failing closed on missing, inconsistent, repeated, or truncated
+metadata. Creation requires zero tokens with the pinned name on every page; after creation a
+read-back must show exactly one pinned-name token carrying the created ID. Access protection and
+phase 8 require exactly one pinned-name token, and it must carry the exact supplied and
+custody-bound token ID.
+
 The stored principal is bound to the account, the Worker name, the verified immutable Worker ID, the
 exact `SERVICE_AUTH_KEYS_JSON` key ID, and the development activation-canary purpose. Retrieval
 re-checks every one of those.
@@ -49,7 +62,9 @@ Before the single POST, the connector reverifies the account and Worker, the ind
 immutable Worker ID, the active deployment allocating 100% to exactly the expected activated
 version, and the Access application shape: `self_hosted`, exactly one destination of type `worker`
 pinning the verified Worker ID, exactly one `non_identity` Service Auth policy including exactly the
-pinned service token, and no additional include, exclude, or require rules.
+pinned service token, and no additional include, exclude, or require rules. The application's
+policies are enumerated across every `page`/`per_page` page, so a second policy on a later page, a
+repeated policy, or incomplete metadata stops before the POST.
 
 It then derives the target hostname from verified account state
 (`GET /accounts/{account_id}/workers/subdomain`, which must yield exactly
@@ -92,7 +107,7 @@ Missing, duplicate, contradictory, or ambiguous metadata stops before the POST.
    pinned service token.
 2. Both custody values, retrieved and bound to the exact phase-8 inputs: the Access credential to
    its receipt, the account, the Worker name, the target, and the exact service-token ID, and it
-   must not be expired; the service-auth principal to its receipt, the account, the Worker name, the
+   must carry a strict expiry later than the current time; the service-auth principal to its receipt, the account, the Worker name, the
    immutable Worker ID, the pinned principal ID, the exact key ID, and the canary purpose.
 3. A final re-read of the active deployment (same deployment ID and version) and of
    `versions/latest`, so the last observable state before enablement is still the authorized version.

@@ -14,6 +14,7 @@ import {
   createReadOnlyRequester,
   listAllWorkers,
   parseVerifierArguments,
+  readTargetCustomDomains,
   requireBootstrapVersionId,
   resolveImmutableWorkerId,
   runBootstrapVerification,
@@ -121,8 +122,51 @@ test("migration tag must be exactly v2 before the reviewed version upload", () =
 test("SERVICE_AUTH_KEYS_JSON must be absent by name and no Custom Domain may target the Worker", () => {
   assert.deepEqual(assertServiceAuthSecretAbsent([{ name: "OTHER" }]), ["OTHER"]);
   assert.throws(() => assertServiceAuthSecretAbsent([{ name: "SERVICE_AUTH_KEYS_JSON" }]), /already installed/u);
-  assert.equal(assertNoCustomDomains([{ service: "another-worker", hostname: "x.example" }]), 0);
-  assert.throws(() => assertNoCustomDomains([{ service: "8978-ai-control-plane-dev", hostname: "x.example" }]), /Custom Domain is attached/u);
+  const info = { page: 1, per_page: 20, count: 0, total_count: 0, total_pages: 0 };
+  assert.equal(assertNoCustomDomains({ success: true, result: [], result_info: info }), 0);
+  assert.throws(
+    () => assertNoCustomDomains({ success: true, result: [{ service: "8978-ai-control-plane-dev", hostname: "x.example" }], result_info: { ...info, count: 1, total_count: 1 } }),
+    (error) => error instanceof BootstrapVerificationStop && /Custom Domain is attached/u.test(error.message),
+  );
+});
+
+// ------------------------------------------- Review B3: zero-Custom-Domain proof ---
+
+function domainRequester(dataset, info = {}) {
+  const calls = [];
+  const requestGet = async (path, options = {}) => {
+    calls.push({ path, options });
+    const service = new URL(`https://x${path}`).searchParams.get("service");
+    const result = dataset.filter((record) => record.service === service);
+    return { success: true, result, result_info: { page: 1, per_page: 20, count: result.length, total_count: result.length, total_pages: result.length === 0 ? 0 : 1, ...info } };
+  };
+  return { requestGet, calls };
+}
+
+test("the verifier requests Worker domains with the service filter and reads the full envelope", async () => {
+  const { requestGet, calls } = domainRequester([]);
+  const envelope = await readTargetCustomDomains(requestGet);
+  assert.deepEqual(calls, [{ path: `/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/domains?service=8978-ai-control-plane-dev`, options: { envelope: true } }]);
+  assert.equal(assertNoCustomDomains(envelope), 0);
+  assert.ok(source.includes("assertNoCustomDomains(await readTargetCustomDomains(requestGet))"));
+});
+
+test("unrelated domains cause no false positive in the verifier when the service filter is honored", async () => {
+  const { requestGet } = domainRequester([{ service: "another-worker", hostname: "y.example" }, { service: "third-worker", hostname: "z.example" }]);
+  assert.equal(assertNoCustomDomains(await readTargetCustomDomains(requestGet)), 0);
+});
+
+test("the verifier's zero-Custom-Domain proof fails closed on a target domain, omitted results, or missing metadata", async () => {
+  const stops = (envelope, pattern) => assert.throws(() => assertNoCustomDomains(envelope), (error) => error instanceof BootstrapVerificationStop && pattern.test(error.message));
+  const { requestGet: withTarget } = domainRequester([{ service: "8978-ai-control-plane-dev", hostname: "x.example" }]);
+  stops(await readTargetCustomDomains(withTarget), /Custom Domain is attached/u);
+  const { requestGet: hidden } = domainRequester([], { total_count: 21, total_pages: 2 });
+  stops(await readTargetCustomDomains(hidden), /omitted results/u);
+  stops({ success: true, result: [], result_info: { page: 1, per_page: 20, count: 1, total_count: 1 } }, /omitted results/u);
+  stops({ success: true, result: [] }, /did not return pagination metadata/u);
+  stops({ success: true, result: [], result_info: { page: 1, per_page: 20, total_count: 0 } }, /valid count and total_count/u);
+  stops({ success: true, result: [{ service: "another-worker" }], result_info: { page: 1, per_page: 20, count: 1, total_count: 1 } }, /service filter was not honored/u);
+  stops([], /did not return a result list/u);
 });
 
 test("the exact reviewed bindings are required", () => {

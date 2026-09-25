@@ -10,6 +10,7 @@ import { CloudflareAdminV7Api } from "../src/cloudflare-admin-v7-api.js";
 import { ManagedSecretCredentialCustodian } from "../src/cloudflare-admin-v7-custodian.js";
 import { redactSensitive, secretMetadataOnly } from "../src/cloudflare-admin-v7-redaction.js";
 import { CloudflareAdminV7Service } from "../src/cloudflare-admin-v7-service.js";
+import { BootstrapVerificationStop, assertNoCustomDomains } from "../scripts/verify-development-worker-bootstrap.js";
 
 function response(result, status = 200) {
   return new Response(JSON.stringify({ success: status < 400, result }), {
@@ -29,8 +30,11 @@ const workerIdentityMocks = {
   async listWorkerScripts() { return [{ id: CLOUDFLARE_ADMIN_V7.workerName, tag: WORKER_ID }]; },
   async getWorkerSubdomain() { return { enabled: false, previews_enabled: false }; },
   async getAccountWorkersSubdomain() { return { subdomain: "jhutchison" }; },
-  async listWorkerDomains() { return []; },
+  async listWorkerDomains() { return { success: true, result: [], result_info: { page: 1, per_page: 20, count: 0, total_count: 0, total_pages: 0 } }; },
 };
+
+const FUTURE_EXPIRY = "2099-01-01T00:00:00Z";
+const CLOCK = () => new Date("2026-09-25T00:00:00Z");
 
 const custodyMocks = {
   async store() { return { receiptId: "managed-secret:" + CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName, custodian: "connector" }; },
@@ -134,6 +138,100 @@ test("preflight proves exact resource identities, no Queue consumer, and require
   assert.deepEqual(result.worker.secretMetadata, [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }]);
 });
 
+// ---------------------------------------- Review B3: complete zero-Custom-Domain proof ---
+
+const DOMAIN_INFO = { page: 1, per_page: 20, count: 0, total_count: 0, total_pages: 0 };
+const domainEnvelope = (result, info = DOMAIN_INFO) => ({ success: true, result, result_info: info });
+const targetDomain = { id: "domain-1", hostname: "x.example.com", service: CLOUDFLARE_ADMIN_V7.workerName };
+const unrelatedDomain = { id: "domain-2", hostname: "y.example.com", service: "another-worker" };
+
+// Every decision the shared rule makes: [label, envelope, expected error or null for acceptance].
+const DOMAIN_CASES = [
+  ["zero filtered domains with valid completion metadata", domainEnvelope([]), null],
+  ["zero filtered domains with total_pages 1", domainEnvelope([], { ...DOMAIN_INFO, total_pages: 1 }), null],
+  ["zero filtered domains without total_pages", domainEnvelope([], { page: 1, per_page: 20, count: 0, total_count: 0 }), null],
+  ["a target domain returned directly", domainEnvelope([targetDomain], { ...DOMAIN_INFO, count: 1, total_count: 1, total_pages: 1 }), /Custom Domain is attached/u],
+  ["a target domain alongside an unrelated one", domainEnvelope([unrelatedDomain, targetDomain], { ...DOMAIN_INFO, count: 2, total_count: 2, total_pages: 1 }), /Custom Domain is attached/u],
+  ["an unrelated domain returned because the filter was not honored", domainEnvelope([unrelatedDomain], { ...DOMAIN_INFO, count: 1, total_count: 1, total_pages: 1 }), /service filter was not honored/u],
+  ["an empty result with nonzero total_count", domainEnvelope([], { ...DOMAIN_INFO, total_count: 1, total_pages: 1 }), /omitted results/u],
+  ["an empty first page when a later page exists", domainEnvelope([], { ...DOMAIN_INFO, total_count: 21, total_pages: 2 }), /omitted results/u],
+  ["a truncated result whose count disagrees with the returned records", domainEnvelope([], { ...DOMAIN_INFO, count: 1, total_count: 1, total_pages: 1 }), /omitted results/u],
+  ["additional pages reported for an empty result", domainEnvelope([], { ...DOMAIN_INFO, total_pages: 2 }), /additional pages/u],
+  ["missing result_info", { success: true, result: [] }, /did not return pagination metadata/u],
+  ["result_info as a list", domainEnvelope([], []), /did not return pagination metadata/u],
+  ["a page other than 1", domainEnvelope([], { ...DOMAIN_INFO, page: 2 }), /instead of page 1/u],
+  ["an invalid per_page", domainEnvelope([], { ...DOMAIN_INFO, per_page: 0 }), /invalid per_page/u],
+  ["a missing count", domainEnvelope([], { page: 1, per_page: 20, total_count: 0 }), /valid count and total_count/u],
+  ["a missing total_count", domainEnvelope([], { page: 1, per_page: 20, count: 0 }), /valid count and total_count/u],
+  ["a string total_count", domainEnvelope([], { ...DOMAIN_INFO, total_count: "0" }), /valid count and total_count/u],
+  ["a missing result list", { success: true, result_info: DOMAIN_INFO }, /did not return a result list/u],
+];
+
+function preflightApi(domains) {
+  return {
+    ...workerIdentityMocks,
+    async verifyIdentity() { return {}; },
+    async getD1Database() { return { uuid: CLOUDFLARE_ADMIN_V7.d1Id, name: CLOUDFLARE_ADMIN_V7.d1Name }; },
+    async getWorkerSettings() { return { bindings: [
+      { name: "AUTHORITY_DB", type: "d1", id: CLOUDFLARE_ADMIN_V7.d1Id },
+      { name: "ORCHESTRATOR_QUEUE", type: "queue", queue_name: CLOUDFLARE_ADMIN_V7.queueName },
+      { name: "ORCHESTRATOR_WORKFLOW", type: "workflow", workflow_name: CLOUDFLARE_ADMIN_V7.workflowName, class_name: CLOUDFLARE_ADMIN_V7.workflowClass, script_name: CLOUDFLARE_ADMIN_V7.workerName },
+    ] }; },
+    async listWorkerDeployments() { return []; },
+    async listQueues() { return [{ queue_name: CLOUDFLARE_ADMIN_V7.queueName, consumers_total_count: 0 }]; },
+    async listWorkflows() { return [{ name: CLOUDFLARE_ADMIN_V7.workflowName, class_name: CLOUDFLARE_ADMIN_V7.workflowClass, script_name: CLOUDFLARE_ADMIN_V7.workerName }]; },
+    async listAccessApplications() { return []; },
+    async listWorkerSecrets() { return []; },
+    async listWorkerDomains() { return domains; },
+  };
+}
+
+test("the connector requests Worker domains with the documented service filter and keeps the full envelope", async () => {
+  const requests = [];
+  const body = domainEnvelope([]);
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url, init) => {
+      requests.push({ url: String(url), method: init.method });
+      return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    },
+  });
+  assert.deepEqual(await api.listWorkerDomains(), body);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].method, "GET");
+  assert.equal(requests[0].url, `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/domains?service=${CLOUDFLARE_ADMIN_V7.workerName}`);
+});
+
+test("unrelated domains cause no false positive when the service filter is honored", async () => {
+  const dataset = [unrelatedDomain, { id: "domain-3", hostname: "z.example.com", service: "third-worker" }];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url) => {
+      const service = new URL(url).searchParams.get("service");
+      const result = dataset.filter((record) => record.service === service);
+      return new Response(JSON.stringify(domainEnvelope(result, { ...DOMAIN_INFO, count: result.length, total_count: result.length })), { status: 200 });
+    },
+  });
+  const result = await new CloudflareAdminV7Service({ api: { ...preflightApi(null), listWorkerDomains: () => api.listWorkerDomains() } }).preflight();
+  assert.deepEqual(result.worker.customDomains, []);
+});
+
+for (const [label, domains, expected] of DOMAIN_CASES) {
+  test(`connector preflight and bootstrap verifier decide identically on ${label}`, async () => {
+    const service = new CloudflareAdminV7Service({ api: preflightApi(domains) });
+    const connector = await service.preflight().then(() => null, (error) => error);
+    const verifier = (() => { try { assertNoCustomDomains(domains); return null; } catch (error) { return error; } })();
+    if (expected === null) {
+      assert.equal(connector, null);
+      assert.equal(verifier, null);
+    } else {
+      assert.match(connector?.message ?? "", expected);
+      assert.ok(verifier instanceof BootstrapVerificationStop);
+      assert.equal(verifier.message, connector.message, "the verifier and connector must share one fail-closed rule");
+    }
+  });
+}
+
 test("preflight rejects drifted Worker binding targets", async () => {
   const validBindings = [
     { name: "AUTHORITY_DB", type: "d1", id: CLOUDFLARE_ADMIN_V7.d1Id },
@@ -199,23 +297,24 @@ test("preflight stops on a Queue consumer or Workflow association drift", async 
 });
 
 test("service-token creation requires exact approval, refuses duplicates, and never returns credentials", async () => {
-  let created = false;
+  let created = null;
   let custodyInput;
   const api = {
     ...workerIdentityMocks,
-    async listAccessServiceTokens() { return []; },
+    async listAccessServiceTokens() { return created ? [created] : []; },
     async createAccessServiceToken(hours) {
-      created = true;
       assert.equal(hours, 24);
-      return { id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "client-" + "fixture", client_secret: "secret-" + "fixture", duration: "24h" };
+      created = { id: "token-id", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, client_id: "client-" + "fixture", client_secret: "secret-" + "fixture", duration: "24h", expires_at: FUTURE_EXPIRY };
+      return created;
     },
   };
   const custodian = { async store(kind, value) { custodyInput = { kind, value }; return { receiptId: "receipt-123", custodian: "managed" }; } };
-  const service = new CloudflareAdminV7Service({ api, custodian });
+  const service = new CloudflareAdminV7Service({ api, custodian, now: CLOCK });
   await assert.rejects(() => service.createServiceToken({ approval: "yes" }), /Exact approval required/);
   const result = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken });
-  assert.equal(created, true);
+  assert.ok(created);
   assert.equal(custodyInput.value.clientSecret, "secret-fixture");
+  assert.equal(custodyInput.value.expiresAt, FUTURE_EXPIRY);
   assert.doesNotMatch(JSON.stringify(result), /client-fixture|secret-fixture/);
 
   api.listAccessServiceTokens = async () => [{ id: "existing", name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }];
@@ -224,10 +323,11 @@ test("service-token creation requires exact approval, refuses duplicates, and ne
 
 test("service-token partial custody failure stops without exposing the returned secret", async () => {
   const service = new CloudflareAdminV7Service({
+    now: CLOCK,
     api: {
       ...workerIdentityMocks,
       async listAccessServiceTokens() { return []; },
-      async createAccessServiceToken() { return { id: "token-id", client_id: "client-" + "fixture", client_secret: "secret-" + "fixture" }; },
+      async createAccessServiceToken() { return { id: "token-id", client_id: "client-" + "fixture", client_secret: "secret-" + "fixture", expires_at: FUTURE_EXPIRY }; },
     },
     custodian: { ...custodyMocks, async store() { throw new Error("storage failed with secret fixture"); } },
   });
@@ -305,19 +405,19 @@ test("Access protection confirms one exact Service Auth policy and rejects a bro
 
 test("managed-secret custodian stores the Access credential without returning it", async () => {
   let installed;
-  const credential = { tokenId: "token-id", target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "client-" + "fixture", clientSecret: "secret-" + "fixture", expiresAt: null };
+  const credential = { tokenId: "token-id", target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "client-" + "fixture", clientSecret: "secret-" + "fixture", expiresAt: FUTURE_EXPIRY };
   const env = {};
-  const custodian = new ManagedSecretCredentialCustodian({ async installConnectorAccessCredential(value) { installed = value; } }, env);
+  const custodian = new ManagedSecretCredentialCustodian({ async installConnectorAccessCredential(value) { installed = value; } }, env, { now: CLOCK });
   const receipt = await custodian.store("access-service-token", credential);
   assert.doesNotMatch(JSON.stringify(receipt), /client-fixture|secret-fixture/);
   env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = installed;
-  assert.deepEqual(await custodian.readAccessCredential(receipt.receiptId, { tokenId: "token-id", now: new Date() }), { clientId: "client-fixture", clientSecret: "secret-fixture" });
+  assert.deepEqual(await custodian.readAccessCredential(receipt.receiptId, { tokenId: "token-id", now: CLOCK() }), { clientId: "client-fixture", clientSecret: "secret-fixture" });
   // The stored credential is bound to the account, Worker, target, and exact service-token ID.
   assert.deepEqual(
     Object.keys(JSON.parse(installed)).sort(),
     ["accountId", "clientId", "clientSecret", "expiresAt", "target", "tokenId", "workerName"],
   );
-  await assert.rejects(() => custodian.readAccessCredential(receipt.receiptId, { tokenId: "another-token", now: new Date() }), /different Access service-token ID/);
+  await assert.rejects(() => custodian.readAccessCredential(receipt.receiptId, { tokenId: "another-token", now: CLOCK() }), /different Access service-token ID/);
   await assert.rejects(() => custodian.readAccessCredential("managed-secret:WRONG"), /pinned managed secret/);
 });
 

@@ -150,8 +150,10 @@ export class CloudflareAdminV7Api {
     });
   }
 
+  // Documented service filter; the complete envelope is returned so result_info can prove absence.
   async listWorkerDomains() {
-    return this.#request("GET", this.#accountPath("/workers/domains"));
+    const service = encodeURIComponent(CLOUDFLARE_ADMIN_V7.workerName);
+    return this.#request("GET", this.#accountPath(`/workers/domains?service=${service}`), { envelope: true });
   }
 
   async listQueues() {
@@ -169,8 +171,13 @@ export class CloudflareAdminV7Api {
     );
   }
 
+  // Documented page/per_page pagination with the documented name filter for the pinned token name.
   async listAccessServiceTokens() {
-    return this.#request("GET", this.#accountPath("/access/service_tokens"));
+    const name = encodeURIComponent(CLOUDFLARE_ADMIN_V7.accessServiceTokenName);
+    return collectPagedResults(
+      (page) => this.#request("GET", this.#accountPath(`/access/service_tokens?name=${name}&page=${page}&per_page=50`), { envelope: true }),
+      "Access service-token listing",
+    );
   }
 
   async createAccessApplication(workerId) {
@@ -204,7 +211,10 @@ export class CloudflareAdminV7Api {
 
   async listAccessApplicationPolicies(applicationId) {
     if (!/^[0-9a-f-]{32,36}$/i.test(String(applicationId))) throw new Error("Access application ID is invalid");
-    return this.#request("GET", this.#accountPath(`/access/apps/${applicationId}/policies`));
+    return collectPagedResults(
+      (page) => this.#request("GET", this.#accountPath(`/access/apps/${applicationId}/policies?page=${page}&per_page=50`), { envelope: true }),
+      "Access policy listing",
+    );
   }
 
   async createServiceAuthVersion(secretJson, reviewedCommit, configurationSha256) {

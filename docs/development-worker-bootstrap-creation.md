@@ -93,6 +93,12 @@ version, the exact bootstrap annotation, the D1 / Queue / Workflow / four Durabl
 `migration_tag === "v2"`, absence of `SERVICE_AUTH_KEYS_JSON` by name, zero Custom Domains, zero
 Queue consumers, and `enabled: false` / `previews_enabled: false`.
 
+Zero Custom Domains is proven with the connector's shared fail-closed rule: the listing is requested
+with the documented `service=8978-ai-control-plane-dev` filter, and only an empty result whose
+`result_info` reports page 1, a valid `per_page`, and `count` and `total_count` both zero is accepted.
+A record for the Worker, a record for another Worker (the filter was not honored), missing or
+contradictory metadata, or a nonzero `total_count` behind an empty result stops verification.
+
 It writes no record. The owner authors it against
 `schemas/development-worker-bootstrap-verification-record.schema.json`.
 

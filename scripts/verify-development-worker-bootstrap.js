@@ -19,7 +19,7 @@ import {
   TARGET_RUNTIME_INPUTS,
   TARGET_WORKER_COMMIT,
 } from "../src/target-runtime-manifest.js";
-import { CLOUDFLARE_ADMIN_V7, collectPagedResults } from "../src/cloudflare-admin-v7-contracts.js";
+import { CLOUDFLARE_ADMIN_V7, assertNoWorkerCustomDomains, collectPagedResults } from "../src/cloudflare-admin-v7-contracts.js";
 
 const API_ORIGIN = "https://api.cloudflare.com/client/v4";
 const ACCOUNT_ID = CLOUDFLARE_ADMIN_V7.accountId;
@@ -191,10 +191,18 @@ export function assertServiceAuthSecretAbsent(secrets) {
   return names;
 }
 
-export function assertNoCustomDomains(domains) {
-  const matching = asList(domains).filter((record) => record?.service === WORKER_NAME);
-  if (matching.length !== 0) throw new BootstrapVerificationStop("A Custom Domain is attached to the bootstrapped Worker");
-  return 0;
+// The connector's fail-closed zero-Custom-Domain rule, applied to the complete filtered envelope.
+export function assertNoCustomDomains(envelope) {
+  try {
+    return assertNoWorkerCustomDomains(envelope, WORKER_NAME);
+  } catch (error) {
+    throw new BootstrapVerificationStop(error instanceof Error ? error.message : "Custom Domain state is ambiguous");
+  }
+}
+
+// Documented service=<workerName> filter; the full envelope is read so result_info can prove absence.
+export async function readTargetCustomDomains(requestGet) {
+  return requestGet(`/accounts/${ACCOUNT_ID}/workers/domains?service=${encodeURIComponent(WORKER_NAME)}`, { envelope: true });
 }
 
 export function assertMigrationTag(service) {
@@ -272,7 +280,7 @@ export async function runBootstrapVerification({ requestGet, remediationCommit, 
   assertExpectedBindings(latest?.resources?.bindings);
   const subdomain = assertSubdomainDisabled(await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/subdomain`));
   const secretNames = assertServiceAuthSecretAbsent(await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/secrets`));
-  assertNoCustomDomains(await requestGet(`/accounts/${ACCOUNT_ID}/workers/domains`));
+  assertNoCustomDomains(await readTargetCustomDomains(requestGet));
   const workflow = await requestGet(`/accounts/${ACCOUNT_ID}/workflows/${CLOUDFLARE_ADMIN_V7.workflowName}`);
   if (workflow?.class_name !== CLOUDFLARE_ADMIN_V7.workflowClass || workflow?.script_name !== WORKER_NAME) {
     throw new BootstrapVerificationStop("Workflow class or Worker association does not match the pinned contract");
