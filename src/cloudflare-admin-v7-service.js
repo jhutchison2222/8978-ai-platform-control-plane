@@ -58,6 +58,10 @@ function stableJson(value) {
 }
 
 function assertOnlyServiceSecretChanged(base, activated) {
+  const baseEtag = base?.resources?.script?.etag;
+  if (typeof baseEtag !== "string" || baseEtag.length === 0) {
+    throw new Error("Reviewed Worker version does not expose a script etag; code continuity cannot be proven");
+  }
   const baseBindings = versionBindings(base).map(stableJson).sort();
   const activatedBindings = versionBindings(activated);
   const secretBindings = activatedBindings.filter(({ name }) => name === CLOUDFLARE_ADMIN_V7.serviceAuthSecretName);
@@ -70,6 +74,28 @@ function assertOnlyServiceSecretChanged(base, activated) {
       stableJson(base?.resources?.script_runtime) !== stableJson(activated?.resources?.script_runtime)) {
     throw new Error("Activation version changed reviewed code or configuration beyond SERVICE_AUTH_KEYS_JSON");
   }
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+// The single workers/message annotation of a version. Two differing sources are ambiguous.
+function exactVersionMessage(version, label) {
+  const sources = [version?.annotations, version?.metadata?.annotations]
+    .filter((annotations) => annotations && typeof annotations === "object" && annotations["workers/message"] !== undefined)
+    .map((annotations) => annotations["workers/message"]);
+  if (sources.length === 0) throw new Error(`${label} carries no workers/message annotation; provenance cannot be proven`);
+  if (new Set(sources).size !== 1 || typeof sources[0] !== "string") throw new Error(`${label} annotation is ambiguous; provenance cannot be proven`);
+  return sources[0];
+}
+
+// The one version receiving 100 percent of traffic in the active deployment, with its deployment ID.
+function exactActiveAllocation(deployments, expectedVersionId, stage) {
+  const active = activeDeployment(deployments);
+  if (!active || typeof active.id !== "string" || active.id.length === 0 || !Array.isArray(active.versions) || active.versions.length !== 1 ||
+      active.versions[0]?.percentage !== 100 || active.versions[0]?.version_id !== expectedVersionId) {
+    throw new Error(`Active deployment at ${stage} does not allocate 100 percent to exactly the expected activated version`);
+  }
+  return { deploymentId: active.id, versionId: active.versions[0].version_id };
 }
 
 function assertSubdomainState(state, expected, stage) {
@@ -532,6 +558,52 @@ export class CloudflareAdminV7Service {
     }
   }
 
+  // Reviewed provenance comes only from the connector's pinned configuration, never from the caller.
+  #pinnedReviewedProvenance(activatedVersionId) {
+    const pinned = this.reviewedDeployment;
+    if (!pinned || pinned.reviewedCommit !== CLOUDFLARE_ADMIN_V7.targetWorkerCommit ||
+        pinned.configurationSha256 !== CLOUDFLARE_ADMIN_V7.targetConfigurationSha256 ||
+        typeof pinned.versionId !== "string" || !UUID_PATTERN.test(pinned.versionId)) {
+      throw new Error("Pinned reviewed Worker provenance is unavailable or does not match the target Worker provenance");
+    }
+    if (typeof activatedVersionId !== "string" || !UUID_PATTERN.test(activatedVersionId)) throw new Error("Activated Worker version ID is malformed");
+    if (activatedVersionId === pinned.versionId) throw new Error("The activated version cannot be the reviewed base version");
+    return {
+      reviewedCommit: pinned.reviewedCommit,
+      configurationSha256: pinned.configurationSha256,
+      reviewedVersionId: pinned.versionId,
+      reviewedMessage: `${CLOUDFLARE_ADMIN_V7.reviewedAnnotationPrefix}:${pinned.reviewedCommit}:${pinned.configurationSha256}`,
+      activatedMessage: `${CLOUDFLARE_ADMIN_V7.activatedAnnotationPrefix}:${pinned.reviewedCommit}:${pinned.configurationSha256}`,
+    };
+  }
+
+  // The version about to be exposed must be the exact authorized activation of the pinned reviewed
+  // version: exact annotation, latest, and the same code-continuity rule enforced in phase 7.
+  async #verifiedActivatedProvenance(provenance, activatedVersionId) {
+    const [reviewedVersion, activatedVersion, latest] = await Promise.all([
+      this.api.getWorkerVersion(provenance.reviewedVersionId),
+      this.api.getWorkerVersion(activatedVersionId),
+      this.api.getLatestWorkerVersion(),
+    ]);
+    if (reviewedVersion?.id !== provenance.reviewedVersionId) throw new Error("Cloudflare did not return the pinned reviewed Worker version");
+    if (exactVersionMessage(reviewedVersion, "Reviewed Worker version") !== provenance.reviewedMessage) {
+      throw new Error("Reviewed Worker version annotation does not bind the exact target commit and configuration digest");
+    }
+    if (activatedVersion?.id !== activatedVersionId) throw new Error("Cloudflare did not return the activated Worker version");
+    if (exactVersionMessage(activatedVersion, "Activated Worker version") !== provenance.activatedMessage) {
+      throw new Error("Activated Worker version annotation does not bind the exact target commit and configuration digest");
+    }
+    this.#assertLatestIsActivated(latest, activatedVersionId, provenance);
+    assertOnlyServiceSecretChanged(reviewedVersion, activatedVersion);
+  }
+
+  #assertLatestIsActivated(latest, activatedVersionId, provenance) {
+    if (latest?.id !== activatedVersionId) throw new Error("versions/latest does not identify exactly the activated Worker version");
+    if (exactVersionMessage(latest, "Latest Worker version") !== provenance.activatedMessage) {
+      throw new Error("Latest Worker version annotation does not bind the exact target commit and configuration digest");
+    }
+  }
+
   async #readBackSubdomain() {
     try {
       const state = await this.api.getWorkerSubdomain();
@@ -564,18 +636,50 @@ export class CloudflareAdminV7Service {
     requireImmutableWorkerId(workerId, "workerId");
     if (typeof keyId !== "string" || keyId.length === 0) throw new Error("Exact service-auth key ID is required before subdomain enablement");
     if (!this.custodian) throw new Error("Credential custodian is required for the bounded canary");
+    const provenance = this.#pinnedReviewedProvenance(activatedVersionId);
 
+    // 1. Identity, pre-enablement surface, deployment, provenance, hostname, and Access isolation.
     const resolvedWorkerId = await this.#resolveImmutableWorkerId();
     if (resolvedWorkerId !== workerId) throw new Error("Supplied Worker ID does not match the independently resolved immutable Worker ID");
     assertSubdomainState(await this.api.getWorkerSubdomain(), CLOUDFLARE_ADMIN_V7.subdomainBeforeEnablement, "pre-enablement");
-    const active = activeDeployment(await this.api.listWorkerDeployments());
-    if (!active || !Array.isArray(active.versions) || active.versions.length !== 1 ||
-        active.versions[0]?.percentage !== 100 || active.versions[0]?.version_id !== activatedVersionId) {
-      throw new Error("Active deployment does not allocate 100 percent to exactly the expected activated version");
-    }
+    const initialAllocation = exactActiveAllocation(await this.api.listWorkerDeployments(), activatedVersionId, "pre-enablement");
+    await this.#verifiedActivatedProvenance(provenance, activatedVersionId);
     const targetHostname = await this.#verifiedTargetHostname();
     await this.#verifiedAccessIsolation(serviceTokenId, workerId, targetHostname);
+    exactOne(
+      await this.api.listAccessServiceTokens(),
+      ({ id, name }) => id === serviceTokenId && name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName,
+      "Pinned development Access service token",
+    );
 
+    // 2. Both custody values, retrieved and bound to the exact phase-8 inputs, before any exposure.
+    let access;
+    let principal;
+    try {
+      access = await this.custodian.readAccessCredential(accessCredentialReceiptId, { tokenId: serviceTokenId, now: this.now() });
+      principal = await this.custodian.readServiceAuthPrincipal(serviceAuthReceiptId, { workerId, keyId });
+    } catch (error) {
+      throw new Error(
+        `Canary custody was not confirmed before subdomain enablement: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        "the subdomain was not changed and no canary request was made",
+      );
+    }
+    if (typeof access?.clientId !== "string" || access.clientId.length === 0 || typeof access?.clientSecret !== "string" || access.clientSecret.length === 0) {
+      throw new Error("Canary Access credential custody is malformed; the subdomain was not changed and no canary request was made");
+    }
+    if (principal?.principalId !== CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId || principal?.keyId !== keyId ||
+        typeof principal?.secret !== "string" || principal.secret.length < 32) {
+      throw new Error("Canary service-auth principal custody is not bound to the exact phase-8 inputs; the subdomain was not changed and no canary request was made");
+    }
+
+    // 3. The last observable state before enablement must still be the exact authorized version.
+    const finalAllocation = exactActiveAllocation(await this.api.listWorkerDeployments(), activatedVersionId, "final pre-enablement check");
+    if (finalAllocation.deploymentId !== initialAllocation.deploymentId) {
+      throw new Error("Active deployment changed during pre-enablement verification; the subdomain was not changed");
+    }
+    this.#assertLatestIsActivated(await this.api.getLatestWorkerVersion(), activatedVersionId, provenance);
+
+    // 4. Exactly one POST, then exactly one read-back on every outcome.
     let posted;
     try {
       posted = await this.api.setWorkerSubdomain({ enabled: true, previews_enabled: false });
@@ -604,8 +708,7 @@ export class CloudflareAdminV7Service {
       throw new Error("Subdomain read-back does not confirm enablement; the canary was not run and the POST was not repeated");
     }
 
-    const access = await this.custodian.readAccessCredential(accessCredentialReceiptId);
-    const principal = await this.custodian.readServiceAuthPrincipal(serviceAuthReceiptId, { workerId, keyId });
+    // 5. The canary runs only after an unambiguous successful read-back, with the custody read in step 2.
     const evidence = await this.#runCanary({
       access,
       principalId: principal.principalId,

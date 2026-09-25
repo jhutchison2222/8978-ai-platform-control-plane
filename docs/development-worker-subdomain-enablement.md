@@ -69,8 +69,39 @@ a conflicting application's policies are harmless. The expected Worker-level app
 not enable `options_preflight_bypass`, which would let CORS preflight requests reach the Worker
 without Access.
 
-Then exactly one POST, exactly one read-back GET — verification, never a retry — and only then the
-five-request canary, once.
+### Activated-version provenance
+
+The reviewed commit, configuration digest, and reviewed version ID come only from the connector's
+pinned configuration (`TARGET_WORKER_COMMIT`, `TARGET_CONFIGURATION_SHA256`,
+`TARGET_WORKER_VERSION_ID`), which must equal the target Worker provenance. A caller-supplied
+`activatedVersionId` is never trusted by itself. Before the POST the connector requires that:
+
+- the active deployment allocates exactly 100% to `activatedVersionId` and to no other version;
+- `GET` of the reviewed version returns it with exactly `8978-reviewed:<commit>:<configuration-sha256>`;
+- `GET` of the activated version returns it with exactly `8978-activated:<commit>:<configuration-sha256>`;
+- `versions/latest` is exactly the activated version with that same annotation;
+- the activated version passes the phase-7 continuity rule against the reviewed version: the same
+  non-empty script etag, the same script runtime, the same bindings, and exactly one added
+  `SERVICE_AUTH_KEYS_JSON` secret.
+
+Missing, duplicate, contradictory, or ambiguous metadata stops before the POST.
+
+### Ordering
+
+1. Identity, pre-enablement surface, deployment, provenance, hostname, Access isolation, and the
+   pinned service token.
+2. Both custody values, retrieved and bound to the exact phase-8 inputs: the Access credential to
+   its receipt, the account, the Worker name, the target, and the exact service-token ID, and it
+   must not be expired; the service-auth principal to its receipt, the account, the Worker name, the
+   immutable Worker ID, the pinned principal ID, the exact key ID, and the canary purpose.
+3. A final re-read of the active deployment (same deployment ID and version) and of
+   `versions/latest`, so the last observable state before enablement is still the authorized version.
+4. Exactly one POST.
+5. Exactly one read-back GET on every POST outcome — verification, never a retry.
+6. The five-request canary, once, only after an unambiguous successful read-back.
+
+Any failure in steps 1-3 stops with no POST, no read-back, and no canary request. No secret value
+is returned, logged, or included in an error.
 
 ## Approvals
 
@@ -90,6 +121,9 @@ Bootstrap creation is owner-run Wrangler and carries **no** connector approval l
 | --- | --- | --- |
 | Custody unconfirmed | Unreachable, nothing deployed | Stop |
 | Access reverification fails | Unreachable | Stop before the POST |
+| Activated-version provenance fails | Unreachable | Stop before the POST |
+| Canary custody unavailable or mismatched | Unreachable | Stop before the POST |
+| Deployment changes before the POST | Unreachable | Stop before the POST |
 | POST clearly fails, read-back false/false | Unreachable | Stop |
 | POST ambiguous, read-back true/false | Reachable, Access-protected | Stop before canary |
 | POST ambiguous, read-back false/false | Unreachable | Stop; never repeat the POST |

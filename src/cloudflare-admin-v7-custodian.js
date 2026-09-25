@@ -33,7 +33,30 @@ function assertPrincipalBinding(binding, { workerId, keyId } = {}) {
   if (typeof binding.keyId !== "string" || binding.keyId.length === 0) throw new Error("Service-auth principal key ID is missing or malformed");
   if (workerId !== undefined && binding.workerId !== workerId) throw new Error("Service-auth principal is bound to a different immutable Worker ID");
   if (keyId !== undefined && binding.keyId !== keyId) throw new Error("Service-auth principal is bound to a different service-auth key ID");
+  if (workerId === undefined || keyId === undefined) {
+    throw new Error("Service-auth principal retrieval requires the exact immutable Worker ID and key ID binding");
+  }
   return binding;
+}
+
+function assertAccessCredentialBinding(credential, { tokenId, now } = {}) {
+  if (!credential || typeof credential !== "object") throw new Error("Managed Access credential binding metadata is missing or malformed");
+  if (credential.accountId !== CLOUDFLARE_ADMIN_V7.accountId) throw new Error("Managed Access credential is not bound to the authorized development account");
+  if (credential.workerName !== CLOUDFLARE_ADMIN_V7.workerName) throw new Error("Managed Access credential is not bound to the pinned development Worker");
+  if (credential.target !== CLOUDFLARE_ADMIN_V7.workerUrl) throw new Error("Managed Access credential does not match the pinned development target");
+  if (typeof tokenId !== "string" || tokenId.length === 0) throw new Error("Access credential retrieval requires the exact service-token ID binding");
+  if (credential.tokenId !== tokenId) throw new Error("Managed Access credential is bound to a different Access service-token ID");
+  if (typeof credential.clientId !== "string" || credential.clientId.length === 0 ||
+      typeof credential.clientSecret !== "string" || credential.clientSecret.length === 0) {
+    throw new Error("Managed Access credential material is unavailable or malformed");
+  }
+  if (credential.expiresAt !== null && credential.expiresAt !== undefined) {
+    const expiresAt = typeof credential.expiresAt === "string" ? Date.parse(credential.expiresAt) : Number.NaN;
+    if (Number.isNaN(expiresAt)) throw new Error("Managed Access credential expiry is malformed");
+    if (!(now instanceof Date) || Number.isNaN(now.getTime())) throw new Error("Access credential retrieval requires a valid current time");
+    if (expiresAt <= now.getTime()) throw new Error("Managed Access credential has expired and is stale");
+  }
+  return credential;
 }
 
 export class ManagedSecretCredentialCustodian {
@@ -47,6 +70,8 @@ export class ManagedSecretCredentialCustodian {
     const slot = slotFor(kind);
     if (kind === "access-service-token") {
       await this.api.installConnectorAccessCredential(JSON.stringify({
+        accountId: CLOUDFLARE_ADMIN_V7.accountId,
+        workerName: CLOUDFLARE_ADMIN_V7.workerName,
         tokenId: credential.tokenId,
         target: credential.target,
         clientId: credential.clientId,
@@ -82,7 +107,8 @@ export class ManagedSecretCredentialCustodian {
     return { ...receiptFor(slot), kind, confirmed: true };
   }
 
-  async readAccessCredential(receiptId) {
+  // Retrieval is bound to the exact service-token ID; an expired credential is stale and refused.
+  async readAccessCredential(receiptId, { tokenId, now } = {}) {
     const slot = CREDENTIAL_SLOTS["access-service-token"];
     if (receiptId !== `managed-secret:${slot}`) throw new Error("Access credential receipt does not match the pinned managed secret");
     let parsed;
@@ -91,9 +117,7 @@ export class ManagedSecretCredentialCustodian {
     } catch {
       throw new Error("Managed Access credential secret is unavailable or invalid");
     }
-    if (parsed?.target !== CLOUDFLARE_ADMIN_V7.workerUrl || typeof parsed?.clientId !== "string" || typeof parsed?.clientSecret !== "string") {
-      throw new Error("Managed Access credential does not match the pinned development target");
-    }
+    assertAccessCredentialBinding(parsed, { tokenId, now });
     return { clientId: parsed.clientId, clientSecret: parsed.clientSecret };
   }
 

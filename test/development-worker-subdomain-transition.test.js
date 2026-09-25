@@ -16,6 +16,32 @@ const VERSION_ID = "11111111-2222-3333-4444-555555555555";
 const ACCESS_RECEIPT = `managed-secret:${CLOUDFLARE_ADMIN_V7.accessCredentialSecretName}`;
 const PRINCIPAL_RECEIPT = `managed-secret:${CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName}`;
 const KEY_ID = "canary-2026-09-23";
+const REVIEWED_VERSION_ID = "aaaaaaaa-2222-3333-4444-555555555555";
+const REVIEWED = {
+  reviewedCommit: CLOUDFLARE_ADMIN_V7.targetWorkerCommit,
+  configurationSha256: CLOUDFLARE_ADMIN_V7.targetConfigurationSha256,
+  versionId: REVIEWED_VERSION_ID,
+};
+const REVIEWED_MESSAGE = `8978-reviewed:${REVIEWED.reviewedCommit}:${REVIEWED.configurationSha256}`;
+const ACTIVATED_MESSAGE = `8978-activated:${REVIEWED.reviewedCommit}:${REVIEWED.configurationSha256}`;
+const BASE_RESOURCES = {
+  bindings: [{ name: "CONTROL_PLANE_MODE", type: "plain_text", text: "development" }],
+  script: { etag: "reviewed-etag" },
+  script_runtime: { compatibility_date: "2026-08-12" },
+};
+
+function reviewedVersion(patch = {}) {
+  return { id: REVIEWED_VERSION_ID, annotations: { "workers/message": REVIEWED_MESSAGE }, resources: BASE_RESOURCES, ...patch };
+}
+
+function activatedVersion(patch = {}) {
+  return {
+    id: VERSION_ID,
+    annotations: { "workers/message": ACTIVATED_MESSAGE },
+    resources: { ...BASE_RESOURCES, bindings: [...BASE_RESOURCES.bindings, { name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }] },
+    ...patch,
+  };
+}
 
 function accessApp() {
   return {
@@ -31,7 +57,7 @@ function accessPolicy() {
 }
 
 function baseApi(overrides = {}) {
-  const calls = { setWorkerSubdomain: 0, getWorkerSubdomain: 0 };
+  const calls = { setWorkerSubdomain: 0, getWorkerSubdomain: 0, listWorkerDeployments: 0 };
   // The default mock reflects a successful transition: disabled until the single POST, enabled after it.
   let enabled = false;
   const api = {
@@ -46,11 +72,18 @@ function baseApi(overrides = {}) {
     async listAccessApplicationPolicies() { return accessPolicy(); },
     async listAccessServiceTokens() { return [{ id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }]; },
     async listWorkerDeployments() {
+      calls.listWorkerDeployments += 1;
       return [
         { id: "d2", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] },
         { id: "d1", versions: [{ version_id: "old", percentage: 100 }] },
       ];
     },
+    async getWorkerVersion(id) {
+      if (id === REVIEWED_VERSION_ID) return reviewedVersion();
+      if (id === VERSION_ID) return activatedVersion();
+      throw new Error(`unexpected version ${id}`);
+    },
+    async getLatestWorkerVersion() { return activatedVersion(); },
     async getWorkerSubdomain() { calls.getWorkerSubdomain += 1; return { enabled, previews_enabled: false }; },
     async setWorkerSubdomain() { calls.setWorkerSubdomain += 1; enabled = true; return { enabled: true, previews_enabled: false }; },
     ...overrides,
@@ -60,8 +93,10 @@ function baseApi(overrides = {}) {
 
 function custodianStub({ principal } = {}) {
   return {
-    async readAccessCredential(receiptId) {
+    async readAccessCredential(receiptId, binding) {
       assert.equal(receiptId, ACCESS_RECEIPT);
+      assert.equal(binding.tokenId, TOKEN_ID);
+      assert.ok(binding.now instanceof Date);
       return { clientId: "cid", clientSecret: "csecret" };
     },
     async readServiceAuthPrincipal(receiptId, binding) {
@@ -126,7 +161,7 @@ test("no route, DNS, custom-domain, delete, disable, or rollback capability exis
 
 test("exactly one subdomain POST is issued and one read-back GET follows it", async () => {
   const api = baseApi();
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
   assert.equal(api.calls.setWorkerSubdomain, 1);
 });
@@ -134,7 +169,7 @@ test("exactly one subdomain POST is issued and one read-back GET follows it", as
 test("no canary runs when the POST fails, and the Worker remains unreachable", async () => {
   let canaryCalls = 0;
   const api = baseApi({ async setWorkerSubdomain() { api.calls.setWorkerSubdomain += 1; throw new Error("cloudflare rejected"); } });
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /remains unreachable/u);
   assert.equal(canaryCalls, 0);
   assert.equal(api.calls.setWorkerSubdomain, 1);
@@ -143,7 +178,7 @@ test("no canary runs when the POST fails, and the Worker remains unreachable", a
 test("an ambiguous POST never repeats and never reaches the canary", async () => {
   let canaryCalls = 0;
   const api = baseApi({ async setWorkerSubdomain() { api.calls.setWorkerSubdomain += 1; return { enabled: true }; } });
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /ambiguous result and was not repeated/u);
   assert.equal(canaryCalls, 0);
   assert.equal(api.calls.setWorkerSubdomain, 1);
@@ -159,7 +194,7 @@ test("a read-back reporting previews enabled is a security stop before any canar
     },
     async setWorkerSubdomain() { api.calls.setWorkerSubdomain += 1; posted = true; return { enabled: true, previews_enabled: false }; },
   });
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /unexpected preview surface/u);
   assert.equal(canaryCalls, 0);
   assert.equal(api.calls.setWorkerSubdomain, 1);
@@ -175,14 +210,14 @@ test("a failed or ambiguous read-back assumes reachability and stops before the 
     },
     async setWorkerSubdomain() { api.calls.setWorkerSubdomain += 1; posted = true; return { enabled: true, previews_enabled: false }; },
   });
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /reachability may exist/u);
   assert.equal(canaryCalls, 0);
 });
 
 test("enablement stops before the POST when the subdomain is not already disabled", async () => {
   const api = baseApi({ async getWorkerSubdomain() { return { enabled: true, previews_enabled: false }; } });
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /pre-enablement/u);
   assert.equal(api.calls.setWorkerSubdomain, 0);
 });
@@ -190,7 +225,7 @@ test("enablement stops before the POST when the subdomain is not already disable
 // ------------------------------------------------ phase 8 authorization gates ---
 
 test("phase 8 requires its own exact literal approvals", async () => {
-  const service = new CloudflareAdminV7Service({ api: baseApi(), custodian: custodianStub() });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api: baseApi(), custodian: custodianStub() });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput({ enableApproval: WRITE_APPROVALS.runCanary })), /Exact approval required/u);
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput({ canaryApproval: WRITE_APPROVALS.enableSubdomain })), /Exact approval required/u);
   assert.notEqual(WRITE_APPROVALS.enableSubdomain, WRITE_APPROVALS.runCanary);
@@ -199,7 +234,7 @@ test("phase 8 requires its own exact literal approvals", async () => {
 });
 
 test("phase 8 reverifies the immutable Worker ID, the active deployment, and the Access shape", async () => {
-  const service = (api) => new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  const service = (api) => new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
 
   await assert.rejects(() => service(baseApi()).enableSubdomainAndRunCanary(enableInput({ workerId: "a".repeat(32) })), /independently resolved immutable Worker ID/u);
   await assert.rejects(() => service(baseApi()).enableSubdomainAndRunCanary(enableInput({ activatedVersionId: "99999999-2222-3333-4444-555555555555" })), /100 percent to exactly the expected activated version/u);
@@ -229,7 +264,7 @@ test("phase 8 cannot retrieve the principal without the exact key ID binding", a
       return { principalId: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId, keyId: KEY_ID, secret: "s".repeat(43) };
     },
   };
-  const service = new CloudflareAdminV7Service({ api, custodian: strict, canaryFetch: async () => { throw new Error("canary reached"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: strict, canaryFetch: async () => { throw new Error("canary reached"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput({ keyId: "canary-wrong" })), /different service-auth key ID/u);
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput({ keyId: "" })), /Exact service-auth key ID is required/u);
 });
@@ -245,7 +280,7 @@ function otherApp(patch) {
 // Runs phase 8 against the supplied API and asserts it stopped before any POST or canary request.
 async function assertStopsBeforePost(api, pattern) {
   let canaryCalls = 0;
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), pattern);
   assert.equal(api.calls.setWorkerSubdomain, 0, "no subdomain POST may be issued");
   assert.equal(canaryCalls, 0, "no canary request may be issued");
@@ -295,7 +330,7 @@ test("phase 8 accepts exactly one valid Worker-level application alongside non-o
     otherApp({ id: "a6", type: "saas", domain: undefined }),
   ];
   const api = baseApi({ async listAccessApplications() { return [...unrelated, accessApp()]; } });
-  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
   // Reaching the canary proves every pre-POST check passed and exactly one POST was made.
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
   assert.equal(api.calls.setWorkerSubdomain, 1);
@@ -490,7 +525,7 @@ test("a fully qualified trailing-dot hostname cannot evade overlap detection", a
   }
   // A fully qualified unrelated hostname is still not a conflict.
   const unrelated = baseApi({ async listAccessApplications() { return [accessApp(), otherApp({ domain: "app.example.com." })]; } });
-  const service = new CloudflareAdminV7Service({ api: unrelated, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api: unrelated, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
 });
 
@@ -501,7 +536,7 @@ test("enablement stops before the POST when the expected Access application enab
   }
   for (const value of [false, undefined, null]) {
     const api = baseApi({ async listAccessApplications() { return [{ ...accessApp(), options_preflight_bypass: value }]; } });
-    const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+    const service = new CloudflareAdminV7Service({ reviewedDeployment: REVIEWED, api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
     await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
     assert.equal(api.calls.setWorkerSubdomain, 1);
   }
@@ -571,12 +606,15 @@ test("retrieving one kind can never return the other", async () => {
   const api = custodianApi();
   const env = {};
   const custodian = new ManagedSecretCredentialCustodian(api, env);
-  env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = JSON.stringify({ target: CLOUDFLARE_ADMIN_V7.workerUrl, clientId: "cid", clientSecret: "csecret" });
+  env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = JSON.stringify({
+    accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName, target: CLOUDFLARE_ADMIN_V7.workerUrl,
+    tokenId: TOKEN_ID, clientId: "cid", clientSecret: "csecret", expiresAt: null,
+  });
   env[CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName] = JSON.stringify({
     accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName, workerId: WORKER_ID,
     principalId: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId, keyId: KEY_ID, secret: "s".repeat(43), purpose: "development-activation-canary",
   });
-  const access = await custodian.readAccessCredential(ACCESS_RECEIPT);
+  const access = await custodian.readAccessCredential(ACCESS_RECEIPT, { tokenId: TOKEN_ID, now: new Date() });
   assert.deepEqual(Object.keys(access).sort(), ["clientId", "clientSecret"]);
   const principal = await custodian.readServiceAuthPrincipal(PRINCIPAL_RECEIPT, { workerId: WORKER_ID, keyId: KEY_ID });
   assert.deepEqual(Object.keys(principal).sort(), ["keyId", "principalId", "secret"]);
@@ -659,4 +697,285 @@ test("activation ends with the subdomain still confirmed false/false and reports
   assert.ok(activation.includes("\"post-deployment\""), "activation must re-assert the subdomain state after deployment");
   assert.ok(activation.includes("reachable: false"), "activation must report the Worker as unreachable");
   assert.ok(!activation.includes("subdomainAfterEnablement"), "activation must never assert the enabled state");
+});
+
+// ============================================================================
+// Phase 8 blocker 1: all custody is retrieved and bound before the POST.
+// ============================================================================
+
+const SECRET = "s".repeat(43);
+
+function accessCustody(patch = {}) {
+  return {
+    accountId: CLOUDFLARE_ADMIN_V7.accountId,
+    workerName: CLOUDFLARE_ADMIN_V7.workerName,
+    target: CLOUDFLARE_ADMIN_V7.workerUrl,
+    tokenId: TOKEN_ID,
+    clientId: "cid",
+    clientSecret: "csecret",
+    expiresAt: "2099-01-01T00:00:00Z",
+    ...patch,
+  };
+}
+
+function principalCustody(patch = {}) {
+  return {
+    accountId: CLOUDFLARE_ADMIN_V7.accountId,
+    workerName: CLOUDFLARE_ADMIN_V7.workerName,
+    workerId: WORKER_ID,
+    principalId: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId,
+    keyId: KEY_ID,
+    secret: SECRET,
+    purpose: "development-activation-canary",
+    ...patch,
+  };
+}
+
+// Real custodian over a managed-secret env; null leaves a slot unavailable.
+function realCustodian({ access = accessCustody(), principal = principalCustody(), rawAccess, rawPrincipal } = {}) {
+  const env = {};
+  if (rawAccess !== undefined) env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = rawAccess;
+  else if (access !== null) env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = JSON.stringify(access);
+  if (rawPrincipal !== undefined) env[CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName] = rawPrincipal;
+  else if (principal !== null) env[CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName] = JSON.stringify(principal);
+  return new ManagedSecretCredentialCustodian({ async listConnectorSecrets() { return []; } }, env);
+}
+
+// Runs phase 8 and proves: no POST, no read-back (only the single pre-enablement state read), no canary.
+async function assertPhase8StopsWithoutExposure({ api = baseApi(), custodian = realCustodian(), input = {}, reviewedDeployment = REVIEWED }, pattern) {
+  let canaryCalls = 0;
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment,
+    api,
+    custodian,
+    canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); },
+    now: () => new Date("2026-09-25T00:00:00Z"),
+  });
+  const error = await service.enableSubdomainAndRunCanary(enableInput(input)).then(() => null, (caught) => caught);
+  assert.ok(error instanceof Error, "phase 8 must stop");
+  assert.match(error.message, pattern);
+  assert.ok(!error.message.includes(SECRET) && !error.message.includes("csecret"), "no secret value may appear in an error");
+  assert.equal(api.calls.setWorkerSubdomain, 0, "setWorkerSubdomain must be called 0 times");
+  assert.ok(api.calls.getWorkerSubdomain <= 1, "no subdomain read-back may occur; only the pre-enablement state read is permitted");
+  assert.equal(canaryCalls, 0, "the canary must be called 0 times");
+}
+
+test("phase 8 succeeds through the real custodian when every custody binding is exact", async () => {
+  const api = baseApi();
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: REVIEWED, api, custodian: realCustodian(),
+    canaryFetch: async () => { throw new Error("canary reached"); }, now: () => new Date("2026-09-25T00:00:00Z"),
+  });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+  assert.equal(api.calls.setWorkerSubdomain, 1);
+  assert.equal(api.calls.getWorkerSubdomain, 2, "one pre-enablement read and exactly one read-back");
+});
+
+const custodyFailures = [
+  ["incorrect keyId", { input: { keyId: "canary-wrong" } }, /different service-auth key ID/u],
+  ["principal bound to a different Worker ID", { custodian: realCustodian({ principal: principalCustody({ workerId: "b".repeat(32) }) }) }, /different immutable Worker ID/u],
+  ["principal bound to a different account", { custodian: realCustodian({ principal: principalCustody({ accountId: "0".repeat(32) }) }) }, /authorized development account/u],
+  ["principal bound to a different Worker name", { custodian: realCustodian({ principal: principalCustody({ workerName: "8978-ai-control-plane-prod" }) }) }, /pinned development Worker/u],
+  ["principal with a different principal ID", { custodian: realCustodian({ principal: principalCustody({ principalId: "someone-else" }) }) }, /pinned development principal/u],
+  ["principal with a different purpose", { custodian: realCustodian({ principal: principalCustody({ purpose: "production" }) }) }, /activation canary purpose/u],
+  ["principal with short secret material", { custodian: realCustodian({ principal: principalCustody({ secret: "short" }) }) }, /secret material is unavailable/u],
+  ["Access credential bound to a different account", { custodian: realCustodian({ access: accessCustody({ accountId: "0".repeat(32) }) }) }, /Access credential is not bound to the authorized development account/u],
+  ["Access credential bound to a different Worker name", { custodian: realCustodian({ access: accessCustody({ workerName: "another" }) }) }, /Access credential is not bound to the pinned development Worker/u],
+  ["Access credential for a different target", { custodian: realCustodian({ access: accessCustody({ target: "https://elsewhere.example" }) }) }, /pinned development target/u],
+  ["incorrect Access receipt", { input: { accessCredentialReceiptId: `managed-secret:${CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName}` } }, /Access credential receipt does not match/u],
+  ["incorrect service-auth receipt", { input: { serviceAuthReceiptId: `managed-secret:${CLOUDFLARE_ADMIN_V7.accessCredentialSecretName}` } }, /principal receipt does not match/u],
+  ["unavailable Access credential", { custodian: realCustodian({ access: null }) }, /Access credential secret is unavailable or invalid/u],
+  ["unavailable service-auth principal", { custodian: realCustodian({ principal: null }) }, /principal secret is unavailable or invalid/u],
+  ["malformed Access credential JSON", { custodian: realCustodian({ rawAccess: "{not json" }) }, /Access credential secret is unavailable or invalid/u],
+  ["malformed service-auth principal JSON", { custodian: realCustodian({ rawPrincipal: "[]" }) }, /principal/u],
+  ["Access credential without client material", { custodian: realCustodian({ access: accessCustody({ clientSecret: "" }) }) }, /credential material is unavailable or malformed/u],
+  ["stale Access credential for a different service token", { custodian: realCustodian({ access: accessCustody({ tokenId: "99999999-1234-1234-1234-abcdefabcdef" }) }) }, /different Access service-token ID/u],
+  ["expired Access credential", { custodian: realCustodian({ access: accessCustody({ expiresAt: "2026-09-24T00:00:00Z" }) }) }, /expired and is stale/u],
+  ["malformed Access credential expiry", { custodian: realCustodian({ access: accessCustody({ expiresAt: "tomorrow" }) }) }, /expiry is malformed/u],
+];
+
+for (const [label, scenario, pattern] of custodyFailures) {
+  test(`phase 8 stops before any exposure on ${label}`, async () => {
+    await assertPhase8StopsWithoutExposure(scenario, pattern);
+  });
+}
+
+test("phase 8 stops before any exposure when the pinned service token is absent or duplicated", async () => {
+  for (const tokens of [[], [{ id: TOKEN_ID, name: "renamed" }], [{ id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }, { id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }]]) {
+    await assertPhase8StopsWithoutExposure({ api: baseApi({ async listAccessServiceTokens() { return tokens; } }) }, /Pinned development Access service token identity is (?:missing|ambiguous)/u);
+  }
+});
+
+test("phase 8 stops before any exposure when a custodian returns malformed material", async () => {
+  const malformed = [
+    [{ async readAccessCredential() { return { clientId: "cid" }; }, async readServiceAuthPrincipal() { return principalCustody(); } }, /Access credential custody is malformed/u],
+    [{ async readAccessCredential() { return { clientId: "cid", clientSecret: "x" }; }, async readServiceAuthPrincipal() { return { principalId: CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalId, keyId: "other", secret: SECRET }; } }, /not bound to the exact phase-8 inputs/u],
+    [{ async readAccessCredential() { return { clientId: "cid", clientSecret: "x" }; }, async readServiceAuthPrincipal() { return { principalId: "other", keyId: KEY_ID, secret: SECRET }; } }, /not bound to the exact phase-8 inputs/u],
+    [{ async readAccessCredential() { throw new Error("custody store unreachable"); }, async readServiceAuthPrincipal() { return principalCustody(); } }, /custody store unreachable/u],
+  ];
+  for (const [custodian, pattern] of malformed) await assertPhase8StopsWithoutExposure({ custodian }, pattern);
+});
+
+test("the custodian requires explicit bindings and never falls back to an unbound read", async () => {
+  const custodian = realCustodian();
+  await assert.rejects(() => custodian.readAccessCredential(ACCESS_RECEIPT), /requires the exact service-token ID binding/u);
+  await assert.rejects(() => custodian.readAccessCredential(ACCESS_RECEIPT, { tokenId: TOKEN_ID }), /requires a valid current time/u);
+  await assert.rejects(() => custodian.readServiceAuthPrincipal(PRINCIPAL_RECEIPT, {}), /requires the exact immutable Worker ID and key ID binding/u);
+  await assert.rejects(() => custodian.readServiceAuthPrincipal(PRINCIPAL_RECEIPT, { workerId: WORKER_ID }), /requires the exact immutable Worker ID and key ID binding/u);
+});
+
+test("successful ordering: every check and both custody reads precede the single POST, then one read-back, then the canary", async () => {
+  const log = [];
+  const api = baseApi();
+  const wrap = (name) => { const original = api[name]; api[name] = async (...args) => { log.push(name); return original.apply(api, args); }; };
+  for (const name of ["listWorkers", "getWorkerSubdomain", "listWorkerDeployments", "getWorkerVersion", "getLatestWorkerVersion",
+    "getAccountWorkersSubdomain", "listAccessApplications", "listAccessApplicationPolicies", "listAccessServiceTokens", "setWorkerSubdomain"]) wrap(name);
+  const custodian = realCustodian();
+  for (const name of ["readAccessCredential", "readServiceAuthPrincipal"]) {
+    const original = custodian[name].bind(custodian);
+    custodian[name] = async (...args) => { log.push(name); return original(...args); };
+  }
+  const service = new CloudflareAdminV7Service({
+    reviewedDeployment: REVIEWED, api, custodian, now: () => new Date("2026-09-25T00:00:00Z"),
+    canaryFetch: async () => { log.push("canary"); throw new Error("canary reached"); },
+  });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+  const post = log.indexOf("setWorkerSubdomain");
+  const at = (name) => log.indexOf(name);
+  const last = (name) => log.lastIndexOf(name);
+  assert.equal(log.filter((name) => name === "setWorkerSubdomain").length, 1);
+  for (const name of ["listWorkers", "getAccountWorkersSubdomain", "listAccessApplications", "listAccessApplicationPolicies", "listAccessServiceTokens", "getWorkerVersion"]) {
+    assert.ok(at(name) >= 0 && at(name) < post, `${name} must precede the POST`);
+  }
+  assert.ok(at("readAccessCredential") < post && at("readServiceAuthPrincipal") < post, "both custody reads must precede the POST");
+  assert.ok(at("readAccessCredential") > last("listAccessApplicationPolicies"), "custody is read after Access isolation");
+  // The final deployment and latest-version re-reads follow custody and immediately precede the POST.
+  assert.ok(last("listWorkerDeployments") > at("readServiceAuthPrincipal") && last("listWorkerDeployments") < post);
+  assert.ok(last("getLatestWorkerVersion") > at("readServiceAuthPrincipal") && last("getLatestWorkerVersion") < post);
+  assert.deepEqual(log.slice(post), ["setWorkerSubdomain", "getWorkerSubdomain", "canary"], "exactly one read-back, then the canary");
+});
+
+// ============================================================================
+// Phase 8 blocker 2: exact activated-version provenance before exposure.
+// ============================================================================
+
+const reviewedMessageFor = (commit, digest) => `8978-reviewed:${commit}:${digest}`;
+const activatedMessageFor = (commit, digest) => `8978-activated:${commit}:${digest}`;
+
+function versionsApi({ reviewed = reviewedVersion(), activated = activatedVersion(), latest = activatedVersion(), extra = {} } = {}) {
+  return baseApi({
+    async getWorkerVersion(id) {
+      if (id === REVIEWED_VERSION_ID) return reviewed;
+      if (id === VERSION_ID) return activated;
+      return extra[id];
+    },
+    async getLatestWorkerVersion() { return latest; },
+  });
+}
+
+const provenanceFailures = [
+  ["a different version is active", {
+    api: baseApi({ async listWorkerDeployments() { return [{ id: "d3", is_active: true, versions: [{ version_id: "bbbbbbbb-2222-3333-4444-555555555555", percentage: 100 }] }]; } }),
+  }, /does not allocate 100 percent to exactly the expected activated version/u],
+  ["a split deployment", {
+    api: baseApi({ async listWorkerDeployments() { return [{ id: "d3", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 50 }, { version_id: "bbbbbbbb-2222-3333-4444-555555555555", percentage: 50 }] }]; } }),
+  }, /does not allocate 100 percent/u],
+  ["an active deployment without an identifier", {
+    api: baseApi({ async listWorkerDeployments() { return [{ is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }]; } }),
+  }, /does not allocate 100 percent/u],
+  ["two active deployments", {
+    api: baseApi({ async listWorkerDeployments() { return [{ id: "a", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }, { id: "b", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }]; } }),
+  }, /Active deployment state is ambiguous/u],
+  ["a caller-supplied active version without the activation annotation", {
+    api: versionsApi({ activated: activatedVersion({ annotations: { "workers/message": "unrelated deploy" } }) }),
+  }, /Activated Worker version annotation does not bind/u],
+  ["an activated version with no annotation", {
+    api: versionsApi({ activated: activatedVersion({ annotations: undefined }) }),
+  }, /Activated Worker version carries no workers\/message annotation/u],
+  ["an activated version with contradictory annotation sources", {
+    api: versionsApi({ activated: activatedVersion({ metadata: { annotations: { "workers/message": "other" } } }) }),
+  }, /Activated Worker version annotation is ambiguous/u],
+  ["versions/latest identifying a different version", {
+    api: versionsApi({ latest: activatedVersion({ id: "cccccccc-2222-3333-4444-555555555555" }) }),
+  }, /versions\/latest does not identify exactly the activated Worker version/u],
+  ["versions/latest with a different annotation", {
+    api: versionsApi({ latest: activatedVersion({ annotations: { "workers/message": reviewedMessageFor(REVIEWED.reviewedCommit, REVIEWED.configurationSha256) } }) }),
+  }, /Latest Worker version annotation does not bind/u],
+  ["an annotation naming a different commit", {
+    api: versionsApi({ activated: activatedVersion({ annotations: { "workers/message": activatedMessageFor("0".repeat(40), REVIEWED.configurationSha256) } }) }),
+  }, /Activated Worker version annotation does not bind/u],
+  ["an annotation naming a different configuration digest", {
+    api: versionsApi({ activated: activatedVersion({ annotations: { "workers/message": activatedMessageFor(REVIEWED.reviewedCommit, "0".repeat(64)) } }) }),
+  }, /Activated Worker version annotation does not bind/u],
+  ["a changed script etag", {
+    api: versionsApi({ activated: activatedVersion({ resources: { ...activatedVersion().resources, script: { etag: "different-etag" } } }) }),
+  }, /changed reviewed code or configuration/u],
+  ["a changed script runtime", {
+    api: versionsApi({ activated: activatedVersion({ resources: { ...activatedVersion().resources, script_runtime: { compatibility_date: "2020-01-01" } } }) }),
+  }, /changed reviewed code or configuration/u],
+  ["an added non-secret binding", {
+    api: versionsApi({ activated: activatedVersion({ resources: { ...activatedVersion().resources, bindings: [...activatedVersion().resources.bindings, { name: "EXTRA", type: "plain_text", text: "x" }] } }) }),
+  }, /changed reviewed code or configuration/u],
+  ["an activated version without the service-auth secret", {
+    api: versionsApi({ activated: activatedVersion({ resources: BASE_RESOURCES }) }),
+  }, /exactly one SERVICE_AUTH_KEYS_JSON secret binding/u],
+  ["a reviewed version without a script etag", {
+    api: versionsApi({ reviewed: reviewedVersion({ resources: { ...BASE_RESOURCES, script: {} } }), activated: activatedVersion({ resources: { ...activatedVersion().resources, script: {} } }) }),
+  }, /does not expose a script etag/u],
+  ["a reviewed version returned under a different identity", {
+    api: versionsApi({ reviewed: reviewedVersion({ id: "dddddddd-2222-3333-4444-555555555555" }) }),
+  }, /did not return the pinned reviewed Worker version/u],
+  ["a reviewed version whose annotation is not the reviewed annotation", {
+    api: versionsApi({ reviewed: reviewedVersion({ annotations: { "workers/message": activatedMessageFor(REVIEWED.reviewedCommit, REVIEWED.configurationSha256) } }) }),
+  }, /Reviewed Worker version annotation does not bind/u],
+  ["missing activated version metadata", {
+    api: versionsApi({ activated: null }),
+  }, /did not return the activated Worker version/u],
+  ["a pinned reviewed commit that differs from the target provenance", {
+    reviewedDeployment: { ...REVIEWED, reviewedCommit: "0".repeat(40) },
+  }, /Pinned reviewed Worker provenance is unavailable or does not match/u],
+  ["a pinned configuration digest that differs from the target provenance", {
+    reviewedDeployment: { ...REVIEWED, configurationSha256: "0".repeat(64) },
+  }, /Pinned reviewed Worker provenance is unavailable or does not match/u],
+  ["an unavailable pinned reviewed deployment", { reviewedDeployment: null }, /Pinned reviewed Worker provenance is unavailable/u],
+  ["a malformed pinned reviewed version ID", { reviewedDeployment: { ...REVIEWED, versionId: "not-a-version" } }, /Pinned reviewed Worker provenance is unavailable/u],
+  ["an activated version ID equal to the reviewed base version", { input: { activatedVersionId: REVIEWED_VERSION_ID } }, /cannot be the reviewed base version/u],
+  ["a malformed activated version ID", { input: { activatedVersionId: "latest" } }, /Activated Worker version ID is malformed/u],
+];
+
+for (const [label, scenario, pattern] of provenanceFailures) {
+  test(`phase 8 stops before any exposure on ${label}`, async () => {
+    await assertPhase8StopsWithoutExposure(scenario, pattern);
+  });
+}
+
+test("a caller cannot authorize an unrelated active version by supplying its ID", async () => {
+  const unrelatedId = "eeeeeeee-2222-3333-4444-555555555555";
+  const unrelated = { id: unrelatedId, annotations: { "workers/message": "manual dashboard deploy" }, resources: activatedVersion().resources };
+  const api = baseApi({
+    async listWorkerDeployments() { return [{ id: "d9", is_active: true, versions: [{ version_id: unrelatedId, percentage: 100 }] }]; },
+    async getWorkerVersion(id) { return id === REVIEWED_VERSION_ID ? reviewedVersion() : id === unrelatedId ? unrelated : undefined; },
+    async getLatestWorkerVersion() { return unrelated; },
+  });
+  await assertPhase8StopsWithoutExposure({ api, input: { activatedVersionId: unrelatedId } }, /Activated Worker version annotation does not bind/u);
+});
+
+test("phase 8 stops before any exposure when the deployment changes during the pre-POST sequence", async () => {
+  const deployments = [
+    [{ id: "d2", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }],
+    [{ id: "d7", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }],
+  ];
+  const redeployed = baseApi({ async listWorkerDeployments() { redeployed.calls.listWorkerDeployments += 1; return deployments[Math.min(redeployed.calls.listWorkerDeployments, 2) - 1]; } });
+  await assertPhase8StopsWithoutExposure({ api: redeployed }, /Active deployment changed during pre-enablement verification/u);
+
+  const replaced = [
+    [{ id: "d2", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }],
+    [{ id: "d2", is_active: true, versions: [{ version_id: "ffffffff-2222-3333-4444-555555555555", percentage: 100 }] }],
+  ];
+  const swapped = baseApi({ async listWorkerDeployments() { swapped.calls.listWorkerDeployments += 1; return replaced[Math.min(swapped.calls.listWorkerDeployments, 2) - 1]; } });
+  await assertPhase8StopsWithoutExposure({ api: swapped }, /final pre-enablement check does not allocate 100 percent/u);
+
+  let latestReads = 0;
+  const newerLatest = baseApi({ async getLatestWorkerVersion() { latestReads += 1; return latestReads === 1 ? activatedVersion() : activatedVersion({ id: "abababab-2222-3333-4444-555555555555" }); } });
+  await assertPhase8StopsWithoutExposure({ api: newerLatest }, /versions\/latest does not identify exactly the activated Worker version/u);
 });

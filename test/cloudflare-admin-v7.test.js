@@ -311,7 +311,13 @@ test("managed-secret custodian stores the Access credential without returning it
   const receipt = await custodian.store("access-service-token", credential);
   assert.doesNotMatch(JSON.stringify(receipt), /client-fixture|secret-fixture/);
   env[CLOUDFLARE_ADMIN_V7.accessCredentialSecretName] = installed;
-  assert.deepEqual(await custodian.readAccessCredential(receipt.receiptId), { clientId: "client-fixture", clientSecret: "secret-fixture" });
+  assert.deepEqual(await custodian.readAccessCredential(receipt.receiptId, { tokenId: "token-id", now: new Date() }), { clientId: "client-fixture", clientSecret: "secret-fixture" });
+  // The stored credential is bound to the account, Worker, target, and exact service-token ID.
+  assert.deepEqual(
+    Object.keys(JSON.parse(installed)).sort(),
+    ["accountId", "clientId", "clientSecret", "expiresAt", "target", "tokenId", "workerName"],
+  );
+  await assert.rejects(() => custodian.readAccessCredential(receipt.receiptId, { tokenId: "another-token", now: new Date() }), /different Access service-token ID/);
   await assert.rejects(() => custodian.readAccessCredential("managed-secret:WRONG"), /pinned managed secret/);
 });
 
@@ -389,8 +395,12 @@ test("one-shot activation derives a secret-bearing version, deploys it, and vali
       },
       async getWorkerVersion(id) {
         return id === reviewed.versionId
-          ? { id, resources: baseResources }
-          : { id, resources: { ...baseResources, bindings: [...baseResources.bindings, { name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }] } };
+          ? { id, annotations: { "workers/message": `8978-reviewed:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` }, resources: baseResources }
+          : {
+            id,
+            annotations: { "workers/message": `8978-activated:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` },
+            resources: { ...baseResources, bindings: [...baseResources.bindings, { name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }] },
+          };
       },
       async getLatestWorkerVersion() {
         return activated
@@ -480,7 +490,14 @@ test("canary stops after the first unexpected result and does not retry", async 
       async listAccessApplications() { return [{ id: "app-id", name: CLOUDFLARE_ADMIN_V7.accessApplicationName, type: "self_hosted", destinations: [{ type: "worker", worker_id: WORKER_ID }] }]; },
       async listAccessApplicationPolicies() { return [{ id: "policy", decision: "non_identity", include: [{ service_token: { token_id: tokenId } }], exclude: [], require: [] }]; },
       async listWorkerDeployments() { return deployedOnce ? [{ id: "deployment-id", is_active: true, versions: [{ version_id: activatedVersionId, percentage: 100 }] }] : []; },
-      async getWorkerVersion(id) { return { id, resources: { ...baseResources, bindings: id === reviewed.versionId ? [] : [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }] } }; },
+      async getWorkerVersion(id) {
+        const prefix = id === reviewed.versionId ? "8978-reviewed" : "8978-activated";
+        return {
+          id,
+          annotations: { "workers/message": `${prefix}:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` },
+          resources: { ...baseResources, bindings: id === reviewed.versionId ? [] : [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text" }] },
+        };
+      },
       async getLatestWorkerVersion() { return activated
         ? { id: activatedVersionId, annotations: { "workers/message": `8978-activated:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` } }
         : { id: reviewed.versionId, annotations: { "workers/message": `8978-reviewed:${reviewed.reviewedCommit}:${reviewed.configurationSha256}` }, resources: baseResources }; },
