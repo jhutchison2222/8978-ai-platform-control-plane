@@ -79,36 +79,58 @@ export function requireImmutableWorkerId(value, name = "workerId") {
 // Collects a complete page/per_page listing and fails closed on any missing, inconsistent,
 // repeated, truncated, or non-terminating pagination. fetchPage(page) must return the full
 // response envelope { result, result_info }, never only the result list.
+//
+// Two Cloudflare V4 page-pagination forms are accepted. Both require page, per_page, and
+// total_count; the page count is always derived as ceil(total_count / per_page):
+//   - result_info.total_pages supplied: it must equal the derived page count;
+//   - result_info.total_pages omitted: the derived page count is used.
+// An empty listing (total_count 0) is one empty page 1 and may report total_pages 0 or 1.
+// There is no single-page fallback: a response without valid metadata always stops.
 export const MAXIMUM_LISTING_PAGES = 100;
 
 const isPositiveInteger = (value) => Number.isInteger(value) && value >= 1;
 const isNonNegativeInteger = (value) => Number.isInteger(value) && value >= 0;
 
+function derivedPageCount(label, page, info) {
+  if (!isPositiveInteger(info.per_page)) throw new Error(`${label} page ${page} reported an invalid per_page; state is ambiguous`);
+  if (!isNonNegativeInteger(info.total_count)) throw new Error(`${label} page ${page} reported an invalid total_count; completeness cannot be proven`);
+  const derived = Math.ceil(info.total_count / info.per_page);
+  if (info.total_pages !== undefined) {
+    if (!isNonNegativeInteger(info.total_pages)) throw new Error(`${label} page ${page} reported an invalid total_pages; completeness cannot be proven`);
+    const consistent = info.total_pages === derived || (info.total_count === 0 && info.total_pages === 1);
+    if (!consistent) {
+      throw new Error(
+        `${label} page ${page} total_pages ${info.total_pages} conflicts with ${derived} derived from total_count ${info.total_count} ` +
+        `and per_page ${info.per_page}; completeness cannot be proven`,
+      );
+    }
+  }
+  return derived;
+}
+
 export async function collectPagedResults(fetchPage, label, { maximumPages = MAXIMUM_LISTING_PAGES } = {}) {
   const collected = [];
   const seen = new Set();
+  let first = null;
   let totalPages = null;
-  let totalCount = null;
   for (let page = 1; page <= maximumPages; page += 1) {
     const envelope = await fetchPage(page);
     const items = envelope?.result;
     const info = envelope?.result_info;
     if (!Array.isArray(items)) throw new Error(`${label} page ${page} did not return a result list; state is ambiguous`);
-    if (!info || typeof info !== "object") throw new Error(`${label} page ${page} did not return pagination metadata; completeness cannot be proven`);
+    if (!info || typeof info !== "object" || Array.isArray(info)) throw new Error(`${label} page ${page} did not return pagination metadata; completeness cannot be proven`);
     if (info.page !== page) throw new Error(`${label} returned page ${String(info.page)} when page ${page} was requested; state is ambiguous`);
-    if (!isPositiveInteger(info.per_page)) throw new Error(`${label} page ${page} reported an invalid per_page; state is ambiguous`);
-    if (!isNonNegativeInteger(info.total_pages)) throw new Error(`${label} page ${page} reported an invalid total_pages; completeness cannot be proven`);
-    if (!isNonNegativeInteger(info.total_count)) throw new Error(`${label} page ${page} reported an invalid total_count; completeness cannot be proven`);
-    if (info.count !== undefined && info.count !== items.length) throw new Error(`${label} page ${page} count does not equal the returned items; state is ambiguous`);
-    if (items.length > info.per_page) throw new Error(`${label} page ${page} returned more items than per_page; state is ambiguous`);
-    if (totalPages === null) {
-      totalPages = info.total_pages;
-      totalCount = info.total_count;
-    } else if (info.total_pages !== totalPages || info.total_count !== totalCount) {
+    if (first === null) {
+      totalPages = derivedPageCount(label, page, info);
+      first = { per_page: info.per_page, total_count: info.total_count, total_pages: info.total_pages };
+      if (totalPages > maximumPages) throw new Error(`${label} pagination did not terminate within ${maximumPages} pages; completeness cannot be proven`);
+    } else if (info.per_page !== first.per_page || info.total_count !== first.total_count || info.total_pages !== first.total_pages) {
       throw new Error(`${label} pagination totals changed between pages; state is ambiguous`);
     }
-    if (totalPages === 0) {
-      if (page !== 1 || items.length !== 0 || totalCount !== 0) throw new Error(`${label} reported zero pages inconsistently; state is ambiguous`);
+    if (info.count !== undefined && info.count !== items.length) throw new Error(`${label} page ${page} count does not equal the returned items; state is ambiguous`);
+    if (items.length > info.per_page) throw new Error(`${label} page ${page} returned more items than per_page; state is ambiguous`);
+    if (first.total_count === 0) {
+      if (page !== 1 || items.length !== 0) throw new Error(`${label} reported zero pages inconsistently; state is ambiguous`);
       return collected;
     }
     if (page > totalPages) throw new Error(`${label} returned a page beyond total_pages; state is ambiguous`);
@@ -121,7 +143,7 @@ export async function collectPagedResults(fetchPage, label, { maximumPages = MAX
       collected.push(item);
     }
     if (page === totalPages) {
-      if (collected.length !== totalCount) throw new Error(`${label} collected ${collected.length} items but total_count is ${totalCount}; completeness cannot be proven`);
+      if (collected.length !== first.total_count) throw new Error(`${label} collected ${collected.length} items but total_count is ${first.total_count}; completeness cannot be proven`);
       return collected;
     }
   }
@@ -131,6 +153,14 @@ export async function collectPagedResults(fetchPage, label, { maximumPages = MAX
 // Conservative Access coverage test. Any hostname-like declaration whose host part equals the
 // target, or whose wildcard pattern could match it, is treated as covering the target at any
 // path. Declarations that cannot be parsed unambiguously are also treated as covering.
+// A single trailing dot (fully qualified form) is removed before comparison; any remaining
+// empty label, such as a doubled trailing dot or "..", makes the declaration uninterpretable.
+function normalizeHost(host) {
+  const withoutRoot = host.endsWith(".") ? host.slice(0, -1) : host;
+  if (withoutRoot.length === 0 || withoutRoot.split(".").some((labelPart) => labelPart.length === 0)) return null;
+  return withoutRoot;
+}
+
 function hostPartOf(declaration) {
   if (typeof declaration !== "string") return null;
   let value = declaration.trim().toLowerCase();
@@ -138,17 +168,19 @@ function hostPartOf(declaration) {
   value = value.replace(/^[a-z][a-z0-9+.-]*:\/\//u, "");
   const host = value.split("/")[0].replace(/:\d+$/u, "");
   if (host.length === 0 || /\s/u.test(host) || !/^[a-z0-9.*-]+$/u.test(host)) return null;
-  return host;
+  return normalizeHost(host);
 }
 
 export function declarationCoversHostname(declaration, targetHostname) {
+  const target = typeof targetHostname === "string" ? normalizeHost(targetHostname.toLowerCase()) : null;
+  if (target === null) throw new Error("Target hostname for Access overlap detection is missing or malformed");
   const host = hostPartOf(declaration);
   if (host === null) return true;
-  if (host === targetHostname) return true;
+  if (host === target) return true;
   if (!host.includes("*")) return false;
   // host contains only [a-z0-9.*-]; "." is the only regular-expression metacharacter to escape.
   const pattern = new RegExp(`^${host.split("*").map((part) => part.replace(/\./gu, "\\.")).join(".*")}$`, "u");
-  return pattern.test(targetHostname);
+  return pattern.test(target);
 }
 
 export function assertPinnedTarget(target = {}) {

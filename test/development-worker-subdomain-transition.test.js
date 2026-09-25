@@ -372,7 +372,7 @@ test("Access application pagination fails closed on missing, inconsistent, repea
   const app = (id) => otherApp({ id, domain: `${id}.example.com` });
   const malformed = [
     ["missing result_info", [{ success: true, result: [app("a")] }], /did not return pagination metadata/u],
-    ["missing total_pages", [envelope([app("a")], { page: 1, per_page: 2, total_count: 1 })], /invalid total_pages/u],
+    ["missing total_pages and total_count", [envelope([app("a")], { page: 1, per_page: 2 })], /invalid total_count/u],
     ["missing total_count", [envelope([app("a")], { page: 1, per_page: 2, total_pages: 1 })], /invalid total_count/u],
     ["wrong page index", [envelope([app("a")], { page: 2, per_page: 2, total_pages: 1, total_count: 1 })], /returned page 2 when page 1/u],
     ["count disagrees", [envelope([app("a")], { page: 1, per_page: 2, count: 3, total_pages: 1, total_count: 1 })], /count does not equal/u],
@@ -401,6 +401,110 @@ test("Access application pagination does not terminate silently", async () => {
     },
   });
   await assert.rejects(() => api.listAccessApplications(), /did not terminate within 100 pages/u);
+});
+
+// ------------------------------------ B1-R1: both V4 page-pagination forms ---
+
+// Omits total_pages: the V4 form from which the page count must be derived.
+const derivedPage = (items, page, totalCount, perPage = 2) => envelope(items, { page, per_page: perPage, count: items.length, total_count: totalCount });
+
+test("Access pagination accepts an explicit total_pages and a safely derived total_pages identically", async () => {
+  const items = [otherApp({ id: "e1", domain: "a.example.com" }), otherApp({ id: "e2", domain: "b.example.com" }), accessApp()];
+  const explicit = await pagedApi([appPage(items.slice(0, 2), 1, 2, 3), appPage(items.slice(2), 2, 2, 3)], /\/access\/apps\?/u);
+  const derived = await pagedApi([derivedPage(items.slice(0, 2), 1, 3), derivedPage(items.slice(2), 2, 3)], /\/access\/apps\?/u);
+  assert.deepEqual((await explicit.api.listAccessApplications()).map(({ id }) => id), ["e1", "e2", TOKEN_ID]);
+  assert.deepEqual((await derived.api.listAccessApplications()).map(({ id }) => id), ["e1", "e2", TOKEN_ID]);
+  assert.equal(explicit.requested.length, 2);
+  assert.equal(derived.requested.length, 2, "ceil(3 / 2) = 2 pages are requested and no more");
+  // An exact multiple derives no phantom trailing page.
+  const exact = await pagedApi([derivedPage(items.slice(0, 2), 1, 2)], /\/access\/apps\?/u);
+  assert.equal((await exact.api.listAccessApplications()).length, 2);
+  assert.equal(exact.requested.length, 1);
+  // An empty listing is one empty page in either form.
+  for (const info of [{ page: 1, per_page: 50, total_count: 0 }, { page: 1, per_page: 50, total_count: 0, total_pages: 0 }, { page: 1, per_page: 50, total_count: 0, total_pages: 1 }]) {
+    const empty = await pagedApi([envelope([], info)], /\/access\/apps\?/u);
+    assert.deepEqual(await empty.api.listAccessApplications(), []);
+  }
+});
+
+test("Access pagination fails closed on conflicting, missing, invalid, or changing metadata in either form", async () => {
+  const app = (id) => otherApp({ id, domain: `${id}.example.com` });
+  const cases = [
+    ["supplied total_pages below derived", [appPage([app("a"), app("b")], 1, 1, 3)], /total_pages 1 conflicts with 2 derived from total_count 3 and per_page 2/u],
+    ["supplied total_pages above derived", [appPage([app("a")], 1, 2, 1)], /total_pages 2 conflicts with 1 derived/u],
+    ["non-empty listing claiming zero pages", [appPage([app("a")], 1, 0, 1)], /total_pages 0 conflicts with 1 derived/u],
+    ["invalid supplied total_pages", [envelope([app("a")], { page: 1, per_page: 2, total_count: 1, total_pages: "1" })], /invalid total_pages/u],
+    ["missing total_count, total_pages supplied", [envelope([app("a")], { page: 1, per_page: 2, total_pages: 1 })], /invalid total_count/u],
+    ["missing total_count, total_pages omitted", [envelope([app("a")], { page: 1, per_page: 2 })], /invalid total_count/u],
+    ["missing per_page", [envelope([app("a")], { page: 1, total_count: 1 })], /invalid per_page/u],
+    ["zero per_page", [envelope([app("a")], { page: 1, per_page: 0, total_count: 1 })], /invalid per_page/u],
+    ["string per_page", [envelope([app("a")], { page: 1, per_page: "2", total_count: 1 })], /invalid per_page/u],
+    ["fractional per_page", [envelope([app("a")], { page: 1, per_page: 1.5, total_count: 1 })], /invalid per_page/u],
+    ["missing page", [envelope([app("a")], { per_page: 2, total_count: 1 })], /returned page undefined when page 1/u],
+    ["result_info is a list", [{ success: true, result: [app("a")], result_info: [] }], /did not return pagination metadata/u],
+    ["per_page changes between pages", [derivedPage([app("a"), app("b")], 1, 3), derivedPage([app("c")], 2, 3, 3)], /totals changed between pages/u],
+    ["total_count changes between pages", [derivedPage([app("a"), app("b")], 1, 3), derivedPage([app("c")], 2, 4)], /totals changed between pages/u],
+    ["total_pages appears on a later page", [derivedPage([app("a"), app("b")], 1, 3), appPage([app("c")], 2, 2, 3)], /totals changed between pages/u],
+    ["total_pages disappears on a later page", [appPage([app("a"), app("b")], 1, 2, 3), derivedPage([app("c")], 2, 3)], /totals changed between pages/u],
+    ["short intermediate page, derived form", [derivedPage([app("a")], 1, 3), derivedPage([app("b"), app("c")], 2, 3)], /truncated before the final page/u],
+    ["repeated record across pages, derived form", [derivedPage([app("a"), app("b")], 1, 3), derivedPage([app("a")], 2, 3)], /more than once/u],
+    ["repeated record within a page", [derivedPage([app("a"), app("a")], 1, 2)], /more than once/u],
+    ["final count below total_count, derived form", [derivedPage([app("a"), app("b")], 1, 4), derivedPage([app("c")], 2, 4)], /collected 3 items but total_count is 4/u],
+    ["items on an empty listing", [envelope([app("a")], { page: 1, per_page: 2, total_count: 0 })], /zero pages inconsistently/u],
+  ];
+  for (const [label, pages, pattern] of cases) {
+    const { api } = await pagedApi(pages, /\/access\/apps\?/u);
+    await assert.rejects(() => api.listAccessApplications(), pattern, label);
+  }
+});
+
+test("Access pagination refuses a derived page count beyond the limit before paging through it", async () => {
+  const { api, requested } = await pagedApi([derivedPage([otherApp({ id: "x1", domain: "x.example.com" })], 1, 10_000, 1)], /\/access\/apps\?/u);
+  await assert.rejects(() => api.listAccessApplications(), /did not terminate within 100 pages/u);
+  assert.equal(requested.length, 1);
+});
+
+for (const [label, conflict] of conflictCases) {
+  test(`a ${label} on the final page of a derived-form listing stops phase 8 before the POST`, async () => {
+    const pages = [
+      derivedPage([otherApp({ id: "q1", domain: "a.example.com" }), accessApp()], 1, 3),
+      derivedPage([{ ...conflict, id: "late-conflict" }], 2, 3),
+    ];
+    const { api: adapter } = await pagedApi(pages, /\/access\/apps\?page=\d+&per_page=50$/u);
+    const api = baseApi({ listAccessApplications: () => adapter.listAccessApplications() });
+    await assertStopsBeforePost(api, /late-conflict \(hostname, path, or wildcard coverage\)/u);
+  });
+}
+
+// ------------------------------------------- trailing-dot and preflight bypass ---
+
+test("a fully qualified trailing-dot hostname cannot evade overlap detection", async () => {
+  for (const domain of [`${TARGET_HOST}.`, `${TARGET_HOST.toUpperCase()}.`, `https://${TARGET_HOST}./admin`, `${TARGET_HOST}.:443`, "*.jhutchison.workers.dev.", "*.workers.dev."]) {
+    const api = baseApi({ async listAccessApplications() { return [accessApp(), otherApp({ domain })]; } });
+    await assertStopsBeforePost(api, /could cover 8978-ai-control-plane-dev\.jhutchison\.workers\.dev with precedence/u);
+  }
+  // Malformed empty labels are uninterpretable and therefore conflicts, never silently ignored.
+  for (const domain of [`${TARGET_HOST}..`, `8978-ai-control-plane-dev..jhutchison.workers.dev`, ".", ".jhutchison.workers.dev"]) {
+    const api = baseApi({ async listAccessApplications() { return [accessApp(), otherApp({ domain })]; } });
+    await assertStopsBeforePost(api, /could cover/u);
+  }
+  // A fully qualified unrelated hostname is still not a conflict.
+  const unrelated = baseApi({ async listAccessApplications() { return [accessApp(), otherApp({ domain: "app.example.com." })]; } });
+  const service = new CloudflareAdminV7Service({ api: unrelated, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+});
+
+test("enablement stops before the POST when the expected Access application enables options_preflight_bypass", async () => {
+  for (const value of [true, "true", 1]) {
+    const api = baseApi({ async listAccessApplications() { return [{ ...accessApp(), options_preflight_bypass: value }]; } });
+    await assertStopsBeforePost(api, /must not enable options_preflight_bypass/u);
+  }
+  for (const value of [false, undefined, null]) {
+    const api = baseApi({ async listAccessApplications() { return [{ ...accessApp(), options_preflight_bypass: value }]; } });
+    const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+    await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+    assert.equal(api.calls.setWorkerSubdomain, 1);
+  }
 });
 
 test("Worker listing uses documented page/per_page pagination with no cursor", async () => {

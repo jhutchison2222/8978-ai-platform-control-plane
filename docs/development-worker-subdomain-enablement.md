@@ -54,13 +54,20 @@ pinned service token, and no additional include, exclude, or require rules.
 It then derives the target hostname from verified account state
 (`GET /accounts/{account_id}/workers/subdomain`, which must yield exactly
 `8978-ai-control-plane-dev.jhutchison.workers.dev`) and enumerates **every** Access application across
-all pages (`page`/`per_page`, bounded by `result_info.total_pages`), stopping on missing,
-inconsistent, repeated, truncated, or ambiguous pagination. Hostname and path Access applications
+all pages (`page`/`per_page`), stopping on missing, inconsistent, repeated, truncated, or ambiguous
+pagination. Both Cloudflare V4 page-pagination forms are accepted: `result_info` must carry `page`,
+`per_page`, and `total_count`, and the page count is always derived as
+`ceil(total_count / per_page)`; a supplied `total_pages` must equal that derived count. There is no
+single-page fallback when metadata is missing. Hostname and path Access applications
 take precedence over Worker-level Access, so any other application whose `domain`,
 `self_hosted_domains`, `public` destination, or other hostname declaration equals the target
 hostname, scopes a path on it, or is a wildcard that could match it is a conflict. Coverage that
-cannot be determined is also a conflict. Any conflict stops before the POST; no attempt is made to
-prove that a conflicting application's policies are harmless.
+cannot be determined is also a conflict. A single trailing dot (the fully qualified form) is removed
+before comparison, and any other empty label makes a declaration uninterpretable, so a trailing-dot
+hostname cannot evade detection. Any conflict stops before the POST; no attempt is made to prove that
+a conflicting application's policies are harmless. The expected Worker-level application must also
+not enable `options_preflight_bypass`, which would let CORS preflight requests reach the Worker
+without Access.
 
 Then exactly one POST, exactly one read-back GET — verification, never a retry — and only then the
 five-request canary, once.

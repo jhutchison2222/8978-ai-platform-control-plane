@@ -90,6 +90,11 @@ function assertAccessApplicationShape(application, workerId) {
   if (destinations.length !== 1) throw new Error("Access application must declare exactly one destination");
   if (destinations[0]?.type !== "worker") throw new Error("Access application destination type must be worker");
   if (destinations[0]?.worker_id !== workerId) throw new Error("Access application destination does not pin the verified immutable Worker ID");
+  // CORS preflight bypass would let OPTIONS requests reach the Worker without Access.
+  const preflightBypass = application?.options_preflight_bypass;
+  if (preflightBypass !== undefined && preflightBypass !== null && preflightBypass !== false) {
+    throw new Error("Access application must not enable options_preflight_bypass");
+  }
   return application;
 }
 

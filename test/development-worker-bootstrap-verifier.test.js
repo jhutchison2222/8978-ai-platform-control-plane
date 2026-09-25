@@ -243,7 +243,8 @@ test("the verifier's Worker listing fails closed on malformed pagination", async
     [[{ success: true, result: [w("a".repeat(32))] }], /pagination metadata/u],
     [[page([w("a".repeat(32))], { page: 1, per_page: 1, total_pages: 2, total_count: 2 }), page([w("a".repeat(32))], { page: 2, per_page: 1, total_pages: 2, total_count: 2 })], /more than once/u],
     [[page([w("a".repeat(32))], { page: 1, per_page: 2, total_pages: 2, total_count: 3 }), page([w("b".repeat(32))], { page: 2, per_page: 2, total_pages: 2, total_count: 3 })], /truncated before the final page/u],
-    [[page([w("a".repeat(32))], { page: 1, per_page: 1, total_pages: 1, total_count: 2 })], /total_count is 2/u],
+    [[page([w("a".repeat(32))], { page: 1, per_page: 1, total_pages: 1, total_count: 2 })], /total_pages 1 conflicts with 2 derived/u],
+    [[page([w("a".repeat(32))], { page: 1, per_page: 1, total_count: 2 }), page([], { page: 2, per_page: 1, total_count: 2 })], /total_count is 2/u],
     [[page([w("a".repeat(32))], { page: 1, per_page: 1, total_pages: "1", total_count: 1 })], /invalid total_pages/u],
   ]) {
     const { requestGet } = pagedRequester(pages);
