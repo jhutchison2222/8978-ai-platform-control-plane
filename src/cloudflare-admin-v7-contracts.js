@@ -76,6 +76,81 @@ export function requireImmutableWorkerId(value, name = "workerId") {
   return value;
 }
 
+// Collects a complete page/per_page listing and fails closed on any missing, inconsistent,
+// repeated, truncated, or non-terminating pagination. fetchPage(page) must return the full
+// response envelope { result, result_info }, never only the result list.
+export const MAXIMUM_LISTING_PAGES = 100;
+
+const isPositiveInteger = (value) => Number.isInteger(value) && value >= 1;
+const isNonNegativeInteger = (value) => Number.isInteger(value) && value >= 0;
+
+export async function collectPagedResults(fetchPage, label, { maximumPages = MAXIMUM_LISTING_PAGES } = {}) {
+  const collected = [];
+  const seen = new Set();
+  let totalPages = null;
+  let totalCount = null;
+  for (let page = 1; page <= maximumPages; page += 1) {
+    const envelope = await fetchPage(page);
+    const items = envelope?.result;
+    const info = envelope?.result_info;
+    if (!Array.isArray(items)) throw new Error(`${label} page ${page} did not return a result list; state is ambiguous`);
+    if (!info || typeof info !== "object") throw new Error(`${label} page ${page} did not return pagination metadata; completeness cannot be proven`);
+    if (info.page !== page) throw new Error(`${label} returned page ${String(info.page)} when page ${page} was requested; state is ambiguous`);
+    if (!isPositiveInteger(info.per_page)) throw new Error(`${label} page ${page} reported an invalid per_page; state is ambiguous`);
+    if (!isNonNegativeInteger(info.total_pages)) throw new Error(`${label} page ${page} reported an invalid total_pages; completeness cannot be proven`);
+    if (!isNonNegativeInteger(info.total_count)) throw new Error(`${label} page ${page} reported an invalid total_count; completeness cannot be proven`);
+    if (info.count !== undefined && info.count !== items.length) throw new Error(`${label} page ${page} count does not equal the returned items; state is ambiguous`);
+    if (items.length > info.per_page) throw new Error(`${label} page ${page} returned more items than per_page; state is ambiguous`);
+    if (totalPages === null) {
+      totalPages = info.total_pages;
+      totalCount = info.total_count;
+    } else if (info.total_pages !== totalPages || info.total_count !== totalCount) {
+      throw new Error(`${label} pagination totals changed between pages; state is ambiguous`);
+    }
+    if (totalPages === 0) {
+      if (page !== 1 || items.length !== 0 || totalCount !== 0) throw new Error(`${label} reported zero pages inconsistently; state is ambiguous`);
+      return collected;
+    }
+    if (page > totalPages) throw new Error(`${label} returned a page beyond total_pages; state is ambiguous`);
+    if (page < totalPages && items.length !== info.per_page) throw new Error(`${label} page ${page} is truncated before the final page; completeness cannot be proven`);
+    for (const item of items) {
+      const id = item?.id;
+      if (typeof id !== "string" || id.length === 0) throw new Error(`${label} page ${page} returned an item without an identifier; state is ambiguous`);
+      if (seen.has(id)) throw new Error(`${label} returned identifier ${id} more than once; pagination is repeated or ambiguous`);
+      seen.add(id);
+      collected.push(item);
+    }
+    if (page === totalPages) {
+      if (collected.length !== totalCount) throw new Error(`${label} collected ${collected.length} items but total_count is ${totalCount}; completeness cannot be proven`);
+      return collected;
+    }
+  }
+  throw new Error(`${label} pagination did not terminate within ${maximumPages} pages; completeness cannot be proven`);
+}
+
+// Conservative Access coverage test. Any hostname-like declaration whose host part equals the
+// target, or whose wildcard pattern could match it, is treated as covering the target at any
+// path. Declarations that cannot be parsed unambiguously are also treated as covering.
+function hostPartOf(declaration) {
+  if (typeof declaration !== "string") return null;
+  let value = declaration.trim().toLowerCase();
+  if (value.length === 0) return null;
+  value = value.replace(/^[a-z][a-z0-9+.-]*:\/\//u, "");
+  const host = value.split("/")[0].replace(/:\d+$/u, "");
+  if (host.length === 0 || /\s/u.test(host) || !/^[a-z0-9.*-]+$/u.test(host)) return null;
+  return host;
+}
+
+export function declarationCoversHostname(declaration, targetHostname) {
+  const host = hostPartOf(declaration);
+  if (host === null) return true;
+  if (host === targetHostname) return true;
+  if (!host.includes("*")) return false;
+  // host contains only [a-z0-9.*-]; "." is the only regular-expression metacharacter to escape.
+  const pattern = new RegExp(`^${host.split("*").map((part) => part.replace(/\./gu, "\\.")).join(".*")}$`, "u");
+  return pattern.test(targetHostname);
+}
+
 export function assertPinnedTarget(target = {}) {
   const allowedKeys = new Set(["accountId", "workerName", "workerUrl", "d1Id", "d1Name", "queueName", "workflowName"]);
   for (const key of Object.keys(target)) {

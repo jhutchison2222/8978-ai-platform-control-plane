@@ -41,6 +41,7 @@ function baseApi(overrides = {}) {
     async listWorkers() { return [{ name: CLOUDFLARE_ADMIN_V7.workerName, id: WORKER_ID }]; },
     async getWorkerById() { return { id: WORKER_ID, name: CLOUDFLARE_ADMIN_V7.workerName }; },
     async listWorkerScripts() { return [{ id: CLOUDFLARE_ADMIN_V7.workerName, tag: WORKER_ID }]; },
+    async getAccountWorkersSubdomain() { return { subdomain: "jhutchison" }; },
     async listAccessApplications() { return [accessApp()]; },
     async listAccessApplicationPolicies() { return accessPolicy(); },
     async listAccessServiceTokens() { return [{ id: TOKEN_ID, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }]; },
@@ -231,6 +232,202 @@ test("phase 8 cannot retrieve the principal without the exact key ID binding", a
   const service = new CloudflareAdminV7Service({ api, custodian: strict, canaryFetch: async () => { throw new Error("canary reached"); } });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput({ keyId: "canary-wrong" })), /different service-auth key ID/u);
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput({ keyId: "" })), /Exact service-auth key ID is required/u);
+});
+
+// ------------------------------------------------- Access precedence (B1) ---
+
+const TARGET_HOST = "8978-ai-control-plane-dev.jhutchison.workers.dev";
+
+function otherApp(patch) {
+  return { id: "other-app", name: "Unrelated application", type: "self_hosted", ...patch };
+}
+
+// Runs phase 8 against the supplied API and asserts it stopped before any POST or canary request.
+async function assertStopsBeforePost(api, pattern) {
+  let canaryCalls = 0;
+  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); } });
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), pattern);
+  assert.equal(api.calls.setWorkerSubdomain, 0, "no subdomain POST may be issued");
+  assert.equal(canaryCalls, 0, "no canary request may be issued");
+}
+
+const conflictCases = [
+  ["exact-hostname self-hosted application", otherApp({ domain: TARGET_HOST })],
+  ["exact-hostname application declared with a scheme", otherApp({ domain: `https://${TARGET_HOST}` })],
+  ["path-scoped application", otherApp({ domain: `${TARGET_HOST}/admin` })],
+  ["workers.dev account wildcard", otherApp({ domain: "*.jhutchison.workers.dev" })],
+  ["partial-label wildcard", otherApp({ domain: "8978-*.jhutchison.workers.dev/v1/*" })],
+  ["global wildcard", otherApp({ domain: "*" })],
+  ["self_hosted_domains entry", otherApp({ domain: "unrelated.example.com", self_hosted_domains: ["unrelated.example.com", TARGET_HOST] })],
+  ["public destination", otherApp({ destinations: [{ type: "public", uri: `${TARGET_HOST}/v1/actions` }] })],
+  ["public wildcard destination", otherApp({ destinations: [{ type: "public", uri: "*.workers.dev" }] })],
+  ["bypass application on the exact hostname", otherApp({ domain: TARGET_HOST, policies: [{ decision: "bypass", include: [{ everyone: {} }] }] })],
+  ["upper-case hostname declaration", otherApp({ domain: TARGET_HOST.toUpperCase() })],
+];
+
+for (const [label, conflict] of conflictCases) {
+  test(`phase 8 stops before the POST on a conflicting ${label}`, async () => {
+    const api = baseApi({ async listAccessApplications() { return [accessApp(), conflict]; } });
+    await assertStopsBeforePost(api, /could cover 8978-ai-control-plane-dev\.jhutchison\.workers\.dev with precedence/u);
+  });
+}
+
+test("phase 8 treats an application with undeterminable coverage as a conflict", async () => {
+  for (const undetermined of [
+    otherApp({}),
+    otherApp({ destinations: [{ type: "public" }] }),
+    otherApp({ self_hosted_domains: "not-a-list" }),
+    otherApp({ domain: { unexpected: true } }),
+    otherApp({ domain: "white space.example" }),
+  ]) {
+    const api = baseApi({ async listAccessApplications() { return [accessApp(), undetermined]; } });
+    await assertStopsBeforePost(api, /could cover|coverage undetermined/u);
+  }
+});
+
+test("phase 8 accepts exactly one valid Worker-level application alongside non-overlapping applications", async () => {
+  const unrelated = [
+    otherApp({ id: "a1", domain: "app.example.com" }),
+    otherApp({ id: "a2", domain: "*.example.com/admin" }),
+    otherApp({ id: "a3", domain: "other-worker.jhutchison.workers.dev" }),
+    otherApp({ id: "a4", self_hosted_domains: ["dash.example.com"] }),
+    otherApp({ id: "a5", destinations: [{ type: "worker", worker_id: "c".repeat(32) }] }),
+    otherApp({ id: "a6", type: "saas", domain: undefined }),
+  ];
+  const api = baseApi({ async listAccessApplications() { return [...unrelated, accessApp()]; } });
+  const service = new CloudflareAdminV7Service({ api, custodian: custodianStub(), canaryFetch: async () => { throw new Error("canary reached"); } });
+  // Reaching the canary proves every pre-POST check passed and exactly one POST was made.
+  await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
+  assert.equal(api.calls.setWorkerSubdomain, 1);
+});
+
+test("phase 8 requires exactly one Worker-level application for the immutable Worker ID", async () => {
+  const none = baseApi({ async listAccessApplications() { return [otherApp({ domain: "app.example.com" })]; } });
+  await assertStopsBeforePost(none, /Worker-level Access application identity is missing/u);
+  const two = baseApi({ async listAccessApplications() { return [accessApp(), { ...accessApp(), id: "duplicate" }]; } });
+  await assertStopsBeforePost(two, /Worker-level Access application identity is ambiguous/u);
+  const mixed = baseApi({ async listAccessApplications() {
+    return [{ ...accessApp(), destinations: [{ type: "worker", worker_id: WORKER_ID }, { type: "public", uri: TARGET_HOST }] }];
+  } });
+  await assertStopsBeforePost(mixed, /exactly one destination/u);
+  const unidentified = baseApi({ async listAccessApplications() { return [accessApp(), { domain: "app.example.com" }]; } });
+  await assertStopsBeforePost(unidentified, /has no identifier/u);
+});
+
+test("phase 8 derives the target hostname from verified account state and stops on any mismatch", async () => {
+  for (const account of [{ subdomain: "someone-else" }, {}, null, { subdomain: "" }, { subdomain: "Bad_Sub" }]) {
+    let accessListed = false;
+    const api = baseApi({
+      async getAccountWorkersSubdomain() { return account; },
+      async listAccessApplications() { accessListed = true; return [accessApp()]; },
+    });
+    await assertStopsBeforePost(api, /workers\.dev (?:subdomain is missing or malformed|hostname .* does not equal the pinned)/u);
+    assert.equal(accessListed, false, "Access state must not be judged against an unverified hostname");
+  }
+  const failing = baseApi({ async getAccountWorkersSubdomain() { throw new Error("account subdomain unavailable"); } });
+  await assertStopsBeforePost(failing, /account subdomain unavailable/u);
+});
+
+test("phase 8 stops before the POST when the Access listing is incomplete or ambiguous", async () => {
+  const failing = baseApi({ async listAccessApplications() { throw new Error("Access application listing page 2 is truncated before the final page; completeness cannot be proven"); } });
+  await assertStopsBeforePost(failing, /completeness cannot be proven/u);
+});
+
+// Adapter-level pagination: the real listing code against a paged fetch fixture.
+async function pagedApi(pages, pathPattern) {
+  const { CloudflareAdminV7Api } = await import("../src/cloudflare-admin-v7-api.js");
+  const requested = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(40),
+    fetchImpl: async (url, init) => {
+      requested.push({ url: String(url), method: init.method });
+      assert.match(String(url), pathPattern);
+      const page = Number(new URL(url).searchParams.get("page"));
+      const body = pages[page - 1];
+      if (body === undefined) throw new Error(`unexpected page ${page}`);
+      return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    },
+  });
+  return { api, requested };
+}
+
+const envelope = (result, info) => ({ success: true, result, result_info: info });
+const appPage = (items, page, totalPages, totalCount, perPage = 2) => envelope(items, { page, per_page: perPage, count: items.length, total_pages: totalPages, total_count: totalCount });
+
+test("Access applications are enumerated across every page and a later-page conflict stops phase 8", async () => {
+  const pages = [
+    appPage([otherApp({ id: "p1a", domain: "a.example.com" }), otherApp({ id: "p1b", domain: "b.example.com" })], 1, 3, 5),
+    appPage([accessApp(), otherApp({ id: "p2b", domain: "c.example.com" })], 2, 3, 5),
+    appPage([otherApp({ id: "p3a", domain: `${TARGET_HOST}/late` })], 3, 3, 5),
+  ];
+  const { api: adapter, requested } = await pagedApi(pages, /\/access\/apps\?page=\d+&per_page=50$/u);
+  const listed = await adapter.listAccessApplications();
+  assert.equal(listed.length, 5);
+  assert.deepEqual(requested.map(({ method }) => method), ["GET", "GET", "GET"]);
+  const api = baseApi({ listAccessApplications: () => adapter.listAccessApplications() });
+  await assertStopsBeforePost(api, /p3a \(hostname, path, or wildcard coverage\)/u);
+});
+
+test("Access application pagination fails closed on missing, inconsistent, repeated, or truncated metadata", async () => {
+  const app = (id) => otherApp({ id, domain: `${id}.example.com` });
+  const malformed = [
+    ["missing result_info", [{ success: true, result: [app("a")] }], /did not return pagination metadata/u],
+    ["missing total_pages", [envelope([app("a")], { page: 1, per_page: 2, total_count: 1 })], /invalid total_pages/u],
+    ["missing total_count", [envelope([app("a")], { page: 1, per_page: 2, total_pages: 1 })], /invalid total_count/u],
+    ["wrong page index", [envelope([app("a")], { page: 2, per_page: 2, total_pages: 1, total_count: 1 })], /returned page 2 when page 1/u],
+    ["count disagrees", [envelope([app("a")], { page: 1, per_page: 2, count: 3, total_pages: 1, total_count: 1 })], /count does not equal/u],
+    ["truncated middle page", [appPage([app("a")], 1, 2, 3), appPage([app("b"), app("c")], 2, 2, 3)], /truncated before the final page/u],
+    ["totals change between pages", [appPage([app("a"), app("b")], 1, 2, 3), appPage([app("c")], 2, 3, 3)], /totals changed between pages/u],
+    ["repeated identifier", [appPage([app("a"), app("b")], 1, 2, 3), appPage([app("b")], 2, 2, 3)], /more than once/u],
+    ["short total_count", [appPage([app("a"), app("b")], 1, 2, 4), appPage([app("c")], 2, 2, 4)], /collected 3 items but total_count is 4/u],
+    ["item without identifier", [appPage([{ domain: "x.example.com" }], 1, 1, 1)], /without an identifier/u],
+    ["result is not a list", [{ success: true, result: { apps: [] }, result_info: { page: 1, per_page: 2, total_pages: 1, total_count: 0 } }], /did not return a result list/u],
+    ["inconsistent zero pages", [envelope([app("a")], { page: 1, per_page: 2, total_pages: 0, total_count: 0 })], /zero pages inconsistently/u],
+  ];
+  for (const [label, pages, pattern] of malformed) {
+    const { api } = await pagedApi(pages, /\/access\/apps\?/u);
+    await assert.rejects(() => api.listAccessApplications(), pattern, label);
+  }
+});
+
+test("Access application pagination does not terminate silently", async () => {
+  const { CloudflareAdminV7Api } = await import("../src/cloudflare-admin-v7-api.js");
+  let page = 0;
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(40),
+    fetchImpl: async () => {
+      page += 1;
+      return new Response(JSON.stringify(appPage([otherApp({ id: `x${page}`, domain: "x.example.com" })], page, 1000, 1000, 1)));
+    },
+  });
+  await assert.rejects(() => api.listAccessApplications(), /did not terminate within 100 pages/u);
+});
+
+test("Worker listing uses documented page/per_page pagination with no cursor", async () => {
+  const worker = (id, name) => ({ id, name });
+  const pages = [
+    envelope([worker("a".repeat(32), "one"), worker("b".repeat(32), "two")], { page: 1, per_page: 2, count: 2, total_pages: 2, total_count: 3 }),
+    envelope([worker(WORKER_ID, CLOUDFLARE_ADMIN_V7.workerName)], { page: 2, per_page: 2, count: 1, total_pages: 2, total_count: 3, cursor: "ignored" }),
+  ];
+  const { api, requested } = await pagedApi(pages, /\/workers\/workers\?page=\d+&per_page=100$/u);
+  const workers = await api.listWorkers();
+  assert.deepEqual(workers.map(({ name }) => name), ["one", "two", CLOUDFLARE_ADMIN_V7.workerName]);
+  assert.equal(requested.length, 2);
+  assert.ok(requested.every(({ url }) => !url.includes("cursor")));
+  assert.ok(!/cursor/u.test(apiSource.slice(apiSource.indexOf("async listWorkers("), apiSource.indexOf("async getWorkerById("))));
+});
+
+test("Worker listing fails closed on malformed pagination", async () => {
+  const worker = (id) => ({ id, name: `w-${id.slice(0, 4)}` });
+  for (const [pages, pattern] of [
+    [[{ success: true, result: [worker("a".repeat(32))] }], /did not return pagination metadata/u],
+    [[envelope([worker("a".repeat(32))], { page: 1, per_page: 1, total_pages: 2, total_count: 2 }), envelope([worker("a".repeat(32))], { page: 2, per_page: 1, total_pages: 2, total_count: 2 })], /more than once/u],
+    [[envelope([worker("a".repeat(32))], { page: 1, per_page: 1, total_pages: 2, total_count: 2 }), envelope([], { page: 2, per_page: 1, total_pages: 2, total_count: 2 })], /collected 1 items but total_count is 2/u],
+    [[envelope([worker("a".repeat(32))], { page: 3, per_page: 1, total_pages: 1, total_count: 1 })], /returned page 3 when page 1/u],
+  ]) {
+    const { api } = await pagedApi(pages, /\/workers\/workers\?/u);
+    await assert.rejects(() => api.listWorkers(), pattern);
+  }
 });
 
 // ----------------------------------------------------- credential isolation ---

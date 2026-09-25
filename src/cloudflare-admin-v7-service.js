@@ -1,6 +1,7 @@
 import {
   CLOUDFLARE_ADMIN_V7,
   assertPinnedTarget,
+  declarationCoversHostname,
   requireExactApproval,
   requireImmutableWorkerId,
   requireReviewedCommit,
@@ -106,6 +107,64 @@ function assertAccessPolicyShape(policies, serviceTokenId) {
     throw new Error("Access policy must declare no additional exclude or require rules");
   }
   return policy;
+}
+
+const isWorkerDestinationFor = (destination, workerId) => destination?.type === "worker" && destination?.worker_id === workerId;
+
+// Every hostname-like declaration an Access application can carry. Worker destinations are
+// resolved separately by immutable Worker ID and are not hostname declarations.
+function accessApplicationDeclarations(application) {
+  const declarations = [];
+  const undetermined = [];
+  if (application?.domain !== undefined && application.domain !== null && application.domain !== "") declarations.push(application.domain);
+  if (application?.self_hosted_domains !== undefined && application.self_hosted_domains !== null) {
+    if (!Array.isArray(application.self_hosted_domains)) undetermined.push("self_hosted_domains is not a list");
+    else declarations.push(...application.self_hosted_domains);
+  }
+  if (application?.destinations !== undefined && application.destinations !== null) {
+    if (!Array.isArray(application.destinations)) undetermined.push("destinations is not a list");
+    else {
+      for (const destination of application.destinations) {
+        if (destination?.type === "worker") {
+          if (typeof destination.worker_id !== "string") undetermined.push("worker destination has no immutable Worker ID");
+          continue;
+        }
+        const values = [destination?.uri, destination?.hostname].filter((value) => value !== undefined && value !== null);
+        if (values.length === 0 && destination?.type !== "private") undetermined.push(`destination of type ${String(destination?.type)} has no determinable hostname`);
+        declarations.push(...values);
+      }
+    }
+  }
+  if (application?.type === "self_hosted" && declarations.length === 0 &&
+      !(Array.isArray(application?.destinations) && application.destinations.some((destination) => destination?.type === "worker"))) {
+    undetermined.push("self_hosted application declares no determinable destination");
+  }
+  return { declarations, undetermined };
+}
+
+// Hostname and path Access applications are more specific than Worker-level Access and take
+// precedence over it. Any other application that covers, or could cover, the target hostname
+// is a conflict. Coverage that cannot be determined is also a conflict.
+function assertNoOverlappingAccessApplications(applications, workerId, targetHostname) {
+  const conflicts = [];
+  for (const application of applications) {
+    const destinations = Array.isArray(application?.destinations) ? application.destinations : [];
+    if (destinations.some((destination) => isWorkerDestinationFor(destination, workerId))) continue;
+    const { declarations, undetermined } = accessApplicationDeclarations(application);
+    if (undetermined.length > 0) {
+      conflicts.push(`${String(application?.id)} (coverage undetermined: ${undetermined.join("; ")})`);
+      continue;
+    }
+    if (declarations.some((declaration) => declarationCoversHostname(declaration, targetHostname))) {
+      conflicts.push(`${String(application?.id)} (hostname, path, or wildcard coverage)`);
+    }
+  }
+  if (conflicts.length > 0) {
+    throw new Error(
+      `${conflicts.length} other Access application(s) could cover ${targetHostname} with precedence over the Worker-level application: ` +
+      `${conflicts.join(", ")}; subdomain enablement stops before any request`,
+    );
+  }
 }
 
 async function jsonBody(response) {
@@ -279,6 +338,38 @@ export class CloudflareAdminV7Service {
       "Worker-level Access application",
     );
     assertAccessApplicationShape(application, workerId);
+    const policy = assertAccessPolicyShape(await this.api.listAccessApplicationPolicies(application.id), serviceTokenId);
+    return { application, policy };
+  }
+
+  // The target hostname is derived from verified account state, never from caller input.
+  async #verifiedTargetHostname() {
+    const account = await this.api.getAccountWorkersSubdomain();
+    const subdomain = account?.subdomain;
+    if (typeof subdomain !== "string" || !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/u.test(subdomain)) {
+      throw new Error("Account workers.dev subdomain is missing or malformed; the target hostname cannot be determined");
+    }
+    const hostname = `${CLOUDFLARE_ADMIN_V7.workerName}.${subdomain}.workers.dev`;
+    if (hostname !== new URL(CLOUDFLARE_ADMIN_V7.workerUrl).hostname) {
+      throw new Error(`Verified workers.dev hostname ${hostname} does not equal the pinned development hostname`);
+    }
+    return hostname;
+  }
+
+  // Complete paginated Access state: exactly one Worker-level application for the immutable
+  // Worker ID with its exact Service Auth policy, and no other application covering the hostname.
+  async #verifiedAccessIsolation(serviceTokenId, workerId, targetHostname) {
+    const applications = asList(await this.api.listAccessApplications());
+    for (const application of applications) {
+      if (typeof application?.id !== "string" || application.id.length === 0) throw new Error("An Access application has no identifier; Access state is ambiguous");
+    }
+    const application = exactOne(
+      applications,
+      (item) => Array.isArray(item?.destinations) && item.destinations.some((destination) => isWorkerDestinationFor(destination, workerId)),
+      "Worker-level Access application",
+    );
+    assertAccessApplicationShape(application, workerId);
+    assertNoOverlappingAccessApplications(applications, workerId, targetHostname);
     const policy = assertAccessPolicyShape(await this.api.listAccessApplicationPolicies(application.id), serviceTokenId);
     return { application, policy };
   }
@@ -477,7 +568,8 @@ export class CloudflareAdminV7Service {
         active.versions[0]?.percentage !== 100 || active.versions[0]?.version_id !== activatedVersionId) {
       throw new Error("Active deployment does not allocate 100 percent to exactly the expected activated version");
     }
-    await this.#verifiedAccessProtection(serviceTokenId, workerId);
+    const targetHostname = await this.#verifiedTargetHostname();
+    await this.#verifiedAccessIsolation(serviceTokenId, workerId, targetHostname);
 
     let posted;
     try {

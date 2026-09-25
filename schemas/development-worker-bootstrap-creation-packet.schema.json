@@ -117,9 +117,9 @@
       "additionalProperties": false,
       "required": ["routeAudit", "bootstrapDeploy", "bootstrapVerification", "maximumAttempts"],
       "properties": {
-        "routeAudit": { "type": "string", "minLength": 10 },
-        "bootstrapDeploy": { "type": "string", "minLength": 10 },
-        "bootstrapVerification": { "type": "string", "minLength": 10 },
+        "routeAudit": { "const": "node scripts/audit-development-worker-routes.js" },
+        "bootstrapDeploy": { "const": "npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message \"8978-bootstrap:371b02d797528f175e9e6075aef6fc92757dfd52:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d\"" },
+        "bootstrapVerification": { "const": "node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>" },
         "maximumAttempts": { "const": 1 }
       }
     },

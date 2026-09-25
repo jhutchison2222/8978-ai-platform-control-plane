@@ -105,6 +105,65 @@ test("the packet declares the two independent credential kinds and cross-invocat
   assert.equal(packet.credentialBoundaries.crossInvocationCustodyRequired, true);
 });
 
+// Independent restatement of the exact pinned commands; the schema, packet, validator, and docs must all agree.
+const PINNED_COMMANDS = {
+  routeAudit: "node scripts/audit-development-worker-routes.js",
+  bootstrapDeploy: `npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:${TARGET_WORKER_COMMIT}:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"`,
+  bootstrapVerification: "node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>",
+};
+
+test("the three owner-run commands are pinned exactly in the schema, packet, validator, and documentation", async () => {
+  const validator = await readFile("scripts/validate-artifacts.js", "utf8");
+  const docs = [
+    await readFile("docs/development-worker-bootstrap-creation.md", "utf8"),
+    await readFile("docs/development-worker-route-audit.md", "utf8"),
+    await readFile("docs/cloudflare-admin-v7.md", "utf8"),
+  ].join("\n");
+  for (const [name, command] of Object.entries(PINNED_COMMANDS)) {
+    const pinned = schema.properties.authorizedCommands.properties[name];
+    assert.deepEqual(Object.keys(pinned), ["const"], `${name} must be a single schema const`);
+    assert.equal(pinned.const, command);
+    assert.equal(packet.authorizedCommands[name], command);
+    assert.ok(docs.includes(command), `documentation must state the exact ${name} command`);
+  }
+  assert.ok(validator.includes("PINNED_BOOTSTRAP_COMMANDS"));
+  assert.ok(validator.includes("--bootstrap-version-id <BOOTSTRAP_VERSION_ID>"));
+});
+
+test("an altered, weakened, or substituted command is rejected by the schema", () => {
+  const altered = {
+    routeAudit: [
+      "node scripts/audit-development-worker-routes.js --skip-pagination",
+      "node scripts/audit-development-worker-routes.jsx",
+      "node  scripts/audit-development-worker-routes.js",
+    ],
+    bootstrapDeploy: [
+      PINNED_COMMANDS.bootstrapDeploy.replace("--config wrangler.bootstrap.jsonc", "--config wrangler.jsonc"),
+      PINNED_COMMANDS.bootstrapDeploy.replace(" --strict", ""),
+      PINNED_COMMANDS.bootstrapDeploy.replace("npx wrangler deploy", "npx wrangler versions upload"),
+      PINNED_COMMANDS.bootstrapDeploy.replace("8978-bootstrap:", "8978-reviewed:"),
+      PINNED_COMMANDS.bootstrapDeploy.replace("9f9cd5ee", "0f9cd5ee"),
+      `${PINNED_COMMANDS.bootstrapDeploy} --name 8978-ai-control-plane-prod`,
+      "npx wrangler deploy --config wrangler.bootstrap.jsonc --strict",
+    ],
+    bootstrapVerification: [
+      "node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA>",
+      PINNED_COMMANDS.bootstrapVerification.replace(" --bootstrap-version-id <BOOTSTRAP_VERSION_ID>", ""),
+      PINNED_COMMANDS.bootstrapVerification.replace("<BOOTSTRAP_VERSION_ID>", "11111111-2222-3333-4444-555555555555"),
+      PINNED_COMMANDS.bootstrapVerification.replace("<AUTHORIZED_REMEDIATION_SHA>", "0".repeat(40)),
+    ],
+  };
+  for (const [name, variants] of Object.entries(altered)) {
+    for (const variant of variants) {
+      const tampered = { ...packet, authorizedCommands: { ...packet.authorizedCommands, [name]: variant } };
+      assert.notDeepEqual(validateSchema(schema, tampered), [], `${name} variant must be rejected: ${variant}`);
+    }
+  }
+  const missing = { ...packet, authorizedCommands: { ...packet.authorizedCommands } };
+  delete missing.authorizedCommands.bootstrapVerification;
+  assert.notDeepEqual(validateSchema(schema, missing), []);
+});
+
 test("the bootstrap phase is satisfiable while the target Worker does not exist", () => {
   assert.equal(packet.requiresWorkerExists, false);
   assert.equal(packet.partialFailurePolicy.automaticRetry, false);

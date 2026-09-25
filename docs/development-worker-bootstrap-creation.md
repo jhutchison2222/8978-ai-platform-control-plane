@@ -52,8 +52,7 @@ git status --porcelain                   # must be empty
 node scripts/validate-artifacts.js
 node scripts/verify-target-runtime-closure.js --against 371b02d797528f175e9e6075aef6fc92757dfd52
 # only when separately authorized:
-npx wrangler deploy --config wrangler.bootstrap.jsonc --strict \
-  --message "8978-bootstrap:371b02d797528f175e9e6075aef6fc92757dfd52:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"
+npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:371b02d797528f175e9e6075aef6fc92757dfd52:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"
 ```
 
 **Reviewed target checkout** — LF-exact at `371b02d797528f175e9e6075aef6fc92757dfd52`, a separate
@@ -73,8 +72,20 @@ copy is CRLF and will not match the reviewed digests; `normalizedFileDigest` han
 ## Verification (phase 2-3)
 
 ```sh
-node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_SHA>
+node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>
 ```
+
+Both arguments are required and are supplied at execution time; neither is tracked.
+`<AUTHORIZED_REMEDIATION_SHA>` is the externally authorized remediation commit, which must equal
+`git rev-parse HEAD`. `<BOOTSTRAP_VERSION_ID>` is the lowercase UUID that the single bootstrap deploy
+prints as its `Current Version ID`; the active deployment and `versions/latest` must both identify
+exactly that version. A missing flag, a missing value, a repeated flag, an unrecognized argument, or
+a malformed value stops before any request is made.
+
+The three commands above are pinned exactly, as schema `const` values, in
+`schemas/development-worker-bootstrap-creation-packet.schema.json` (`authorizedCommands`) and are
+checked for exact equality by `npm run check`. Any changed flag, target, configuration path, or
+omitted safety option fails validation.
 
 GET-only across twelve endpoints. It confirms the account and Worker, the immutable Worker ID and
 its stable `tag` cross-check, exactly one active deployment at 100% identifying the bootstrap

@@ -51,6 +51,17 @@ version, and the Access application shape: `self_hosted`, exactly one destinatio
 pinning the verified Worker ID, exactly one `non_identity` Service Auth policy including exactly the
 pinned service token, and no additional include, exclude, or require rules.
 
+It then derives the target hostname from verified account state
+(`GET /accounts/{account_id}/workers/subdomain`, which must yield exactly
+`8978-ai-control-plane-dev.jhutchison.workers.dev`) and enumerates **every** Access application across
+all pages (`page`/`per_page`, bounded by `result_info.total_pages`), stopping on missing,
+inconsistent, repeated, truncated, or ambiguous pagination. Hostname and path Access applications
+take precedence over Worker-level Access, so any other application whose `domain`,
+`self_hosted_domains`, `public` destination, or other hostname declaration equals the target
+hostname, scopes a path on it, or is a wildcard that could match it is a conflict. Coverage that
+cannot be determined is also a conflict. Any conflict stops before the POST; no attempt is made to
+prove that a conflicting application's policies are harmless.
+
 Then exactly one POST, exactly one read-back GET — verification, never a retry — and only then the
 five-request canary, once.
 

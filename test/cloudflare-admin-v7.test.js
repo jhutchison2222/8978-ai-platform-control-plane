@@ -28,6 +28,7 @@ const workerIdentityMocks = {
   async getWorkerById() { return { id: WORKER_ID, name: CLOUDFLARE_ADMIN_V7.workerName }; },
   async listWorkerScripts() { return [{ id: CLOUDFLARE_ADMIN_V7.workerName, tag: WORKER_ID }]; },
   async getWorkerSubdomain() { return { enabled: false, previews_enabled: false }; },
+  async getAccountWorkersSubdomain() { return { subdomain: "jhutchison" }; },
   async listWorkerDomains() { return []; },
 };
 

@@ -4,10 +4,12 @@
 // and writes no verification record. The owner authors the record from this output.
 //
 // Usage:
-//   node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_SHA>
+//   node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>
 //
-// The remediation commit SHA is supplied externally in the owner authorization after
-// independent review. It is never stored in a tracked reviewed file.
+// Both values are required and are supplied at execution time; neither is stored in a tracked
+// reviewed file. The remediation commit SHA comes from the owner authorization after independent
+// review. The bootstrap version ID is the "Current Version ID" that the single authorized
+// bootstrap deploy prints; it does not exist until that deploy completes.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -17,7 +19,7 @@ import {
   TARGET_RUNTIME_INPUTS,
   TARGET_WORKER_COMMIT,
 } from "../src/target-runtime-manifest.js";
-import { CLOUDFLARE_ADMIN_V7 } from "../src/cloudflare-admin-v7-contracts.js";
+import { CLOUDFLARE_ADMIN_V7, collectPagedResults } from "../src/cloudflare-admin-v7-contracts.js";
 
 const API_ORIGIN = "https://api.cloudflare.com/client/v4";
 const ACCOUNT_ID = CLOUDFLARE_ADMIN_V7.accountId;
@@ -55,9 +57,42 @@ export class BootstrapVerificationStop extends Error {
   }
 }
 
+export const BOOTSTRAP_VERSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
+const VERIFIER_FLAGS = Object.freeze(["--remediation-commit", "--bootstrap-version-id"]);
+
+export function requireBootstrapVersionId(value) {
+  if (typeof value !== "string" || !BOOTSTRAP_VERSION_ID_PATTERN.test(value)) {
+    throw new BootstrapVerificationStop("--bootstrap-version-id must be the exact lowercase UUID printed as the Current Version ID by the bootstrap deploy");
+  }
+  return value;
+}
+
+// Strict argument parsing: each required flag exactly once with a value, nothing else accepted.
+// An absent flag can never fall through to another argv position.
+export function parseVerifierArguments(args) {
+  if (!Array.isArray(args)) throw new BootstrapVerificationStop("Verifier arguments are unavailable");
+  const values = {};
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index];
+    if (!VERIFIER_FLAGS.includes(flag)) throw new BootstrapVerificationStop(`Unrecognized verifier argument: ${String(flag)}`);
+    if (Object.prototype.hasOwnProperty.call(values, flag)) throw new BootstrapVerificationStop(`${flag} was supplied more than once; input is ambiguous`);
+    const value = args[index + 1];
+    if (typeof value !== "string" || value.length === 0 || value.startsWith("--")) throw new BootstrapVerificationStop(`${flag} requires a value`);
+    values[flag] = value;
+  }
+  for (const flag of VERIFIER_FLAGS) {
+    if (!Object.prototype.hasOwnProperty.call(values, flag)) throw new BootstrapVerificationStop(`${flag} is required`);
+  }
+  const remediationCommit = values["--remediation-commit"];
+  if (!/^[a-f0-9]{40}$/u.test(remediationCommit)) {
+    throw new BootstrapVerificationStop("--remediation-commit must be an exact 40-character lowercase Git commit SHA supplied by the owner authorization");
+  }
+  return { remediationCommit, bootstrapVersionId: requireBootstrapVersionId(values["--bootstrap-version-id"]) };
+}
+
 export function createReadOnlyRequester(token, fetchImpl = fetch) {
   if (typeof token !== "string" || token.length < 20) throw new BootstrapVerificationStop("Cloudflare credential is unavailable");
-  return async function requestGet(pathAndQuery) {
+  return async function requestGet(pathAndQuery, { envelope = false } = {}) {
     if (typeof pathAndQuery !== "string" || !pathAndQuery.startsWith("/") || pathAndQuery.includes("..")) {
       throw new BootstrapVerificationStop("Invalid bootstrap-verifier path");
     }
@@ -75,8 +110,21 @@ export function createReadOnlyRequester(token, fetchImpl = fetch) {
     if (!response.ok || parsed?.success === false) {
       throw new BootstrapVerificationStop(`Request for ${pathAndQuery} was rejected with HTTP ${response.status}; state is ambiguous`);
     }
-    return parsed.result;
+    return envelope ? parsed : parsed.result;
   };
+}
+
+// Documented page/per_page pagination bounded by result_info.total_pages. No cursor is used.
+export async function listAllWorkers(requestGet) {
+  try {
+    return await collectPagedResults(
+      (page) => requestGet(`/accounts/${ACCOUNT_ID}/workers/workers?page=${page}&per_page=100`, { envelope: true }),
+      "Worker listing",
+    );
+  } catch (error) {
+    if (error instanceof BootstrapVerificationStop) throw error;
+    throw new BootstrapVerificationStop(error instanceof Error ? error.message : "Worker listing is ambiguous");
+  }
 }
 
 const asList = (value) => (Array.isArray(value) ? value : Array.isArray(value?.result) ? value.result : []);
@@ -95,7 +143,8 @@ export function assertActiveBootstrapDeployment(deployment, expectedVersionId) {
   const versions = Array.isArray(deployment?.versions) ? deployment.versions : [];
   if (versions.length !== 1) throw new BootstrapVerificationStop("Active deployment does not contain exactly one version");
   if (versions[0]?.percentage !== 100) throw new BootstrapVerificationStop("Active deployment does not allocate 100 percent to one version");
-  if (expectedVersionId !== undefined && versions[0]?.version_id !== expectedVersionId) {
+  requireBootstrapVersionId(expectedVersionId);
+  if (versions[0]?.version_id !== expectedVersionId) {
     throw new BootstrapVerificationStop("Active deployment does not identify the expected bootstrap version");
   }
   return versions[0];
@@ -197,9 +246,10 @@ export function verifyLocalProvenance(remediationCommit) {
 }
 
 export async function runBootstrapVerification({ requestGet, remediationCommit, expectedBootstrapVersionId }) {
+  requireBootstrapVersionId(expectedBootstrapVersionId);
   const provenance = verifyLocalProvenance(remediationCommit);
   const identity = await requestGet("/user/tokens/verify");
-  const workers = await requestGet(`/accounts/${ACCOUNT_ID}/workers/workers?per_page=100`);
+  const workers = await listAllWorkers(requestGet);
   const scripts = await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts`);
   const workerId = resolveImmutableWorkerId(workers, scripts);
   const confirmed = await requestGet(`/accounts/${ACCOUNT_ID}/workers/workers/${workerId}`);
@@ -212,6 +262,9 @@ export async function runBootstrapVerification({ requestGet, remediationCommit, 
   const active = selectActiveDeployment(deployments);
   const activeVersion = assertActiveBootstrapDeployment(active, expectedBootstrapVersionId);
   const latest = await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/versions/latest`);
+  if (latest?.id !== expectedBootstrapVersionId) {
+    throw new BootstrapVerificationStop("The latest Worker version is not the supplied bootstrap version; its annotation cannot be attributed to the active deployment");
+  }
   const annotation = assertBootstrapAnnotation(latest, {
     targetCommit: TARGET_WORKER_COMMIT,
     bootstrapConfigurationSha256: provenance.bootstrapConfigurationSha256,
@@ -258,8 +311,13 @@ export async function runBootstrapVerification({ requestGet, remediationCommit, 
 
 const invokedDirectly = process.argv[1] && import.meta.url === new URL(`file://${process.argv[1].split("\\").join("/")}`).href;
 if (invokedDirectly) {
-  const index = process.argv.indexOf("--remediation-commit");
-  const remediationCommit = index === -1 ? undefined : process.argv[index + 1];
+  let parsedArguments;
+  try {
+    parsedArguments = parseVerifierArguments(process.argv.slice(2));
+  } catch (error) {
+    console.error(`FAIL ${error instanceof Error ? error.message : "invalid verifier arguments"}`);
+    process.exit(2);
+  }
   const token = process.env[BOOTSTRAP_VERIFIER_CONTRACT.tokenVariable];
   if (!token) {
     console.error(`${BOOTSTRAP_VERIFIER_CONTRACT.tokenVariable} is not set in the process environment.`);
@@ -268,8 +326,8 @@ if (invokedDirectly) {
   try {
     const summary = await runBootstrapVerification({
       requestGet: createReadOnlyRequester(token),
-      remediationCommit,
-      expectedBootstrapVersionId: process.argv[process.argv.indexOf("--bootstrap-version-id") + 1],
+      remediationCommit: parsedArguments.remediationCommit,
+      expectedBootstrapVersionId: parsedArguments.bootstrapVersionId,
     });
     console.log(JSON.stringify(summary, null, 2));
     console.log("Bootstrap verification passed. No record was written; author it from this sanitized output.");

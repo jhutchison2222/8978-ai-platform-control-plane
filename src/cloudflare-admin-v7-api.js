@@ -1,4 +1,4 @@
-import { CLOUDFLARE_ADMIN_V7, requireImmutableWorkerId } from "./cloudflare-admin-v7-contracts.js";
+import { CLOUDFLARE_ADMIN_V7, collectPagedResults, requireImmutableWorkerId } from "./cloudflare-admin-v7-contracts.js";
 import { redactSensitive } from "./cloudflare-admin-v7-redaction.js";
 
 const API_ORIGIN = "https://api.cloudflare.com/client/v4";
@@ -29,7 +29,7 @@ export class CloudflareAdminV7Api {
     return `/accounts/${this.accountId}${path}`;
   }
 
-  async #request(method, path, { body, contentType = "application/json", expected = [200], headers: extraHeaders } = {}) {
+  async #request(method, path, { body, contentType = "application/json", expected = [200], headers: extraHeaders, envelope = false } = {}) {
     if (!new Set(["GET", "POST", "PUT", "PATCH"]).has(method)) throw new Error(`Cloudflare API method is prohibited: ${method}`);
     const headers = new Headers({ Accept: "application/json", Authorization: `Bearer ${this.apiToken}` });
     for (const [name, value] of Object.entries(extraHeaders ?? {})) headers.set(name, value);
@@ -59,7 +59,7 @@ export class CloudflareAdminV7Api {
         response: parsed,
       });
     }
-    return parsed.result;
+    return envelope ? parsed : parsed.result;
   }
 
   async verifyIdentity() {
@@ -111,18 +111,12 @@ export class CloudflareAdminV7Api {
     });
   }
 
+  // Documented page/per_page pagination; result_info.total_pages bounds the listing. No cursor is used.
   async listWorkers() {
-    const collected = [];
-    let cursor;
-    for (let page = 0; page < 50; page += 1) {
-      const query = cursor ? `?per_page=100&cursor=${encodeURIComponent(cursor)}` : "?per_page=100";
-      const result = await this.#request("GET", this.#accountPath(`/workers/workers${query}`));
-      const items = Array.isArray(result) ? result : Array.isArray(result?.result) ? result.result : [];
-      collected.push(...items);
-      cursor = result?.result_info?.cursor ?? result?.cursor;
-      if (!cursor || items.length === 0) return collected;
-    }
-    throw new Error("Worker listing pagination did not terminate; state is ambiguous");
+    return collectPagedResults(
+      (page) => this.#request("GET", this.#accountPath(`/workers/workers?page=${page}&per_page=100`), { envelope: true }),
+      "Worker listing",
+    );
   }
 
   async getWorkerById(workerId) {
@@ -136,6 +130,10 @@ export class CloudflareAdminV7Api {
 
   async getWorkerService() {
     return this.#request("GET", this.#accountPath(`/workers/services/${CLOUDFLARE_ADMIN_V7.workerName}`));
+  }
+
+  async getAccountWorkersSubdomain() {
+    return this.#request("GET", this.#accountPath("/workers/subdomain"));
   }
 
   async getWorkerSubdomain() {
@@ -165,7 +163,10 @@ export class CloudflareAdminV7Api {
   }
 
   async listAccessApplications() {
-    return this.#request("GET", this.#accountPath("/access/apps"));
+    return collectPagedResults(
+      (page) => this.#request("GET", this.#accountPath(`/access/apps?page=${page}&per_page=50`), { envelope: true }),
+      "Access application listing",
+    );
   }
 
   async listAccessServiceTokens() {

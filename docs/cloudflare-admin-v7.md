@@ -91,7 +91,7 @@ surface exists at any point before Worker-level Access is installed. See
    routes targeting the Worker. Never grant `Workers Routes Write`, and never add zone permission to
    the runtime or connector token.
 1. Deploy the bootstrap Worker once, with no public surface:
-   `npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:<target-commit>:<bootstrap-sha256>"`.
+   `npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:371b02d797528f175e9e6075aef6fc92757dfd52:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"`.
    This creates the Worker, applies Durable Object migrations `v1` and `v2`, and registers the
    Workflow, with `workers_dev` and `preview_urls` both `false`.
 2. Resolve and pin the immutable Worker ID from `GET /accounts/{account_id}/workers/workers`,
@@ -99,7 +99,7 @@ surface exists at any point before Worker-level Access is installed. See
    `GET /accounts/{account_id}/workers/workers/{worker_id}`, and agreement with the stable Worker
    script `tag`. The legacy script endpoint returns the name as its `id` and is never the source.
 3. Run the owner-run local verifier — not Admin v7 —
-   `node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_SHA>`.
+   `node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>`, where `<BOOTSTRAP_VERSION_ID>` is the `Current Version ID` printed by step 1.
    It is GET-only and writes no record.
 4. From an LF-exact checkout of the target commit, upload but do not deploy the reviewed version with
    message `8978-reviewed:<target-commit>:<configuration-sha256>`. Pin the returned UUID as

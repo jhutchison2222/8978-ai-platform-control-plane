@@ -1615,6 +1615,26 @@ const targetConfig = parseJsonStrict(targetConfigText.replace(/^\s*\/\/.*$/gmu, 
 
 assertValid("development Worker bootstrap creation packet", bootstrapPacketSchema, bootstrapPacket);
 
+// Exact pinned owner-run commands: packet, schema const, and documentation must all agree byte-for-byte.
+const PINNED_BOOTSTRAP_COMMANDS = Object.freeze({
+  routeAudit: "node scripts/audit-development-worker-routes.js",
+  bootstrapDeploy: `npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:${TARGET_WORKER_COMMIT}:${CLOUDFLARE_ADMIN_V7.bootstrapConfigurationSha256}"`,
+  bootstrapVerification: "node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>",
+});
+const bootstrapCommandSchema = bootstrapPacketSchema.properties?.authorizedCommands?.properties ?? {};
+const bootstrapCommandDocs = [
+  await readFile("docs/development-worker-bootstrap-creation.md", "utf8"),
+  await readFile("docs/development-worker-route-audit.md", "utf8"),
+  await readFile("docs/cloudflare-admin-v7.md", "utf8"),
+].join("\n");
+for (const [name, command] of Object.entries(PINNED_BOOTSTRAP_COMMANDS)) {
+  if (bootstrapPacket.authorizedCommands?.[name] !== command) throw new Error(`Bootstrap packet command ${name} must equal the exact pinned command`);
+  if (bootstrapCommandSchema[name]?.const !== command || Object.keys(bootstrapCommandSchema[name]).length !== 1) {
+    throw new Error(`Bootstrap packet schema must pin ${name} as exactly one const value`);
+  }
+  if (!bootstrapCommandDocs.includes(command)) throw new Error(`Bootstrap documentation must state the exact pinned ${name} command`);
+}
+
 const gitBlobSha256 = (file) => normalizedFileDigest(file);
 
 // Three-way equality: file digest === contracts constant === packet pin.
