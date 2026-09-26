@@ -1727,7 +1727,40 @@ for (const forbidden of [/workers\/routes/u, /\/dns/u, /"DELETE"/u, /deleteWorke
 if (!/workers\/domains/u.test(adminV7ApiSource)) throw new Error("Admin v7 API adapter must read account Worker domains to prove custom-domain absence");
 if (!/Cloudflare-Workers-Script-Api-Date/u.test(adminV7ApiSource)) throw new Error("Subdomain writes must carry the dated Workers script API header");
 
-assertValid("development Worker bootstrap verification record contract", { type: "object" }, {});
+// Synthetic, non-governing record shapes: each must pass its schema, and each credential-recording,
+// exposure, or unexpected-property variant must fail it, so a schema regression cannot pass silently.
+const syntheticBootstrapVerificationRecord = {
+  schemaVersion: "1", status: "BOOTSTRAP_VERIFIED_UNREACHABLE", governing: false, environment: "development",
+  verifiedAt: "2026-09-26T00:00:00Z", accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName,
+  workerId: { value: "0".repeat(32), source: "workers_beta_list", corroboratingSource: "workers_scripts_tag", sourcesAgree: true },
+  remediationCommit: "0".repeat(40), targetWorkerCommit: TARGET_WORKER_COMMIT, targetConfigurationSha256: TARGET_CONFIGURATION_SHA256,
+  bootstrapConfigurationSha256: "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d",
+  annotation: `8978-bootstrap:${TARGET_WORKER_COMMIT}:${TARGET_CONFIGURATION_SHA256}`,
+  activeDeployment: { id: "synthetic-deployment", versionId: "synthetic-version", versionCount: 1, percentage: 100 },
+  migrationTag: "v2", subdomain: { enabled: false, previews_enabled: false }, serviceAuthSecretPresent: false, customDomainMatches: 0,
+  routeAudit: { performedAt: "2026-09-26T00:00:00Z", zonesEnumerated: 0, paginationComplete: true, matchingRouteCount: 0, credentialType: "temporary_read_only", tokenValueRecorded: false },
+  credentialCustody: { accessServiceTokenSlot: "CANARY_ACCESS_CREDENTIAL_JSON", serviceAuthPrincipalSlot: "CANARY_SERVICE_AUTH_PRINCIPAL_JSON", slotsDistinct: true },
+  secretValueRecorded: false,
+};
+const syntheticRouteAuditRecord = {
+  schemaVersion: "1", status: "ROUTE_AUDIT_PASSED_NO_MATCHING_ROUTE", governing: false, environment: "development",
+  performedAt: "2026-09-26T00:00:00Z", accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName,
+  zonesEnumerated: 0, zonesInspected: 0, paginationComplete: true, matchingRouteCount: 0, credentialType: "temporary_read_only",
+  tokenValueRecorded: false, permittedMethods: ["GET"], routeMutationPerformed: false, cleanupPerformed: false,
+};
+assertValid("development Worker bootstrap verification record contract", bootstrapVerificationRecordSchema, syntheticBootstrapVerificationRecord);
+assertValid("development Worker route audit record contract", routeAuditRecordSchema, syntheticRouteAuditRecord);
+for (const [label, schema, record] of [
+  ["a recorded secret value", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, secretValueRecorded: true }],
+  ["an enabled subdomain", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, subdomain: { enabled: true, previews_enabled: false } }],
+  ["a Custom Domain match", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, customDomainMatches: 1 }],
+  ["an unexpected property", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, clientSecret: "x" }],
+  ["a recorded route-audit token", routeAuditRecordSchema, { ...syntheticRouteAuditRecord, tokenValueRecorded: true }],
+  ["a non-GET route-audit method", routeAuditRecordSchema, { ...syntheticRouteAuditRecord, permittedMethods: ["PUT"] }],
+  ["a route-audit unexpected property", routeAuditRecordSchema, { ...syntheticRouteAuditRecord, apiToken: "x" }],
+]) {
+  if (validateSchema(schema, record).length === 0) throw new Error(`Record schema negative fixture unexpectedly passed: ${label}`);
+}
 if (bootstrapVerificationRecordSchema.additionalProperties !== false || routeAuditRecordSchema.additionalProperties !== false) {
   throw new Error("Bootstrap verification and route audit record schemas must reject unexpected properties");
 }

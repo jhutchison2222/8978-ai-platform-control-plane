@@ -385,6 +385,8 @@ export class CloudflareAdminV7Service {
         clientSecret: created.client_secret,
         expiresAt: verified.expiresAt,
       });
+      // Like the service-auth principal, the stored slot must be confirmed by name before success.
+      await this.custodian.confirmCustody("access-service-token");
     } catch {
       throw new Error("Access service token was created but credential custody was not confirmed; partial state requires owner review");
     }

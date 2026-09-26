@@ -1012,7 +1012,7 @@ const exactToken = (overrides = {}) => ({
   duration: "24h", expires_at: "2026-09-26T00:00:00Z", ...overrides,
 });
 
-function creationHarness({ create = createResponse(), exact = () => exactToken(), listAfter = null, listAfterStore = null, custodyFails = false, listErrorAfterCreate = null } = {}) {
+function creationHarness({ create = createResponse(), exact = () => exactToken(), listAfter = null, listAfterStore = null, custodyFails = false, confirmFails = false, listErrorAfterCreate = null } = {}) {
   const writes = [];
   let created = false;
   let stored = false;
@@ -1039,12 +1039,18 @@ function creationHarness({ create = createResponse(), exact = () => exactToken()
     },
   });
   const custody = [];
+  const confirms = [];
   const custodian = {
     async store(kind, value) {
       custody.push({ kind, value });
       if (custodyFails) throw new Error(`storage failed for ${value.clientSecret}`);
       stored = true;
       return { receiptId: ACCESS_RECEIPT };
+    },
+    async confirmCustody(kind) {
+      confirms.push({ kind, afterStore: stored });
+      if (confirmFails) throw new Error("Managed custody of access-service-token was not confirmed; stop before installing or deploying");
+      return { receiptId: ACCESS_RECEIPT, kind, confirmed: true };
     },
   };
   let canaryCalls = 0;
@@ -1053,7 +1059,7 @@ function creationHarness({ create = createResponse(), exact = () => exactToken()
     canaryFetch: async () => { canaryCalls += 1; return new Response("{}"); },
   });
   const run = () => service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then((value) => ({ value }), (error) => ({ error }));
-  return { run, writes, custody, calls: target.calls, get canaryCalls() { return canaryCalls; } };
+  return { run, writes, custody, confirms, calls: target.calls, get canaryCalls() { return canaryCalls; } };
 }
 
 // After any stop following creation: one POST only, no retry, cleanup, Access installation,
@@ -1155,7 +1161,10 @@ test("the complete creation flow through the real adapter lists every token unfi
   const custody = [];
   const service = new CloudflareAdminV7Service({
     api, now: clock,
-    custodian: { async store(kind, value) { custody.push({ kind, value }); return { receiptId: ACCESS_RECEIPT }; } },
+    custodian: {
+      async store(kind, value) { custody.push({ kind, value }); return { receiptId: ACCESS_RECEIPT }; },
+      async confirmCustody(kind) { assert.equal(kind, "access-service-token"); return { confirmed: true }; },
+    },
   });
   const result = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken });
   assert.equal(result.created, true);
@@ -1256,6 +1265,21 @@ test("a custody failure after a verified read-back stops as owner-review partial
   assertStoppedAfterSingleCreate(harness, outcome, /created but credential custody was not confirmed; partial state requires owner review/u, { stored: true });
   assert.equal(harness.custody.length, 1, "custody is attempted once, only after the read-back verified the token");
   assert.equal(harness.custody[0].value.expiresAt, "2026-09-26T00:00:00Z");
+});
+
+test("successful creation confirms Access credential custody by name only after storing it", async () => {
+  const harness = creationHarness();
+  const outcome = await harness.run();
+  assert.equal(outcome.error, undefined);
+  assert.deepEqual(harness.confirms, [{ kind: "access-service-token", afterStore: true }]);
+});
+
+test("a store that reports success without the secret landing stops as owner-review partial state", async () => {
+  const harness = creationHarness({ confirmFails: true });
+  const outcome = await harness.run();
+  assertStoppedAfterSingleCreate(harness, outcome, /created but credential custody was not confirmed; partial state requires owner review/u, { stored: true });
+  assert.equal(harness.custody.length, 1, "custody is stored once and never retried");
+  assert.deepEqual(harness.confirms, [{ kind: "access-service-token", afterStore: true }]);
 });
 
 test("a read-back failure after custody stops as owner-review partial state with no further action", async () => {
@@ -1499,7 +1523,7 @@ test("token creation stops when read-back does not show exactly the created toke
         async createAccessServiceToken() { created = true; return { id: TOKEN_ID, name: TOKEN_NAME, client_id: "cid", client_secret: "csecret" }; },
         async getAccessServiceToken() { return { id: TOKEN_ID, name: TOKEN_NAME, client_id: "cid", enabled: true, expires_at: "2026-09-26T00:00:00Z" }; },
       },
-      custodian: { async store() { stores += 1; return { receiptId: ACCESS_RECEIPT }; } },
+      custodian: { async store() { stores += 1; return { receiptId: ACCESS_RECEIPT }; }, async confirmCustody() { return { confirmed: true }; } },
       now: clock,
     });
     const error = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken }).then(() => null, (caught) => caught);

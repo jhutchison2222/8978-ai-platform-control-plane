@@ -418,7 +418,10 @@ test("service-token creation requires exact approval, refuses duplicates, and ne
       return { id, name: created.name, client_id: created.client_id, enabled: true, duration: "24h", expires_at: FUTURE_EXPIRY };
     },
   };
-  const custodian = { async store(kind, value) { custodyInput = { kind, value }; return { receiptId: "receipt-123", custodian: "managed" }; } };
+  const custodian = {
+    async store(kind, value) { custodyInput = { kind, value }; return { receiptId: "receipt-123", custodian: "managed" }; },
+    async confirmCustody(kind) { assert.equal(kind, "access-service-token"); return { confirmed: true }; },
+  };
   const service = new CloudflareAdminV7Service({ api, custodian, now: CLOCK });
   await assert.rejects(() => service.createServiceToken({ approval: "yes" }), /Exact approval required/);
   const result = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken });
