@@ -29,8 +29,11 @@ record from that output against `schemas/development-worker-route-audit-record.s
 
 ## Endpoints
 
-1. `GET /zones?account.id=<account>&per_page=50&page=N` — paginated to `result_info.total_pages`
-2. `GET /zones/{zone_id}/workers/routes` — for every enumerated zone
+1. `GET /zones?per_page=50&page=N` — every zone visible to the credential, with no search filter,
+   collected by the same strict pagination rule as the connector. Cloudflare documents
+   `total_count` as the total without search parameters, so only the unfiltered population can
+   prove completeness; zones are then selected locally by their exact `account.id`.
+2. `GET /zones/{zone_id}/workers/routes` — for every zone of the authorized account
 
 ## Required outcome
 
@@ -39,7 +42,10 @@ Zero routes whose `script` equals `8978-ai-control-plane-dev`.
 ## Stop conditions
 
 - any zone cannot be enumerated
-- pagination metadata is missing, or a returned page index is unexpected
+- pagination metadata is missing, malformed, or contradictory: an unexpected page index, a
+  `total_pages` that disagrees with `total_count` and `per_page`, a truncated non-final page, a
+  repeated zone ID, totals that change between pages, or a collected count below `total_count`
+- any zone does not report its account
 - any route response is missing, rejected, truncated, or ambiguous
 - any zone is left uninspected
 - any route targets the pinned Worker

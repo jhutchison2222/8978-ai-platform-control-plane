@@ -32,7 +32,15 @@ const REMEDIATION = "a".repeat(40);
 test("verifier is GET-only, writes no record, and never lists a zone-scoped route endpoint", () => {
   assert.deepEqual([...BOOTSTRAP_VERIFIER_CONTRACT.permittedMethods], ["GET"]);
   assert.equal(BOOTSTRAP_VERIFIER_CONTRACT.writesRecord, false);
-  assert.equal(BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.length, 12);
+  assert.equal(BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.length, 13);
+  // The declared contract is exactly the set of GET paths the verifier source issues.
+  const issued = new Set([...source.matchAll(/requestGet\([`"]([^`"?]+)/gu)].map(([, path]) => path
+    .replace("${ACCOUNT_ID}", "{account_id}")
+    .replace("${WORKER_NAME}", "{script_name}")
+    .replace("${workerId}", "{worker_id}")
+    .replace("${CLOUDFLARE_ADMIN_V7.workflowName}", "{workflow_name}")
+    .replace("${CLOUDFLARE_ADMIN_V7.d1Id}", "{database_id}")));
+  assert.deepEqual([...issued].sort(), [...BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints].sort());
   for (const endpoint of BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints) {
     assert.ok(!endpoint.includes("/routes"), `${endpoint} must not enumerate zone-scoped routes`);
   }

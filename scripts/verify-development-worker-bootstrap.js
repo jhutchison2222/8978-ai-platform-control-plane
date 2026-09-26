@@ -32,6 +32,7 @@ export const BOOTSTRAP_VERIFIER_CONTRACT = Object.freeze({
   permittedMethods: Object.freeze(["GET"]),
   writesRecord: false,
   permittedEndpoints: Object.freeze([
+    "/user/tokens/verify",
     "/accounts/{account_id}/workers/workers",
     "/accounts/{account_id}/workers/workers/{worker_id}",
     "/accounts/{account_id}/workers/scripts",

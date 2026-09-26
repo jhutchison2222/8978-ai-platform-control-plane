@@ -12,6 +12,8 @@
 // any response is missing/rejected/truncated/ambiguous, or a matching route exists.
 // Never prints or persists the token. Writes no verification record.
 
+import { collectPagedResults } from "../src/cloudflare-admin-v7-contracts.js";
+
 const ACCOUNT_ID = "de5e0273347b0b4c5f8f4e554aa2288f";
 const WORKER_NAME = "8978-ai-control-plane-dev";
 const API_ORIGIN = "https://api.cloudflare.com/client/v4";
@@ -66,27 +68,29 @@ export function createReadOnlyRequester(token, fetchImpl = fetch) {
   };
 }
 
+// Every zone visible to the credential, by the shared strict collector: total_count, per_page,
+// truncation, repeated-ID, and changing-total checks all apply. No account.id filter is sent,
+// because Cloudflare documents total_count as the total without search parameters, so only the
+// unfiltered population lets the collector prove completeness. Zones are then selected locally by
+// their exact account ID; a zone whose account cannot be determined stops the audit.
 export async function enumerateZones(requestGet) {
-  const zones = [];
-  let page = 1;
-  let totalPages = null;
-  for (; page <= MAX_PAGES; page += 1) {
-    const body = await requestGet(`/zones?account.id=${ACCOUNT_ID}&per_page=50&page=${page}`);
-    const info = body.result_info;
-    if (!info || typeof info.total_pages !== "number" || typeof info.page !== "number") {
-      throw new RouteAuditStop("Zone enumeration did not return pagination metadata; completeness cannot be proven");
+  let visible;
+  try {
+    visible = await collectPagedResults(
+      (page) => requestGet(`/zones?per_page=50&page=${page}`),
+      "Zone enumeration",
+      { maximumPages: MAX_PAGES },
+    );
+  } catch (error) {
+    if (error instanceof RouteAuditStop) throw error;
+    throw new RouteAuditStop(error instanceof Error ? error.message : "Zone enumeration failed; completeness cannot be proven");
+  }
+  for (const zone of visible) {
+    if (typeof zone?.account?.id !== "string" || zone.account.id.length === 0) {
+      throw new RouteAuditStop(`Zone ${String(zone?.id)} does not report its account; the audited zone set is ambiguous`);
     }
-    if (info.page !== page) throw new RouteAuditStop("Zone enumeration returned an unexpected page index; state is ambiguous");
-    totalPages = info.total_pages;
-    zones.push(...body.result);
-    if (page >= totalPages) break;
   }
-  if (totalPages === null) throw new RouteAuditStop("Zone enumeration produced no pagination metadata");
-  if (page > MAX_PAGES) throw new RouteAuditStop("Zone enumeration did not terminate; completeness cannot be proven");
-  for (const zone of zones) {
-    if (typeof zone?.id !== "string" || zone.id.length === 0) throw new RouteAuditStop("A zone record is missing its identifier; state is ambiguous");
-  }
-  return zones;
+  return visible.filter((zone) => zone.account.id === ACCOUNT_ID);
 }
 
 export async function auditZoneRoutes(requestGet, zoneId) {
