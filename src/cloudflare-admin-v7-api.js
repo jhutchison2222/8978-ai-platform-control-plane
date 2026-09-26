@@ -171,11 +171,12 @@ export class CloudflareAdminV7Api {
     );
   }
 
-  // Documented page/per_page pagination with the documented name filter for the pinned token name.
+  // Every service token in the account, by documented page/per_page pagination with no search filter.
+  // Cloudflare documents total_count as the total without search parameters, so only the unfiltered
+  // population lets the strict collector prove completeness; callers filter by exact name locally.
   async listAccessServiceTokens() {
-    const name = encodeURIComponent(CLOUDFLARE_ADMIN_V7.accessServiceTokenName);
     return collectPagedResults(
-      (page) => this.#request("GET", this.#accountPath(`/access/service_tokens?name=${name}&page=${page}&per_page=50`), { envelope: true }),
+      (page) => this.#request("GET", this.#accountPath(`/access/service_tokens?page=${page}&per_page=50`), { envelope: true }),
       "Access service-token listing",
     );
   }

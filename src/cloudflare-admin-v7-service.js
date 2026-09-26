@@ -337,11 +337,23 @@ export class CloudflareAdminV7Service {
     if (!this.custodian) throw new Error("Credential custodian is required before creating a service token");
     const existing = await this.#pinnedNameServiceTokens();
     if (existing.length > 0) throw new Error("Development Access service-token state already exists or is ambiguous; automatic retry is prohibited");
-    // Exactly one creation POST. The client secret stays in this request-local value only.
-    const created = await this.api.createAccessServiceToken(durationHours);
+    // Exactly one creation POST. The client secret stays in this request-local value only. A thrown
+    // or ambiguous POST may still have created a token, so it is reported as partial state; no error
+    // detail or response body is carried into the message.
+    let created;
+    try {
+      created = await this.api.createAccessServiceToken(durationHours);
+    } catch {
+      throw new Error(
+        "Access service-token creation POST failed or was ambiguous and may have created a token; the credential was not stored; " +
+        "stop without retry or cleanup; partial state requires owner review",
+      );
+    }
+    // name is optional in the documented creation response: if present it must be the pinned name,
+    // and the exact-ID read and complete listing below prove the pinned name before any custody.
     const isText = (value) => typeof value === "string" && value.length > 0;
     if (!isText(created?.id) || !isText(created?.client_id) || !isText(created?.client_secret) ||
-        created?.name !== CLOUDFLARE_ADMIN_V7.accessServiceTokenName ||
+        (created?.name !== undefined && created.name !== CLOUDFLARE_ADMIN_V7.accessServiceTokenName) ||
         (created?.enabled !== undefined && created.enabled !== true)) {
       throw new Error(
         "Cloudflare returned a partial or mismatched Access service-token creation result; the credential was not stored; " +
@@ -384,7 +396,7 @@ export class CloudflareAdminV7Service {
     return {
       ok: true,
       created: true,
-      token: { id: created.id, name: created.name, duration: created.duration, expiresAt: verified.expiresAt },
+      token: { id: created.id, name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName, duration: created.duration, expiresAt: verified.expiresAt },
       credential: receipt,
     };
   }
@@ -409,8 +421,8 @@ export class CloudflareAdminV7Service {
     return { expiresAt: exact.expires_at };
   }
 
-  // Every token carrying the pinned name, from the complete paginated name-filtered listing. The
-  // exact name is re-applied, so a looser server-side match can never widen the result.
+  // Every token carrying the pinned name, filtered by exact equality from the complete, unfiltered,
+  // strictly paginated account listing. Differently named tokens count toward completeness only.
   async #pinnedNameServiceTokens() {
     return asList(await this.api.listAccessServiceTokens()).filter((token) => token?.name === CLOUDFLARE_ADMIN_V7.accessServiceTokenName);
   }

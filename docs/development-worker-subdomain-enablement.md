@@ -35,17 +35,24 @@ the current time, or nothing is stored; the custodian re-checks the same rule be
 slot. At retrieval a null, missing, empty, numeric, malformed, or expired `expiresAt` is refused —
 an unknown expiry is never treated as unexpiring.
 
-Access service tokens are enumerated completely with the documented `name` filter and
-`page`/`per_page` pagination, failing closed on missing, inconsistent, repeated, or truncated
-metadata. Access protection and phase 8 require exactly one pinned-name token, and it must carry
-the exact supplied and custody-bound token ID.
+Access service tokens are enumerated as the complete, **unfiltered** account listing
+(`GET /accounts/{account_id}/access/service_tokens?page=N&per_page=50`, with no `name` or `search`
+parameter), failing closed on missing, inconsistent, repeated, or truncated metadata. Cloudflare
+documents `result_info.total_count` as the total available without search parameters, so only the
+unfiltered population lets `total_count` prove completeness. The pinned-name set is then taken
+locally by exact equality (`token.name === "8978-ai-control-plane-dev-canary"`); differently named
+tokens never match but still count toward completeness. Creation, the pre- and post-custody
+read-backs, Access protection, and phase 8 all use this one enumeration. Access protection and
+phase 8 require exactly one pinned-name token, and it must carry the exact supplied and
+custody-bound token ID.
 
 Service-token creation runs in this order, with exactly one POST:
 
 1. The complete pinned-name listing must show zero tokens; otherwise creation is refused.
 2. One creation POST. The returned client secret is held only in request-local memory. The response
-   must carry a non-empty token ID, client ID, and client secret, the exact pinned name, and, if
-   reported, `enabled: true`.
+   must carry a non-empty token ID, client ID, and client secret, and, if reported, the exact pinned
+   name and `enabled: true`. `name` is optional in the documented creation response; the pinned name
+   is always proven by step 3 before custody.
 3. Read-only verification before custody: `GET /accounts/{account_id}/access/service_tokens/{id}`
    must return the created ID, the pinned name, the created client ID, `enabled: true` if reported,
    and a strict future `expires_at`; the complete pinned-name listing must contain exactly that one
@@ -53,11 +60,13 @@ Service-token creation runs in this order, with exactly one POST:
 4. Only then does the custodian store the client ID, client secret, and the read-back `expiresAt`.
 5. After custody, the complete listing must still show exactly that one pinned-name token.
 
-**Partial state requiring owner review.** Any failure after step 2 — a partial or mismatched
-creation response, a failed or mismatched read-back, an invalid expiry, a duplicate or missing
-pinned-name token, a custody failure, or a failed post-custody read-back — leaves a created service
-token in Cloudflare. The call stops with an error ending in `partial state requires owner review`
-and states whether the credential was stored. It never retries, creates a second token, stores an
+**Partial state requiring owner review.** Any failure from step 2 onward — a creation POST that
+throws or is ambiguous (it may still have created a token), a partial or mismatched creation
+response, a failed or mismatched read-back, an invalid expiry, a duplicate or missing pinned-name
+token, a custody failure, or a failed post-custody read-back — may leave a created service token in
+Cloudflare. The call stops with an error ending in `partial state requires owner review` and states
+whether the credential was stored; a failed or ambiguous POST carries no error detail or response
+body into the message. It never retries, creates a second token, stores an
 unverified credential, deletes or cleans up the token, installs Access, enables the subdomain, or
 runs the canary, and no error contains the client secret. A later invocation finds the existing
 pinned-name token and refuses to create another; the owner resolves the token in the Cloudflare

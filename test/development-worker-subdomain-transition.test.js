@@ -1085,6 +1085,92 @@ test("a documented creation response without expires_at, followed by a valid rea
   assert.ok(!JSON.stringify(outcome.value).includes(CREATED_CLIENT_ID));
 });
 
+test("a creation response that omits the optional name succeeds once the read-back proves the pinned name", async () => {
+  const harness = creationHarness({ create: () => { const response = createResponse(); delete response.name; return response; } });
+  const outcome = await harness.run();
+  assert.equal(outcome.error, undefined);
+  assert.equal(outcome.value.token.name, CLOUDFLARE_ADMIN_V7.accessServiceTokenName);
+  assert.equal(harness.custody.length, 1);
+  assert.deepEqual(harness.writes, ["createAccessServiceToken"]);
+});
+
+test("a creation response carrying the correct name succeeds", async () => {
+  const harness = creationHarness({ create: createResponse({ name: CLOUDFLARE_ADMIN_V7.accessServiceTokenName }) });
+  const outcome = await harness.run();
+  assert.equal(outcome.error, undefined);
+  assert.equal(harness.custody.length, 1);
+});
+
+test("a creation response without a name still stops before custody when the exact read shows a different name", async () => {
+  const harness = creationHarness({
+    create: () => { const response = createResponse(); delete response.name; return response; },
+    exact: () => exactToken({ name: "another-token" }),
+  });
+  assertStoppedAfterSingleCreate(harness, await harness.run(), READ_BACK_STOP("the exact token read does not carry the pinned name"));
+});
+
+test("a thrown or ambiguous creation POST stops as possible partial state without detail, and a later run refuses duplication", async () => {
+  const harness = creationHarness({
+    create: () => { throw new Error(`Cloudflare API request failed: {"result":{"client_secret":"${CREATED_SECRET}"}}`); },
+  });
+  const outcome = await harness.run();
+  assertStoppedAfterSingleCreate(harness, outcome,
+    /Access service-token creation POST failed or was ambiguous and may have created a token; the credential was not stored; stop without retry or cleanup; partial state requires owner review$/u);
+  assert.ok(!outcome.error.message.includes("client_secret"), "no raw response body may appear in the error");
+  assert.ok(!outcome.error.message.includes("result"), "no raw response body may appear in the error");
+  // The token did land: the next invocation's complete enumeration finds it and refuses.
+  const retry = await harness.run();
+  assert.match(retry.error.message, /already exists or is ambiguous; automatic retry is prohibited/u);
+  assert.deepEqual(harness.writes, ["createAccessServiceToken"], "no second POST");
+  assert.equal(harness.custody.length, 0);
+});
+
+test("the complete creation flow through the real adapter lists every token unfiltered before and after the POST", async () => {
+  const { CloudflareAdminV7Api } = await import("../src/cloudflare-admin-v7-api.js");
+  const others = namedTokens(3, "a");
+  let created = false;
+  const requested = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(40),
+    fetchImpl: async (url, init) => {
+      requested.push({ url: String(url), method: init.method });
+      const { pathname } = new URL(url);
+      const json = (body) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+      if (init.method === "POST" && pathname.endsWith("/access/service_tokens")) {
+        created = true;
+        const { name, ...response } = createResponse();
+        void name;
+        return json({ success: true, errors: [], messages: [], result: response });
+      }
+      if (init.method === "GET" && pathname.endsWith(`/access/service_tokens/${TOKEN_ID}`)) {
+        return json({ success: true, errors: [], messages: [], result: exactToken() });
+      }
+      if (init.method === "GET" && pathname.endsWith("/access/service_tokens")) {
+        const items = created ? [...others, { id: TOKEN_ID, name: TOKEN_NAME, client_id: CREATED_CLIENT_ID }] : others;
+        return json(docPage(items, 1, 50, items.length));
+      }
+      throw new Error(`unexpected request ${init.method} ${pathname}`);
+    },
+  });
+  const custody = [];
+  const service = new CloudflareAdminV7Service({
+    api, now: clock,
+    custodian: { async store(kind, value) { custody.push({ kind, value }); return { receiptId: ACCESS_RECEIPT }; } },
+  });
+  const result = await service.createServiceToken({ approval: WRITE_APPROVALS.createServiceToken });
+  assert.equal(result.created, true);
+  assert.equal(custody.length, 1);
+  assert.equal(custody[0].value.expiresAt, "2026-09-26T00:00:00Z");
+  assert.deepEqual(requested.map(({ method, url }) => `${method} ${new URL(url).pathname.replace(/^.*\/access/u, "/access")}${new URL(url).search}`), [
+    "GET /access/service_tokens?page=1&per_page=50",
+    "POST /access/service_tokens",
+    `GET /access/service_tokens/${TOKEN_ID}`,
+    "GET /access/service_tokens?page=1&per_page=50",
+    "GET /access/service_tokens?page=1&per_page=50",
+  ], "before-creation, pre-custody, and post-custody listings are all complete and unfiltered");
+  assertUnfilteredTokenRequests(requested.filter(({ method }) => method === "GET"));
+});
+
 test("a read-back without an enabled field still succeeds when every documented identity matches", async () => {
   const harness = creationHarness({ exact: () => { const token = exactToken(); delete token.enabled; return token; } });
   const outcome = await harness.run();
@@ -1100,7 +1186,6 @@ for (const [label, create] of [
   ["no client secret", createResponse({ client_secret: undefined })],
   ["an empty client secret", createResponse({ client_secret: "" })],
   ["a different name", createResponse({ name: "another-token" })],
-  ["no name", createResponse({ name: undefined })],
   ["a disabled token", createResponse({ enabled: false })],
   ["a null result", null],
 ]) {
@@ -1235,22 +1320,88 @@ async function tokenListing(pages) {
   return { listAccessServiceTokens: () => api.listAccessServiceTokens(), requested };
 }
 
-test("the service-token listing uses the documented name filter and page/per_page on every page", async () => {
+// Documented service-token listing envelope: result_info.total_count describes the whole account
+// (it ignores search parameters), so the listing is unfiltered and filtered by exact name locally.
+const docPage = (items, page, perPage, totalCount) => ({
+  success: true, errors: [], messages: [], result: items,
+  result_info: { page, per_page: perPage, count: items.length, total_count: totalCount, total_pages: Math.ceil(totalCount / perPage) },
+});
+const namedTokens = (count, prefix) => Array.from({ length: count }, (_, index) => tokenItem(`${prefix}-${index}`, `other-token-${prefix}-${index}`));
+const UNFILTERED_TOKEN_QUERY = /^\?page=\d+&per_page=50$/u;
+const assertUnfilteredTokenRequests = (requested, expectedPages) => {
+  const tokenRequests = requested.filter(({ url }) => new URL(url).pathname.endsWith("/access/service_tokens"));
+  assert.ok(tokenRequests.length > 0, "the service-token listing was requested");
+  for (const { url, method } of tokenRequests) {
+    assert.equal(method, "GET");
+    assert.match(new URL(url).search, UNFILTERED_TOKEN_QUERY, `service-token listing is unfiltered and paginated: ${url}`);
+    assert.ok(!url.includes("name="), `service-token listing carries no name filter: ${url}`);
+  }
+  if (expectedPages) assert.deepEqual(tokenRequests.map(({ url }) => Number(new URL(url).searchParams.get("page"))), expectedPages);
+};
+
+test("the service-token listing is unfiltered and uses page/per_page on every page", async () => {
   const { listAccessServiceTokens, requested } = await tokenListing([
     appPage(fillerTokens(2, "a"), 1, 2, 3),
     appPage([tokenItem(TOKEN_ID)], 2, 2, 3),
   ]);
   const tokens = await listAccessServiceTokens();
-  assert.equal(tokens.length, 3);
-  assert.deepEqual(requested.map(({ url }) => new URL(url).search), [
-    `?name=${encodeURIComponent(TOKEN_NAME)}&page=1&per_page=50`,
-    `?name=${encodeURIComponent(TOKEN_NAME)}&page=2&per_page=50`,
-  ]);
-  assert.ok(requested.every(({ method }) => method === "GET"));
+  assert.equal(tokens.length, 3, "differently named tokens are part of the complete listing");
+  assert.deepEqual(requested.map(({ url }) => new URL(url).search), ["?page=1&per_page=50", "?page=2&per_page=50"]);
+  assertUnfilteredTokenRequests(requested, [1, 2]);
 });
 
+const exactNameDecisions = [
+  ["one exact-name match with an account-wide total_count greater than one",
+    [docPage([...namedTokens(3, "a"), tokenItem(TOKEN_ID)], 1, 50, 4)], { matches: [TOKEN_ID] }],
+  ["zero exact-name matches while other service tokens exist",
+    [docPage(namedTokens(5, "a"), 1, 50, 5)], { matches: [] }],
+  ["an exact-name match on a later page among differently named tokens",
+    [docPage(namedTokens(50, "a"), 1, 50, 53), docPage([...namedTokens(2, "b"), tokenItem(TOKEN_ID)], 2, 50, 53)], { matches: [TOKEN_ID] }],
+  ["a near-miss name that is not an exact match",
+    [docPage([tokenItem("n1", `${TOKEN_NAME} `), tokenItem("n2", TOKEN_NAME.toUpperCase()), tokenItem("n3", `${TOKEN_NAME}-copy`)], 1, 50, 3)], { matches: [] }],
+  ["duplicate exact-name matches across pages",
+    [docPage([...namedTokens(49, "a"), tokenItem(TOKEN_ID)], 1, 50, 51), docPage([tokenItem(OTHER_TOKEN_ID)], 2, 50, 51)], { matches: [TOKEN_ID, OTHER_TOKEN_ID] }],
+];
+
+for (const [label, pages, { matches }] of exactNameDecisions) {
+  test(`complete unfiltered enumeration with local exact-name filtering handles ${label}`, async () => {
+    const { listAccessServiceTokens, requested } = await tokenListing(pages);
+    const all = await listAccessServiceTokens();
+    assert.equal(all.length, pages[0].result_info.total_count, "every token in the account is collected");
+    assert.deepEqual(all.filter((token) => token.name === TOKEN_NAME).map(({ id }) => id), matches);
+    assertUnfilteredTokenRequests(requested, pages.map((_, index) => index + 1));
+  });
+}
+
+const unfilteredListingFailures = [
+  ["the same ID repeated across pages",
+    [docPage([...namedTokens(49, "a"), tokenItem(TOKEN_ID)], 1, 50, 51), docPage([tokenItem(TOKEN_ID)], 2, 50, 51)], /more than once/u],
+  ["an account-wide total_count that does not match the collected list",
+    [docPage([...namedTokens(3, "a"), tokenItem(TOKEN_ID)], 1, 50, 5)], /collected 4 items but total_count is 5/u],
+  ["a truncated page before the final page",
+    [docPage(namedTokens(49, "a"), 1, 50, 51), docPage([tokenItem(TOKEN_ID)], 2, 50, 51)], /truncated before the final page/u],
+  ["missing result_info",
+    [{ success: true, errors: [], messages: [], result: [tokenItem(TOKEN_ID)] }], /did not return pagination metadata/u],
+  ["a string total_count",
+    [{ ...docPage([tokenItem(TOKEN_ID)], 1, 50, 1), result_info: { page: 1, per_page: 50, count: 1, total_count: "1" } }], /invalid total_count/u],
+  ["contradictory total_pages",
+    [{ ...docPage([tokenItem(TOKEN_ID)], 1, 50, 1), result_info: { page: 1, per_page: 50, count: 1, total_count: 1, total_pages: 3 } }], /conflicts with 1 derived/u],
+  ["a count that does not equal the returned items",
+    [{ ...docPage([tokenItem(TOKEN_ID)], 1, 50, 1), result_info: { page: 1, per_page: 50, count: 2, total_count: 1 } }], /count does not equal the returned items/u],
+  ["changing totals between pages",
+    [docPage(namedTokens(50, "a"), 1, 50, 51), docPage([tokenItem(TOKEN_ID)], 2, 50, 52)], /totals changed between pages/u],
+];
+
+for (const [label, pages, pattern] of unfilteredListingFailures) {
+  test(`the unfiltered service-token enumeration fails closed on ${label}`, async () => {
+    const { listAccessServiceTokens, requested } = await tokenListing(pages);
+    await assert.rejects(() => listAccessServiceTokens(), pattern);
+    assertUnfilteredTokenRequests(requested);
+  });
+}
+
 test("phase 8 finds the pinned token on a later page and proceeds only with exactly one match", async () => {
-  const { listAccessServiceTokens } = await tokenListing([appPage(fillerTokens(2, "a"), 1, 2, 3), appPage([tokenItem(TOKEN_ID)], 2, 2, 3)]);
+  const { listAccessServiceTokens, requested } = await tokenListing([appPage(fillerTokens(2, "a"), 1, 2, 3), appPage([tokenItem(TOKEN_ID)], 2, 2, 3)]);
   const api = baseApi({ listAccessServiceTokens });
   const service = new CloudflareAdminV7Service({
     reviewedDeployment: REVIEWED, api, custodian: realCustodian(), now: clock,
@@ -1258,6 +1409,42 @@ test("phase 8 finds the pinned token on a later page and proceeds only with exac
   });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
   assert.equal(api.calls.setWorkerSubdomain, 1);
+  assertUnfilteredTokenRequests(requested, [1, 2]);
+});
+
+test("phase 8 stops before exposure on a duplicate exact-name token hidden among differently named tokens on a later page", async () => {
+  const { listAccessServiceTokens, requested } = await tokenListing([
+    docPage([...namedTokens(49, "a"), tokenItem(TOKEN_ID)], 1, 50, 52),
+    docPage([tokenItem("b-0", "other-token-b-0"), tokenItem(OTHER_TOKEN_ID)], 2, 50, 52),
+  ]);
+  await assertPhase8StopsWithoutExposure({ api: baseApi({ listAccessServiceTokens }) }, /service token identity is ambiguous/u);
+  assertUnfilteredTokenRequests(requested, [1, 2]);
+});
+
+test("Access setup enumerates every token unfiltered and stops on a later-page exact-name duplicate", async () => {
+  const { listAccessServiceTokens, requested } = await tokenListing([
+    docPage([...namedTokens(49, "a"), tokenItem(TOKEN_ID)], 1, 50, 51),
+    docPage([tokenItem(OTHER_TOKEN_ID)], 2, 50, 51),
+  ]);
+  let creates = 0;
+  const service = new CloudflareAdminV7Service({
+    api: { ...baseApi(), listAccessServiceTokens, async createAccessApplication() { creates += 1; return {}; } },
+  });
+  await assert.rejects(() => service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: TOKEN_ID, workerId: WORKER_ID }), /identity is ambiguous/u);
+  assert.equal(creates, 0);
+  assertUnfilteredTokenRequests(requested, [1, 2]);
+});
+
+test("Access setup accepts exactly one exact-name token among many differently named tokens", async () => {
+  const { listAccessServiceTokens, requested } = await tokenListing([
+    docPage(namedTokens(50, "a"), 1, 50, 51),
+    docPage([tokenItem(TOKEN_ID)], 2, 50, 51),
+  ]);
+  const service = new CloudflareAdminV7Service({ api: { ...baseApi(), listAccessServiceTokens } });
+  const result = await service.ensureAccessProtection({ approval: WRITE_APPROVALS.ensureAccess, serviceTokenId: TOKEN_ID, workerId: WORKER_ID });
+  assert.equal(result.ok, true);
+  assert.equal(result.created, false, "the existing verified Worker-level application is confirmed, not recreated");
+  assertUnfilteredTokenRequests(requested, [1, 2]);
 });
 
 const tokenListingFailures = [
