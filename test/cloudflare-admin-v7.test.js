@@ -120,11 +120,20 @@ test("preflight proves exact resource identities, no Queue consumer, and require
       ], latest: { id: "deployment-id" } }; },
       async listQueues() { return [{ queue_id: "queue-id", queue_name: CLOUDFLARE_ADMIN_V7.queueName, consumers_total_count: 0 }]; },
       async listWorkflows() { return [{ id: "workflow-id", name: CLOUDFLARE_ADMIN_V7.workflowName, class_name: CLOUDFLARE_ADMIN_V7.workflowClass, script_name: CLOUDFLARE_ADMIN_V7.workerName }]; },
-      async listAccessApplications() { return []; },
+      async listAccessApplications() { return [
+        { id: "worker-app", name: CLOUDFLARE_ADMIN_V7.accessApplicationName, type: "self_hosted", destinations: [{ type: "worker", worker_id: WORKER_ID }], policies: ["internal"] },
+        { id: "unrelated-app", name: "production admin", type: "self_hosted", destinations: [{ type: "public", uri: "admin.example.com" }] },
+        { id: "other-worker-app", name: "other worker", type: "self_hosted", destinations: [{ type: "worker", worker_id: "f".repeat(32) }] },
+      ]; },
       async listWorkerSecrets() { return [{ name: CLOUDFLARE_ADMIN_V7.serviceAuthSecretName, type: "secret_text", text: "not-returned" }]; },
     },
   });
   const result = await service.preflight();
+  // Read scope sees only the Worker-level application for the verified Worker ID, with metadata fields only.
+  assert.deepEqual(result.access, [
+    { id: "worker-app", name: CLOUDFLARE_ADMIN_V7.accessApplicationName, type: "self_hosted", destinations: [{ type: "worker", worker_id: WORKER_ID }] },
+  ]);
+  assert.doesNotMatch(JSON.stringify(result), /unrelated-app|production admin|admin\.example\.com|other-worker-app/u);
   assert.equal(result.target.workflow.name, CLOUDFLARE_ADMIN_V7.workflowName);
   assert.equal(result.target.queue.id, "queue-id");
   assert.equal(result.worker.bindings.some(({ type }) => type === "secret_text"), false);
@@ -211,6 +220,22 @@ function preflightApi(domains) {
     async listWorkerDomains() { return domains; },
   };
 }
+
+test("pre-bootstrap preflight returns no Access applications from the account-wide listing", async () => {
+  const result = await new CloudflareAdminV7Service({
+    api: {
+      ...preflightApi(null),
+      async listWorkers() { return []; },
+      async listAccessApplications() { return [
+        { id: "unrelated-app", name: "production admin", type: "self_hosted", destinations: [{ type: "public", uri: "admin.example.com" }] },
+        { id: "other-worker-app", name: "other worker", type: "self_hosted", destinations: [{ type: "worker", worker_id: "f".repeat(32) }] },
+      ]; },
+    },
+  }).preflight();
+  assert.equal(result.phase, "pre_bootstrap");
+  assert.deepEqual(result.access, []);
+  assert.doesNotMatch(JSON.stringify(result), /unrelated-app|production admin|admin\.example\.com|other-worker-app/u);
+});
 
 test("the connector requests Worker domains with the documented service filter and keeps the full envelope", async () => {
   const requests = [];
@@ -736,7 +761,14 @@ test("canary stops after the first unexpected result and does not retry", async 
     workerId: WORKER_ID,
     keyId: "canary-2026-09-16",
     activatedVersionId,
-  }), /canary sequence 1 returned HTTP 500/);
+  }), (error) => {
+    // The failure keeps the canary detail and states the confirmed exposure state.
+    assert.match(error.message, /^Canary failed after exactly one subdomain enablement POST: canary sequence 1 returned HTTP 500, expected 401; /u);
+    assert.match(error.message, /read-back confirmed enabled=true previews_enabled=false, so the Worker is reachable and remains Access-protected; /u);
+    assert.match(error.message, /no retry, cleanup, rollback, or restore was attempted$/u);
+    assert.doesNotMatch(error.message, /client|secret|s{43}/u);
+    return true;
+  });
   // One canary request, one enablement POST, and no retry of either.
   assert.equal(calls, 1);
   assert.equal(subdomainPosts, 1);

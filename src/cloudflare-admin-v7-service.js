@@ -252,7 +252,11 @@ export class CloudflareAdminV7Service {
     const queueHasNoConsumers = queue.consumers_total_count === 0 || (Array.isArray(queue.consumers) && queue.consumers.length === 0);
     if (!queueHasNoConsumers) throw new Error("Pinned Queue consumer state is non-empty or unavailable");
     const workerId = await this.#resolveImmutableWorkerId();
-    const access = asList(accessApplications).map(({ id, name, type, destinations }) => ({ id, name, type, destinations }));
+    // Read scope sees only the Worker-level application for the verified immutable Worker ID. The
+    // account-wide listing is used internally for overlap detection and is never returned.
+    const access = workerId === null ? [] : asList(accessApplications)
+      .filter((item) => Array.isArray(item?.destinations) && item.destinations.some((destination) => isWorkerDestinationFor(destination, workerId)))
+      .map(({ id, name, type, destinations }) => ({ id, name, type, destinations }));
 
     if (workerId === null) {
       return {
@@ -776,12 +780,22 @@ export class CloudflareAdminV7Service {
     }
 
     // 5. The canary runs only after an unambiguous successful read-back, with the custody read in step 2.
-    const evidence = await this.#runCanary({
-      access,
-      principalId: principal.principalId,
-      keyId: principal.keyId,
-      secret: principal.secret,
-    });
+    // A canary failure still reports the confirmed exposure state, like every earlier stop.
+    let evidence;
+    try {
+      evidence = await this.#runCanary({
+        access,
+        principalId: principal.principalId,
+        keyId: principal.keyId,
+        secret: principal.secret,
+      });
+    } catch (error) {
+      throw new Error(
+        `Canary failed after exactly one subdomain enablement POST: ${error instanceof Error ? error.message : "unknown failure"}; ` +
+        `read-back confirmed enabled=${String(readBack.enabled)} previews_enabled=${String(readBack.previews_enabled)}, ` +
+        "so the Worker is reachable and remains Access-protected; the canary was not repeated and no retry, cleanup, rollback, or restore was attempted",
+      );
+    }
     return {
       ok: true,
       attempts: 1,
