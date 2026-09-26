@@ -71,8 +71,10 @@ export function createReadOnlyRequester(token, fetchImpl = fetch) {
 // Every zone visible to the credential, by the shared strict collector: total_count, per_page,
 // truncation, repeated-ID, and changing-total checks all apply. No account.id filter is sent,
 // because Cloudflare documents total_count as the total without search parameters, so only the
-// unfiltered population lets the collector prove completeness. Zones are then selected locally by
-// their exact account ID; a zone whose account cannot be determined stops the audit.
+// unfiltered population lets the collector prove completeness. The credential must be scoped to
+// exactly the authorized account: a zone whose account cannot be determined, any zone of another
+// account, or no zone at all stops the audit, because an empty result cannot be told apart from a
+// credential scoped to the wrong account and must never pass as a completed audit.
 export async function enumerateZones(requestGet) {
   let visible;
   try {
@@ -90,7 +92,19 @@ export async function enumerateZones(requestGet) {
       throw new RouteAuditStop(`Zone ${String(zone?.id)} does not report its account; the audited zone set is ambiguous`);
     }
   }
-  return visible.filter((zone) => zone.account.id === ACCOUNT_ID);
+  const foreign = visible.filter((zone) => zone.account.id !== ACCOUNT_ID).length;
+  if (foreign > 0) {
+    throw new RouteAuditStop(
+      `The route-audit credential can see ${foreign} zone(s) outside account ${ACCOUNT_ID}; it must be scoped to exactly the authorized account`,
+    );
+  }
+  if (visible.length === 0) {
+    throw new RouteAuditStop(
+      `The route-audit credential can see no zone of account ${ACCOUNT_ID}; an empty result cannot be distinguished from a credential ` +
+      "scoped to the wrong account, so the audit cannot pass and requires owner review",
+    );
+  }
+  return visible;
 }
 
 export async function auditZoneRoutes(requestGet, zoneId) {

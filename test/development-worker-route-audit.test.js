@@ -94,11 +94,24 @@ test("audit paginates every zone page unfiltered and inspects every zone", async
   assert.deepEqual(inspected, ["zone1", "zone2", "zone3"]);
 });
 
-test("audit accepts the documented account-wide total_count and audits only zones of the pinned account", async () => {
+test("a credential that can also see another account's zones stops before any route is inspected", async () => {
   const { requestGet, inspected } = zoneDataset([zone("zone1"), zone("other1", "f".repeat(32)), zone("zone2"), zone("other2", "f".repeat(32)), zone("zone3")]);
-  const summary = await runRouteAudit({ requestGet });
-  assert.equal(summary.zonesEnumerated, 3);
-  assert.deepEqual(inspected, ["zone1", "zone2", "zone3"]);
+  await assert.rejects(() => runRouteAudit({ requestGet }),
+    (error) => error instanceof RouteAuditStop && /can see 2 zone\(s\) outside account de5e0273347b0b4c5f8f4e554aa2288f; it must be scoped to exactly the authorized account/u.test(error.message));
+  assert.deepEqual(inspected, []);
+});
+
+test("a credential scoped to the wrong account never passes as a completed audit", async () => {
+  const { requestGet, inspected } = zoneDataset([zone("wrong1", "f".repeat(32)), zone("wrong2", "f".repeat(32))]);
+  await assert.rejects(() => runRouteAudit({ requestGet }), (error) => error instanceof RouteAuditStop && /outside account/u.test(error.message));
+  assert.deepEqual(inspected, []);
+});
+
+test("an empty zone listing cannot pass, because it is indistinguishable from a misscoped credential", async () => {
+  const { requestGet, inspected } = zoneDataset([]);
+  await assert.rejects(() => runRouteAudit({ requestGet }),
+    (error) => error instanceof RouteAuditStop && /can see no zone of account .*cannot be distinguished from a credential scoped to the wrong account/u.test(error.message));
+  assert.deepEqual(inspected, []);
 });
 
 test("a matching route in a zone on a later page stops the audit", async () => {
@@ -144,7 +157,7 @@ test("an unrelated route in the same zone does not fail the audit", async () => 
 
 test("the audit never records or prints the temporary credential", async () => {
   const requestGet = createReadOnlyRequester("s3cret-token-value-that-is-long", fakeFetch((url) => {
-    if (url.pathname === "/client/v4/zones") return { payload: zonePage(1, 1, []) };
+    if (url.pathname === "/client/v4/zones") return { payload: zonePage(1, 1, [zone("zone1")]) };
     return { payload: { success: true, result: [] } };
   }));
   const summary = await runRouteAudit({ requestGet });

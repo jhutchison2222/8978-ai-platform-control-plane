@@ -32,8 +32,13 @@ record from that output against `schemas/development-worker-route-audit-record.s
 1. `GET /zones?per_page=50&page=N` — every zone visible to the credential, with no search filter,
    collected by the same strict pagination rule as the connector. Cloudflare documents
    `total_count` as the total without search parameters, so only the unfiltered population can
-   prove completeness; zones are then selected locally by their exact `account.id`.
-2. `GET /zones/{zone_id}/workers/routes` — for every zone of the authorized account
+   prove completeness. Every visible zone must report `account.id` equal to the authorized account.
+2. `GET /zones/{zone_id}/workers/routes` — for every enumerated zone
+
+The credential must be scoped to exactly the authorized account. A zone from any other account stops
+the audit, and so does an empty zone listing: zero visible zones cannot be distinguished from a
+credential scoped to the wrong account, so it never passes as a completed audit. An authorized
+account with genuinely no zones therefore stops here and requires owner review.
 
 ## Required outcome
 
@@ -46,6 +51,8 @@ Zero routes whose `script` equals `8978-ai-control-plane-dev`.
   `total_pages` that disagrees with `total_count` and `per_page`, a truncated non-final page, a
   repeated zone ID, totals that change between pages, or a collected count below `total_count`
 - any zone does not report its account
+- any visible zone belongs to another account
+- no zone of the authorized account is visible
 - any route response is missing, rejected, truncated, or ambiguous
 - any zone is left uninspected
 - any route targets the pinned Worker
