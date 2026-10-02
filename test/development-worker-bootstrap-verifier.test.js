@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
@@ -47,6 +48,83 @@ test("verifier is GET-only, writes no record, and never lists a zone-scoped rout
   assert.ok(BOOTSTRAP_VERIFIER_CONTRACT.prohibitedEndpoints.some((e) => e.includes("/routes")));
   assert.ok(!/"(POST|PUT|PATCH|DELETE)"/u.test(source));
   assert.ok(!/writeFile|appendFile/u.test(source));
+});
+
+// A true end-to-end run of runBootstrapVerification(), mocking only the Cloudflare side in each
+// endpoint's documented real response shape (not the shape that happens to be convenient for a
+// unit test in isolation). verifyLocalProvenance() is NOT mocked: it runs against this actual
+// checkout's real HEAD and real tracked file digests, which this repository's own protected-file
+// invariants (enforced elsewhere by validate-artifacts.js and the target-runtime closure check)
+// guarantee will match the pinned manifest. This is the only test that would have caught the
+// deployments-endpoint envelope shape bug: the documented response for
+// GET .../workers/scripts/{name}/deployments is { deployments: [...] }, not a bare array (confirmed
+// against the official Cloudflare SDK's typed response and against wrangler's own production
+// parsing of this exact endpoint), and every other existing test exercises selectActiveDeployment()
+// directly with an already-unwrapped array, never through the real envelope.
+test("a full successful run succeeds end-to-end against every endpoint's documented real response shape", async () => {
+  const realHead = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const annotation = `${CLOUDFLARE_ADMIN_V7.bootstrapAnnotationPrefix}:${TARGET_WORKER_COMMIT}:${CLOUDFLARE_ADMIN_V7.bootstrapConfigurationSha256}`;
+  const routes = {
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/tokens/verify`]: { status: "active" },
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts`]: [{ id: CLOUDFLARE_ADMIN_V7.workerName, tag: WORKER_ID }],
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/workers/${WORKER_ID}`]: { id: WORKER_ID, name: CLOUDFLARE_ADMIN_V7.workerName },
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/services/${CLOUDFLARE_ADMIN_V7.workerName}`]: { default_environment: { script: { migration_tag: "v2" } } },
+    // Documented real shape: an object with a `deployments` key, never a bare array.
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/deployments`]: {
+      deployments: [{ id: "deployment-1", is_active: true, versions: [{ version_id: VERSION_ID, percentage: 100 }] }],
+    },
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`]: {
+      id: VERSION_ID,
+      annotations: { "workers/message": annotation },
+      resources: {
+        bindings: [
+          { name: "AUTHORITY_DB", type: "d1", id: CLOUDFLARE_ADMIN_V7.d1Id },
+          { name: "ORCHESTRATOR_QUEUE", type: "queue", queue_name: CLOUDFLARE_ADMIN_V7.queueName },
+          { name: "ORCHESTRATOR_WORKFLOW", type: "workflow", workflow_name: CLOUDFLARE_ADMIN_V7.workflowName, class_name: CLOUDFLARE_ADMIN_V7.workflowClass },
+          { name: "SERVICE_AUTH_REPLAY", type: "durable_object_namespace" },
+          { name: "IDEMPOTENCY_STORE", type: "durable_object_namespace" },
+          { name: "OWNER_DECISION_STORE", type: "durable_object_namespace" },
+          { name: "AUDIT_STORE", type: "durable_object_namespace" },
+        ],
+        script: { etag: "etag-123" },
+      },
+    },
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/subdomain`]: { enabled: false, previews_enabled: false },
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/secrets`]: [],
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workflows/${CLOUDFLARE_ADMIN_V7.workflowName}`]: { class_name: CLOUDFLARE_ADMIN_V7.workflowClass, script_name: CLOUDFLARE_ADMIN_V7.workerName },
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/queues`]: [{ queue_name: CLOUDFLARE_ADMIN_V7.queueName, consumers_total_count: 0 }],
+    [`/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/d1/database/${CLOUDFLARE_ADMIN_V7.d1Id}`]: { name: CLOUDFLARE_ADMIN_V7.d1Name, uuid: CLOUDFLARE_ADMIN_V7.d1Id },
+  };
+  const requestGet = async (pathAndQuery, { envelope = false } = {}) => {
+    const path = pathAndQuery.split("?")[0];
+    if (path === `/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/workers`) {
+      const page = Number(new URL(`https://x${pathAndQuery}`).searchParams.get("page"));
+      if (page !== 1) return { success: true, result: [], result_info: { page, per_page: 100, count: 0, total_count: 1, total_pages: 1 } };
+      return { success: true, result: [{ id: WORKER_ID, name: CLOUDFLARE_ADMIN_V7.workerName }], result_info: { page: 1, per_page: 100, count: 1, total_count: 1, total_pages: 1 } };
+    }
+    if (path === `/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/domains`) {
+      return { success: true, result: [], result_info: { page: 1, per_page: 20, count: 0, total_count: 0, total_pages: 0 } };
+    }
+    if (!Object.hasOwn(routes, path)) throw new Error(`unexpected request in test mock: ${pathAndQuery}`);
+    const body = routes[path];
+    return envelope ? { success: true, result: body } : body;
+  };
+  const summary = await runBootstrapVerification({ requestGet, remediationCommit: realHead, expectedBootstrapVersionId: VERSION_ID });
+  assert.equal(summary.workerId, WORKER_ID);
+  assert.equal(summary.migrationTag, "v2");
+  assert.equal(summary.activeDeployment.versionId, VERSION_ID);
+  assert.equal(summary.activeDeployment.percentage, 100);
+  assert.equal(summary.annotation, annotation);
+  assert.equal(summary.customDomainMatches, 0);
+  assert.equal(summary.recordWritten, false);
+});
+
+test("credential status is verified at the account-owned-token endpoint, never the user-token endpoint", () => {
+  assert.equal(BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.length, 13);
+  assert.ok(BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.includes("/accounts/{account_id}/tokens/verify"));
+  assert.ok(!BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.includes("/user/tokens/verify"));
+  assert.ok(/requestGet\(`\/accounts\/\$\{ACCOUNT_ID\}\/tokens\/verify`\)/u.test(source));
+  assert.ok(!/requestGet\(["'`]\/user\/tokens\/verify/u.test(source));
 });
 
 test("the requester issues GET without a body and rejects traversal", async () => {

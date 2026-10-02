@@ -32,7 +32,7 @@ export const BOOTSTRAP_VERIFIER_CONTRACT = Object.freeze({
   permittedMethods: Object.freeze(["GET"]),
   writesRecord: false,
   permittedEndpoints: Object.freeze([
-    "/user/tokens/verify",
+    "/accounts/{account_id}/tokens/verify",
     "/accounts/{account_id}/workers/workers",
     "/accounts/{account_id}/workers/workers/{worker_id}",
     "/accounts/{account_id}/workers/scripts",
@@ -257,7 +257,9 @@ export function verifyLocalProvenance(remediationCommit) {
 export async function runBootstrapVerification({ requestGet, remediationCommit, expectedBootstrapVersionId }) {
   requireBootstrapVersionId(expectedBootstrapVersionId);
   const provenance = verifyLocalProvenance(remediationCommit);
-  const identity = await requestGet("/user/tokens/verify");
+  // This procedure deliberately uses the pinned account-owned bootstrap credential, so credential
+  // status is verified at the account-owned-token endpoint; no fallback to the user-token endpoint.
+  const identity = await requestGet(`/accounts/${ACCOUNT_ID}/tokens/verify`);
   const workers = await listAllWorkers(requestGet);
   const scripts = await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts`);
   const workerId = resolveImmutableWorkerId(workers, scripts);
@@ -267,7 +269,10 @@ export async function runBootstrapVerification({ requestGet, remediationCommit, 
   }
   const service = await requestGet(`/accounts/${ACCOUNT_ID}/workers/services/${WORKER_NAME}`);
   const migrationTag = assertMigrationTag(service);
-  const deployments = await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/deployments`);
+  // Cloudflare's documented envelope for this endpoint is { deployments: [...] }, not a bare array
+  // (confirmed against the official SDK's typed response and against wrangler's own production
+  // parsing of this exact endpoint); the deployments list is destructured out before selection.
+  const { deployments } = await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/deployments`);
   const active = selectActiveDeployment(deployments);
   const activeVersion = assertActiveBootstrapDeployment(active, expectedBootstrapVersionId);
   const latest = await requestGet(`/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}/versions/latest`);
