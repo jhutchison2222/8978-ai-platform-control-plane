@@ -49,6 +49,14 @@ test("verifier is GET-only, writes no record, and never lists a zone-scoped rout
   assert.ok(!/writeFile|appendFile/u.test(source));
 });
 
+test("credential status is verified at the account-owned-token endpoint, never the user-token endpoint", () => {
+  assert.equal(BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.length, 13);
+  assert.ok(BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.includes("/accounts/{account_id}/tokens/verify"));
+  assert.ok(!BOOTSTRAP_VERIFIER_CONTRACT.permittedEndpoints.includes("/user/tokens/verify"));
+  assert.ok(/requestGet\(`\/accounts\/\$\{ACCOUNT_ID\}\/tokens\/verify`\)/u.test(source));
+  assert.ok(!/requestGet\(["'`]\/user\/tokens\/verify/u.test(source));
+});
+
 test("the requester issues GET without a body and rejects traversal", async () => {
   let observed;
   const requestGet = createReadOnlyRequester("x".repeat(40), async (url, init) => {

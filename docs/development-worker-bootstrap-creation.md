@@ -87,7 +87,10 @@ The three commands above are pinned exactly, as schema `const` values, in
 checked for exact equality by `npm run check`. Any changed flag, target, configuration path, or
 omitted safety option fails validation.
 
-GET-only across thirteen endpoints. It confirms the account and Worker, the immutable Worker ID and
+GET-only across thirteen endpoints. The credential-status check uses the account-owned API-token
+verification endpoint (`GET /accounts/{account_id}/tokens/verify`), matching the pinned
+account-owned bootstrap credential; it never falls back to the user-token endpoint. It confirms the
+account and Worker, the immutable Worker ID and
 its stable `tag` cross-check, exactly one active deployment at 100% identifying the bootstrap
 version, the exact bootstrap annotation, the D1 / Queue / Workflow / four Durable Object bindings,
 `migration_tag === "v2"`, absence of `SERVICE_AUTH_KEYS_JSON` by name, zero Custom Domains, zero
