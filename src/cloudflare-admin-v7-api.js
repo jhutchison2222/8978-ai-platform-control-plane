@@ -167,9 +167,13 @@ export class CloudflareAdminV7Api {
     return this.#request("GET", this.#accountPath("/workflows"));
   }
 
+  // Every Access application in the account, unfiltered (no documented destination/worker_id filter
+  // exists for this endpoint; `domain`/`name` only match hostname-based applications, never a
+  // worker_id destination). per_page is Cloudflare's documented maximum, so the fail-closed
+  // completeness ceiling (MAXIMUM_LISTING_PAGES * per_page) is as high as this endpoint allows.
   async listAccessApplications() {
     return collectPagedResults(
-      (page) => this.#request("GET", this.#accountPath(`/access/apps?page=${page}&per_page=50`), { envelope: true }),
+      (page) => this.#request("GET", this.#accountPath(`/access/apps?page=${page}&per_page=1000`), { envelope: true }),
       "Access application listing",
     );
   }
@@ -177,9 +181,10 @@ export class CloudflareAdminV7Api {
   // Every service token in the account, by documented page/per_page pagination with no search filter.
   // Cloudflare documents total_count as the total without search parameters, so only the unfiltered
   // population lets the strict collector prove completeness; callers filter by exact name locally.
+  // per_page is Cloudflare's documented maximum for this endpoint.
   async listAccessServiceTokens() {
     return collectPagedResults(
-      (page) => this.#request("GET", this.#accountPath(`/access/service_tokens?page=${page}&per_page=50`), { envelope: true }),
+      (page) => this.#request("GET", this.#accountPath(`/access/service_tokens?page=${page}&per_page=1000`), { envelope: true }),
       "Access service-token listing",
     );
   }
@@ -220,10 +225,11 @@ export class CloudflareAdminV7Api {
     });
   }
 
+  // per_page is Cloudflare's documented maximum for this endpoint.
   async listAccessApplicationPolicies(applicationId) {
     if (!/^[0-9a-f-]{32,36}$/i.test(String(applicationId))) throw new Error("Access application ID is invalid");
     return collectPagedResults(
-      (page) => this.#request("GET", this.#accountPath(`/access/apps/${applicationId}/policies?page=${page}&per_page=50`), { envelope: true }),
+      (page) => this.#request("GET", this.#accountPath(`/access/apps/${applicationId}/policies?page=${page}&per_page=1000`), { envelope: true }),
       "Access policy listing",
     );
   }

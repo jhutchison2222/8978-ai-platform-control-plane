@@ -36,7 +36,7 @@ slot. At retrieval a null, missing, empty, numeric, malformed, or expired `expir
 an unknown expiry is never treated as unexpiring.
 
 Access service tokens are enumerated as the complete, **unfiltered** account listing
-(`GET /accounts/{account_id}/access/service_tokens?page=N&per_page=50`, with no `name` or `search`
+(`GET /accounts/{account_id}/access/service_tokens?page=N&per_page=1000`, with no `name` or `search`
 parameter), failing closed on missing, inconsistent, repeated, or truncated metadata. Cloudflare
 documents `result_info.total_count` as the total available without search parameters, so only the
 unfiltered population lets `total_count` prove completeness. The pinned-name set is then taken
