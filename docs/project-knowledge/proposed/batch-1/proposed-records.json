@@ -1,0 +1,352 @@
+{
+  "schemaVersion": "1.1.0",
+  "packageId": "8978-master-prompt-architecture-batch-1",
+  "status": "PROPOSED",
+  "governing": false,
+  "sourcePackagePath": "docs/source-material/master-prompts/batch-1",
+  "independentReview": {
+    "artifact": "docs/reviews/pr-3/PR-3-Batch-1-Master-Prompt-Architecture-Review.json",
+    "reviewedHead": "ff1312dfef800b27066f4885c0d022c09ad24652",
+    "publicationParentHead": "175ae3a991e72a5461fb280b53ac404935ae4aa8",
+    "reconciledThroughHead": "023bee96d4f3005710fa9371e8565460ad781915",
+    "disposition": "ACCEPTABLE_AS_SOURCE_MATERIAL_ONLY"
+  },
+  "normalizationRules": [
+    "All records remain PROPOSED and non-governing.",
+    "Source self-labels cannot promote records to CURRENT or FINAL.",
+    "Commercial values require independent authority, effective dating, and owner approval.",
+    "The governing production-isolation baseline applies to every production customer."
+  ],
+  "records": [
+    {
+      "recordId": "PK-PROP-001",
+      "title": "Batch 1 source corpus registration",
+      "type": "artifact_set",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Register the seven files at the independently reviewed head as SOURCE_MATERIAL_ONLY with no automatic promotion.",
+      "evidence": [
+        "README:1-7,28-30",
+        "manifest:1-10,52"
+      ],
+      "promotionDependencies": [
+        "Acquire and archive originals and hashes."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-002",
+      "title": "Master prompt modular composition model",
+      "type": "architecture_decision",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Adopt atomic, versioned prompt components and composition manifests pinned to immutable component versions.",
+      "evidence": [
+        "governing architecture baseline",
+        "README:18-27"
+      ],
+      "promotionDependencies": [
+        "Incorporate the additional authoritative corpus.",
+        "Complete owner and Project Knowledge review."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-003",
+      "title": "Prompt rule precedence model",
+      "type": "governance_decision",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Use explicit precedence and rule-level supersession. A source file's self-label has no promotion authority.",
+      "evidence": [
+        "README:23-24",
+        "manifest:6-10"
+      ],
+      "promotionDependencies": [
+        "Validate against authoritative FINAL/CURRENT Project Knowledge."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-004",
+      "title": "Customer-facing identity and mode separation",
+      "type": "prompt_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Resolve customer-selected identity, suppress internal labels, and make demo, installed, roleplay, and debrief modes explicit.",
+      "evidence": [
+        "01:16,20-30",
+        "02:13-16",
+        "03:34-36",
+        "04:15-17"
+      ],
+      "promotionDependencies": [
+        "Define agent-instance configuration and the mode/state schema."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-005",
+      "title": "Context read-first and live correction policy",
+      "type": "prompt_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Hydrate authoritative context before asking, reuse populated values, and handle live corrections with provenance and controlled persistence.",
+      "evidence": [
+        "01:38-42",
+        "02:17-21"
+      ],
+      "promotionDependencies": [
+        "Approve authority, freshness, null, and mirror contracts."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-006",
+      "title": "Layered discovery and trial-close method",
+      "type": "sales_method",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Use multi-item layered discovery and an open, benefit-forward close; higher-priority states stop unnecessary probing.",
+      "evidence": [
+        "01:62-64",
+        "02:23-37",
+        "overrides:12-16"
+      ],
+      "promotionDependencies": [
+        "Verify against authoritative Project Knowledge.",
+        "Approve acceptance fixtures."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-007",
+      "title": "Database reactivation flow profiles",
+      "type": "agent_flow_family",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Model optional transfer, assumed transfer, no-AI transfer, and downstream closer as distinct profiles.",
+      "evidence": [
+        "01:7-18,44-60"
+      ],
+      "promotionDependencies": [
+        "Define a deterministic profile selector and fallback configuration."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-008",
+      "title": "Sarah-to-James phone demo continuity",
+      "type": "handoff_flow",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "James resumes Sarah context without restarting and owns the final summary.",
+      "evidence": [
+        "02:7-21,49-51"
+      ],
+      "promotionDependencies": [
+        "Approve a typed handoff schema and current platform mapping."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-009",
+      "title": "Kelly-to-Matt SmartSite flow",
+      "type": "handoff_flow",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Kelly engages the website visitor first; Matt performs deeper roleplay and closing; Kelly closes when no transfer occurs.",
+      "evidence": [
+        "03:7-36,59-61"
+      ],
+      "promotionDependencies": [
+        "Verify authoritative prompts and runtime behavior."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-010",
+      "title": "Two-tier SmartSite discovery isolation",
+      "type": "data_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Store simulated visitor insights and actual owner or prospect insights as separate, related subject sets with explicit provenance.",
+      "evidence": [
+        "03:38-45",
+        "overrides:17,22-23"
+      ],
+      "promotionDependencies": [
+        "Define canonical subject, session, and synthetic-data types."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-011",
+      "title": "Conversation handoff scope",
+      "type": "data_architecture",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Keep handoffs and summaries canonical in D1 conversation records with governed optional GHL mirrors, not account Custom Values.",
+      "evidence": [
+        "04:19-25,39-43"
+      ],
+      "promotionDependencies": [
+        "Approve final schema, mappings, and migration plan."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-012",
+      "title": "Canonical data ownership pattern",
+      "type": "data_architecture",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "D1 owns normalized intelligence, configuration, and mappings; AutoCalls receives role variables; GHL contains only selected mirrors.",
+      "evidence": [
+        "04:7-17,39-43"
+      ],
+      "promotionDependencies": [
+        "Compare against the existing schema and current runtime configurations."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-013",
+      "title": "Production customer isolation correction",
+      "type": "conflict_record",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Preserve the workbook's shared-D1 assumption only as history. The governing platform baseline requires a separate Worker and D1 for every production customer.",
+      "evidence": [
+        "04:35-37",
+        "governing baseline: production isolation"
+      ],
+      "promotionDependencies": [
+        "Write the approved conflict and supersession record to Project Knowledge.",
+        "Do not reintroduce a paying-customer qualifier."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-014",
+      "title": "SmartSite commercial terms candidate",
+      "type": "commercial_rule",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Treat $197 Base and $297 Pro, the prohibition on unlimited or included claims, and reactive approximate usage framing only as an unverified commercial candidate.",
+      "evidence": [
+        "overrides:9-11"
+      ],
+      "promotionDependencies": [
+        "Obtain commercial-owner approval.",
+        "Define market, currency, tax, eligibility, and effective dates."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-015",
+      "title": "Post-demo disposition vocabulary candidate",
+      "type": "controlled_vocabulary",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Treat the five exact lowercase disposition tags in the source as an unverified candidate vocabulary.",
+      "evidence": [
+        "overrides:21"
+      ],
+      "promotionDependencies": [
+        "Resolve CRM identifiers, destination and workflow semantics, and owner approval."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-016",
+      "title": "Handoff payload contract candidate",
+      "type": "schema_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Define a typed payload containing source session, agent, channel, entity, context, insight items, objections, urgency, desired outcome, transfer reason, and ownership.",
+      "evidence": [
+        "01:44-46",
+        "02:49-51",
+        "04:21-23"
+      ],
+      "promotionDependencies": [
+        "Approve required and optional fields, privacy, retention, freshness, and acknowledgement rules."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-017",
+      "title": "State-priority and stop-condition policy",
+      "type": "prompt_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Opt-out, human or support requests, frustration or refusal, high intent, and direct action override normal probing and action cadence.",
+      "evidence": [
+        "01:32-36,48-60",
+        "02:33-37"
+      ],
+      "promotionDependencies": [
+        "Validate compliance and action mappings."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-018",
+      "title": "Entity-specific sales knowledge normalization",
+      "type": "data_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Store insight items separately and relate them to products, services, AI employees, offers, demos, plans, promotions, and niches.",
+      "evidence": [
+        "04:27-33",
+        "governing discovery model"
+      ],
+      "promotionDependencies": [
+        "Approve the final entity schema and controlled vocabulary."
+      ]
+    },
+    {
+      "recordId": "PK-PROP-019",
+      "title": "Batch 1 unresolved-material gate",
+      "type": "open_issue",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Do not finalize the master prompt architecture until authoritative Project Knowledge and the additional master-prompt corpus are incorporated.",
+      "evidence": [
+        "governing prompt gate",
+        "README:23-24"
+      ],
+      "promotionDependencies": [
+        "Attach or otherwise provide authoritative Project Knowledge.",
+        "Ingest and reconcile the remaining corpus."
+      ]
+    }
+  ],
+  "legacyRecordMapping": {
+    "pk.b1.runtime.autocalls-primary": [
+      "PK-PROP-002"
+    ],
+    "pk.b1.identity.customer-facing": [
+      "PK-PROP-004"
+    ],
+    "pk.b1.context.read-first": [
+      "PK-PROP-005"
+    ],
+    "pk.b1.sales.layered-emotional": [
+      "PK-PROP-006"
+    ],
+    "pk.b1.sales.momentum-stop": [
+      "PK-PROP-017"
+    ],
+    "pk.b1.smartsite.flow": [
+      "PK-PROP-009"
+    ],
+    "pk.b1.smartsite.two-tier-provenance": [
+      "PK-PROP-010"
+    ],
+    "pk.b1.smartsite.pricing": [
+      "PK-PROP-014"
+    ],
+    "pk.b1.data.normalized-entities": [
+      "PK-PROP-012",
+      "PK-PROP-018"
+    ],
+    "pk.b1.runtime.production-isolation": [
+      "PK-PROP-013"
+    ],
+    "pk.b1.runtime.service-auth": []
+  },
+  "nonBatch1RuntimeConstraints": [
+    {
+      "constraintId": "runtime.cloudflare.service-auth",
+      "source": "current user direction, reaffirmed 2026-08-12",
+      "requirement": "Cloudflare runtime integrations use machine-to-machine service authentication through managed secrets and bindings; interactive OAuth is not a runtime dependency.",
+      "classification": "implementation_constraint_outside_batch_1_source_promotion",
+      "changesBatch1RecordCount": false
+    }
+  ]
+}

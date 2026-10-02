@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-activation-readiness-packet.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","status","governing","environment","phase","executionAuthorized","ownerDirection","sourcePlan","remainingBlockers","orderedPhases","stopConditions","alwaysProhibited","partialFailurePolicy","requiredEvidence"],
+  "properties": {
+    "schemaVersion": {"const":"1.0.0"},
+    "status": {"const":"PLANNED"},
+    "governing": {"const":false},
+    "environment": {"const":"development"},
+    "phase": {"const":"sequence_remaining_activation_readiness"},
+    "executionAuthorized": {"const":false},
+    "ownerDirection": {
+      "type":"object","additionalProperties":false,
+      "required":["received","scope","codeOnlyPublicationAndMergeAuthorized","developmentExternalOperationsAuthorized","exactReviewedSubpacketRequired","productionOrCustomerOperationsAuthorized"],
+      "properties": {
+        "received":{"const":true},
+        "scope":{"const":"all_remaining_development_activation_phases"},
+        "codeOnlyPublicationAndMergeAuthorized":{"const":true},
+        "developmentExternalOperationsAuthorized":{"const":true},
+        "exactReviewedSubpacketRequired":{"const":true},
+        "productionOrCustomerOperationsAuthorized":{"const":false}
+      }
+    },
+    "sourcePlan": {
+      "type":"object","additionalProperties":false,"required":["path","sha256","pr54MergeCommit"],
+      "properties": {
+        "path":{"const":"deployment/development-activation-plan-schema-reconciled.json"},
+        "sha256":{"const":"7191626c099ee5fba00cfcd76091e090139a9eeac1ff7ae5d7a6344048912b9e"},
+        "pr54MergeCommit":{"const":"56054110c0e7ff00625030e569826430b6aafc18"}
+      }
+    },
+    "remainingBlockers": {"type":"array","minItems":15,"maxItems":15,"items":{"type":"string","minLength":1}},
+    "orderedPhases": {
+      "type":"array","minItems":5,"maxItems":5,
+      "items": {
+        "type":"object","additionalProperties":false,
+        "required":["sequence","id","resolves","requiresIndependentReview","requiresExactExecutionPacket","externalExecutionPermittedByThisPacket"],
+        "properties": {
+          "sequence":{"type":"integer","minimum":1,"maximum":5},
+          "id":{"type":"string","minLength":1},
+          "resolves":{"type":"array","minItems":1,"items":{"type":"string","minLength":1}},
+          "requiresIndependentReview":{"const":true},
+          "requiresExactExecutionPacket":{"const":true},
+          "externalExecutionPermittedByThisPacket":{"const":false}
+        }
+      }
+    },
+    "stopConditions": {"type":"array","minItems":7,"maxItems":7,"items":{"type":"string","minLength":1}},
+    "alwaysProhibited": {"type":"array","minItems":9,"maxItems":9,"items":{"type":"string","minLength":1}},
+    "partialFailurePolicy": {
+      "type":"object","additionalProperties":false,
+      "required":["automaticDeletion","automaticCleanup","automaticRetry","automaticRestore","action"],
+      "properties": {
+        "automaticDeletion":{"const":false},"automaticCleanup":{"const":false},
+        "automaticRetry":{"const":false},"automaticRestore":{"const":false},
+        "action":{"const":"stop_and_report_exact_state"}
+      }
+    },
+    "requiredEvidence": {"type":"array","minItems":8,"maxItems":8,"items":{"type":"string","minLength":1}}
+  }
+}

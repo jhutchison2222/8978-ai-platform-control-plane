@@ -1,0 +1,137 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { parseJsonStrict } from "../src/canonical-digest.js";
+import { validateSchema } from "../scripts/json-schema-lite.js";
+
+const load = async (path) => parseJsonStrict(await readFile(path, "utf8"));
+const digest = async (path) => createHash("sha256").update(await readFile(path)).digest("hex");
+const packet = await load("deployment/development-live-test-execution-packet.json");
+const schema = await load("schemas/development-live-test-execution-packet.schema.json");
+const wrangler = await load("wrangler.jsonc");
+
+test("live-test packet is immutable, non-governing, and not authorized", async () => {
+  assert.deepEqual(validateSchema(schema, packet), []);
+  assert.equal(packet.governing, false);
+  for (const field of ["executionAuthorized", "workerDeploymentAuthorized", "secretInstallationAuthorized", "accessSurfaceChangeAuthorized", "canaryInvocationAuthorized"]) assert.equal(packet[field], false);
+  for (const source of [packet.source.wranglerConfiguration, packet.source.resourceCreationRecord, packet.source.migrationRecord, packet.source.schemaVerificationRecord]) assert.equal(await digest(source.path), source.sha256);
+});
+
+test("packet pins targets and distinguishes declarations from remote facts", () => {
+  assert.deepEqual({ ...packet.target.authorityDatabase }, { binding:"AUTHORITY_DB", name:"8978-ai-authority-dev", databaseId:"741ade94-8539-4fc8-b6be-24884720dee8" });
+  assert.deepEqual({ ...packet.target.workflow }, { binding:"ORCHESTRATOR_WORKFLOW", name:"8978-ai-orchestrator-dev", className:"OrchestratorWorkflow" });
+  assert.deepEqual({ ...packet.target.queueProducer }, { binding:"ORCHESTRATOR_QUEUE", name:"8978-ai-orchestrator-dev" });
+  assert.equal(packet.target.workerName, "8978-ai-control-plane-dev");
+  assert.equal(packet.stateDistinction.configurationDeclared.authorityDatabaseBinding, true);
+  assert.equal(packet.stateDistinction.configurationDeclared.workflowBinding, true);
+  assert.equal(packet.stateDistinction.configurationDeclared.queueProducerBinding, true);
+  assert.equal(packet.stateDistinction.remotelyRecorded.workflowExistence, "UNVERIFIED");
+  assert.equal(packet.stateDistinction.remotelyRecorded.runtimeBindingsInstalled, "UNVERIFIED_NOT_CLAIMED");
+  assert.equal(packet.stateDistinction.declarationDoesNotProveRemoteInstallation, true);
+});
+
+test("packet matches the current fail-closed Wrangler configuration", () => {
+  assert.equal(wrangler.name, packet.target.workerName);
+  assert.deepEqual(wrangler.d1_databases.map((binding) => ({ ...binding })), [{ binding:"AUTHORITY_DB", database_name:"8978-ai-authority-dev", database_id:"741ade94-8539-4fc8-b6be-24884720dee8", migrations_dir:"migrations/authority" }]);
+  assert.deepEqual(wrangler.workflows.map((binding) => ({ ...binding })), [{ binding:"ORCHESTRATOR_WORKFLOW", name:"8978-ai-orchestrator-dev", class_name:"OrchestratorWorkflow" }]);
+  assert.deepEqual({ producers:wrangler.queues.producers.map((binding) => ({ ...binding })) }, { producers:[{ binding:"ORCHESTRATOR_QUEUE", queue:"8978-ai-orchestrator-dev" }] });
+  assert.equal(wrangler.workers_dev, true);
+  assert.equal(wrangler.preview_urls, false);
+  assert.equal(Object.hasOwn(wrangler, "routes"), false);
+  assert.equal(Object.hasOwn(wrangler.queues, "consumers"), false);
+  assert.equal(wrangler.vars.CONTROL_PLANE_MODE, "development");
+  assert.equal(wrangler.vars.ALLOW_EXTERNAL_WRITES, "false");
+  assert.equal(Object.hasOwn(wrangler.vars, "SERVICE_AUTH_KEYS_JSON"), false);
+});
+
+test("preflight commands are pinned to the exact reviewed read-only allowlist", () => {
+  // Zero-state commands must be satisfiable before the Worker exists: none may name it.
+  assert.deepEqual([...packet.requiredPreflight.zeroStatePreflight], [
+    "wrangler whoami",
+    "wrangler d1 info 8978-ai-authority-dev --json",
+    "wrangler queues info 8978-ai-orchestrator-dev",
+  ]);
+  for (const command of packet.requiredPreflight.zeroStatePreflight) {
+    assert.equal(command.includes("8978-ai-control-plane-dev"), false, command);
+  }
+  assert.deepEqual([...packet.requiredPreflight.postBootstrapPreflight], [
+    "wrangler workflows describe 8978-ai-orchestrator-dev",
+    "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+    "wrangler secret list --name 8978-ai-control-plane-dev",
+    "wrangler subdomain status --name 8978-ai-control-plane-dev",
+  ]);
+  assert.equal(packet.requiresWorkerExists, true);
+  assert.equal(packet.requiresBootstrapRecord, true);
+  assert.deepEqual({ ...packet.subdomainTransition.beforeEnablement }, { enabled: false, previews_enabled: false });
+  assert.deepEqual({ ...packet.subdomainTransition.afterEnablement }, { enabled: true, previews_enabled: false });
+  assert.equal(packet.subdomainTransition.maximumEnablementPosts, 1);
+  assert.equal(packet.subdomainTransition.readBackGetsAfterPost, 1);
+  assert.equal(packet.subdomainTransition.canaryPermittedOnlyAfterExactReadBack, true);
+  for (const unsafeCommand of [
+    'wrangler d1 execute 8978-ai-authority-dev --remote --command "DELETE FROM authority_resources"',
+    "wrangler deploy --name 8978-ai-control-plane-dev",
+  ]) {
+    const changed = structuredClone(packet);
+    changed.requiredPreflight.zeroStatePreflight[0] = unsafeCommand;
+    assert.notDeepEqual(validateSchema(schema, changed), []);
+  }
+});
+
+test("owner decisions are recorded while new security identities remain unmaterialized", () => {
+  assert.deepEqual(packet.recordedOwnerDecisions.map(({ id, selected }) => ({ id, selected })), [
+    { id:"development_access_surface", selected:"access_protected_workers_dev_production_url" },
+    { id:"development_access_policy", selected:"cloudflare_access_service_token_policy" },
+  ]);
+  assert.deepEqual({ ...packet.target.accessSurface }, {
+    kind:"workers_dev_production_url",
+    url:"https://8978-ai-control-plane-dev.jhutchison.workers.dev",
+    previewUrlsEnabled:false,
+    customDomain:null,
+    cloudflareAccessRequiredBeforeDeployment:true,
+  });
+  assert.deepEqual(packet.unmaterializedSecurityIdentities.map(({ id, selectedType, materialized }) => ({ id, selectedType, materialized })), [
+    { id:"access_policy_credential", selectedType:"new_expiring_cloudflare_access_service_token", materialized:false },
+    { id:"service_auth_identity", selectedType:"new_development_only_principal_and_key", materialized:false },
+  ]);
+  assert.equal(packet.unmaterializedSecurityIdentities[0].maximumLifetimeHours, 24);
+  assert.equal(packet.unmaterializedSecurityIdentities[1].maximumScope, "8978-ai-control-plane-dev-only");
+  assert.equal(packet.candidateExternalOperations.maximumExecutionAttempts, 1);
+  assert.equal(packet.candidateExternalOperations.requiresNewExactReviewedHeadAfterOwnerDecisions, true);
+  assert.match(packet.requiredOwnerAuthorizationTemplate, /exact head <FULL_SHA>/u);
+  assert.match(packet.requiredOwnerAuthorizationTemplate, /Worker-level Cloudflare Access/u);
+  assert.match(packet.requiredOwnerAuthorizationTemplate, /no later than 24 hours after creation/u);
+});
+
+test("canary proves authentication, D1 reads, replay denial, and execution denial with bounded effects", () => {
+  assert.deepEqual(packet.canary.requests.map(({ sequence }) => sequence), [1, 2, 3, 4, 5]);
+  assert.deepEqual(packet.canary.requests.map(({ expectedStatus }) => expectedStatus), [401, 200, 401, 200, 503]);
+  assert.deepEqual(packet.canary.requests.map(({ expectedResult }) => expectedResult), ["service_authentication_failed", "ready_false_mode_development_external_writes_false_no_missing_authoritative_dependencies", "service_authentication_failed_replay_denied", "authoritative_resolution_unavailable", "execution_disabled"]);
+  assert.deepEqual({ ...packet.canary.boundedEffects }, { authorityD1ReadsExpected:true, authorityD1WritesMaximum:0, durableReplayNonceRecordsMaximum:3, queueMessagesMaximum:0, workflowInstancesMaximum:0, externalBusinessActionsMaximum:0, customerRecordsMaximum:0 });
+  assert.deepEqual({ ...packet.canary.syntheticAction.requestedTarget }, { locator:"live-canary://missing-resource" });
+  assert.equal(packet.canary.syntheticAction.operation, "read");
+});
+
+test("schema rejects authorization, exposure, write, retry, and target weakening", () => {
+  const mutations = [
+    (value) => { value.executionAuthorized = true; },
+    (value) => { value.workerDeploymentAuthorized = true; },
+    (value) => { value.secretInstallationAuthorized = true; },
+    (value) => { value.accessSurfaceChangeAuthorized = true; },
+    (value) => { value.canaryInvocationAuthorized = true; },
+    (value) => { value.environment = "production"; },
+    (value) => { value.target.authorityDatabase.databaseId = "wrong"; },
+    (value) => { value.preservedFailClosedBoundary.workersDev = false; },
+    (value) => { value.preservedFailClosedBoundary.allowExternalWrites = "true"; },
+    (value) => { value.preservedFailClosedBoundary.queuePublicationPermitted = true; },
+    (value) => { value.canary.boundedEffects.authorityD1WritesMaximum = 1; },
+    (value) => { value.candidateExternalOperations.maximumExecutionAttempts = 2; },
+    (value) => { value.target.accessSurface.cloudflareAccessRequiredBeforeDeployment = false; },
+    (value) => { value.recordedOwnerDecisions[0].selected = "invented"; },
+    (value) => { value.unmaterializedSecurityIdentities[0].maximumLifetimeHours = 25; },
+    (value) => { value.unmaterializedSecurityIdentities[0].materialized = true; },
+    (value) => { value.partialFailurePolicy.automaticRetry = true; },
+    (value) => { value.unexpected = true; },
+  ];
+  for (const mutate of mutations) { const changed = structuredClone(packet); mutate(changed); assert.notDeepEqual(validateSchema(schema, changed), []); }
+});

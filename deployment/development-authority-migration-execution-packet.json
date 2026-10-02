@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED",
+  "governing": false,
+  "environment": "development",
+  "phase": "capture_backup_and_apply_authority_migrations",
+  "executionAuthorized": false,
+  "foundationBaseline": "ebd7a82dc47095814de2dc663c5615d60e87b0e1",
+  "sourcePlan": {
+    "path": "deployment/development-activation-plan-resource-reconciled.json",
+    "sha256": "3621dc92abf5c309d4a92a86cf4dc3f01da473d88c273697c9e91e9e7d092825"
+  },
+  "sourceCompletionRecord": {
+    "path": "deployment/development-resource-creation-completion-record.json",
+    "sha256": "98f9c0623e2240aad87d68f9fdc7b3fe895d0853308d272c9398ec6858815747"
+  },
+  "account": {
+    "accountId": null,
+    "selection": "exact_owner_authorized_account_required_at_execution"
+  },
+  "authorityDatabase": {
+    "name": "8978-ai-authority-dev",
+    "databaseId": "741ade94-8539-4fc8-b6be-24884720dee8",
+    "expectedRegion": "WNAM",
+    "expectedJurisdiction": null,
+    "requiredVersion": "production",
+    "requiredPreMigrationTableCount": 0
+  },
+  "migrationConfiguration": {
+    "path": "deployment/wrangler.authority-migrations.jsonc",
+    "sha256": "7d028839586d0009ff88ec172da85efaa0bb1e05b43644af65f37dd1cd7fbd26",
+    "deployableWorkerConfiguration": false,
+    "installsRuntimeBinding": false,
+    "migrationsDirectory": "../migrations/authority"
+  },
+  "backup": {
+    "timeTravelBookmarkRequired": true,
+    "sqlExportRequired": true,
+    "exportStorage": "ephemeral_untracked_local_file",
+    "exportSha256Required": true,
+    "commitExportToRepository": false,
+    "restoreAuthorized": false,
+    "automaticRestoreAuthorized": false
+  },
+  "migration": {
+    "operation": "apply_exact_pending_migrations_once",
+    "attemptLimit": 1,
+    "remote": true,
+    "createsMigrationBookkeepingRows": true,
+    "insertsAuthorityData": false,
+    "seedsProjectKnowledge": false,
+    "writesActivationEvidence": false,
+    "migrations": [
+      {
+        "path": "migrations/authority/0001_authority_read_model.sql",
+        "sha256": "fded8c2fe248ecd7cfbb1214d0449f012b7099220f85e80fcd3012b3b9ade424"
+      },
+      {
+        "path": "migrations/authority/0002_validation_evidence.sql",
+        "sha256": "75e03891d1b93baf4d10bb0d248b9779405b31f78458f6874e629c320ed5b4b9"
+      },
+      {
+        "path": "migrations/authority/0003_governing_project_knowledge.sql",
+        "sha256": "8383c73014a72d30fd179628b0ff8411bf0ab27572585a281279227d03fb3c7a"
+      },
+      {
+        "path": "migrations/authority/0004_owner_control.sql",
+        "sha256": "4f7d4cb7939eefb8e6c2f7f292c7e806399b3366e135d775fa317214d7f67185"
+      },
+      {
+        "path": "migrations/authority/0005_development_activation_evidence.sql",
+        "sha256": "4f75b03549ab1df797fb73a87768291caf921a22f796939c7b466eea3eb528c3"
+      },
+      {
+        "path": "migrations/authority/0006_development_activation_evidence_writes.sql",
+        "sha256": "0bf3e2dbdd935fe6c2ecbd310d8c465e2bca845569a0d10e52e0ac563a181eb4"
+      }
+    ]
+  },
+  "commands": {
+    "databaseInfo": "wrangler d1 info 8978-ai-authority-dev --json",
+    "timeTravelBookmark": "wrangler d1 time-travel info 8978-ai-authority-dev --json",
+    "sqlExportTemplate": "wrangler d1 export 8978-ai-authority-dev --remote --output <ephemeral-untracked-path>",
+    "listPending": "wrangler d1 migrations list 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc",
+    "applyOnce": "wrangler d1 migrations apply 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc",
+    "listPendingAfter": "wrangler d1 migrations list 8978-ai-authority-dev --remote --config deployment/wrangler.authority-migrations.jsonc"
+  },
+  "postMigrationBoundary": {
+    "requireNoPendingMigrations": true,
+    "expectedTableCountIncludingMigrationBookkeeping": 11,
+    "remoteSchemaVerified": false,
+    "activationPlanUpdateDeferred": true,
+    "executionRecordRequired": true
+  },
+  "stopConditions": [
+    "owner authorization does not identify the exact reviewed commit, this packet digest, and exactly one Cloudflare account ID",
+    "the authenticated Cloudflare account does not match the owner-authorized account ID",
+    "database identity, WNAM region, null jurisdiction, production version, or empty pre-migration state does not match this packet",
+    "the current Time Travel bookmark cannot be captured and preserved in the execution evidence",
+    "the ephemeral SQL export cannot be completed and hashed before migration",
+    "the migration configuration or any of the six migration digests differs from this packet",
+    "the pending migration list is not exactly the six migrations in the pinned order",
+    "migration application reports an error, ambiguity, interruption, or partial completion",
+    "post-application migration listing is unavailable or reports any pending migration",
+    "the requested operation would bind, deploy, restore, seed, insert authority data, write evidence, publish, retry, clean up, or delete"
+  ],
+  "prohibitedOperations": [
+    "modify_deployable_wrangler_config",
+    "install_or_update_runtime_binding",
+    "create_or_deploy_worker",
+    "create_or_trigger_workflow",
+    "add_queue_producer_or_consumer",
+    "publish_queue_message",
+    "install_or_rotate_secret_or_key",
+    "insert_update_or_delete_authority_data",
+    "seed_project_knowledge",
+    "write_activation_evidence",
+    "certify_remote_schema",
+    "update_activation_plan",
+    "restore_database",
+    "retry_migration_application",
+    "delete_or_automatically_clean_up_resource",
+    "touch_production_or_customer_resource",
+    "reuse_or_modify_pk_d1_dev"
+  ],
+  "partialFailurePolicy": {
+    "automaticRestore": false,
+    "automaticRetry": false,
+    "automaticCleanup": false,
+    "action": "stop_and_report_exact_remote_state"
+  },
+  "requiredEvidence": [
+    "reviewed repository commit and packet SHA-256 digest",
+    "authenticated operator identity without credential material",
+    "owner-authorized Cloudflare account ID",
+    "pre-migration D1 identity, metadata, version, table count, and file size",
+    "pre-migration Time Travel bookmark",
+    "ephemeral SQL export SHA-256 digest and byte size without repository publication",
+    "exact ordered pending-migration listing",
+    "exact migration command result and attempt count",
+    "post-application pending-migration listing",
+    "post-migration D1 metadata and table count",
+    "confirmation no runtime binding, Worker, Workflow, Queue connection, secret, evidence, deployment, activation, restore, retry, cleanup, or deletion occurred",
+    "exact errors and final remote state if execution stops"
+  ]
+}

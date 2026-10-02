@@ -1,0 +1,29 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - bootstrap-autonomous-control-plane
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Target-runtime closure tests read Git blobs at the reviewed target commit, which a
+          # shallow clone does not contain.
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - run: npm run secret-scan
+      - run: npm run cf:types:check
+      - run: npm run cf:dry-run

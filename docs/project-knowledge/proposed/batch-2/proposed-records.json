@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "1.0.0",
+  "packageId": "8978-master-prompt-architecture-batch-2",
+  "status": "PROPOSED",
+  "governing": false,
+  "sourcePackagePath": "docs/source-material/master-prompts/batch-2",
+  "baseline": {
+    "batch1MergeCommit": "27c47039c7853b0c508dfbba8240750aaea17f2b",
+    "runtimeMergeCommit": "a28ca12ac415abc143dd1f6b921cefdc3a8fc557",
+    "rule": "Batch 1 records remain PROPOSED; explicit current user direction may inform conflict analysis but requires normal promotion gates."
+  },
+  "summaryCounts": {
+    "sources": 4,
+    "componentDeltaItems": 10,
+    "conflicts": 8,
+    "missingMaterialItems": 12,
+    "dependencyGroups": 9,
+    "proposedProjectKnowledgeRecords": 10
+  },
+  "records": [
+    {
+      "recordId": "PK-B2-PROP-001",
+      "title": "Batch 2 source corpus registration",
+      "type": "artifact_set",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Register the two curated inbound-phone extracts plus README and manifest as SOURCE_MATERIAL_ONLY; complete originals, immutable hashes, and exact extraction anchors remain absent.",
+      "evidence": [
+        "batch-2/README.md",
+        "batch-2/manifest.json"
+      ],
+      "promotionDependencies": [
+        "Archive immutable originals and hashes.",
+        "Verify exact extraction anchors and fidelity."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-002",
+      "title": "Direct inbound phone specialist entry profile",
+      "type": "agent_flow_profile",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Model a direct inbound phone specialist entry profile for callers who have not necessarily passed through a receptionist or transfer flow; hydrate known context silently and classify current intent before selecting behavior.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Role and entry point",
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Intent classification"
+      ],
+      "promotionDependencies": [
+        "Verify complete source and deployed variants.",
+        "Approve session and intent state machine."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-003",
+      "title": "No-specialist-transfer receptionist profile",
+      "type": "agent_flow_profile",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Model the no-AI-sales-specialist-transfer receptionist as a distinct versioned profile that must not mention or imply a downstream AI specialist; do not generalize the restriction to other receptionist variants.",
+      "evidence": [
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Role and routing boundary",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Conflicts requiring normalization"
+      ],
+      "promotionDependencies": [
+        "Approve deterministic variant selector.",
+        "Verify optional and assumed-transfer sibling profiles."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-004",
+      "title": "Inbound intent and state-priority policy",
+      "type": "prompt_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Classify sales, support, direct action, human request, general information, and unclear intent; support, human requests, frustration, refusal, direct action, weak engagement, and natural endpoints override extended sales discovery.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Intent classification",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Caller handling"
+      ],
+      "promotionDependencies": [
+        "Approve intent codes, transition guards, and fallback matrix.",
+        "Complete channel and compliance review."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-005",
+      "title": "Installed inbound identity resolution",
+      "type": "prompt_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Resolve installed inbound agent names and titles from customer configuration, keep Top Sales Pro and other template labels internal, and do not expose matching, CRM, workflow, field, or prompt internals.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Role and entry point",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Role and routing boundary"
+      ],
+      "promotionDependencies": [
+        "Approve subscriber and agent-instance configuration schema.",
+        "Verify AutoCalls variable mapping."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-006",
+      "title": "Configured action capability gate",
+      "type": "runtime_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Treat quotes, estimates, appointments, intake, links, payments, callbacks, routing, workflows, tasks, messages, and summaries as candidate action families only; an action is usable solely when an authoritative runtime capability and destination contract is configured.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Factual accuracy and actions",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Role and routing boundary"
+      ],
+      "promotionDependencies": [
+        "Inspect current AutoCalls capabilities.",
+        "Approve tool schemas, identifiers, authorization, idempotency, and fallback behavior."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-007",
+      "title": "Inbound sales and support handoff separation",
+      "type": "schema_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Keep sales and customer-service handoff subjects, reasons, outcomes, ownership, and summaries distinct while preserving enough context for continuation without repetition.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Context, summaries, and field evidence",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Handoff and summary"
+      ],
+      "promotionDependencies": [
+        "Approve versioned handoff and summary schemas.",
+        "Approve routing ownership and acknowledgement rules."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-008",
+      "title": "Historical numeric sales targets",
+      "type": "conflict_record",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Preserve five-motivator and three-to-seven action-attempt ranges only as variant-specific historical evidence; they cannot override high intent, support, human request, frustration, refusal, direct action, weak engagement, or a natural endpoint.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Sales behavior",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Sales-assistance behavior"
+      ],
+      "promotionDependencies": [
+        "Define evidence-based adequacy gates and acceptance corpus.",
+        "Obtain owner approval before adopting any numeric target."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-009",
+      "title": "Inbound field mapping normalization",
+      "type": "data_requirement",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Treat historical HighLevel fields as mapping evidence, not canonical storage; normalize contact insights, conversations, handoffs, routing, and summaries in D1 with selected CRM mirrors and prepared AutoCalls variables.",
+      "evidence": [
+        "batch-2/01-direct-inbound-phone-sales-specialist.md: Context, summaries, and field evidence",
+        "batch-2/02-phone-receptionist-no-ai-sales-rep.md: Data and field evidence"
+      ],
+      "promotionDependencies": [
+        "Acquire the complete field inventory and identifiers.",
+        "Approve canonical D1 schema and mirror/reconciliation rules."
+      ]
+    },
+    {
+      "recordId": "PK-B2-PROP-010",
+      "title": "Batch 2 unresolved-material gate",
+      "type": "open_issue",
+      "status": "PROPOSED",
+      "governing": false,
+      "assertion": "Do not finalize inbound-phone prompt components or activate actions until authoritative Project Knowledge, complete source provenance, current AutoCalls capability evidence, routing/action contracts, and required compliance material are incorporated.",
+      "evidence": [
+        "batch-2/README.md: Processing boundaries",
+        "batch-2/manifest.json: required_outputs_after_review"
+      ],
+      "promotionDependencies": [
+        "Resolve all blocking Batch 2 missing-material items.",
+        "Complete independent Claude review and owner-approved promotion."
+      ]
+    }
+  ],
+  "prohibitedPromotions": [
+    "No record in this package is CURRENT or FINAL.",
+    "No source label or cross-batch comparison can promote a record.",
+    "No candidate action family establishes an implemented AutoCalls capability.",
+    "No numeric discovery or action-attempt target overrides stop conditions."
+  ]
+}

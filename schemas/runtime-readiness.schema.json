@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/runtime-readiness.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["resourceResolver","identityVerifier","evidenceProvider","rollbackVerifier","limitProvider","ownerVerifier","ownerDecisionStore","idempotencyStore","auditStore","revalidateStandingState","projectKnowledge","workflowDispatcher","queuePublisher"],
+  "properties": {
+    "resourceResolver":{"type":"object"},"identityVerifier":{"type":"object"},"evidenceProvider":{"type":"object"},"rollbackVerifier":{"type":"object"},"limitProvider":{"type":"object"},"ownerVerifier":{"type":"object"},"ownerDecisionStore":{"type":"object"},"idempotencyStore":{"type":"object"},"auditStore":{"type":"object"},"revalidateStandingState":{},"projectKnowledge":{"type":"object"},"workflowDispatcher":{"type":"object"},"queuePublisher":{"type":"object"}
+  }
+}

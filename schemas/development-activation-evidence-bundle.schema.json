@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-activation-evidence-bundle.schema.json",
+  "title": "Authenticated Development Activation Evidence Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","makerValidationAttestation","checkerValidationAttestation","resourceActivationDecision","workerDeploymentDecision","rollbackAttestation","backupAttestation"],
+  "properties": {
+    "schemaVersion": {"const":"1.0.0"},
+    "makerValidationAttestation": {"type":"string","minLength":1,"maxLength":8192},
+    "checkerValidationAttestation": {"type":"string","minLength":1,"maxLength":8192},
+    "rollbackAttestation": {"type":"string","minLength":1,"maxLength":8192},
+    "backupAttestation": {"type":"string","minLength":1,"maxLength":8192},
+    "resourceActivationDecision": {
+      "type":"object","additionalProperties":false,
+      "required":["decisionId","requestedActionDigest","decision","decidedBy","decidedAt","expiresAt","issuerKeyId","signatureAlgorithm","signature"],
+      "properties":{"decisionId":{"type":"string","minLength":1},"requestedActionDigest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"decision":{"const":"approved"},"decidedBy":{"type":"string","minLength":1},"decidedAt":{"type":"string","format":"date-time"},"expiresAt":{"type":"string","format":"date-time"},"issuerKeyId":{"type":"string","minLength":1},"signatureAlgorithm":{"const":"Ed25519"},"signature":{"type":"string","minLength":1,"maxLength":8192}}
+    },
+    "workerDeploymentDecision": {
+      "type":"object","additionalProperties":false,
+      "required":["decisionId","requestedActionDigest","decision","decidedBy","decidedAt","expiresAt","issuerKeyId","signatureAlgorithm","signature"],
+      "properties":{"decisionId":{"type":"string","minLength":1},"requestedActionDigest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},"decision":{"const":"approved"},"decidedBy":{"type":"string","minLength":1},"decidedAt":{"type":"string","format":"date-time"},"expiresAt":{"type":"string","format":"date-time"},"issuerKeyId":{"type":"string","minLength":1},"signatureAlgorithm":{"const":"Ed25519"},"signature":{"type":"string","minLength":1,"maxLength":8192}}
+    }
+  }
+}

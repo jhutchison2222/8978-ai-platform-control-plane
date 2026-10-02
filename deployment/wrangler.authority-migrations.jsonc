@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "8978-ai-authority-migrations-dev",
+  "compatibility_date": "2026-08-18",
+  "d1_databases": [
+    {
+      "binding": "AUTHORITY_DB",
+      "database_name": "8978-ai-authority-dev",
+      "database_id": "741ade94-8539-4fc8-b6be-24884720dee8",
+      "migrations_dir": "../migrations/authority"
+    }
+  ]
+}

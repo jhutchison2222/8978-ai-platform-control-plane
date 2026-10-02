@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-resource-creation-partial-execution-record.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion","status","governing","environment","phase","recordedAt","sourcePacket","ownerAuthorization","authorityDatabase","locationDeviation","queue","workflow","externalEffects","continuation","verification"],
+  "properties": {
+    "schemaVersion": {"const":"1.0.0"},
+    "status": {"const":"STOPPED_PARTIAL"},
+    "governing": {"const":false},
+    "environment": {"const":"development"},
+    "phase": {"const":"create_unbound_storage_and_queue"},
+    "recordedAt": {"const":"2026-08-18T17:31:50Z"},
+    "sourcePacket": {
+      "type":"object","additionalProperties":false,"required":["path","sha256","reviewedHead","mergeCommit"],
+      "properties": {
+        "path":{"const":"deployment/development-resource-creation-packet.json"},
+        "sha256":{"const":"a3dd1fe2657818a068bdb1095df82eeed00af8642d412b65b2e6b1aad5720f0a"},
+        "reviewedHead":{"const":"604604473cadf68a7f26732b45314c2c8af288d2"},
+        "mergeCommit":{"const":"fd5f218158f57bf4efd18d01466e20a743abe5d4"}
+      }
+    },
+    "ownerAuthorization": {
+      "type":"object","additionalProperties":false,"required":["received","accountName","accountId","scope"],
+      "properties": {
+        "received":{"const":true},"accountName":{"const":"smartsitecapture.com"},
+        "accountId":{"const":"de5e0273347b0b4c5f8f4e554aa2288f"},
+        "scope":{"const":"create_exact_empty_unbound_d1_and_exact_unconnected_queue_only"}
+      }
+    },
+    "authorityDatabase": {
+      "type":"object","additionalProperties":false,
+      "required":["operation","outcome","name","databaseId","createdAt","requestedLocationPolicy","actualRegion","jurisdiction","readReplication","numTables","fileSizeBytes","sqlExecuted","migrationsApplied","dataInserted","bindingInstalled","bindingVerification"],
+      "properties": {
+        "operation":{"const":"create"},"outcome":{"const":"CREATED"},"name":{"const":"8978-ai-authority-dev"},
+        "databaseId":{"const":"741ade94-8539-4fc8-b6be-24884720dee8"},"createdAt":{"const":"2026-08-18T17:17:23.103Z"},
+        "requestedLocationPolicy":{"const":"cloudflare_automatic"},"actualRegion":{"const":"WNAM"},"jurisdiction":{"type":"null"},
+        "readReplication":{"const":"disabled"},"numTables":{"const":0},"fileSizeBytes":{"const":12288},
+        "sqlExecuted":{"const":false},"migrationsApplied":{"const":false},"dataInserted":{"const":false},"bindingInstalled":{"const":false},
+        "bindingVerification": {
+          "type":"object","additionalProperties":false,"required":["status","basis","latestWorkerModifiedAt"],
+          "properties": {
+            "status":{"const":"INFERRED_UNBOUND"},"basis":{"const":"all_eight_workers_predate_database_creation"},
+            "latestWorkerModifiedAt":{"const":"2026-08-11T16:43:02Z"}
+          }
+        }
+      }
+    },
+    "locationDeviation": {
+      "type":"object","additionalProperties":false,"required":["detected","expected","actual","operationalAssessment","ownerAccepted","deleteAuthorized","automaticCleanupAuthorized"],
+      "properties": {
+        "detected":{"const":true},"expected":{"const":"cloudflare_automatic"},"actual":{"const":"WNAM"},
+        "operationalAssessment":{"const":"ACCEPTABLE"},"ownerAccepted":{"const":false},
+        "deleteAuthorized":{"const":false},"automaticCleanupAuthorized":{"const":false}
+      }
+    },
+    "queue": {
+      "type":"object","additionalProperties":false,
+      "required":["operation","outcome","name","expectedDeliveryDelaySeconds","expectedMessageRetentionSeconds","postStopExistence","bindingInstalled","producerAdded","consumerAdded","messagePublished"],
+      "properties": {
+        "operation":{"const":"create"},"outcome":{"const":"NOT_ATTEMPTED"},"name":{"const":"8978-ai-orchestrator-dev"},
+        "expectedDeliveryDelaySeconds":{"const":0},"expectedMessageRetentionSeconds":{"const":86400},"postStopExistence":{"const":"UNVERIFIED"},
+        "bindingInstalled":{"const":false},"producerAdded":{"const":false},"consumerAdded":{"const":false},"messagePublished":{"const":false}
+      }
+    },
+    "workflow": {
+      "type":"object","additionalProperties":false,"required":["outcome","workerOrWorkflowChanged"],
+      "properties":{"outcome":{"const":"NOT_ATTEMPTED"},"workerOrWorkflowChanged":{"const":false}}
+    },
+    "externalEffects": {
+      "type":"object","additionalProperties":false,
+      "required":["workerDeployed","configurationChanged","routeChanged","secretOrKeyChanged","activationPerformed","automaticRetryPerformed","automaticCleanupPerformed"],
+      "properties": {
+        "workerDeployed":{"const":false},"configurationChanged":{"const":false},"routeChanged":{"const":false},
+        "secretOrKeyChanged":{"const":false},"activationPerformed":{"const":false},
+        "automaticRetryPerformed":{"const":false},"automaticCleanupPerformed":{"const":false}
+      }
+    },
+    "continuation": {
+      "type":"object","additionalProperties":false,"required":["authorized","requiredDecision","nextPermittedRepositoryAction"],
+      "properties": {
+        "authorized":{"const":false},
+        "requiredDecision":{"const":"owner_accepts_wnam_deviation_and_separately_authorizes_queue_resume"},
+        "nextPermittedRepositoryAction":{"const":"independent_review_of_this_code_only_record"}
+      }
+    },
+    "verification": {
+      "type":"object","additionalProperties":false,"required":["method","checkerVerdict","limitations"],
+      "properties": {
+        "method":{"const":"cloudflare_api_read_only"},
+        "checkerVerdict":{"const":"CLAUDE READ-ONLY VERIFICATION: PR #24 D1 CREATION ACCEPTABLE WITH WNAM DEVIATION"},
+        "limitations":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"string","minLength":1}}
+      }
+    }
+  }
+}

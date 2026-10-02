@@ -1,0 +1,34 @@
+{
+  "name": "8978-ai-platform-control-plane",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:node && npm run test:worker",
+    "test:node": "node --test test/*.test.js",
+    "test:worker": "vitest run",
+    "check": "node scripts/validate-artifacts.js",
+    "secret-scan": "node scripts/secret-scan.js",
+    "cf:types": "wrangler types",
+    "cf:types:check": "wrangler types --check",
+    "cf:dry-run": "wrangler deploy --dry-run --outdir .wrangler/dry-run",
+    "cf:admin-v7:dry-run": "wrangler deploy --dry-run --config wrangler.cloudflare-admin-v7.example.jsonc --outdir .wrangler/admin-v7-dry-run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "latest",
+    "@cloudflare/workers-types": "latest",
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "0.10.3",
+    "@modelcontextprotocol/server": "2.0.0",
+    "agents": "0.23.0",
+    "zod": "4.5.4"
+  }
+}
