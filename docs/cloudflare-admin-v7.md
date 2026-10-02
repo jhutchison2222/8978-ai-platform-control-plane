@@ -18,7 +18,15 @@ The source pins these identities and rejects caller-selected alternatives:
 - connector Worker `8978-cloudflare-admin-v7`
 - MCP path `/mcp-8978-admin-v7`
 
-All Cloudflare requests use a dedicated `CLOUDFLARE_ADMIN_API_TOKEN`. No HighLevel or GHL credential is accepted. The API adapter permits only fixed `GET`, `POST`, `PUT`, and `PATCH` operations; it has no deletion, cleanup, rollback, restore, retry, DNS, custom-domain, production, customer, or arbitrary REST operation.
+All Cloudflare requests use a dedicated `CLOUDFLARE_ADMIN_API_TOKEN`, which **must be an Account
+API Token** (created from *Manage Account → API Tokens*, scoped to "Entire `<account_id>` account"),
+consistent with every other credential this project uses (the bootstrap deploy token, the route-audit
+token). Its credential-status check is verified at the account-owned endpoint
+(`GET /accounts/{account_id}/tokens/verify`); a **User** API Token (created from *My Profile → API
+Tokens*) will not authenticate against this check. No HighLevel or GHL credential is accepted. The
+API adapter permits only fixed `GET`, `POST`, `PUT`, and `PATCH` operations; it has no deletion,
+cleanup, rollback, restore, retry, DNS, custom-domain, production, customer, or arbitrary REST
+operation.
 
 ## Authentication
 
