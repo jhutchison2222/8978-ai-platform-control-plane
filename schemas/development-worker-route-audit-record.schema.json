@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-worker-route-audit-record.schema.json",
+  "title": "Development Worker pre-bootstrap route audit record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "status", "governing", "environment", "performedAt",
+    "accountId", "workerName", "zonesEnumerated", "zonesInspected", "paginationComplete",
+    "matchingRouteCount", "credentialType", "tokenValueRecorded", "permittedMethods",
+    "routeMutationPerformed", "cleanupPerformed"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["ROUTE_AUDIT_PASSED_NO_MATCHING_ROUTE", "ROUTE_AUDIT_STOPPED"] },
+    "governing": { "const": false },
+    "environment": { "const": "development" },
+    "performedAt": { "type": "string", "format": "date-time" },
+    "accountId": { "const": "de5e0273347b0b4c5f8f4e554aa2288f" },
+    "workerName": { "const": "8978-ai-control-plane-dev" },
+    "zonesEnumerated": { "type": "integer", "minimum": 0 },
+    "zonesInspected": { "type": "integer", "minimum": 0 },
+    "paginationComplete": { "const": true },
+    "matchingRouteCount": { "const": 0 },
+    "credentialType": { "const": "temporary_read_only" },
+    "tokenValueRecorded": { "const": false },
+    "permittedMethods": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "const": "GET" } },
+    "routeMutationPerformed": { "const": false },
+    "cleanupPerformed": { "const": false },
+    "limitations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}

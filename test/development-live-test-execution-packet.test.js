@@ -46,20 +46,34 @@ test("packet matches the current fail-closed Wrangler configuration", () => {
 });
 
 test("preflight commands are pinned to the exact reviewed read-only allowlist", () => {
-  assert.deepEqual(packet.requiredPreflight.readOnlyCommands, [
+  // Zero-state commands must be satisfiable before the Worker exists: none may name it.
+  assert.deepEqual([...packet.requiredPreflight.zeroStatePreflight], [
     "wrangler whoami",
-    "wrangler deployments status --name 8978-ai-control-plane-dev --json",
     "wrangler d1 info 8978-ai-authority-dev --json",
     "wrangler queues info 8978-ai-orchestrator-dev",
-    "wrangler workflows describe 8978-ai-orchestrator-dev",
-    "wrangler secret list --name 8978-ai-control-plane-dev",
   ]);
+  for (const command of packet.requiredPreflight.zeroStatePreflight) {
+    assert.equal(command.includes("8978-ai-control-plane-dev"), false, command);
+  }
+  assert.deepEqual([...packet.requiredPreflight.postBootstrapPreflight], [
+    "wrangler workflows describe 8978-ai-orchestrator-dev",
+    "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+    "wrangler secret list --name 8978-ai-control-plane-dev",
+    "wrangler subdomain status --name 8978-ai-control-plane-dev",
+  ]);
+  assert.equal(packet.requiresWorkerExists, true);
+  assert.equal(packet.requiresBootstrapRecord, true);
+  assert.deepEqual({ ...packet.subdomainTransition.beforeEnablement }, { enabled: false, previews_enabled: false });
+  assert.deepEqual({ ...packet.subdomainTransition.afterEnablement }, { enabled: true, previews_enabled: false });
+  assert.equal(packet.subdomainTransition.maximumEnablementPosts, 1);
+  assert.equal(packet.subdomainTransition.readBackGetsAfterPost, 1);
+  assert.equal(packet.subdomainTransition.canaryPermittedOnlyAfterExactReadBack, true);
   for (const unsafeCommand of [
     'wrangler d1 execute 8978-ai-authority-dev --remote --command "DELETE FROM authority_resources"',
     "wrangler deploy --name 8978-ai-control-plane-dev",
   ]) {
     const changed = structuredClone(packet);
-    changed.requiredPreflight.readOnlyCommands[0] = unsafeCommand;
+    changed.requiredPreflight.zeroStatePreflight[0] = unsafeCommand;
     assert.notDeepEqual(validateSchema(schema, changed), []);
   }
 });

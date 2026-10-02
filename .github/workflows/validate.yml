@@ -14,6 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Target-runtime closure tests read Git blobs at the reviewed target commit, which a
+          # shallow clone does not contain.
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 22

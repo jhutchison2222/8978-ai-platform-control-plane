@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "PLANNED_BOOTSTRAP_NOT_EXECUTED",
+  "governing": false,
+  "environment": "development",
+  "phase": "create_zero_surface_development_worker",
+  "requiresWorkerExists": false,
+  "executionAuthorized": false,
+  "workerDeploymentAuthorized": false,
+  "subdomainEnablementAuthorized": false,
+  "secretInstallationAuthorized": false,
+  "canaryInvocationAuthorized": false,
+  "targetWorkerCommit": "371b02d797528f175e9e6075aef6fc92757dfd52",
+  "targetConfigurationSha256": "f011600fb1835dcdf9f6491f4b27613004e58e37a1cd5ef9b2b5697859ab40a6",
+  "bootstrapConfiguration": {
+    "path": "wrangler.bootstrap.jsonc",
+    "sha256": "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d",
+    "differsFromTargetOnlyBy": ["workers_dev"]
+  },
+  "remediationCommit": null,
+  "remediationCommitBinding": "supplied_externally_in_owner_authorization_never_written_to_reviewed_tree",
+  "target": {
+    "cloudflareAccountId": "de5e0273347b0b4c5f8f4e554aa2288f",
+    "workerName": "8978-ai-control-plane-dev",
+    "authorityDatabaseId": "741ade94-8539-4fc8-b6be-24884720dee8",
+    "workflowName": "8978-ai-orchestrator-dev",
+    "queueName": "8978-ai-orchestrator-dev"
+  },
+  "bootstrapSurface": {
+    "workersDev": false,
+    "previewUrls": false,
+    "routes": [],
+    "customDomains": [],
+    "migrationTags": ["v1", "v2"],
+    "publicSurface": "none"
+  },
+  "preBootstrapRouteAudit": {
+    "required": true,
+    "credential": "separate_temporary_read_only_zone_credential",
+    "requiredPermissions": ["Zone Read", "Workers Routes Read"],
+    "prohibitedPermissions": ["Workers Routes Write", "Workers Routes Edit"],
+    "permittedMethods": ["GET"],
+    "permittedEndpoints": ["/zones", "/zones/{zone_id}/workers/routes"],
+    "requiredOutcome": "zero_routes_targeting_the_pinned_worker",
+    "requiredOwnerAuthorizationTemplate": "I authorize one read-only all-zone Workers route audit for account de5e0273347b0b4c5f8f4e554aa2288f using a separate temporary credential scoped to Zone Read and Workers Routes Read only, never Workers Routes Write. The audit is GET-only, paginates every response, writes no record, and must stop if any zone cannot be enumerated, any response is missing, rejected, truncated or ambiguous, or any route targets 8978-ai-control-plane-dev. No route may be created, modified, or deleted, and no cleanup or remediation is authorized."
+  },
+  "authorizedCommands": {
+    "routeAudit": "node scripts/audit-development-worker-routes.js",
+    "bootstrapDeploy": "npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message \"8978-bootstrap:371b02d797528f175e9e6075aef6fc92757dfd52:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d\"",
+    "bootstrapVerification": "node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>",
+    "maximumAttempts": 1
+  },
+  "credentialBoundaries": {
+    "credentialKinds": ["access-service-token", "service-auth-principal"],
+    "connectorRouteAccess": false,
+    "runtimeTokenZonePermissions": false,
+    "crossInvocationCustodyRequired": true
+  },
+  "prohibitedOperations": [
+    "enable_workers_dev_subdomain",
+    "enable_preview_urls",
+    "create_or_modify_route",
+    "create_or_modify_custom_domain",
+    "modify_dns",
+    "install_or_rotate_secret_or_key",
+    "create_access_application_or_service_token",
+    "run_canary",
+    "deploy_or_upload_the_target_reviewed_version",
+    "delete_cleanup_retry_restore_or_rollback",
+    "production_or_customer_operation",
+    "unreviewed_scope_expansion"
+  ],
+  "stopConditions": [
+    "the read-only all-zone route audit did not complete or reported any route targeting the pinned Worker",
+    "the authenticated Cloudflare account is not exactly de5e0273347b0b4c5f8f4e554aa2288f",
+    "HEAD does not equal the externally authorized remediation commit",
+    "any target runtime input, migration, or protected file digest does not equal the reviewed manifest",
+    "the bootstrap configuration digest does not equal the reviewed pinned digest",
+    "the bootstrap configuration does not declare workers_dev false and preview_urls false explicitly",
+    "the bootstrap deployment annotation does not bind the exact target commit and bootstrap configuration digest",
+    "the Worker subdomain is not exactly enabled false and previews_enabled false after bootstrap",
+    "any result is partial, inconsistent, unexpected, or unavailable"
+  ],
+  "partialFailurePolicy": {
+    "automaticDeletion": false,
+    "automaticCleanup": false,
+    "automaticRetry": false,
+    "automaticRestore": false,
+    "automaticRollback": false,
+    "action": "stop_and_report_exact_sanitized_state"
+  },
+  "requiredOwnerAuthorizationTemplate": "I authorize exactly one bootstrap deployment of Worker 8978-ai-control-plane-dev in account de5e0273347b0b4c5f8f4e554aa2288f using wrangler.bootstrap.jsonc with SHA-256 9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d, from remediation commit <AUTHORIZED_REMEDIATION_SHA>, whose target runtime closure is byte-identical to target commit 371b02d797528f175e9e6075aef6fc92757dfd52. The completed read-only all-zone route audit must report zero routes targeting the Worker. workers.dev and preview URLs must remain disabled, no route, DNS, or custom domain may be created, no secret may be installed, no Access resource may be created, and no canary may run. Execute once. Do not retry, clean up, restore, or roll back. Stop and report the exact sanitized state on any mismatch, ambiguity, or partial result."
+}

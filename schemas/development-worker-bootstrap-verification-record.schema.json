@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://8978.ai/schemas/development-worker-bootstrap-verification-record.schema.json",
+  "title": "Development Worker bootstrap verification record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "status", "governing", "environment", "verifiedAt",
+    "accountId", "workerName", "workerId", "remediationCommit", "targetWorkerCommit",
+    "targetConfigurationSha256", "bootstrapConfigurationSha256", "annotation",
+    "activeDeployment", "migrationTag", "subdomain", "serviceAuthSecretPresent",
+    "customDomainMatches", "routeAudit", "credentialCustody", "secretValueRecorded"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "minLength": 1 },
+    "status": { "const": "BOOTSTRAP_VERIFIED_UNREACHABLE" },
+    "governing": { "const": false },
+    "environment": { "const": "development" },
+    "verifiedAt": { "type": "string", "format": "date-time" },
+    "accountId": { "const": "de5e0273347b0b4c5f8f4e554aa2288f" },
+    "workerName": { "const": "8978-ai-control-plane-dev" },
+    "workerId": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source", "corroboratingSource", "sourcesAgree"],
+      "properties": {
+        "value": { "type": "string", "pattern": "^[a-f0-9]{32}$" },
+        "source": { "const": "workers_beta_list" },
+        "corroboratingSource": { "const": "workers_scripts_tag" },
+        "sourcesAgree": { "const": true }
+      }
+    },
+    "remediationCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "targetWorkerCommit": { "const": "371b02d797528f175e9e6075aef6fc92757dfd52" },
+    "targetConfigurationSha256": { "const": "f011600fb1835dcdf9f6491f4b27613004e58e37a1cd5ef9b2b5697859ab40a6" },
+    "bootstrapConfigurationSha256": { "const": "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d" },
+    "annotation": { "type": "string", "pattern": "^8978-bootstrap:[a-f0-9]{40}:[a-f0-9]{64}$" },
+    "activeDeployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "versionId", "versionCount", "percentage"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "versionId": { "type": "string", "minLength": 1 },
+        "versionCount": { "const": 1 },
+        "percentage": { "const": 100 }
+      }
+    },
+    "bootstrapEtag": { "type": "string", "minLength": 1 },
+    "migrationTag": { "const": "v2" },
+    "subdomain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "previews_enabled"],
+      "properties": {
+        "enabled": { "const": false },
+        "previews_enabled": { "const": false }
+      }
+    },
+    "serviceAuthSecretPresent": { "const": false },
+    "customDomainMatches": { "const": 0 },
+    "routeAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["performedAt", "zonesEnumerated", "paginationComplete", "matchingRouteCount", "credentialType", "tokenValueRecorded"],
+      "properties": {
+        "performedAt": { "type": "string", "format": "date-time" },
+        "zonesEnumerated": { "type": "integer", "minimum": 0 },
+        "paginationComplete": { "const": true },
+        "matchingRouteCount": { "const": 0 },
+        "credentialType": { "const": "temporary_read_only" },
+        "tokenValueRecorded": { "const": false }
+      }
+    },
+    "credentialCustody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accessServiceTokenSlot", "serviceAuthPrincipalSlot", "slotsDistinct"],
+      "properties": {
+        "accessServiceTokenSlot": { "const": "CANARY_ACCESS_CREDENTIAL_JSON" },
+        "serviceAuthPrincipalSlot": { "const": "CANARY_SERVICE_AUTH_PRINCIPAL_JSON" },
+        "slotsDistinct": { "const": true }
+      }
+    },
+    "secretValueRecorded": { "const": false },
+    "limitations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  }
+}

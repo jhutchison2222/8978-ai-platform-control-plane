@@ -14,6 +14,12 @@ import {
   REVIEWED_SCHEMA_INVENTORY_PACKET_SHA256,
 } from "../src/development-authority-schema-inventory-verification-record.js";
 import { TRUSTED_POLICY_SET_DIGESTS } from "../src/trusted-policy-sets.js";
+import { normalizedFileDigest } from "./verify-target-runtime-closure.js";
+import { CLOUDFLARE_ADMIN_V7, WRITE_APPROVALS } from "../src/cloudflare-admin-v7-contracts.js";
+import {
+  PERMITTED_EXTERNAL_SPECIFIERS, TARGET_CONFIGURATION_SHA256, TARGET_ENTRYPOINT,
+  TARGET_MIGRATIONS, TARGET_PROTECTED_FILES, TARGET_RUNTIME_INPUTS, TARGET_WORKER_COMMIT,
+} from "../src/target-runtime-manifest.js";
 import { validateSchema } from "./json-schema-lite.js";
 
 const load = async (path) => parseJsonStrict(await readFile(path, "utf8"));
@@ -93,6 +99,7 @@ const activationEvidenceRuntimeCompositionTestSource = await readFile("test/d1-d
 const activationPreflightEvaluatorTestSource = await readFile("test/d1-development-activation-preflight-evaluator.test.js", "utf8");
 const vitestSource = await readFile("vitest.config.js", "utf8");
 const secretScanSource = await readFile("scripts/secret-scan.js", "utf8");
+const adminV7ApiSource = await readFile("src/cloudflare-admin-v7-api.js", "utf8");
 const authorityMigrationRecordValidatorSource = await readFile("src/development-authority-migration-execution-record.js", "utf8");
 const authoritySchemaInventoryRecordValidatorSource = await readFile("src/development-authority-schema-inventory-verification-record.js", "utf8");
 const prMergeGateWorkflowSource = await readFile(".github/workflows/dispatch-pr-merge-gate.yml", "utf8");
@@ -404,16 +411,27 @@ if (liveTestPacket.target.cloudflareAccountId !== AUTHORIZED_DEVELOPMENT_ACCOUNT
     })) {
   throw new Error("Development live-test target identity drifted");
 }
-const expectedLiveTestReadOnlyCommands = [
+// Split so the zero-state half is satisfiable before the Worker exists. Both halves stay pinned.
+const expectedLiveTestZeroStatePreflight = [
   "wrangler whoami",
-  "wrangler deployments status --name 8978-ai-control-plane-dev --json",
   "wrangler d1 info 8978-ai-authority-dev --json",
   "wrangler queues info 8978-ai-orchestrator-dev",
-  "wrangler workflows describe 8978-ai-orchestrator-dev",
-  "wrangler secret list --name 8978-ai-control-plane-dev",
 ];
-if (JSON.stringify(liveTestPacket.requiredPreflight.readOnlyCommands) !== JSON.stringify(expectedLiveTestReadOnlyCommands)) {
+const expectedLiveTestPostBootstrapPreflight = [
+  "wrangler workflows describe 8978-ai-orchestrator-dev",
+  "wrangler deployments status --name 8978-ai-control-plane-dev --json",
+  "wrangler secret list --name 8978-ai-control-plane-dev",
+  "wrangler subdomain status --name 8978-ai-control-plane-dev",
+];
+if (JSON.stringify(liveTestPacket.requiredPreflight.zeroStatePreflight) !== JSON.stringify(expectedLiveTestZeroStatePreflight) ||
+    JSON.stringify(liveTestPacket.requiredPreflight.postBootstrapPreflight) !== JSON.stringify(expectedLiveTestPostBootstrapPreflight)) {
   throw new Error("Development live-test preflight commands must remain the exact reviewed read-only allowlist");
+}
+// The zero-state half must never name the Worker: it runs before the Worker exists.
+for (const command of liveTestPacket.requiredPreflight.zeroStatePreflight) {
+  if (command.includes(CLOUDFLARE_ADMIN_V7.workerName)) {
+    throw new Error(`Zero-state preflight command must not require the target Worker to exist: ${command}`);
+  }
 }
 if (liveTestPacket.stateDistinction.declarationDoesNotProveRemoteInstallation !== true ||
     liveTestPacket.stateDistinction.remotelyRecorded.workflowExistence !== "UNVERIFIED" ||
@@ -1583,6 +1601,173 @@ if (!/candidate action families only and fail closed without verified AutoCalls 
 const batch3ServiceAuthRule = "Cloudflare service authentication remains HMAC-based with replay defense and no OAuth dependency.";
 if (!batch3Proposed.normalizationRules?.includes("Service authentication remains HMAC-based with replay defense and no OAuth dependency.") || batch3Proposed.nonBatch3RuntimeConstraints?.length !== 1 || batch3Proposed.nonBatch3RuntimeConstraints[0].constraint !== batch3ServiceAuthRule || !batch3Proposed.nonBatch3RuntimeConstraints.every((constraint) => constraint.changesBatch3RecordCount === false)) throw new Error("Batch 3 must preserve service-auth independence without changing its record count");
 if (/Status: (?:CURRENT|FINAL)/u.test([batch3Readme, ...batch3Sources].join("\n"))) throw new Error("Batch 3 source files cannot self-promote to CURRENT or FINAL");
+
+
+// --- Zero-surface bootstrap remediation: target-runtime provenance and bootstrap invariants ---
+const bootstrapPacketSchema = await load("schemas/development-worker-bootstrap-creation-packet.schema.json");
+const bootstrapPacket = await load("deployment/development-worker-bootstrap-creation-packet.json");
+const bootstrapVerificationRecordSchema = await load("schemas/development-worker-bootstrap-verification-record.schema.json");
+const routeAuditRecordSchema = await load("schemas/development-worker-route-audit-record.schema.json");
+const bootstrapConfigText = await readFile("wrangler.bootstrap.jsonc", "utf8");
+const bootstrapConfig = parseJsonStrict(bootstrapConfigText.replace(/^\s*\/\/.*$/gmu, ""));
+const targetConfigText = await readFile("wrangler.jsonc", "utf8");
+const targetConfig = parseJsonStrict(targetConfigText.replace(/^\s*\/\/.*$/gmu, ""));
+
+assertValid("development Worker bootstrap creation packet", bootstrapPacketSchema, bootstrapPacket);
+
+// Exact pinned owner-run commands: packet, schema const, and documentation must all agree byte-for-byte.
+const PINNED_BOOTSTRAP_COMMANDS = Object.freeze({
+  routeAudit: "node scripts/audit-development-worker-routes.js",
+  bootstrapDeploy: `npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:${TARGET_WORKER_COMMIT}:${CLOUDFLARE_ADMIN_V7.bootstrapConfigurationSha256}"`,
+  bootstrapVerification: "node scripts/verify-development-worker-bootstrap.js --remediation-commit <AUTHORIZED_REMEDIATION_SHA> --bootstrap-version-id <BOOTSTRAP_VERSION_ID>",
+});
+const bootstrapCommandSchema = bootstrapPacketSchema.properties?.authorizedCommands?.properties ?? {};
+const bootstrapCommandDocs = [
+  await readFile("docs/development-worker-bootstrap-creation.md", "utf8"),
+  await readFile("docs/development-worker-route-audit.md", "utf8"),
+  await readFile("docs/cloudflare-admin-v7.md", "utf8"),
+].join("\n");
+for (const [name, command] of Object.entries(PINNED_BOOTSTRAP_COMMANDS)) {
+  if (bootstrapPacket.authorizedCommands?.[name] !== command) throw new Error(`Bootstrap packet command ${name} must equal the exact pinned command`);
+  if (bootstrapCommandSchema[name]?.const !== command || Object.keys(bootstrapCommandSchema[name]).length !== 1) {
+    throw new Error(`Bootstrap packet schema must pin ${name} as exactly one const value`);
+  }
+  if (!bootstrapCommandDocs.includes(command)) throw new Error(`Bootstrap documentation must state the exact pinned ${name} command`);
+}
+
+const gitBlobSha256 = (file) => normalizedFileDigest(file);
+
+// Three-way equality: file digest === contracts constant === packet pin.
+const bootstrapDigestFromGit = gitBlobSha256("wrangler.bootstrap.jsonc");
+if (bootstrapDigestFromGit !== CLOUDFLARE_ADMIN_V7.bootstrapConfigurationSha256 ||
+    bootstrapDigestFromGit !== bootstrapPacket.bootstrapConfiguration.sha256) {
+  throw new Error("Bootstrap configuration digest must be identical in the file, the connector contracts, and the bootstrap packet");
+}
+if (CLOUDFLARE_ADMIN_V7.targetWorkerCommit !== TARGET_WORKER_COMMIT ||
+    CLOUDFLARE_ADMIN_V7.targetConfigurationSha256 !== TARGET_CONFIGURATION_SHA256) {
+  throw new Error("Connector contracts must pin exactly the reviewed target Worker provenance");
+}
+
+// Every reviewed target runtime input, migration, and protected file must be byte-identical at HEAD.
+for (const [file, expected] of Object.entries({ ...TARGET_RUNTIME_INPUTS, ...TARGET_MIGRATIONS, ...TARGET_PROTECTED_FILES })) {
+  if (gitBlobSha256(file) !== expected) throw new Error(`Target runtime provenance digest changed for ${file}`);
+}
+if (Object.keys(TARGET_RUNTIME_INPUTS).length !== 22) throw new Error("Target runtime manifest must describe exactly the 22 reviewed runtime inputs");
+if (Object.keys(TARGET_MIGRATIONS).length !== 6) throw new Error("Target runtime manifest must describe exactly six reviewed migrations");
+if (TARGET_ENTRYPOINT !== targetConfig.main) throw new Error("Target runtime manifest entrypoint must equal the reviewed configuration entrypoint");
+if (PERMITTED_EXTERNAL_SPECIFIERS.length !== 1 || PERMITTED_EXTERNAL_SPECIFIERS[0] !== "cloudflare:workers") {
+  throw new Error("cloudflare:workers must remain the only permitted external runtime specifier");
+}
+
+// The bootstrap configuration must differ from the reviewed target configuration only in workers_dev.
+const bootstrapKeys = Object.keys(bootstrapConfig).sort().join(",");
+const targetKeys = Object.keys(targetConfig).sort().join(",");
+if (bootstrapKeys !== targetKeys) throw new Error("Bootstrap configuration must declare exactly the reviewed target configuration keys");
+for (const key of Object.keys(targetConfig)) {
+  if (key === "workers_dev") continue;
+  if (JSON.stringify(bootstrapConfig[key]) !== JSON.stringify(targetConfig[key])) {
+    throw new Error(`Bootstrap configuration may differ from the reviewed target configuration only in workers_dev; ${key} differs`);
+  }
+}
+// Wrangler defaults workers_dev to true when it is absent and no route exists, so absence is a security hazard.
+if (!Object.prototype.hasOwnProperty.call(bootstrapConfig, "workers_dev") || bootstrapConfig.workers_dev !== false) {
+  throw new Error("Bootstrap configuration must explicitly declare workers_dev false");
+}
+if (!Object.prototype.hasOwnProperty.call(bootstrapConfig, "preview_urls") || bootstrapConfig.preview_urls !== false) {
+  throw new Error("Bootstrap configuration must explicitly declare preview_urls false");
+}
+if (targetConfig.workers_dev !== true) throw new Error("Reviewed target configuration is expected to declare workers_dev true");
+for (const key of ["routes", "route", "rules", "alias", "build", "find_additional_modules", "no_bundle", "site", "assets"]) {
+  if (Object.prototype.hasOwnProperty.call(bootstrapConfig, key)) throw new Error(`Bootstrap configuration must not declare ${key}`);
+}
+if (JSON.stringify(bootstrapConfig.migrations?.map((m) => m.tag)) !== JSON.stringify(bootstrapPacket.bootstrapSurface.migrationTags)) {
+  throw new Error("Bootstrap packet migration tags must equal the bootstrap configuration migration tags");
+}
+
+// A remediation commit cannot contain its own SHA: the tracked packet must never claim one.
+if (bootstrapPacket.remediationCommit !== null) throw new Error("Tracked bootstrap packet must not contain a remediation commit SHA");
+const packetSerialized = JSON.stringify(bootstrapPacket);
+for (const candidate of packetSerialized.match(/(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/gu) ?? []) {
+  if (candidate !== TARGET_WORKER_COMMIT) throw new Error(`Tracked bootstrap packet must not pin any commit other than the reviewed target commit: ${candidate}`);
+}
+if (validateSchema(bootstrapPacketSchema, { ...bootstrapPacket, remediationCommit: "0".repeat(40) }).length === 0) {
+  throw new Error("Bootstrap packet schema must reject a 40-hex remediation commit SHA");
+}
+
+// Anti-recurrence: at least one packet must be satisfiable while the target Worker does not exist.
+if (bootstrapPacket.requiresWorkerExists !== false) throw new Error("The bootstrap packet must declare requiresWorkerExists false");
+if (liveTestPacket.requiresWorkerExists !== true) throw new Error("The live-test packet must declare requiresWorkerExists true");
+
+// Subdomain transition contract and credential isolation.
+if (CLOUDFLARE_ADMIN_V7.subdomainBeforeEnablement.enabled !== false ||
+    CLOUDFLARE_ADMIN_V7.subdomainBeforeEnablement.previews_enabled !== false ||
+    CLOUDFLARE_ADMIN_V7.subdomainAfterEnablement.enabled !== true ||
+    CLOUDFLARE_ADMIN_V7.subdomainAfterEnablement.previews_enabled !== false) {
+  throw new Error("Reviewed subdomain transition must be false/false before enablement and true/false after");
+}
+if (CLOUDFLARE_ADMIN_V7.accessCredentialSecretName === CLOUDFLARE_ADMIN_V7.serviceAuthPrincipalSecretName) {
+  throw new Error("The two custodian credential kinds must use distinct managed-secret slots");
+}
+if (!WRITE_APPROVALS.enableSubdomain || WRITE_APPROVALS.enableSubdomain === WRITE_APPROVALS.runCanary ||
+    WRITE_APPROVALS.enableSubdomain === WRITE_APPROVALS.deployReviewedWorker ||
+    WRITE_APPROVALS.enableSubdomain === WRITE_APPROVALS.installServiceAuth) {
+  throw new Error("Subdomain enablement must carry its own exact literal owner approval");
+}
+if (!/WORKER-LEVEL ACCESS PROTECTION/u.test(WRITE_APPROVALS.ensureAccess)) {
+  throw new Error("The Access approval literal must describe Worker-level protection rather than a single hostname");
+}
+if (Object.prototype.hasOwnProperty.call(WRITE_APPROVALS, "bootstrapCreateWorker")) {
+  throw new Error("Bootstrap creation is owner-run and must not appear in connector write approvals");
+}
+
+// The connector must expose no route, DNS, custom-domain, delete, or disable capability.
+for (const forbidden of [/workers\/routes/u, /\/dns/u, /"DELETE"/u, /deleteWorkerSubdomain/u, /disableWorkerSubdomain/u]) {
+  if (forbidden.test(adminV7ApiSource)) throw new Error(`Admin v7 API adapter must not expose ${forbidden}`);
+}
+if (!/workers\/domains/u.test(adminV7ApiSource)) throw new Error("Admin v7 API adapter must read account Worker domains to prove custom-domain absence");
+if (!/Cloudflare-Workers-Script-Api-Date/u.test(adminV7ApiSource)) throw new Error("Subdomain writes must carry the dated Workers script API header");
+
+// Synthetic, non-governing record shapes: each must pass its schema, and each credential-recording,
+// exposure, or unexpected-property variant must fail it, so a schema regression cannot pass silently.
+const syntheticBootstrapVerificationRecord = {
+  schemaVersion: "1", status: "BOOTSTRAP_VERIFIED_UNREACHABLE", governing: false, environment: "development",
+  verifiedAt: "2026-09-26T00:00:00Z", accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName,
+  workerId: { value: "0".repeat(32), source: "workers_beta_list", corroboratingSource: "workers_scripts_tag", sourcesAgree: true },
+  remediationCommit: "0".repeat(40), targetWorkerCommit: TARGET_WORKER_COMMIT, targetConfigurationSha256: TARGET_CONFIGURATION_SHA256,
+  bootstrapConfigurationSha256: "9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d",
+  annotation: `8978-bootstrap:${TARGET_WORKER_COMMIT}:${TARGET_CONFIGURATION_SHA256}`,
+  activeDeployment: { id: "synthetic-deployment", versionId: "synthetic-version", versionCount: 1, percentage: 100 },
+  migrationTag: "v2", subdomain: { enabled: false, previews_enabled: false }, serviceAuthSecretPresent: false, customDomainMatches: 0,
+  routeAudit: { performedAt: "2026-09-26T00:00:00Z", zonesEnumerated: 0, paginationComplete: true, matchingRouteCount: 0, credentialType: "temporary_read_only", tokenValueRecorded: false },
+  credentialCustody: { accessServiceTokenSlot: "CANARY_ACCESS_CREDENTIAL_JSON", serviceAuthPrincipalSlot: "CANARY_SERVICE_AUTH_PRINCIPAL_JSON", slotsDistinct: true },
+  secretValueRecorded: false,
+};
+const syntheticRouteAuditRecord = {
+  schemaVersion: "1", status: "ROUTE_AUDIT_PASSED_NO_MATCHING_ROUTE", governing: false, environment: "development",
+  performedAt: "2026-09-26T00:00:00Z", accountId: CLOUDFLARE_ADMIN_V7.accountId, workerName: CLOUDFLARE_ADMIN_V7.workerName,
+  zonesEnumerated: 0, zonesInspected: 0, paginationComplete: true, matchingRouteCount: 0, credentialType: "temporary_read_only",
+  tokenValueRecorded: false, permittedMethods: ["GET"], routeMutationPerformed: false, cleanupPerformed: false,
+};
+assertValid("development Worker bootstrap verification record contract", bootstrapVerificationRecordSchema, syntheticBootstrapVerificationRecord);
+assertValid("development Worker route audit record contract", routeAuditRecordSchema, syntheticRouteAuditRecord);
+for (const [label, schema, record] of [
+  ["a recorded secret value", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, secretValueRecorded: true }],
+  ["an enabled subdomain", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, subdomain: { enabled: true, previews_enabled: false } }],
+  ["a Custom Domain match", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, customDomainMatches: 1 }],
+  ["an unexpected property", bootstrapVerificationRecordSchema, { ...syntheticBootstrapVerificationRecord, clientSecret: "x" }],
+  ["a recorded route-audit token", routeAuditRecordSchema, { ...syntheticRouteAuditRecord, tokenValueRecorded: true }],
+  ["a non-GET route-audit method", routeAuditRecordSchema, { ...syntheticRouteAuditRecord, permittedMethods: ["PUT"] }],
+  ["a route-audit unexpected property", routeAuditRecordSchema, { ...syntheticRouteAuditRecord, apiToken: "x" }],
+]) {
+  if (validateSchema(schema, record).length === 0) throw new Error(`Record schema negative fixture unexpectedly passed: ${label}`);
+}
+if (bootstrapVerificationRecordSchema.additionalProperties !== false || routeAuditRecordSchema.additionalProperties !== false) {
+  throw new Error("Bootstrap verification and route audit record schemas must reject unexpected properties");
+}
+if (bootstrapVerificationRecordSchema.properties?.secretValueRecorded?.const !== false ||
+    routeAuditRecordSchema.properties?.tokenValueRecorded?.const !== false) {
+  throw new Error("Record schemas must structurally forbid recording credential values");
+}
 
 const trustKey = `${policies.policySetId}@${policies.policySetVersion}`;
 if (await digestCanonicalValue(policies) !== TRUSTED_POLICY_SET_DIGESTS[trustKey]) throw new Error(`Policy trust-anchor digest mismatch: ${trustKey}`);
