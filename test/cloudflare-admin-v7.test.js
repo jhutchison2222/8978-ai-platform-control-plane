@@ -76,6 +76,28 @@ test("Cloudflare API adapter pins account and exposes only fixed operations with
   assert.equal(requests.some(({ url }) => url.includes("/workers/workers/")), false);
 });
 
+// Mirrors the bug found and fixed in the owner-run Phase 2 verifier: CLOUDFLARE_ADMIN_API_TOKEN is
+// required to be an Account API Token, which Cloudflare verifies at the account-owned endpoint, not
+// the user-token endpoint. No existing test exercised verifyIdentity()'s real request URL; every
+// other test mocks the whole function at the service level. This is the one that would have caught
+// the same class of bug here.
+test("verifyIdentity() checks credential status at the account-owned-token endpoint, never the user-token endpoint", async () => {
+  const requests = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url, init) => {
+      requests.push({ url: String(url), init });
+      if (String(url).endsWith("/tokens/verify")) return response({ id: "token-id", status: "active" });
+      return response({ id: CLOUDFLARE_ADMIN_V7.accountId, name: "account" });
+    },
+  });
+  const identity = await api.verifyIdentity();
+  assert.equal(requests[0].url, `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/tokens/verify`);
+  assert.equal(requests.some(({ url }) => url.includes("/user/tokens/verify")), false);
+  assert.equal(identity.tokenStatus, "active");
+  assert.equal(identity.account.id, CLOUDFLARE_ADMIN_V7.accountId);
+});
+
 test("secret metadata and nested responses are redacted", () => {
   assert.deepEqual(secretMetadataOnly([
     { name: "SAFE", type: "plain_text", text: "visible" },

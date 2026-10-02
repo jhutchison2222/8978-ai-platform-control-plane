@@ -63,7 +63,10 @@ export class CloudflareAdminV7Api {
   }
 
   async verifyIdentity() {
-    const token = await this.#request("GET", "/user/tokens/verify");
+    // CLOUDFLARE_ADMIN_API_TOKEN is required to be an Account API Token (consistent with every
+    // other credential this project uses), so credential status is verified at the account-owned
+    // endpoint; no fallback to the user-token endpoint.
+    const token = await this.#request("GET", this.#accountPath("/tokens/verify"));
     const account = await this.#request("GET", this.#accountPath(""));
     if (token?.status !== "active") throw new Error("Cloudflare API token is not active");
     if (account?.id !== this.accountId) throw new Error("Authenticated Cloudflare account identity mismatch");
