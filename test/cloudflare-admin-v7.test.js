@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  CEILING_WARNING_THRESHOLD,
   CLOUDFLARE_ADMIN_V7,
   MAXIMUM_LISTING_PAGES,
   WRITE_APPROVALS,
   assertPinnedTarget,
+  collectPagedResults,
   requireExactApproval,
 } from "../src/cloudflare-admin-v7-contracts.js";
 import { CloudflareAdminV7Api } from "../src/cloudflare-admin-v7-api.js";
@@ -123,6 +125,65 @@ test("every unfiltered Access listing uses Cloudflare's documented maximum per_p
   }
   for (const url of requests) assert.match(url, /[?&]per_page=1000(&|$)/u, `${url} must use the documented maximum per_page`);
   assert.equal(MAXIMUM_LISTING_PAGES * 1000, 100000);
+});
+
+// An early, non-blocking capacity signal: once a listing's derived page count reaches
+// CEILING_WARNING_THRESHOLD of the fail-closed ceiling, operators get notice well before it
+// actually becomes unprovable. The listing still completes normally either way.
+// A real, fully consistent multi-page generator: each requested page returns exactly the items
+// that belong on it, so collectPagedResults can genuinely paginate through to completion.
+function fixedPage(totalCount, perPage) {
+  const totalPages = Math.ceil(totalCount / perPage) || 1;
+  return async (page) => {
+    const start = (page - 1) * perPage;
+    const count = Math.max(0, Math.min(perPage, totalCount - start));
+    const items = Array.from({ length: count }, (_, index) => ({ id: `item-${start + index}` }));
+    return { success: true, result: items, result_info: { page, per_page: perPage, count: items.length, total_count: totalCount, total_pages: totalPages } };
+  };
+}
+
+test("collectPagedResults warns, without failing, once a listing approaches its fail-closed ceiling", async () => {
+  const warnings = [];
+  const totalPages = Math.ceil(MAXIMUM_LISTING_PAGES * CEILING_WARNING_THRESHOLD);
+  const result = await collectPagedResults(fixedPage(totalPages * 10, 10), "test listing", {
+    onApproachingCeiling: (message) => warnings.push(message),
+  });
+  assert.equal(result.length, totalPages * 10, "the listing still completes fully despite the warning");
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], new RegExp(`requires ${totalPages} of a maximum ${MAXIMUM_LISTING_PAGES} pages`));
+});
+
+test("collectPagedResults stays silent well below the ceiling", async () => {
+  const warnings = [];
+  await collectPagedResults(fixedPage(5, 10), "test listing", {
+    onApproachingCeiling: (message) => warnings.push(message),
+  });
+  assert.equal(warnings.length, 0);
+});
+
+test("collectPagedResults never warns on a listing it ultimately rejects as exceeding the ceiling", async () => {
+  const warnings = [];
+  await assert.rejects(
+    () => collectPagedResults(fixedPage((MAXIMUM_LISTING_PAGES + 1) * 10, 10), "test listing", {
+      onApproachingCeiling: (message) => warnings.push(message),
+    }),
+    /did not terminate within \d+ pages/u,
+  );
+  assert.equal(warnings.length, 0, "a listing that fails closed is reported by its own error, not a warning");
+});
+
+test("collectPagedResults warns through console.warn by default when no callback is supplied", async () => {
+  const originalWarn = console.warn;
+  const captured = [];
+  console.warn = (message) => captured.push(message);
+  try {
+    // maximumPages=5, threshold 0.8 -> warning zone starts at ceil(5*0.8)=4 pages.
+    await collectPagedResults(fixedPage(4 * 10, 10), "default-callback listing", { maximumPages: 5 });
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.equal(captured.length, 1);
+  assert.match(captured[0], /default-callback listing requires 4 of a maximum 5 pages/u);
 });
 
 test("secret metadata and nested responses are redacted", () => {
