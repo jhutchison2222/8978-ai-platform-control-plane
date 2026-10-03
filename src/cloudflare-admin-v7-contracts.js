@@ -135,7 +135,7 @@ export async function collectPagedResults(fetchPage, label, {
       if (totalPages >= maximumPages * CEILING_WARNING_THRESHOLD) {
         const warning =
           `${label} requires ${totalPages} of a maximum ${maximumPages} pages (${info.total_count} items at ${info.per_page} per page); ` +
-          "approaching the fail-closed pagination ceiling. This listing still completed; raise per_page or the ceiling before it becomes unprovable.";
+          "approaching the fail-closed pagination ceiling; raise per_page or the ceiling before it becomes unprovable.";
         try {
           await onApproachingCeiling(warning);
         } catch {
