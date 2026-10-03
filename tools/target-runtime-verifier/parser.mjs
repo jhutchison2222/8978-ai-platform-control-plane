@@ -12,12 +12,19 @@
 // local/external as sorted arrays (the parent process reconstructs them as Sets). Performs no
 // Cloudflare call, reads no credential, and writes no file.
 
+import { createRequire } from "node:module";
 import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const toPosix = (value) => value.split(path.sep).join("/");
 const thisDirectory = path.dirname(fileURLToPath(import.meta.url));
+// createRequire(...).resolve() is CommonJS-style synchronous resolution, available unflagged since
+// Node 12 — unlike import.meta.resolve(), which is synchronous only from Node 20.6.0 and does not
+// exist at all (without an experimental flag) on Node 20.0.0-20.5.x. package.json declares
+// "node": ">=20", so this must work correctly across the entire >=20 range, not just the version CI
+// happens to run.
+const resolveFromHere = createRequire(import.meta.url).resolve;
 
 function readArg(name) {
   const index = process.argv.indexOf(name);
@@ -32,7 +39,8 @@ function readArg(name) {
 // fall back to whatever happens to be hoisted at the repository root — precisely the accidental
 // coupling this isolation exists to prevent. Fail loudly instead of ever silently falling back.
 function assertIsolatedResolution() {
-  const resolved = import.meta.resolve("es-module-lexer");
+  const resolvedPath = resolveFromHere("es-module-lexer");
+  const resolved = pathToFileURL(resolvedPath).href;
   const expectedPrefix = pathToFileURL(path.join(thisDirectory, "node_modules", "es-module-lexer") + path.sep).href;
   if (!resolved.startsWith(expectedPrefix)) {
     throw new Error(

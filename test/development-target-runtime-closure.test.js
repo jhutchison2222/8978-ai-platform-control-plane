@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, renameSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
@@ -120,28 +121,47 @@ test("the verifier sub-package pins an exact, non-range es-module-lexer version 
 test("a missing sub-package install fails loudly instead of silently falling back to the repository root's hoisted copy", () => {
   // Node's module resolution walks up parent directories when a package is absent locally, so this
   // proves assertIsolatedResolution() actually catches that fallback rather than merely looking like
-  // it would. Destructive but self-restoring: the sub-package's real install is always put back,
-  // even if an assertion below throws.
-  const nodeModules = path.join(verifierSubpackage, "node_modules");
-  const displaced = `${nodeModules}.isolation-test-displaced`;
-  rmSync(displaced, { recursive: true, force: true });
-  renameSync(nodeModules, displaced);
+  // it would. Proves it WITHOUT ever touching the real, installed tools/target-runtime-verifier/
+  // node_modules: a throwaway copy of parser.mjs is run from an OS temp directory, outside the
+  // repository tree entirely, with no node_modules of its own. If the process were ever killed
+  // mid-test, at worst an orphaned OS temp directory is left behind (harmless, and OS/CI-cleaned) —
+  // there is no real install to rename away and no risk of a later run finding a broken repository.
+  const scratch = mkdtempSync(path.join(tmpdir(), "trv-isolation-"));
   try {
+    const copiedParser = path.join(scratch, "parser.mjs");
+    cpSync(path.join(verifierSubpackage, "parser.mjs"), copiedParser);
     assert.throws(() => {
-      execFileSync(process.execPath, [path.join(verifierSubpackage, "parser.mjs"), "--resolve-path"], {
-        cwd: verifierSubpackage,
-        stdio: "pipe",
-      });
-    }, /./u, "removing the sub-package's own install must not let resolution silently succeed from elsewhere");
+      execFileSync(process.execPath, [copiedParser, "--resolve-path"], { cwd: scratch, stdio: "pipe" });
+    }, /./u, "a copy with no node_modules of its own must not resolve es-module-lexer from anywhere");
   } finally {
-    renameSync(displaced, nodeModules);
+    rmSync(scratch, { recursive: true, force: true });
   }
-  // Confirm the restore actually worked and normal operation resumed.
+  // The real sub-package, untouched throughout, still resolves correctly.
   const resolved = execFileSync(process.execPath, [path.join(verifierSubpackage, "parser.mjs"), "--resolve-path"], {
     cwd: verifierSubpackage,
     encoding: "utf8",
   }).trim();
   assert.ok(resolved.includes(path.join(verifierSubpackage, "node_modules", "es-module-lexer").split(path.sep).join("/")));
+});
+
+test("a stale leftover artifact from a prior interrupted run (an older destructive test design) cannot break this suite", () => {
+  // Regression guard for the exact risk the destructive rename-based design above was replaced to
+  // eliminate: if a process were ever killed between renaming the real node_modules away and
+  // renaming it back, a `node_modules.isolation-test-displaced` directory could be left on disk.
+  // Prove that such a leftover, even if present, is simply ignored — it is never inspected, never
+  // deleted, and never relied upon by the current (non-destructive) design.
+  const nodeModules = path.join(verifierSubpackage, "node_modules");
+  const staleLeftover = `${nodeModules}.isolation-test-displaced`;
+  cpSync(nodeModules, staleLeftover, { recursive: true });
+  try {
+    const resolved = execFileSync(process.execPath, [path.join(verifierSubpackage, "parser.mjs"), "--resolve-path"], {
+      cwd: verifierSubpackage,
+      encoding: "utf8",
+    }).trim();
+    assert.ok(resolved.includes(path.join(verifierSubpackage, "node_modules", "es-module-lexer").split(path.sep).join("/")));
+  } finally {
+    rmSync(staleLeftover, { recursive: true, force: true });
+  }
 });
 
 test("the verifier sub-package's own dependency tree contains nothing but its one pinned dependency", () => {
