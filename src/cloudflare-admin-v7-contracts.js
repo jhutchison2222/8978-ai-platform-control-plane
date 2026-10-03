@@ -133,10 +133,14 @@ export async function collectPagedResults(fetchPage, label, {
       first = { per_page: info.per_page, total_count: info.total_count, total_pages: info.total_pages };
       if (totalPages > maximumPages) throw new Error(`${label} pagination did not terminate within ${maximumPages} pages; completeness cannot be proven`);
       if (totalPages >= maximumPages * CEILING_WARNING_THRESHOLD) {
-        onApproachingCeiling(
+        const warning =
           `${label} requires ${totalPages} of a maximum ${maximumPages} pages (${info.total_count} items at ${info.per_page} per page); ` +
-          "approaching the fail-closed pagination ceiling. This listing still completed; raise per_page or the ceiling before it becomes unprovable.",
-        );
+          "approaching the fail-closed pagination ceiling. This listing still completed; raise per_page or the ceiling before it becomes unprovable.";
+        try {
+          await onApproachingCeiling(warning);
+        } catch {
+          // Capacity reporting is advisory and must never change listing success or failure.
+        }
       }
     } else if (info.per_page !== first.per_page || info.total_count !== first.total_count || info.total_pages !== first.total_pages) {
       throw new Error(`${label} pagination totals changed between pages; state is ambiguous`);
