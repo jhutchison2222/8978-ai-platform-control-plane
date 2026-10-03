@@ -143,6 +143,18 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
       reasons.push(`security stop #${latest.number} was not closed by repository owner ${ownerLogin}`);
     }
   }
+  // The canonical issue is the only one automation ever creates, edits, or closes. But automation
+  // must not silently ignore a different open issue that carries the exact same label: it is still
+  // a fail-closed condition, it is only ever reported (by number), and it is never auto-closed or
+  // auto-modified. Closed non-canonical stops, and issues with any other label, never block.
+  const unexpectedOpenStops = issues.filter((issue) =>
+    !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER && issue.state === "open" && hasLabel(issue, SECURITY_STOP_LABEL));
+  for (const issue of unexpectedOpenStops) {
+    reasons.push(
+      `unexpected open security-stop issue #${issue.number} carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
+      `#${SECURITY_STOP_ISSUE_NUMBER}; owner review is required before automation may treat this condition as resolved`,
+    );
+  }
   for (const pr of pullRequests) {
     const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
     const sensitive = [...new Set(changedFiles.flatMap((file) =>
@@ -160,6 +172,16 @@ export async function fetchSecurityStop(api) {
     throw new Error(`Canonical security stop #${SECURITY_STOP_ISSUE_NUMBER} is unavailable`);
   }
   return issue;
+}
+
+// Every OPEN issue carrying the exact canonical label, other than the canonical issue itself. Used
+// only to feed securityStopReasons()'s detection of an unexpected non-canonical stop; never
+// written to. A GitHub-side label filter is advisory for discovery only — hasLabel() inside
+// securityStopReasons re-applies the exact match, so a server-side quirk can never widen or narrow
+// what actually blocks.
+export async function fetchOtherOpenSecurityStops(api) {
+  const labeled = await api.getAll(`/issues?state=open&labels=${encodeURIComponent(SECURITY_STOP_LABEL)}`);
+  return labeled.filter((issue) => !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER);
 }
 
 export async function inspectPullRequestFiles(api, pullRequests) {
@@ -583,12 +605,13 @@ export async function runSupervisor({
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
-  const [securityStop, fileInspections] = await Promise.all([
+  const [securityStop, otherOpenStops, fileInspections] = await Promise.all([
     fetchSecurityStop(api),
+    fetchOtherOpenSecurityStops(api),
     inspectPullRequestFiles(api, pullRequests),
   ]);
   const persistentReasons = securityStopReasons({
-    issues: [securityStop],
+    issues: [securityStop, ...otherOpenStops],
     pullRequests,
     changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
     ownerLogin: repository.split("/", 1)[0],

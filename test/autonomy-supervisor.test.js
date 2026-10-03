@@ -20,6 +20,7 @@ import {
   ensureLabels,
   ensureSecurityStop,
   exactHeadClaudeVerdict,
+  fetchOtherOpenSecurityStops,
   fetchSecurityStop,
   hasLabel,
   hasMarker,
@@ -269,10 +270,75 @@ test("global security stops fail closed and only the repository owner can clear 
     ...inputs,
     issues: [{ number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "OWNER" }, labels: [] }],
   }), []);
+  // #66 closed by the owner, with no other open stop -> allowed.
   assert.deepEqual(securityStopReasons({
     ...inputs,
-    issues: [{ number: 7, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] }],
+    issues: [{ number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] }],
   }), []);
+});
+
+test("an unexpected open issue carrying the canonical label is also a fail-closed stop, reported by number", () => {
+  const inputs = { pullRequests: [], changedFilesByPullRequest: new Map(), ownerLogin: "owner" };
+  const canonicalClosed = { number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] };
+  // #66 closed by the owner, but a different open issue carries the exact label -> STOP.
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [canonicalClosed, { number: 75, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] }],
+  }), [
+    `unexpected open security-stop issue #75 carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
+    `#${SECURITY_STOP_ISSUE_NUMBER}; owner review is required before automation may treat this condition as resolved`,
+  ]);
+});
+
+test("multiple unexpected open labeled stops are all reported, and the repository still remains stopped", () => {
+  const inputs = { pullRequests: [], changedFilesByPullRequest: new Map(), ownerLogin: "owner" };
+  const canonicalClosed = { number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] };
+  const reasons = securityStopReasons({
+    ...inputs,
+    issues: [
+      canonicalClosed,
+      { number: 75, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] },
+      { number: 90, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] },
+    ],
+  });
+  assert.equal(reasons.length, 2);
+  assert.ok(reasons.some((r) => r.includes("#75")));
+  assert.ok(reasons.some((r) => r.includes("#90")));
+});
+
+test("a closed historical non-canonical labeled stop never blocks", () => {
+  const inputs = { pullRequests: [], changedFilesByPullRequest: new Map(), ownerLogin: "owner" };
+  const canonicalClosed = { number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] };
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [canonicalClosed, { number: 67, state: "closed", closed_by: { login: "owner" }, labels: [{ name: SECURITY_STOP_LABEL }] }],
+  }), []);
+});
+
+test("an open issue with an unrelated label never causes a false stop", () => {
+  const inputs = { pullRequests: [], changedFilesByPullRequest: new Map(), ownerLogin: "owner" };
+  const canonicalClosed = { number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] };
+  assert.deepEqual(securityStopReasons({
+    ...inputs,
+    issues: [canonicalClosed, { number: 91, state: "open", labels: [{ name: "bug" }] }],
+  }), []);
+});
+
+test("an unexpected open stop is detected but never auto-mutated: securityStopReasons performs no write", () => {
+  // securityStopReasons takes a plain data object with no API handle at all: it is structurally
+  // incapable of calling the GitHub API, so it cannot close, edit, or label any issue, canonical or
+  // not, no matter what it finds.
+  assert.equal(securityStopReasons.length, 1);
+  const reasons = securityStopReasons({
+    issues: [
+      { number: SECURITY_STOP_ISSUE_NUMBER, state: "closed", closed_by: { login: "owner" }, labels: [] },
+      { number: 75, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] },
+    ],
+    pullRequests: [],
+    changedFilesByPullRequest: new Map(),
+    ownerLogin: "owner",
+  });
+  assert.equal(reasons.length, 1);
 });
 
 test("open changes to the dispatch boundary stop all autonomous dispatch", () => {
@@ -574,6 +640,22 @@ test("the canonical security stop is fetched directly and cannot vanish with its
     changedFilesByPullRequest: new Map(),
     ownerLogin: "owner",
   }), []);
+});
+
+test("fetchOtherOpenSecurityStops queries the exact canonical label, open only, and excludes the canonical issue and PRs", async () => {
+  const requested = [];
+  const stops = await fetchOtherOpenSecurityStops({
+    getAll: async (path) => {
+      requested.push(path);
+      return [
+        { number: 75, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] },
+        { number: SECURITY_STOP_ISSUE_NUMBER, state: "open", labels: [{ name: SECURITY_STOP_LABEL }] },
+        { number: 12, state: "open", pull_request: {}, labels: [{ name: SECURITY_STOP_LABEL }] },
+      ];
+    },
+  });
+  assert.deepEqual(requested, [`/issues?state=open&labels=${encodeURIComponent(SECURITY_STOP_LABEL)}`]);
+  assert.deepEqual(stops.map((issue) => issue.number), [75]);
 });
 
 test("changed-file inspection isolates failures and preserves other PR results", async () => {

@@ -4,6 +4,7 @@ import {
   GitHubApi,
   ensureLabels,
   ensureSecurityStop,
+  fetchOtherOpenSecurityStops,
   fetchSecurityStop,
   inspectPullRequestFiles,
   securityStopReasons,
@@ -90,9 +91,10 @@ export async function runWatchdog({
   const api = new GitHubApi({ repository, token: githubToken, fetchImpl });
   const restrictedForkPullRequest = isRestrictedForkPullRequest({ eventName, headRepository, repository });
   if (!restrictedForkPullRequest) await ensureLabels(api);
-  const [pullRequests, securityStop, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
+  const [pullRequests, securityStop, otherOpenStops, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
     api.getAll("/pulls?state=open"),
     fetchSecurityStop(api),
+    fetchOtherOpenSecurityStops(api),
     readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
     readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
@@ -100,7 +102,7 @@ export async function runWatchdog({
   const persistentReasons = [
     ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
     ...securityStopReasons({
-      issues: [securityStop],
+      issues: [securityStop, ...otherOpenStops],
       pullRequests,
       changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
       ownerLogin: repository.split("/", 1)[0],
