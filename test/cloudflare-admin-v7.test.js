@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CLOUDFLARE_ADMIN_V7,
+  MAXIMUM_LISTING_PAGES,
   WRITE_APPROVALS,
   assertPinnedTarget,
   requireExactApproval,
@@ -96,6 +97,32 @@ test("verifyIdentity() checks credential status at the account-owned-token endpo
   assert.equal(requests.some(({ url }) => url.includes("/user/tokens/verify")), false);
   assert.equal(identity.tokenStatus, "active");
   assert.equal(identity.account.id, CLOUDFLARE_ADMIN_V7.accountId);
+});
+
+// Raises the fail-closed completeness ceiling for each unfiltered Access listing from 5,000 to
+// 100,000 (MAXIMUM_LISTING_PAGES * per_page) by using Cloudflare's documented maximum per_page for
+// each endpoint, with no change to pagination completeness or safety: every listing still fails
+// closed, never a silent partial/false pass, past its (now much higher) ceiling.
+test("every unfiltered Access listing uses Cloudflare's documented maximum per_page", async () => {
+  const requests = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url, init) => {
+      requests.push(String(url));
+      return response([], 200);
+    },
+  });
+  // Each call is expected to reject (the stub response carries no result_info), since only the
+  // exact request URL each one issued is under test here.
+  for (const call of [
+    () => api.listAccessApplications(),
+    () => api.listAccessServiceTokens(),
+    () => api.listAccessApplicationPolicies("12345678-1234-1234-1234-123456789abc"),
+  ]) {
+    await call().catch(() => {});
+  }
+  for (const url of requests) assert.match(url, /[?&]per_page=1000(&|$)/u, `${url} must use the documented maximum per_page`);
+  assert.equal(MAXIMUM_LISTING_PAGES * 1000, 100000);
 });
 
 test("secret metadata and nested responses are redacted", () => {

@@ -395,7 +395,7 @@ test("Access applications are enumerated across every page and a later-page conf
     appPage([accessApp(), otherApp({ id: "p2b", domain: "c.example.com" })], 2, 3, 5),
     appPage([otherApp({ id: "p3a", domain: `${TARGET_HOST}/late` })], 3, 3, 5),
   ];
-  const { api: adapter, requested } = await pagedApi(pages, /\/access\/apps\?page=\d+&per_page=50$/u);
+  const { api: adapter, requested } = await pagedApi(pages, /\/access\/apps\?page=\d+&per_page=1000$/u);
   const listed = await adapter.listAccessApplications();
   assert.equal(listed.length, 5);
   assert.deepEqual(requested.map(({ method }) => method), ["GET", "GET", "GET"]);
@@ -505,7 +505,7 @@ for (const [label, conflict] of conflictCases) {
       derivedPage([otherApp({ id: "q1", domain: "a.example.com" }), accessApp()], 1, 3),
       derivedPage([{ ...conflict, id: "late-conflict" }], 2, 3),
     ];
-    const { api: adapter } = await pagedApi(pages, /\/access\/apps\?page=\d+&per_page=50$/u);
+    const { api: adapter } = await pagedApi(pages, /\/access\/apps\?page=\d+&per_page=1000$/u);
     const api = baseApi({ listAccessApplications: () => adapter.listAccessApplications() });
     await assertStopsBeforePost(api, /late-conflict \(hostname, path, or wildcard coverage\)/u);
   });
@@ -1171,11 +1171,11 @@ test("the complete creation flow through the real adapter lists every token unfi
   assert.equal(custody.length, 1);
   assert.equal(custody[0].value.expiresAt, "2026-09-26T00:00:00Z");
   assert.deepEqual(requested.map(({ method, url }) => `${method} ${new URL(url).pathname.replace(/^.*\/access/u, "/access")}${new URL(url).search}`), [
-    "GET /access/service_tokens?page=1&per_page=50",
+    "GET /access/service_tokens?page=1&per_page=1000",
     "POST /access/service_tokens",
     `GET /access/service_tokens/${TOKEN_ID}`,
-    "GET /access/service_tokens?page=1&per_page=50",
-    "GET /access/service_tokens?page=1&per_page=50",
+    "GET /access/service_tokens?page=1&per_page=1000",
+    "GET /access/service_tokens?page=1&per_page=1000",
   ], "before-creation, pre-custody, and post-custody listings are all complete and unfiltered");
   assertUnfilteredTokenRequests(requested.filter(({ method }) => method === "GET"));
 });
@@ -1351,7 +1351,7 @@ const docPage = (items, page, perPage, totalCount) => ({
   result_info: { page, per_page: perPage, count: items.length, total_count: totalCount, total_pages: Math.ceil(totalCount / perPage) },
 });
 const namedTokens = (count, prefix) => Array.from({ length: count }, (_, index) => tokenItem(`${prefix}-${index}`, `other-token-${prefix}-${index}`));
-const UNFILTERED_TOKEN_QUERY = /^\?page=\d+&per_page=50$/u;
+const UNFILTERED_TOKEN_QUERY = /^\?page=\d+&per_page=1000$/u;
 const assertUnfilteredTokenRequests = (requested, expectedPages) => {
   const tokenRequests = requested.filter(({ url }) => new URL(url).pathname.endsWith("/access/service_tokens"));
   assert.ok(tokenRequests.length > 0, "the service-token listing was requested");
@@ -1370,7 +1370,7 @@ test("the service-token listing is unfiltered and uses page/per_page on every pa
   ]);
   const tokens = await listAccessServiceTokens();
   assert.equal(tokens.length, 3, "differently named tokens are part of the complete listing");
-  assert.deepEqual(requested.map(({ url }) => new URL(url).search), ["?page=1&per_page=50", "?page=2&per_page=50"]);
+  assert.deepEqual(requested.map(({ url }) => new URL(url).search), ["?page=1&per_page=1000", "?page=2&per_page=1000"]);
   assertUnfilteredTokenRequests(requested, [1, 2]);
 });
 
@@ -1568,7 +1568,7 @@ test("the Access policy listing uses page/per_page and accepts exactly one polic
   });
   await assert.rejects(() => service.enableSubdomainAndRunCanary(enableInput()), /canary reached/u);
   assert.equal(api.calls.setWorkerSubdomain, 1);
-  assert.equal(new URL(requested[0].url).search, "?page=1&per_page=50");
+  assert.equal(new URL(requested[0].url).search, "?page=1&per_page=1000");
 });
 
 const policyListingFailures = [
