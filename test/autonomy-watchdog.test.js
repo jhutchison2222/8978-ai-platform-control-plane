@@ -73,7 +73,7 @@ test("fork pull-request events skip label writes before evaluating the boundary"
     if (url.includes("/pulls?state=open")) {
       return { ok: true, status: 200, json: async () => [] };
     }
-    if (url.includes("/issues?state=open&labels=")) {
+    if (url.includes("/issues?state=all&labels=")) {
       return { ok: true, status: 200, json: async () => [] };
     }
     if (url.endsWith("/issues/66")) {

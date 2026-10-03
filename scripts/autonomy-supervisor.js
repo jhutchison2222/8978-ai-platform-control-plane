@@ -144,16 +144,28 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
     }
   }
   // The canonical issue is the only one automation ever creates, edits, or closes. But automation
-  // must not silently ignore a different open issue that carries the exact same label: it is still
-  // a fail-closed condition, it is only ever reported (by number), and it is never auto-closed or
-  // auto-modified. Closed non-canonical stops, and issues with any other label, never block.
-  const unexpectedOpenStops = issues.filter((issue) =>
-    !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER && issue.state === "open" && hasLabel(issue, SECURITY_STOP_LABEL));
-  for (const issue of unexpectedOpenStops) {
-    reasons.push(
-      `unexpected open security-stop issue #${issue.number} carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
-      `#${SECURITY_STOP_ISSUE_NUMBER}; owner review is required before automation may treat this condition as resolved`,
-    );
+  // must not silently ignore a different issue that carries the exact same label: it is still a
+  // fail-closed condition, it is only ever reported (by number), and it is never auto-closed or
+  // auto-modified. Mirrors the canonical issue's own rule immediately above: an open non-canonical
+  // stop always blocks, and a closed one only stops blocking once the repository owner was the one
+  // who closed it. A non-owner closing a non-canonical stop must not silently clear it — that is
+  // exactly the same disposition gap the canonical issue already guards against, and the state
+  // transition (open -> closed by someone else) must not make the condition stop mattering.
+  const otherStops = issues.filter((issue) =>
+    !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER && hasLabel(issue, SECURITY_STOP_LABEL));
+  for (const issue of otherStops) {
+    if (issue.state === "open") {
+      reasons.push(
+        `unexpected open security-stop issue #${issue.number} carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
+        `#${SECURITY_STOP_ISSUE_NUMBER}; owner review is required before automation may treat this condition as resolved`,
+      );
+    } else if (issue.closed_by?.login?.toLowerCase() !== ownerLogin.toLowerCase()) {
+      reasons.push(
+        `unexpected security-stop issue #${issue.number} carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
+        `#${SECURITY_STOP_ISSUE_NUMBER}, and was closed by ${issue.closed_by?.login ?? "an unknown actor"}, not repository owner ` +
+        `${ownerLogin}; owner review is required before automation may treat this condition as resolved`,
+      );
+    }
   }
   for (const pr of pullRequests) {
     const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
@@ -174,13 +186,15 @@ export async function fetchSecurityStop(api) {
   return issue;
 }
 
-// Every OPEN issue carrying the exact canonical label, other than the canonical issue itself. Used
-// only to feed securityStopReasons()'s detection of an unexpected non-canonical stop; never
-// written to. A GitHub-side label filter is advisory for discovery only — hasLabel() inside
-// securityStopReasons re-applies the exact match, so a server-side quirk can never widen or narrow
-// what actually blocks.
-export async function fetchOtherOpenSecurityStops(api) {
-  const labeled = await api.getAll(`/issues?state=open&labels=${encodeURIComponent(SECURITY_STOP_LABEL)}`);
+// Every issue carrying the exact canonical label, open or closed, other than the canonical issue
+// itself. Closed ones are included — not just open ones — because securityStopReasons() must be
+// able to tell whether a non-canonical stop was closed by the repository owner: a closed issue
+// whose closer is unknown is indistinguishable from one that was never fetched, which would let a
+// non-owner closure silently stop blocking. Used only to feed that detection; never written to. A
+// GitHub-side label filter is advisory for discovery only — hasLabel() inside securityStopReasons
+// re-applies the exact match, so a server-side quirk can never widen or narrow what actually blocks.
+export async function fetchOtherSecurityStops(api) {
+  const labeled = await api.getAll(`/issues?state=all&labels=${encodeURIComponent(SECURITY_STOP_LABEL)}`);
   return labeled.filter((issue) => !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER);
 }
 
@@ -449,13 +463,32 @@ export async function ensureLabels(api) {
   }
 }
 
+export function securityStopBody(reasons) {
+  return [
+    "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
+    "",
+    "Detected conditions:",
+    ...reasons.map((reason) => `- ${reason}`),
+    "",
+    "Only the repository owner may reactivate autonomous dispatch, after reviewing and resolving every condition, by closing this issue. The supervisor and watchdog never close this issue automatically.",
+  ].join("\n");
+}
+
 export async function ensureSecurityStop(api, reasons, knownStop) {
   if (reasons.length === 0) return null;
   const stop = knownStop ?? await fetchSecurityStop(api);
   const labels = [SECURITY_STOP_LABEL, "security-review"];
+  const body = securityStopBody(reasons);
   if (stop.state === "open") {
     if (!labels.every((label) => hasLabel(stop, label))) {
       await api.post(`/issues/${SECURITY_STOP_ISSUE_NUMBER}/labels`, { labels });
+    }
+    // #66 staying open never changes automatically, but new conditions can be discovered after it
+    // was first opened (e.g. a non-canonical stop appears, or a different protected-automation PR
+    // is found) — without this, the owner would read a stale "Detected conditions" list that no
+    // longer names every condition actually blocking dispatch, which is misleading, not fail-safe.
+    if (stop.body !== body) {
+      await api.patch(`/issues/${SECURITY_STOP_ISSUE_NUMBER}`, { body });
     }
     return stop;
   }
@@ -463,14 +496,7 @@ export async function ensureSecurityStop(api, reasons, knownStop) {
     state: "open",
     title: "Autonomous dispatch security stop",
     labels,
-    body: [
-      "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
-      "",
-      "Detected conditions:",
-      ...reasons.map((reason) => `- ${reason}`),
-      "",
-      "Only the repository owner may reactivate autonomous dispatch, after reviewing and resolving every condition, by closing this issue. The supervisor and watchdog never close this issue automatically.",
-    ].join("\n"),
+    body,
   });
 }
 
@@ -605,13 +631,13 @@ export async function runSupervisor({
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
-  const [securityStop, otherOpenStops, fileInspections] = await Promise.all([
+  const [securityStop, otherStops, fileInspections] = await Promise.all([
     fetchSecurityStop(api),
-    fetchOtherOpenSecurityStops(api),
+    fetchOtherSecurityStops(api),
     inspectPullRequestFiles(api, pullRequests),
   ]);
   const persistentReasons = securityStopReasons({
-    issues: [securityStop, ...otherOpenStops],
+    issues: [securityStop, ...otherStops],
     pullRequests,
     changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
     ownerLogin: repository.split("/", 1)[0],
