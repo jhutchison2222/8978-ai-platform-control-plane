@@ -6,8 +6,39 @@ const workflowDirectory = ".github/workflows";
 const isWorkflowFile = (name) => name.endsWith(".yml") || name.endsWith(".yaml");
 // npm's documented aliases for `npm install` (https://docs.npmjs.com/cli/v10/commands/npm-install):
 // every prefix of "install" from "i" up, plus "add". None of these are prefixes of "ci", so this
-// cannot false-positive on the one command this guard allows.
-const BARE_NPM_INSTALL = /\bnpm\s+(?:install|i|in|ins|inst|insta|instal|isnt|isnta|isntal|isntall|add)\b/gu;
+// cannot false-positive on the one command this guard allows. The trailing (?![\w-]) (rather than a
+// plain \b) rejects a composite subcommand like "install-ci-test": a real, lockfile-respecting npm
+// command whose name merely starts with "install", not an alias of it.
+const BARE_NPM_INSTALL = /\bnpm\s+(?:install|i|in|ins|inst|insta|instal|isnt|isnta|isntal|isntall|add)(?![\w-])/gu;
+
+// Extracts only the text of each step's `run:` command — inline (`run: npm ci`) or block scalar
+// (`run: |` followed by a more-indented body) — so the guard below matches real command
+// invocations, never a YAML comment, a step `name:`, or any other non-command text that happens to
+// contain the words "npm install".
+function runStepCommandText(source) {
+  const lines = source.split(/\r?\n/u);
+  const commands = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(/^(\s*(?:-\s+)?)run:[ \t]?(.*)$/u);
+    if (!match) continue;
+    const [, indent, rest] = match;
+    if (rest === "" || rest === "|" || rest === ">" || rest === "|-" || rest === ">-") {
+      const blockIndent = indent.length;
+      let cursor = index + 1;
+      while (cursor < lines.length) {
+        const line = lines[cursor];
+        if (line.trim() === "") { cursor += 1; continue; }
+        if (line.match(/^(\s*)/u)[1].length <= blockIndent) break;
+        commands.push(line);
+        cursor += 1;
+      }
+      index = cursor - 1;
+    } else {
+      commands.push(rest);
+    }
+  }
+  return commands.join("\n");
+}
 
 test("GitHub-hosted JavaScript actions use the Node 24 generation", async () => {
   const workflowNames = (await readdir(workflowDirectory)).filter(isWorkflowFile);
@@ -40,7 +71,7 @@ test("every workflow installs Node dependencies with npm ci, never npm install",
     source: await readFile(`${workflowDirectory}/${name}`, "utf8"),
   })));
   const bareNpmInstall = workflows.flatMap(({ name, source }) =>
-    [...source.matchAll(BARE_NPM_INSTALL)].map(() => name));
+    [...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)].map(() => name));
   assert.deepEqual(bareNpmInstall, [], "no workflow may install from package.json directly; only npm ci from the committed lockfile is reproducible");
 });
 
@@ -60,7 +91,7 @@ test("a .yaml workflow using bare npm install is rejected, not silently skipped 
     name, source: await readFile(join(directory, name), "utf8"),
   })));
   const bareNpmInstall = workflows.flatMap(({ name, source }) =>
-    [...source.matchAll(BARE_NPM_INSTALL)].map(() => name));
+    [...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)].map(() => name));
   assert.deepEqual(bareNpmInstall, ["fixture.yaml"]);
 });
 
@@ -79,6 +110,60 @@ test("npm's documented install aliases (e.g. npm i) are rejected just like the f
     name, source: await readFile(join(directory, name), "utf8"),
   })));
   const bareNpmInstall = workflows.flatMap(({ name, source }) =>
-    [...source.matchAll(BARE_NPM_INSTALL)].map(() => name));
+    [...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)].map(() => name));
   assert.deepEqual(bareNpmInstall.sort(), ["alias-add.yml", "alias-i.yml"]);
+});
+
+test("npm install-ci-test, a real lockfile-respecting npm command, is not misclassified as a bare install", async (context) => {
+  const { mkdtemp, rm, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(tmpdir(), "8978-workflow-composite-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(join(directory, "composite.yml"), "run: npm install-ci-test\n", "utf8");
+
+  const source = await readFile(join(directory, "composite.yml"), "utf8");
+  assert.deepEqual([...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("the guard only scans actual run: command text, never a YAML comment or a step's name field", async (context) => {
+  const { mkdtemp, rm, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(tmpdir(), "8978-workflow-comment-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      # do not use npm install, use npm ci instead",
+    "      - name: Explain why we avoid npm install here",
+    "        run: npm ci",
+  ].join("\n");
+  await writeFile(join(directory, "commented.yml"), fixture, "utf8");
+
+  const source = await readFile(join(directory, "commented.yml"), "utf8");
+  assert.deepEqual([...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a bare npm install inside a block-scalar run: body (run: |) is still caught", async (context) => {
+  const { mkdtemp, rm, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(tmpdir(), "8978-workflow-block-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      - run: |",
+    "          echo preparing",
+    "          npm install",
+    "          echo done",
+    "      - run: npm ci",
+  ].join("\n");
+  await writeFile(join(directory, "block.yml"), fixture, "utf8");
+
+  const source = await readFile(join(directory, "block.yml"), "utf8");
+  assert.equal([...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)].length, 1);
 });
