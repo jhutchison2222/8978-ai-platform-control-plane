@@ -151,6 +151,7 @@ test("collectPagedResults warns, without failing, once a listing approaches its 
   assert.equal(result.length, totalPages * 10, "the listing still completes fully despite the warning");
   assert.equal(warnings.length, 1);
   assert.match(warnings[0], new RegExp(`requires ${totalPages} of a maximum ${MAXIMUM_LISTING_PAGES} pages`));
+  assert.doesNotMatch(warnings[0], /completed/u, "a page-1 warning must not claim the listing has already completed");
 });
 
 test("collectPagedResults isolates synchronous and asynchronous warning callback failures", async () => {
