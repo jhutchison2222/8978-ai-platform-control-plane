@@ -47,7 +47,12 @@ function runStepCommandText(source) {
     if (!match) continue;
     const [, indent, rest] = match;
     const keyIndent = indent.length;
-    if (BLOCK_SCALAR_HEADER.test(rest)) {
+    // YAML allows a comment (and/or trailing whitespace) after a block-scalar header, e.g.
+    // `run: | # explain`. Strip it only for the header shape test below — `rest` itself is left
+    // untouched, since in the non-block-scalar branch it is real command text that may legitimately
+    // contain "#" (e.g. a URL fragment or shell comment of its own).
+    const headerCandidate = rest.replace(/[ \t]*#.*$/u, "").trimEnd();
+    if (BLOCK_SCALAR_HEADER.test(headerCandidate)) {
       // ">" is a YAML *folded* scalar: GitHub Actions joins its body lines with a space, producing
       // one shell command, not one per line. "|" is *literal*: each line stays a separate command,
       // newline-joined (handled by the outer commands.join("\n") below). Folding ">" the same way
@@ -326,4 +331,34 @@ test("a run: | literal block scalar keeps each line separate, never bridging unr
     "      - run: |", "          echo npm", "          install_dir=/tmp",
   ].join("\n");
   assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a block-scalar header followed by a trailing YAML comment is still recognized as a block scalar", () => {
+  // Valid YAML: a comment may follow a block-scalar header, e.g. "run: | # explain the block". The
+  // body here also leads with a key-shaped line, so the fallback plain-scalar path (which stops
+  // folding at anything key-shaped) would never reach "npm install" if the header went unrecognized.
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: | # explain the block", "          status: ok", "          npm install",
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a folded block-scalar header followed by a trailing YAML comment is still recognized, folding its body", () => {
+  // The key-shaped "status: ok" line would stop the plain-scalar fallback's continuation folding
+  // before "npm install" — this only passes if "> # explain" is genuinely recognized as a block
+  // scalar, not coincidentally rescued by that fallback.
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: > # explain", "          status: ok", "          npm", "          install",
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a block-scalar header followed only by trailing whitespace (no comment) is still recognized", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: |   ", "          status: ok", "          npm install",
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
 });
