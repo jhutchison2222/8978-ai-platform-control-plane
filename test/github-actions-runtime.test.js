@@ -8,13 +8,34 @@ const isWorkflowFile = (name) => name.endsWith(".yml") || name.endsWith(".yaml")
 // every prefix of "install" from "i" up, plus "add". None of these are prefixes of "ci", so this
 // cannot false-positive on the one command this guard allows. The trailing (?![\w-]) (rather than a
 // plain \b) rejects a composite subcommand like "install-ci-test": a real, lockfile-respecting npm
-// command whose name merely starts with "install", not an alias of it.
-const BARE_NPM_INSTALL = /\bnpm\s+(?:install|i|in|ins|inst|insta|instal|isnt|isnta|isntal|isntall|add)(?![\w-])/gu;
+// command whose name merely starts with "install", not an alias of it. Uses [ \t]+ rather than \s+
+// between "npm" and the subcommand: \s matches a literal newline, and runStepCommandText joins
+// separate, unrelated command lines with "\n" — a plain \s+ could bridge one line ending in "npm"
+// into the next line's unrelated leading token and false-positive across the join.
+const BARE_NPM_INSTALL = /\bnpm[ \t]+(?:install|i|in|ins|inst|insta|instal|isnt|isnta|isntal|isntall|add)(?![\w-])/gu;
 
-// Extracts only the text of each step's `run:` command — inline (`run: npm ci`) or block scalar
-// (`run: |` followed by a more-indented body) — so the guard below matches real command
-// invocations, never a YAML comment, a step `name:`, or any other non-command text that happens to
-// contain the words "npm install".
+// Any valid YAML block-scalar header: "|" or ">", with an optional chomping indicator (-/+) and/or
+// a single-digit explicit indentation indicator, in either order (both orders are valid YAML).
+const BLOCK_SCALAR_HEADER = /^[|>](?:[+-]?[1-9]?|[1-9]?[+-]?)$/u;
+
+function lineIndent(line) {
+  return line.match(/^(\s*)/u)[1].length;
+}
+
+// A deeper-indented line that looks like a new mapping key (`foo:`) or sequence item (`- foo`) is
+// YAML structure, not a continuation of the run: value above it — folding it in would swallow
+// unrelated keys. Anything else at a deeper indent is a plain- or quoted-scalar continuation line
+// (YAML folds such lines into the scalar's value, replacing the newline with a space).
+function isScalarContinuation(line, keyIndent) {
+  if (line.trim() === "") return false;
+  if (lineIndent(line) <= keyIndent) return false;
+  return !/^\s*(?:-\s|[\w.-]+:(?:\s|$))/u.test(line);
+}
+
+// Extracts only the text of each step's `run:` command — inline (`run: npm ci`, including one
+// folded across continuation lines) or block scalar (`run: |` and its variants, followed by a
+// more-indented body) — so the guard below matches real command invocations, never a YAML comment,
+// a step `name:`, or any other non-command text that happens to contain the words "npm install".
 function runStepCommandText(source) {
   const lines = source.split(/\r?\n/u);
   const commands = [];
@@ -22,19 +43,26 @@ function runStepCommandText(source) {
     const match = lines[index].match(/^(\s*(?:-\s+)?)run:[ \t]?(.*)$/u);
     if (!match) continue;
     const [, indent, rest] = match;
-    if (rest === "" || rest === "|" || rest === ">" || rest === "|-" || rest === ">-") {
-      const blockIndent = indent.length;
+    const keyIndent = indent.length;
+    if (BLOCK_SCALAR_HEADER.test(rest)) {
       let cursor = index + 1;
       while (cursor < lines.length) {
         const line = lines[cursor];
         if (line.trim() === "") { cursor += 1; continue; }
-        if (line.match(/^(\s*)/u)[1].length <= blockIndent) break;
+        if (lineIndent(line) <= keyIndent) break;
         commands.push(line);
         cursor += 1;
       }
       index = cursor - 1;
     } else {
-      commands.push(rest);
+      const parts = [rest];
+      let cursor = index + 1;
+      while (cursor < lines.length && isScalarContinuation(lines[cursor], keyIndent)) {
+        parts.push(lines[cursor].trim());
+        cursor += 1;
+      }
+      commands.push(parts.join(" "));
+      index = cursor - 1;
     }
   }
   return commands.join("\n");
@@ -166,4 +194,78 @@ test("a bare npm install inside a block-scalar run: body (run: |) is still caugh
 
   const source = await readFile(join(directory, "block.yml"), "utf8");
   assert.equal([...runStepCommandText(source).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("two unrelated commands joined across a newline never bridge into a false npm-install match", () => {
+  // "echo building npm" ends in the bare word "npm"; the very next, unrelated command starts with
+  // an install-alias token plus a non-word/hyphen character ("i=0"). If the guard's regex let \s
+  // match the newline between them, this would falsely read as "npm i".
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      - run: |",
+    "          echo building npm",
+    "          i=0",
+    "      - run: npm ci",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+for (const header of ["|", ">", "|-", ">-", "|+", ">+", "|2", ">2", "|2+", "|+2"]) {
+  test(`a block-scalar run: using the "${header}" header still has its body scanned`, () => {
+    const fixture = [
+      "jobs:",
+      "  test:",
+      "    steps:",
+      `      - run: ${header}`,
+      "          npm install",
+    ].join("\n");
+    assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+  });
+
+  test(`a block-scalar run: using the "${header}" header includes every line verbatim, even one that resembles a YAML key`, () => {
+    // A block-scalar body line like `status: ok` (echoed JSON/status text, not a real shell
+    // assignment) can resemble a YAML mapping key. True block-scalar content is included verbatim
+    // regardless of its shape — unlike the plain-scalar continuation fallback, which deliberately
+    // stops folding at anything key-shaped. This fixture only passes if the header above is
+    // genuinely recognized as a block scalar; the fallback path would stop at "status: ok" and
+    // never reach "npm install" on the line after it.
+    const fixture = [
+      "jobs:",
+      "  test:",
+      "    steps:",
+      `      - run: ${header}`,
+      "          status: ok",
+      "          npm install",
+    ].join("\n");
+    assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+  });
+}
+
+test("a run: value folded across plain-scalar continuation lines is still scanned as one command", () => {
+  // Valid YAML: an unquoted scalar value may continue on a following, more-indented line, with the
+  // newline folded into a single space.
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      - run: npm",
+    "          install",
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a folded continuation stops at the next sibling step, never swallowing an unrelated key", () => {
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      - run: npm",
+    "          ci",
+    "      - name: a later, unrelated step",
+    "        run: npm install",
+  ].join("\n");
+  const matches = [...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)];
+  assert.equal(matches.length, 1, "only the second step's genuine bare install should be caught");
 });
