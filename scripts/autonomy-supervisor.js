@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 export const CLAUDE_LOGIN = "claude[bot]";
@@ -36,6 +37,70 @@ const PRIOR_FINDINGS_FIXED = [
 ];
 const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
+
+const WORKSPACE_AGENT_CREDENTIAL = /CHATGPT_WORKSPACE_AGENT_(?:ID|TOKEN)|AGENT_(?:ID|TOKEN)/u;
+const WORKSPACE_AGENT_TRIGGER = /api\.chatgpt\.com|triggerWorkspaceAgent/u;
+const EXPECTED_SUPERVISOR_PERMISSIONS = new Map([
+  ["actions", "read"],
+  ["checks", "read"],
+  ["contents", "read"],
+  ["issues", "write"],
+  ["pull-requests", "write"],
+]);
+const EXPECTED_WATCHDOG_PERMISSIONS = new Map([
+  ["contents", "read"],
+  ["issues", "write"],
+  ["pull-requests", "read"],
+]);
+
+// This lives here, not in autonomy-watchdog.js, specifically so runSupervisor below can share it:
+// both the supervisor and the watchdog feed the exact same reason set into ensureSecurityStop for
+// the shared canonical issue #66, or the two schedulers would overwrite each other's #66 body with
+// their own differing reason set on every run, patching it forever even once the owner has read it,
+// and silently discarding any note the owner added to the body in between.
+export function topLevelPermissions(workflow) {
+  const lines = workflow.split(/\r?\n/u);
+  const start = lines.findIndex((line) => line === "permissions:");
+  if (start < 0) return null;
+  const permissions = new Map();
+  for (const line of lines.slice(start + 1)) {
+    if (line !== "" && !line.startsWith(" ")) break;
+    const match = line.match(/^  ([a-z-]+): (read|write|none)$/u);
+    if (match) permissions.set(match[1], match[2]);
+  }
+  return permissions;
+}
+
+function permissionMismatch(name, actual, expected) {
+  if (!actual || actual.size !== expected.size) return `${name} permissions do not exactly match the reviewed allowlist`;
+  for (const [scope, access] of expected) {
+    if (actual.get(scope) !== access) return `${name} permissions do not exactly match the reviewed allowlist`;
+  }
+  return null;
+}
+
+export function localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }) {
+  const violations = [];
+  const supervisorMismatch = permissionMismatch(
+    "the supervisor",
+    topLevelPermissions(supervisorWorkflow),
+    EXPECTED_SUPERVISOR_PERMISSIONS,
+  );
+  if (supervisorMismatch) violations.push(supervisorMismatch);
+  const watchdogMismatch = permissionMismatch(
+    "the watchdog",
+    topLevelPermissions(watchdogWorkflow),
+    EXPECTED_WATCHDOG_PERMISSIONS,
+  );
+  if (watchdogMismatch) violations.push(watchdogMismatch);
+  if (WORKSPACE_AGENT_CREDENTIAL.test(watchdogWorkflow)) {
+    violations.push("the watchdog workflow references a Workspace Agent credential");
+  }
+  if (WORKSPACE_AGENT_TRIGGER.test(watchdogWorkflow)) {
+    violations.push("the watchdog workflow can reference Workspace Agent dispatch code or endpoints");
+  }
+  return violations;
+}
 
 function required(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new Error(`${name} is not configured`);
@@ -626,22 +691,32 @@ export async function runSupervisor({
   agentToken = process.env.AGENT_TOKEN,
   fetchImpl = fetch,
   nowMs = Date.now(),
+  readFileImpl = readFile,
 } = {}) {
   const api = new GitHubApi({ repository, token: githubToken, fetchImpl });
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
-  const [securityStop, otherStops, fileInspections] = await Promise.all([
+  const [securityStop, otherStops, fileInspections, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
     fetchSecurityStop(api),
     fetchOtherSecurityStops(api),
     inspectPullRequestFiles(api, pullRequests),
+    readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
+    readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
-  const persistentReasons = securityStopReasons({
-    issues: [securityStop, ...otherStops],
-    pullRequests,
-    changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
-    ownerLogin: repository.split("/", 1)[0],
-  });
+  // Must compute the exact same persistentReasons the watchdog computes (localBoundaryViolations
+  // plus securityStopReasons) — not a supervisor-only subset — so the two schedulers that share
+  // #66 never feed ensureSecurityStop two different reason sets and overwrite each other's body
+  // every run. See the comment on localBoundaryViolations above.
+  const persistentReasons = [
+    ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
+    ...securityStopReasons({
+      issues: [securityStop, ...otherStops],
+      pullRequests,
+      changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
+      ownerLogin: repository.split("/", 1)[0],
+    }),
+  ];
   const reasons = [...persistentReasons, ...fileInspections.failures];
   if (reasons.length > 0) {
     await ensureSecurityStop(api, persistentReasons, securityStop);
