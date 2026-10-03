@@ -48,14 +48,21 @@ function runStepCommandText(source) {
     const [, indent, rest] = match;
     const keyIndent = indent.length;
     if (BLOCK_SCALAR_HEADER.test(rest)) {
+      // ">" is a YAML *folded* scalar: GitHub Actions joins its body lines with a space, producing
+      // one shell command, not one per line. "|" is *literal*: each line stays a separate command,
+      // newline-joined (handled by the outer commands.join("\n") below). Folding ">" the same way
+      // as "|" would leave "npm" and "install" split across an un-matchable newline.
+      const folded = rest.startsWith(">");
+      const body = [];
       let cursor = index + 1;
       while (cursor < lines.length) {
         const line = lines[cursor];
         if (line.trim() === "") { cursor += 1; continue; }
         if (lineIndent(line) <= keyIndent) break;
-        commands.push(line);
+        body.push(folded ? line.trim() : line);
         cursor += 1;
       }
+      commands.push(folded ? body.join(" ") : body.join("\n"));
       index = cursor - 1;
     } else {
       const parts = [rest];
@@ -302,4 +309,21 @@ test("a run: header with two or more spaces before a block-scalar indicator is s
 test("a run: header with two or more spaces before an inline command is still scanned", () => {
   const fixture = ["jobs:", "  test:", "    steps:", "      - run:   npm install"].join("\n");
   assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a run: > folded block scalar joins its body with spaces, so npm/install split across lines is still caught", () => {
+  // Valid YAML: "run: >" folds its body lines into one space-joined value — GitHub Actions executes
+  // this exactly as `npm install`, even though the words sit on separate source lines.
+  const fixture = ["jobs:", "  test:", "    steps:", "      - run: >", "          npm", "          install"].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a run: | literal block scalar keeps each line separate, never bridging unrelated lines into a false match", () => {
+  // The companion case to the test above: "|" is literal, not folded, so "npm" ending one line and
+  // an unrelated "install_dir=/tmp" starting the next must NOT be read as "npm install_dir".
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: |", "          echo npm", "          install_dir=/tmp",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
 });
