@@ -83,14 +83,20 @@ retroactively to Generation 1's own protected files (`package.json`, `package-lo
 `wrangler.jsonc`) — see "Generation 1" above for why.
 
 1. **No activation-critical dependency may use `"latest"`, `"*"`, or an unbounded range.** Pin an
-   exact version. `tools/target-runtime-verifier/package.json` is the reference example: one
-   dependency, one exact version, no range.
+   exact version in every package.json in the repository, root and sub-package alike.
 2. **No verifier, parser, compiler, bundler, Cloudflare SDK, or security-scanning tool may rely on an
    undeclared transitive dependency.** If code imports a package directly, that package is declared
    directly, in the package.json of whichever install actually provides it at resolution time — not
-   assumed to be present because some other dependency happens to pull it in. This is exactly the
-   defect issue #77 found and fixed: `es-module-lexer` was imported directly but only ever present
-   as a transitive dependency of `vitest`.
+   assumed to be present because some other dependency happens to pull it in. This is the defect
+   issue #77 identified: `scripts/verify-target-runtime-closure.js` imports `es-module-lexer`
+   directly, but as of this document, package.json declares no `es-module-lexer` dependency of its
+   own — it resolves only because `vitest` happens to pull it in as a transitive, hoisted dependency.
+   If `vitest`'s own `es-module-lexer` range ever changes, or npm's hoisting picks a different
+   version, the closure verifier would silently resolve a different, undeclared version with no
+   package.json diff to flag it in review. Remediating this — isolating the parser into its own
+   sub-package with `es-module-lexer` declared as an exact-pinned, direct dependency — is tracked as
+   a separate, independently reviewed companion change; this rule states the requirement that
+   remediation must satisfy regardless of when it lands.
 3. **Lockfiles are committed** for every package.json in the repository, root and sub-package alike.
 4. **CI installs only with `npm ci` (or equivalent deterministic installation), never
    `npm install`.** `npm install` re-resolves ranges against the registry and can silently rewrite
