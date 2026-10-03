@@ -5,14 +5,17 @@ import test from "node:test";
 const workflowDirectory = ".github/workflows";
 const isWorkflowFile = (name) => name.endsWith(".yml") || name.endsWith(".yaml");
 // npm's documented aliases for `npm install` (https://docs.npmjs.com/cli/v10/commands/npm-install):
-// every prefix of "install" from "i" up, plus "add". None of these are prefixes of "ci", so this
-// cannot false-positive on the one command this guard allows. The trailing (?![\w-]) (rather than a
-// plain \b) rejects a composite subcommand like "install-ci-test": a real, lockfile-respecting npm
-// command whose name merely starts with "install", not an alias of it. Uses [ \t]+ rather than \s+
-// between "npm" and the subcommand: \s matches a literal newline, and runStepCommandText joins
-// separate, unrelated command lines with "\n" — a plain \s+ could bridge one line ending in "npm"
-// into the next line's unrelated leading token and false-positive across the join.
-const BARE_NPM_INSTALL = /\bnpm[ \t]+(?:install|i|in|ins|inst|insta|instal|isnt|isnta|isntal|isntall|add)(?![\w-])/gu;
+// every true prefix of "install" from "i" up, plus "add". (Earlier versions of this list also
+// included "isnt"/"isnta"/"isntal"/"isntall" — transpositions, not prefixes, of "inst"/"insta"/
+// "instal"/"install" that match no real npm command, and that falsely flagged ordinary text like
+// "npm isnt installed" in an availability check.) None of these are prefixes of "ci", so this cannot
+// false-positive on the one command this guard allows. The trailing (?![\w-]) (rather than a plain
+// \b) rejects a composite subcommand like "install-ci-test": a real, lockfile-respecting npm command
+// whose name merely starts with "install", not an alias of it. Uses [ \t]+ rather than \s+ between
+// "npm" and the subcommand: \s matches a literal newline, and runStepCommandText joins separate,
+// unrelated command lines with "\n" — a plain \s+ could bridge one line ending in "npm" into the
+// next line's unrelated leading token and false-positive across the join.
+const BARE_NPM_INSTALL = /\bnpm[ \t]+(?:install|i|in|ins|inst|insta|instal|add)(?![\w-])/gu;
 
 // Any valid YAML block-scalar header: "|" or ">", with an optional chomping indicator (-/+) and/or
 // a single-digit explicit indentation indicator, in either order (both orders are valid YAML).
@@ -40,7 +43,7 @@ function runStepCommandText(source) {
   const lines = source.split(/\r?\n/u);
   const commands = [];
   for (let index = 0; index < lines.length; index += 1) {
-    const match = lines[index].match(/^(\s*(?:-\s+)?)run:[ \t]?(.*)$/u);
+    const match = lines[index].match(/^(\s*(?:-\s+)?)run:[ \t]*(.*)$/u);
     if (!match) continue;
     const [, indent, rest] = match;
     const keyIndent = indent.length;
@@ -268,4 +271,35 @@ test("a folded continuation stops at the next sibling step, never swallowing an 
   ].join("\n");
   const matches = [...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)];
   assert.equal(matches.length, 1, "only the second step's genuine bare install should be caught");
+});
+
+test("ordinary prose like \"npm isnt installed\" is never mistaken for a bare install", () => {
+  // "isnt" (and its own prefixes "isnta"/"isntal"/"isntall") are transpositions, not prefixes, of
+  // real npm subcommands ("inst"/"insta"/"instal"/"install") — no npm command named "isnt" exists.
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      - run: |",
+    '          if ! command -v npm &> /dev/null; then echo "npm isnt installed"; exit 1; fi',
+    "      - run: npm ci",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a run: header with two or more spaces before a block-scalar indicator is still recognized as a block scalar", () => {
+  const fixture = [
+    "jobs:",
+    "  test:",
+    "    steps:",
+    "      - run:  |",
+    "          status: ok",
+    "          npm install",
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a run: header with two or more spaces before an inline command is still scanned", () => {
+  const fixture = ["jobs:", "  test:", "    steps:", "      - run:   npm install"].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
 });
