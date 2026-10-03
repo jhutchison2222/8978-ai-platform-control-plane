@@ -4,6 +4,10 @@ import test from "node:test";
 
 const workflowDirectory = ".github/workflows";
 const isWorkflowFile = (name) => name.endsWith(".yml") || name.endsWith(".yaml");
+// npm's documented aliases for `npm install` (https://docs.npmjs.com/cli/v10/commands/npm-install):
+// every prefix of "install" from "i" up, plus "add". None of these are prefixes of "ci", so this
+// cannot false-positive on the one command this guard allows.
+const BARE_NPM_INSTALL = /\bnpm\s+(?:install|i|in|ins|inst|insta|instal|isnt|isnta|isntal|isntall|add)\b/gu;
 
 test("GitHub-hosted JavaScript actions use the Node 24 generation", async () => {
   const workflowNames = (await readdir(workflowDirectory)).filter(isWorkflowFile);
@@ -36,7 +40,7 @@ test("every workflow installs Node dependencies with npm ci, never npm install",
     source: await readFile(`${workflowDirectory}/${name}`, "utf8"),
   })));
   const bareNpmInstall = workflows.flatMap(({ name, source }) =>
-    [...source.matchAll(/\bnpm install\b/gu)].map(() => name));
+    [...source.matchAll(BARE_NPM_INSTALL)].map(() => name));
   assert.deepEqual(bareNpmInstall, [], "no workflow may install from package.json directly; only npm ci from the committed lockfile is reproducible");
 });
 
@@ -56,6 +60,25 @@ test("a .yaml workflow using bare npm install is rejected, not silently skipped 
     name, source: await readFile(join(directory, name), "utf8"),
   })));
   const bareNpmInstall = workflows.flatMap(({ name, source }) =>
-    [...source.matchAll(/\bnpm install\b/gu)].map(() => name));
+    [...source.matchAll(BARE_NPM_INSTALL)].map(() => name));
   assert.deepEqual(bareNpmInstall, ["fixture.yaml"]);
+});
+
+test("npm's documented install aliases (e.g. npm i) are rejected just like the full npm install, and npm ci is never flagged", async (context) => {
+  const { mkdtemp, rm, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const directory = await mkdtemp(join(tmpdir(), "8978-workflow-alias-"));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(join(directory, "alias-i.yml"), "run: npm i\n", "utf8");
+  await writeFile(join(directory, "alias-add.yml"), "run: npm add left-pad\n", "utf8");
+  await writeFile(join(directory, "ci-only.yml"), "run: npm ci\n", "utf8");
+
+  const workflowNames = (await readdir(directory)).filter(isWorkflowFile);
+  const workflows = await Promise.all(workflowNames.map(async (name) => ({
+    name, source: await readFile(join(directory, name), "utf8"),
+  })));
+  const bareNpmInstall = workflows.flatMap(({ name, source }) =>
+    [...source.matchAll(BARE_NPM_INSTALL)].map(() => name));
+  assert.deepEqual(bareNpmInstall.sort(), ["alias-add.yml", "alias-i.yml"]);
 });
