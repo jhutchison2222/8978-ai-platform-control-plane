@@ -1,0 +1,13 @@
+{
+  "name": "@8978/target-runtime-verifier",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated, independently-locked environment for the target-runtime closure verifier's es-module-lexer parser mechanism. Deliberately decoupled from the root repository's dependency snapshot so Generation-1 target-runtime provenance never depends on what the root happens to hoist or on a transitive devDependency of an unrelated tool (vitest/vite). Not a build or deploy dependency: wrangler stays at the repository root.",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "es-module-lexer": "2.3.1"
+  }
+}
