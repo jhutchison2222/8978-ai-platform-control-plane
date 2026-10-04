@@ -278,23 +278,40 @@ test("review-gate rejects a review from an account merely named claude[bot] with
 //
 // pull_request, pull_request_review, and pull_request_review_comment all execute the workflow's own
 // step DEFINITIONS from the pull request's merge commit, not the base branch — the documented reason
-// pull_request_target exists at all. A PR editing merge-gates.yml itself could delete the overlay
-// step, the "Fail if the gate failed" step, or the whole job, and that edited version would execute
-// and be reported as the result — no checkout-ref pinning or file overlay inside those steps can help,
-// because the steps themselves would be attacker-controlled. These tests pin the workflow file to
-// never reintroduce any of those three trigger types for this specific workflow.
-test("merge-gates.yml never triggers on pull_request, pull_request_review, or pull_request_review_comment", async () => {
+// pull_request_target exists at all. workflow_dispatch has the same structural problem: the caller
+// chooses which ref's copy of this file's steps execute, and a PR-controlled ref could delete the
+// gate invocation, the Checks API publish step, or the final failure step. A PR editing
+// merge-gates.yml (or a workflow_dispatch call against a PR-controlled ref) must never be able to
+// control which steps execute against it — no checkout-ref pinning or file overlay inside those
+// steps can help, because the steps themselves would be attacker-controlled. These tests pin the
+// workflow file to never reintroduce any of these four trigger types for this specific workflow.
+test("merge-gates.yml never triggers on pull_request, pull_request_review, pull_request_review_comment, or workflow_dispatch", async () => {
   const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
   const onBlock = workflow.split(/\njobs:\n/u)[0];
-  for (const forbidden of ["\n  pull_request:", "\n  pull_request_review:", "\n  pull_request_review_comment:"]) {
+  for (const forbidden of [
+    "\n  pull_request:", "\n  pull_request_review:", "\n  pull_request_review_comment:", "\n  workflow_dispatch:",
+  ]) {
     assert.equal(onBlock.includes(forbidden), false, `merge-gates.yml must not trigger on ${forbidden.trim()}`);
   }
 });
 
-test("merge-gates.yml triggers only on workflow_run (validate and Dispatch PR merge gate), issue_comment, and workflow_dispatch", async () => {
+test("merge-gates.yml triggers only on workflow_run (validate and Dispatch PR merge gate) and issue_comment", async () => {
   const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
   const onBlock = workflow.split(/\njobs:\n/u)[0];
   assert.match(onBlock, /\n\s+workflow_run:\n\s+workflows: \[validate, "Dispatch PR merge gate"\]/u);
   assert.match(onBlock, /\n\s+issue_comment:\n\s+types: \[created\]/u);
-  assert.match(onBlock, /\n\s+workflow_dispatch:/u);
+});
+
+// Every remaining trigger type needs its result explicitly republished against the resolved PR head
+// sha — see the publish_externally comment in merge-gates.yml for the empirical evidence. Pins that
+// both gate jobs always run the "Publish result" step unconditionally (no `if:` gating it on a
+// trigger-specific flag), so neither workflow_run nor issue_comment can silently skip publishing.
+test("security-gate and review-gate always publish their result against the resolved head sha, unconditionally", async () => {
+  const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
+  const publishSteps = [...workflow.matchAll(/- name: Publish result against the pull request's head commit\n(?: {8}.*\n)*/gu)];
+  assert.equal(publishSteps.length, 2, "expected exactly one publish step in security-gate and one in review-gate");
+  for (const [block] of publishSteps) {
+    assert.equal(block.includes("if:"), false, "the publish step must not be conditional on any trigger-specific flag");
+    assert.match(block, /head_sha=\$\{\{ needs\.resolve-pr\.outputs\.head_sha \}\}/u);
+  }
 });

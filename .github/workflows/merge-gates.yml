@@ -6,11 +6,6 @@ on:
     types: [completed]
   issue_comment:
     types: [created]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: Pull request number to re-evaluate
-        required: true
 
 permissions:
   contents: read
@@ -22,17 +17,16 @@ jobs:
   # TRIGGER SAFETY, read this before changing `on:` above: pull_request, pull_request_review, and
   # pull_request_review_comment all execute the workflow's own step DEFINITIONS from the pull
   # request's merge commit, not the base branch (this is the documented reason pull_request_target
-  # exists at all). A prior version of this file used pull_request, then pull_request_review, both on
-  # the mistaken assumption that only the FILE CONTENTS they check out (not the steps that execute)
-  # come from the PR. A PR editing merge-gates.yml itself — deleting the overlay step, the "Fail if
-  # the gate failed" step, or the whole job — would have had that edited version execute and get
-  # reported as the result, regardless of any checkout-ref pinning or file overlay inside those now-
-  # attacker-controlled steps. Only workflow_run and workflow_dispatch read the workflow DEFINITION
-  # from the default branch (workflow_run always; workflow_dispatch's definition is pinned to
-  # whichever ref the dispatch targets, but that ref is chosen by a trusted caller, never by the PR
-  # being evaluated) — issue_comment is also safe here as a PURE data trigger (a comment cannot alter
-  # which steps run). None of the four remaining trigger types in this file let a PR control its own
-  # evaluation.
+  # exists at all) — none of the three may ever be added here. workflow_dispatch was also removed: it
+  # lets the CALLER choose any ref to run the workflow against, and if that ref is the PR's own branch
+  # (or any other attacker-influenced branch), that ref's copy of this file defines which steps
+  # execute — the same structural vulnerability, not something a protected-path file overlay can fix,
+  # since the PR-controlled workflow could simply delete the overlay step itself, the gate invocation,
+  # the Checks API publish step, or the final failure step. "The caller is trusted" is not an
+  # acceptable security boundary for a required merge gate. Only workflow_run (always sourced from the
+  # default branch) and issue_comment (a pure data trigger — a comment cannot alter which steps run)
+  # remain, and both are genuinely safe: a PR can never control which version of this file's steps
+  # execute against it.
   #
   # workflow_run listens to BOTH validate (re-evaluates after every push/test completion) and
   # Dispatch PR merge gate (re-evaluates promptly after Claude review activity, since that workflow's
@@ -44,53 +38,47 @@ jobs:
   # cannot forge a genuine claude[bot] exact-head review, since this workflow never reads anything
   # from that run's own output or logs.
   #
-  # Resolves the PR number, head sha, base sha, and the checkout/publish posture for every trigger
-  # shape:
+  # Resolves the PR number, head sha, and base sha for every trigger shape. Both workflow_run and
+  # issue_comment already execute in the context of the default branch — including the tree checked
+  # out by the gate jobs below — so there is no PR-controlled checkout to defend against here and no
+  # overlay/protected-path mechanism is needed (a prior version of this file had one, built to protect
+  # against pull_request_review and workflow_dispatch's untrusted checkouts; with both removed, it had
+  # no remaining purpose and was removed with them rather than kept as unreachable complexity).
   #
-  # needs_overlay — whether this run's default checkout can contain content the evaluated PR itself
-  # controls. workflow_run always executes in the context of its own trigger (the base branch) and
-  # issue_comment likewise checks out the default branch by default — both false. workflow_dispatch
-  # lets the CALLER choose any ref to run against; if that ref happens to be the PR's own branch (or
-  # any other attacker-influenced branch), default checkout would contain unprotected gate files —
-  # true, so the overlay below always runs for it regardless of which ref was actually chosen.
-  #
-  # publish_externally — whether this run's own pass/fail is invisible to the PR's required checks and
-  # must be explicitly republished against the real head sha via the Checks API. Confirmed empirically
-  # (not assumed): neither workflow_run nor issue_comment auto-attach their check conclusion to the
-  # originating PR's head commit — `gh api .../check-runs` on this PR's own head showed the "dispatch"
-  # check-run (from dispatch-pr-merge-gate.yml) was present only from its pull_request_review-triggered
-  # runs; its workflow_run-triggered runs' own associated commit was main's tip, not this PR's head, and
-  # produced no check-run on this PR at all. So publish_externally is true for all three remaining
-  # trigger types here, unconditionally.
+  # publish_externally: every trigger here needs its result explicitly republished against the
+  # resolved PR head sha via the Checks API — confirmed empirically (not assumed): `gh api
+  # .../check-runs` on this PR's own head showed dispatch-pr-merge-gate.yml's "dispatch" check-run was
+  # present only from its pull_request_review-triggered runs (now a removed trigger class); its
+  # workflow_run-triggered runs' own associated commit was main's tip, not this PR's head, and
+  # produced no check-run on this PR at all. issue_comment has the same property: github.sha resolves
+  # to the default branch tip for it, not the PR's head.
   #
   # Known limitation, left as-is: GitHub Actions has no workflow trigger for "a review thread was
   # resolved" alone (pull_request_review_thread is a real webhook/GraphQL event but is not a
   # supported `on:` trigger — using it here previously made the whole workflow file unparseable, so
   # it was removed). Resolving the last actionable thread does not by itself re-run review-gate; a
-  # new commit (reruns validate), a new review (reruns Dispatch PR merge gate), a new issue comment,
-  # or workflow_dispatch does.
+  # new commit (reruns validate), a new review (reruns Dispatch PR merge gate), or a new issue
+  # comment does.
   #
   # Known limitation, left as-is: GitHub leaves github.event.workflow_run.pull_requests empty for a
   # pull request from a forked repository (the same documented behavior dispatch-pr-merge-gate.yml
   # already relies on unprotected, at its own identical `pull_requests[0].number > 0` check). A fork
   # PR's ordinary push therefore never resolves a PR number here and never gets a security-gate/
-  # review-gate result on its own — only issue_comment (an owner/maintainer commenting) or an explicit
-  # workflow_dispatch does. This repository has no history of fork contributions and this gate's
-  # purpose is to protect merges, not to review fork PRs in general, so a maintainer reviewing a fork
-  # PR manually (as the existing supervisor dispatch flow's own restrictedForkPullRequest handling
-  # already assumes) is an acceptable, pre-existing boundary, not something this PR introduces.
+  # review-gate result on its own. Operational path for that case: a maintainer posts a comment on the
+  # fork PR, which fires issue_comment and evaluates the gates using the trusted default-branch
+  # workflow — the same path this file already provides for the owner's exact-head disposition
+  # comment. This repository has no history of fork contributions and this gate's purpose is to
+  # protect merges, not to review fork PRs in general, so this is an acceptable, pre-existing
+  # boundary, not something this PR introduces.
   resolve-pr:
     runs-on: ubuntu-latest
     if: >-
       (github.event_name == 'issue_comment' && github.event.issue.pull_request != null) ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number > 0) ||
-      github.event_name == 'workflow_dispatch'
+      (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number > 0)
     outputs:
       pr_number: ${{ steps.resolve.outputs.pr_number }}
       head_sha: ${{ steps.resolve.outputs.head_sha }}
       base_sha: ${{ steps.resolve.outputs.base_sha }}
-      needs_overlay: ${{ steps.resolve.outputs.needs_overlay }}
-      publish_externally: ${{ steps.resolve.outputs.publish_externally }}
     steps:
       - id: resolve
         env:
@@ -101,7 +89,6 @@ jobs:
           WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
           WORKFLOW_RUN_BASE_SHA: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
           ISSUE_NUMBER_INPUT: ${{ github.event.issue.number }}
-          WORKFLOW_DISPATCH_PR_NUMBER: ${{ github.event.inputs.pr_number }}
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
@@ -109,30 +96,12 @@ jobs:
               echo "pr_number=$WORKFLOW_RUN_PR_NUMBER" >> "$GITHUB_OUTPUT"
               echo "head_sha=$WORKFLOW_RUN_HEAD_SHA" >> "$GITHUB_OUTPUT"
               echo "base_sha=$WORKFLOW_RUN_BASE_SHA" >> "$GITHUB_OUTPUT"
-              echo "needs_overlay=false" >> "$GITHUB_OUTPUT"
-              echo "publish_externally=true" >> "$GITHUB_OUTPUT"
               ;;
             issue_comment)
               pr_json="$(gh api "repos/$REPOSITORY/pulls/$ISSUE_NUMBER_INPUT")"
               echo "pr_number=$ISSUE_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
               echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
               echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
-              echo "needs_overlay=false" >> "$GITHUB_OUTPUT"
-              echo "publish_externally=true" >> "$GITHUB_OUTPUT"
-              ;;
-            workflow_dispatch)
-              # workflow_dispatch lets the caller choose ANY ref to run this workflow against — the
-              # default checkout below would then check out that caller-chosen ref, not necessarily
-              # anything trusted. needs_overlay=true forces the protected-path overlay, so the gate
-              # scripts that actually execute are always the base-branch's trusted copies regardless
-              # of which ref was dispatched against, and the PR they evaluate is always resolved
-              # fresh via the API (pr_json below), never from local files.
-              pr_json="$(gh api "repos/$REPOSITORY/pulls/$WORKFLOW_DISPATCH_PR_NUMBER")"
-              echo "pr_number=$WORKFLOW_DISPATCH_PR_NUMBER" >> "$GITHUB_OUTPUT"
-              echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
-              echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
-              echo "needs_overlay=true" >> "$GITHUB_OUTPUT"
-              echo "publish_externally=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "::error::Unexpected event: $EVENT_NAME"
@@ -149,49 +118,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      # See resolve-pr's needs_overlay comment above for why only workflow_dispatch needs this today.
-      # Overwrites every SENSITIVE_AUTOMATION_PATHS file with its base-branch copy before evaluating,
-      # so a run dispatched against an untrusted ref (or, if a future trigger ever checks out PR
-      # content again, a PR editing scripts/autonomy-supervisor.js or this gate's own files) cannot
-      # control its own gate run. The protected-path list itself is read from the BASE branch's copy
-      # of autonomy-supervisor.js, not the checked-out one, so it cannot be shrunk to exempt anything.
-      # If no trusted gate exists on the base branch yet (scripts/security-gate.js absent there), this
-      # is the one-time PR introducing the gate mechanism itself — there is nothing to fall back to, so
-      # this PR's own code runs unmodified; protection begins with the next PR, once this one merges.
-      - name: Protect gate logic against an untrusted checked-out ref
-        if: needs.resolve-pr.outputs.needs_overlay == 'true'
-        env:
-          BASE_SHA: ${{ needs.resolve-pr.outputs.base_sha }}
-        run: |
-          set -euo pipefail
-          git fetch --depth 1 origin "$BASE_SHA"
-          if git cat-file -e "$BASE_SHA:scripts/security-gate.js" 2>/dev/null; then
-            mkdir -p /tmp/merge-gate-overlay
-            git show "$BASE_SHA:scripts/autonomy-supervisor.js" > /tmp/merge-gate-overlay/base-autonomy-supervisor.mjs
-            # A relative import from a wrapper file placed alongside it, not `node -e` with an
-            # absolute specifier: autonomy-supervisor.js's own entry-point guard
-            # (`if (import.meta.url === pathToFileURL(process.argv[1]).href)`) would otherwise compare
-            # against an undefined argv[1] under `-e` and crash trying to run the full supervisor, and
-            # a bare absolute-path import specifier is not portably valid across Node ESM resolvers.
-            {
-              echo 'import { SENSITIVE_AUTOMATION_PATHS } from "./base-autonomy-supervisor.mjs";'
-              echo 'console.log(SENSITIVE_AUTOMATION_PATHS.join("\n"));'
-            } > /tmp/merge-gate-overlay/print-sensitive-paths.mjs
-            # A plain redirect into a file, not `mapfile < <(...)`: bash's `set -e` does not see a
-            # process substitution's exit status, only mapfile's own, so a crashing node helper would
-            # otherwise leave `paths` silently empty and this step would exit 0 — disabling the entire
-            # tamper-protection overlay without any error. Redirecting to a real file makes node's own
-            # exit code the one `set -e` observes, failing the step loudly instead.
-            node /tmp/merge-gate-overlay/print-sensitive-paths.mjs > /tmp/merge-gate-overlay/sensitive-paths.txt
-            mapfile -t paths < /tmp/merge-gate-overlay/sensitive-paths.txt
-            for path in "${paths[@]}"; do
-              if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
-                git show "$BASE_SHA:$path" > "$path"
-              fi
-            done
-          else
-            echo "::notice::No trusted gate exists yet on the base branch; evaluating this PR's own gate code (bootstrap). Protection begins once this PR merges."
-          fi
       - name: Evaluate security gate
         id: run
         continue-on-error: true
@@ -200,7 +126,6 @@ jobs:
           PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
         run: node scripts/security-gate.js
       - name: Publish result against the pull request's head commit
-        if: needs.resolve-pr.outputs.publish_externally == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -225,45 +150,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      # Same protection as security-gate — see its comment above and resolve-pr's needs_overlay
-      # comment. review-gate's own decision logic only reads already-posted GitHub review/thread
-      # state (nothing a checked-out file can forge), but it imports from the same
-      # autonomy-supervisor.js, so it is protected identically for consistency and because a future
-      # trigger could still expose it to an untrusted checkout.
-      - name: Protect gate logic against an untrusted checked-out ref
-        if: needs.resolve-pr.outputs.needs_overlay == 'true'
-        env:
-          BASE_SHA: ${{ needs.resolve-pr.outputs.base_sha }}
-        run: |
-          set -euo pipefail
-          git fetch --depth 1 origin "$BASE_SHA"
-          if git cat-file -e "$BASE_SHA:scripts/review-gate.js" 2>/dev/null; then
-            mkdir -p /tmp/merge-gate-overlay
-            git show "$BASE_SHA:scripts/autonomy-supervisor.js" > /tmp/merge-gate-overlay/base-autonomy-supervisor.mjs
-            # A relative import from a wrapper file placed alongside it, not `node -e` with an
-            # absolute specifier: autonomy-supervisor.js's own entry-point guard
-            # (`if (import.meta.url === pathToFileURL(process.argv[1]).href)`) would otherwise compare
-            # against an undefined argv[1] under `-e` and crash trying to run the full supervisor, and
-            # a bare absolute-path import specifier is not portably valid across Node ESM resolvers.
-            {
-              echo 'import { SENSITIVE_AUTOMATION_PATHS } from "./base-autonomy-supervisor.mjs";'
-              echo 'console.log(SENSITIVE_AUTOMATION_PATHS.join("\n"));'
-            } > /tmp/merge-gate-overlay/print-sensitive-paths.mjs
-            # A plain redirect into a file, not `mapfile < <(...)`: bash's `set -e` does not see a
-            # process substitution's exit status, only mapfile's own, so a crashing node helper would
-            # otherwise leave `paths` silently empty and this step would exit 0 — disabling the entire
-            # tamper-protection overlay without any error. Redirecting to a real file makes node's own
-            # exit code the one `set -e` observes, failing the step loudly instead.
-            node /tmp/merge-gate-overlay/print-sensitive-paths.mjs > /tmp/merge-gate-overlay/sensitive-paths.txt
-            mapfile -t paths < /tmp/merge-gate-overlay/sensitive-paths.txt
-            for path in "${paths[@]}"; do
-              if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
-                git show "$BASE_SHA:$path" > "$path"
-              fi
-            done
-          else
-            echo "::notice::No trusted gate exists yet on the base branch; evaluating this PR's own gate code (bootstrap). Protection begins once this PR merges."
-          fi
       - name: Evaluate review gate
         id: run
         continue-on-error: true
@@ -272,7 +158,6 @@ jobs:
           PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
         run: node scripts/review-gate.js
       - name: Publish result against the pull request's head commit
-        if: needs.resolve-pr.outputs.publish_externally == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
