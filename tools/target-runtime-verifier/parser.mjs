@@ -90,7 +90,7 @@ export async function parserClosure(entry, root) {
   return { local: seen, external, failures };
 }
 
-const invokedDirectly = process.argv[1] && import.meta.url === new URL(`file://${toPosix(process.argv[1])}`).href;
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (invokedDirectly) {
   if (process.argv.includes("--resolve-path")) {
     // Isolation proof for tests: prints where this process actually resolved es-module-lexer from,

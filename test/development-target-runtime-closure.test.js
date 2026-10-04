@@ -4,6 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 import {
   PROHIBITED_CONFIG_KEYS,
   assertConfigSurface,
@@ -161,6 +162,29 @@ test("a stale leftover artifact from a prior interrupted run (an older destructi
     assert.ok(resolved.includes(path.join(verifierSubpackage, "node_modules", "es-module-lexer").split(path.sep).join("/")));
   } finally {
     rmSync(staleLeftover, { recursive: true, force: true });
+  }
+});
+
+test("parser.mjs is invoked as a direct CLI run even when its own path contains a literal '%'", () => {
+  // Confirmed review finding: comparing import.meta.url against a manually built
+  // `file://${path}` URL (rather than pathToFileURL(path).href) never escapes "%" to "%25" the way
+  // Node's own file-URL construction does. If the checkout/CI workspace path ever contained a
+  // literal "%", the two URLs would silently mismatch, invokedDirectly would be wrongly false, and
+  // the CLI branch (which prints the JSON result parserClosure() depends on) would be skipped
+  // entirely — producing a bare SyntaxError from empty stdout instead of the intended remediation.
+  const scratch = mkdtempSync(path.join(tmpdir(), "trv-percent-"));
+  const percentDirectory = path.join(scratch, "100%-copy");
+  cpSync(verifierSubpackage, percentDirectory, { recursive: true });
+  try {
+    const resolved = execFileSync(process.execPath, [path.join(percentDirectory, "parser.mjs"), "--resolve-path"], {
+      cwd: percentDirectory,
+      encoding: "utf8",
+    }).trim();
+    assert.ok(resolved.length > 0, "the CLI branch must still run and print a result from a path containing '%'");
+    const expectedPrefix = pathToFileURL(path.join(percentDirectory, "node_modules", "es-module-lexer") + path.sep).href;
+    assert.ok(resolved.startsWith(expectedPrefix), `${resolved} must resolve inside the percent-containing sub-package copy`);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
   }
 });
 
