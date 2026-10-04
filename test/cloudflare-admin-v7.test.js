@@ -59,24 +59,46 @@ test("Cloudflare API adapter pins account and exposes only fixed operations with
     apiToken: "x".repeat(30),
     fetchImpl: async (url, init) => {
       requests.push({ url, init });
-      return response([]);
+      // getLatestWorkerVersion() lists versions and takes the first (Cloudflare documents no
+      // "versions/latest" GET); every other call in this test ignores the body.
+      return response({ items: [{ id: "test-version" }] });
     },
   });
   assert.equal("request" in api, false);
   assert.equal("accountPath" in api, false);
-  const latestVersionUrl =
-    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`;
+  const versionsListUrl =
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions`;
+  // Cloudflare documents no PATCH under /workers/scripts/.../versions/latest; this mirrors
+  // wrangler's own "wrangler versions secret" implementation, which patches the newer
+  // /workers/workers/ collection instead.
+  const patchLatestVersionUrl =
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`;
   await api.listWorkerSecrets();
   assert.equal(requests[0].init.redirect, "error");
   assert.equal(requests[0].url.includes(CLOUDFLARE_ADMIN_V7.accountId), true);
   await api.getLatestWorkerVersion();
   assert.equal(requests[1].init.method, "GET");
-  assert.equal(requests[1].url, latestVersionUrl);
+  assert.equal(requests[1].url, versionsListUrl);
   await api.createServiceAuthVersion("{}", "a".repeat(40), "b".repeat(64));
-  assert.equal(requests[2].url, latestVersionUrl);
+  assert.equal(requests[2].url, patchLatestVersionUrl);
   assert.equal(requests[2].init.method, "PATCH");
   assert.equal(requests[2].init.headers.get("content-type"), "application/merge-patch+json");
-  assert.equal(requests.some(({ url }) => url.includes("/workers/workers/")), false);
+});
+
+// Cloudflare API contract hardening (Part E): confirmed against the real "list versions" endpoint
+// (no "versions/latest" GET is documented) — the first item in the list is the latest version.
+test("getLatestWorkerVersion lists versions and returns the first one, and fails closed when the list is empty", async () => {
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async () => response({ items: [{ id: "newest" }, { id: "older" }] }),
+  });
+  assert.deepEqual(await api.getLatestWorkerVersion(), { id: "newest" });
+
+  const emptyApi = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async () => response({ items: [] }),
+  });
+  await assert.rejects(() => emptyApi.getLatestWorkerVersion(), /has no versions/);
 });
 
 // Mirrors the bug found and fixed in the owner-run Phase 2 verifier: CLOUDFLARE_ADMIN_API_TOKEN is

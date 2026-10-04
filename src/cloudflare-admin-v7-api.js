@@ -96,8 +96,12 @@ export class CloudflareAdminV7Api {
     return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/${versionId}`));
   }
 
+  // Cloudflare documents no "versions/latest" path; the list endpoint's own documentation states
+  // "The first version in the list is the latest version", so that is how the latest is obtained.
   async getLatestWorkerVersion() {
-    return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`));
+    const { items } = await this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions`));
+    if (!Array.isArray(items) || items.length === 0) throw new Error(`${CLOUDFLARE_ADMIN_V7.workerName} has no versions`);
+    return items[0];
   }
 
   async createWorkerDeployment(versionId, reviewedCommit) {
@@ -129,10 +133,6 @@ export class CloudflareAdminV7Api {
 
   async listWorkerScripts() {
     return this.#request("GET", this.#accountPath("/workers/scripts"));
-  }
-
-  async getWorkerService() {
-    return this.#request("GET", this.#accountPath(`/workers/services/${CLOUDFLARE_ADMIN_V7.workerName}`));
   }
 
   async getAccountWorkersSubdomain() {
@@ -234,8 +234,13 @@ export class CloudflareAdminV7Api {
     );
   }
 
+  // PATCH-on-"latest" with a merge-patch body is a real Cloudflare mechanism for creating a new
+  // version carrying a secret without deploying it (confirmed against wrangler's own
+  // "wrangler versions secret" implementation, which this mirrors), but it lives under
+  // /workers/workers/, not /workers/scripts/ — the only other endpoint documenting a PATCH on a
+  // versions resource at all is under the newer workers/workers collection.
   async createServiceAuthVersion(secretJson, reviewedCommit, configurationSha256) {
-    return this.#request("PATCH", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
+    return this.#request("PATCH", this.#accountPath(`/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
       contentType: "application/merge-patch+json",
       body: {
         env: {
