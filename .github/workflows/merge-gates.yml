@@ -38,12 +38,21 @@ jobs:
   # cannot forge a genuine claude[bot] exact-head review, since this workflow never reads anything
   # from that run's own output or logs.
   #
-  # Resolves the PR number, head sha, and base sha for every trigger shape. Both workflow_run and
-  # issue_comment already execute in the context of the default branch — including the tree checked
-  # out by the gate jobs below — so there is no PR-controlled checkout to defend against here and no
-  # overlay/protected-path mechanism is needed (a prior version of this file had one, built to protect
-  # against pull_request_review and workflow_dispatch's untrusted checkouts; with both removed, it had
-  # no remaining purpose and was removed with them rather than kept as unreachable complexity).
+  # Resolves EVERY pull request number this run must gate, for every trigger shape, as a JSON array —
+  # never a single number. github.event.workflow_run.pull_requests can legitimately contain more than
+  # one open PR sharing the exact same head branch/commit (e.g. the same branch opened as a PR against
+  # two different base branches); indexing [0] and trusting its bundled head_sha/base_sha would risk
+  # evaluating and publishing one PR's result onto a different PR that merely shares that commit. Each
+  # downstream matrix job (see security-gate/review-gate below) re-fetches its OWN pr_number's current
+  # head sha fresh via the API, rather than trusting anything bundled in this event payload, so there
+  # is no step at which two PRs' identities could be confused with each other.
+  #
+  # Both workflow_run and issue_comment already execute in the context of the default branch —
+  # including the tree checked out by the gate jobs below — so there is no PR-controlled checkout to
+  # defend against here and no overlay/protected-path mechanism is needed (a prior version of this
+  # file had one, built to protect against pull_request_review and workflow_dispatch's untrusted
+  # checkouts; with both removed, it had no remaining purpose and was removed with them rather than
+  # kept as unreachable complexity).
   #
   # publish_externally: every trigger here needs its result explicitly republished against the
   # resolved PR head sha via the Checks API — confirmed empirically (not assumed): `gh api
@@ -76,32 +85,21 @@ jobs:
       (github.event_name == 'issue_comment' && github.event.issue.pull_request != null) ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number > 0)
     outputs:
-      pr_number: ${{ steps.resolve.outputs.pr_number }}
-      head_sha: ${{ steps.resolve.outputs.head_sha }}
-      base_sha: ${{ steps.resolve.outputs.base_sha }}
+      pr_numbers: ${{ steps.resolve.outputs.pr_numbers }}
     steps:
       - id: resolve
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
-          REPOSITORY: ${{ github.repository }}
-          WORKFLOW_RUN_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
-          WORKFLOW_RUN_BASE_SHA: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
+          WORKFLOW_RUN_PULL_REQUESTS_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
           ISSUE_NUMBER_INPUT: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
             workflow_run)
-              echo "pr_number=$WORKFLOW_RUN_PR_NUMBER" >> "$GITHUB_OUTPUT"
-              echo "head_sha=$WORKFLOW_RUN_HEAD_SHA" >> "$GITHUB_OUTPUT"
-              echo "base_sha=$WORKFLOW_RUN_BASE_SHA" >> "$GITHUB_OUTPUT"
+              echo "pr_numbers=$(jq -c '[.[].number]' <<< "$WORKFLOW_RUN_PULL_REQUESTS_JSON")" >> "$GITHUB_OUTPUT"
               ;;
             issue_comment)
-              pr_json="$(gh api "repos/$REPOSITORY/pulls/$ISSUE_NUMBER_INPUT")"
-              echo "pr_number=$ISSUE_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
-              echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
-              echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
+              echo "pr_numbers=[$ISSUE_NUMBER_INPUT]" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "::error::Unexpected event: $EVENT_NAME"
@@ -111,6 +109,10 @@ jobs:
 
   security-gate:
     needs: resolve-pr
+    strategy:
+      fail-fast: false
+      matrix:
+        pr_number: ${{ fromJSON(needs.resolve-pr.outputs.pr_numbers) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -118,12 +120,24 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # Fetched fresh here, never trusted from the triggering event payload: this is the one place
+      # that fixes the pull_requests[0] ambiguity described above — each matrix entry resolves its OWN
+      # head sha independently, so two PRs sharing a head branch can never have their results swapped.
+      - name: Resolve this pull request's current head commit
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER")"
+          echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
       - name: Evaluate security gate
         id: run
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+          PR_NUMBER: ${{ matrix.pr_number }}
         run: node scripts/security-gate.js
       - name: Publish result against the pull request's head commit
         env:
@@ -134,7 +148,7 @@ jobs:
           if [ "${{ steps.run.outcome }}" != "success" ]; then conclusion="failure"; fi
           gh api --method POST "repos/${{ github.repository }}/check-runs" \
             -f "name=security-gate" \
-            -f "head_sha=${{ needs.resolve-pr.outputs.head_sha }}" \
+            -f "head_sha=${{ steps.pr.outputs.head_sha }}" \
             -f "status=completed" \
             -f "conclusion=$conclusion" > /dev/null
       - name: Fail if the gate failed
@@ -143,6 +157,10 @@ jobs:
 
   review-gate:
     needs: resolve-pr
+    strategy:
+      fail-fast: false
+      matrix:
+        pr_number: ${{ fromJSON(needs.resolve-pr.outputs.pr_numbers) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -150,12 +168,21 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: Resolve this pull request's current head commit
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER")"
+          echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
       - name: Evaluate review gate
         id: run
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
+          PR_NUMBER: ${{ matrix.pr_number }}
         run: node scripts/review-gate.js
       - name: Publish result against the pull request's head commit
         env:
@@ -166,7 +193,7 @@ jobs:
           if [ "${{ steps.run.outcome }}" != "success" ]; then conclusion="failure"; fi
           gh api --method POST "repos/${{ github.repository }}/check-runs" \
             -f "name=review-gate" \
-            -f "head_sha=${{ needs.resolve-pr.outputs.head_sha }}" \
+            -f "head_sha=${{ steps.pr.outputs.head_sha }}" \
             -f "status=completed" \
             -f "conclusion=$conclusion" > /dev/null
       - name: Fail if the gate failed

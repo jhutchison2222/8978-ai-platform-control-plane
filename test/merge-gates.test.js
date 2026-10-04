@@ -305,13 +305,32 @@ test("merge-gates.yml triggers only on workflow_run (validate and Dispatch PR me
 // Every remaining trigger type needs its result explicitly republished against the resolved PR head
 // sha — see the publish_externally comment in merge-gates.yml for the empirical evidence. Pins that
 // both gate jobs always run the "Publish result" step unconditionally (no `if:` gating it on a
-// trigger-specific flag), so neither workflow_run nor issue_comment can silently skip publishing.
+// trigger-specific flag), so neither workflow_run nor issue_comment can silently skip publishing, and
+// that the head sha it publishes against comes from a per-matrix-entry fresh API fetch, not anything
+// bundled in the triggering event payload — see the next test for why that distinction matters.
 test("security-gate and review-gate always publish their result against the resolved head sha, unconditionally", async () => {
   const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
   const publishSteps = [...workflow.matchAll(/- name: Publish result against the pull request's head commit\n(?: {8}.*\n)*/gu)];
   assert.equal(publishSteps.length, 2, "expected exactly one publish step in security-gate and one in review-gate");
   for (const [block] of publishSteps) {
     assert.equal(block.includes("if:"), false, "the publish step must not be conditional on any trigger-specific flag");
-    assert.match(block, /head_sha=\$\{\{ needs\.resolve-pr\.outputs\.head_sha \}\}/u);
+    assert.match(block, /head_sha=\$\{\{ steps\.pr\.outputs\.head_sha \}\}/u);
   }
+});
+
+// github.event.workflow_run.pull_requests can legitimately contain more than one open PR sharing the
+// exact same head branch/commit (e.g. the same branch opened as a PR against two different base
+// branches). Naively indexing [0] and trusting its bundled head_sha/base_sha risks evaluating and
+// publishing one PR's result onto a different PR that merely shares that commit. Pins that: (1)
+// resolve-pr emits every PR number as a JSON array, not a single index [0]; (2) both gate jobs fan out
+// over that array via a matrix; (3) each matrix entry resolves its own head sha with a fresh API call
+// using matrix.pr_number, never anything carried over from the workflow_run event payload.
+test("security-gate and review-gate evaluate every pull request sharing a workflow_run's head branch, not just index 0", async () => {
+  const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
+  assert.match(workflow, /pr_numbers=\$\(jq -c '\[\.\[\]\.number\]' <<< "\$WORKFLOW_RUN_PULL_REQUESTS_JSON"\)/u);
+  assert.doesNotMatch(workflow, /pull_requests\[0\]\.head\.sha|pull_requests\[0\]\.base\.sha/u);
+  const matrixBlocks = [...workflow.matchAll(/strategy:\n\s+fail-fast: false\n\s+matrix:\n\s+pr_number: \$\{\{ fromJSON\(needs\.resolve-pr\.outputs\.pr_numbers\) \}\}/gu)];
+  assert.equal(matrixBlocks.length, 2, "both security-gate and review-gate must fan out over every resolved PR number");
+  const prNumberUses = [...workflow.matchAll(/PR_NUMBER: \$\{\{ matrix\.pr_number \}\}/gu)];
+  assert.ok(prNumberUses.length >= 4, "each matrix job must use its own matrix.pr_number, not a shared resolve-pr output");
 });
