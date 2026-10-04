@@ -162,7 +162,13 @@ export async function collectPagedResults(fetchPage, label, {
     }
     if (page === totalPages) {
       if (collected.length !== first.total_count) throw new Error(`${label} collected ${collected.length} items but total_count is ${first.total_count}; completeness cannot be proven`);
-      if (pendingCeilingWarning) onApproachingCeiling(pendingCeilingWarning);
+      if (pendingCeilingWarning) {
+        try {
+          await onApproachingCeiling(pendingCeilingWarning);
+        } catch {
+          // Capacity reporting is advisory and must never change listing success or failure.
+        }
+      }
       return collected;
     }
   }

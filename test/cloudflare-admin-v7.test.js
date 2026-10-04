@@ -151,6 +151,22 @@ test("collectPagedResults warns, without failing, once a listing approaches its 
   assert.equal(result.length, totalPages * 10, "the listing still completes fully despite the warning");
   assert.equal(warnings.length, 1);
   assert.match(warnings[0], new RegExp(`requires ${totalPages} of a maximum ${MAXIMUM_LISTING_PAGES} pages`));
+  // The warning is deferred until the listing actually finishes (see the dedicated test below for
+  // why), so by the time it fires, claiming the listing "completed" is accurate, not premature.
+  assert.match(warnings[0], /completed/u);
+});
+
+test("collectPagedResults isolates synchronous and asynchronous warning callback failures", async () => {
+  const totalPages = Math.ceil(MAXIMUM_LISTING_PAGES * CEILING_WARNING_THRESHOLD);
+  for (const onApproachingCeiling of [
+    () => { throw new Error("synchronous reporting failure"); },
+    async () => { throw new Error("asynchronous reporting failure"); },
+  ]) {
+    const result = await collectPagedResults(fixedPage(totalPages * 10, 10), "test listing", {
+      onApproachingCeiling,
+    });
+    assert.equal(result.length, totalPages * 10, "advisory callback failures must not affect listing completion");
+  }
 });
 
 test("collectPagedResults stays silent well below the ceiling", async () => {
