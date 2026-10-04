@@ -30,9 +30,12 @@ function lineIndent(line) {
 // block-scalar header test below — so a trailing same-line comment (e.g. `run: npm ci # see npm
 // install docs`) can never be mistaken for part of the command itself. (This is a line-based
 // heuristic, not a full YAML/shell parser: a literal "#" inside a quoted string is also stripped,
-// same limitation as the rest of this file's regex-based scanning.)
+// same limitation as the rest of this file's regex-based scanning.) The (?:^|[ \t]) requires the
+// "#" itself to be at the very start of the line or preceded by whitespace — never bare after a
+// word character — so bash's `${VAR#pattern}` prefix-strip (a "#" with no preceding whitespace,
+// common when deriving a branch name from GITHUB_REF) is correctly left alone.
 function stripComment(line) {
-  return line.replace(/[ \t]*#.*$/u, "");
+  return line.replace(/(?:^|[ \t])#.*$/u, "");
 }
 
 // A deeper-indented line that looks like a new mapping key (`foo:`) or sequence item (`- foo`) is
@@ -78,8 +81,21 @@ function runStepCommandText(source) {
           continue;
         }
         if (lineIndent(line) <= keyIndent) break;
-        if (folded) paragraph.push(stripComment(line).trim());
-        else paragraphs.push(stripComment(line));
+        if (folded) {
+          // A comment-only line is non-blank, but strips to nothing. YAML has no concept of "#" as
+          // a comment marker inside a block scalar — it folds the line as plain text — but a real
+          // shell then truncates execution at that "#". Either way, the words before and after a
+          // comment-only line must never be bridged into one false match, so it is treated exactly
+          // like a blank line: a paragraph break, not a word that joins its neighbors with a space.
+          const content = stripComment(line).trim();
+          if (content === "") {
+            if (paragraph.length > 0) { paragraphs.push(paragraph.join(" ")); paragraph = []; }
+          } else {
+            paragraph.push(content);
+          }
+        } else {
+          paragraphs.push(stripComment(line));
+        }
         cursor += 1;
       }
       if (folded && paragraph.length > 0) paragraphs.push(paragraph.join(" "));
@@ -420,4 +436,35 @@ test("a folded (>) block scalar still folds lines within the same paragraph, eve
     "          install",
   ].join("\n");
   assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a '#' not preceded by whitespace (e.g. bash's ${VAR#pattern} prefix-strip) is never mistaken for a comment", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    '      - run: BRANCH="${GITHUB_REF#refs/heads/}" && npm install',
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a '#' not preceded by whitespace inside a block-scalar body is also left alone", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: |",
+    '          BRANCH="${GITHUB_REF#refs/heads/}" && npm install',
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a comment-only line inside a folded (>) block scalar is a paragraph break, not a bridge between its neighbors", () => {
+  // Real YAML folds "npm" / "# a comment" / "install" to "npm # a comment install"; bash then
+  // truncates at the "#", running only "npm". The words on either side of a comment-only line must
+  // never be joined into a false "npm install" match.
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: >",
+    "          npm",
+    "          # a comment",
+    "          install",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
 });
