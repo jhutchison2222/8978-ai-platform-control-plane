@@ -5,6 +5,16 @@ import test from "node:test";
 
 const workflowDirectory = ".github/workflows";
 
+// True only if the sub-package install step appears strictly before npm test runs. Presence alone
+// is not enough: a workflow could contain both tokens anywhere in the file, including with the
+// install step placed after npm test (where it does nothing useful), and CI would still hard-fail
+// inside parserClosure with "run `npm ci` inside tools/target-runtime-verifier".
+function installsVerifierBeforeTest(source) {
+  const installIndex = source.search(/working-directory:\s*tools\/target-runtime-verifier/u);
+  const testIndex = source.search(/\bnpm test\b/u);
+  return installIndex >= 0 && installIndex < testIndex;
+}
+
 test("GitHub-hosted JavaScript actions use the Node 24 generation", async () => {
   const workflowNames = (await readdir(workflowDirectory)).filter((name) => name.endsWith(".yml"));
   const workflows = await Promise.all(workflowNames.map(async (name) => ({
@@ -39,7 +49,7 @@ test("every workflow running npm test against the current ref installs the targe
   const missing = workflows
     .filter(({ source }) => /\bnpm test\b/u.test(source))
     .filter(({ source }) => !/ref:\s*\$\{\{\s*inputs\.\w*commit\w*\s*\}\}/iu.test(source))
-    .filter(({ source }) => !/working-directory:\s*tools\/target-runtime-verifier/u.test(source))
+    .filter(({ source }) => !installsVerifierBeforeTest(source))
     .map(({ name }) => name);
   assert.deepEqual(missing, []);
 
@@ -53,4 +63,24 @@ test("every workflow running npm test against the current ref installs the targe
     const tree = execFileSync("git", ["ls-tree", "-r", "--name-only", pinned], { encoding: "utf8" });
     assert.ok(!tree.includes("tools/target-runtime-verifier"), `${name}'s pinned commit ${pinned} must not already contain the sub-package`);
   }
+});
+
+test("installsVerifierBeforeTest flags the install step reordered after npm test, not just its presence", () => {
+  const reordered = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: npm test",
+    "      - working-directory: tools/target-runtime-verifier",
+    "        run: npm ci",
+  ].join("\n");
+  assert.equal(installsVerifierBeforeTest(reordered), false, "the install step runs after npm test and does nothing useful there");
+
+  const correctlyOrdered = [
+    "jobs:", "  test:", "    steps:",
+    "      - working-directory: tools/target-runtime-verifier",
+    "        run: npm ci",
+    "      - run: npm test",
+  ].join("\n");
+  assert.equal(installsVerifierBeforeTest(correctlyOrdered), true);
+
+  assert.equal(installsVerifierBeforeTest("jobs:\n  test:\n    steps:\n      - run: npm test"), false, "no install step at all");
 });
