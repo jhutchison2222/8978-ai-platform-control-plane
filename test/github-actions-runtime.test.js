@@ -25,6 +25,16 @@ function lineIndent(line) {
   return line.match(/^(\s*)/u)[1].length;
 }
 
+// YAML strips everything from an unquoted, whitespace-preceded "#" onward before the shell ever
+// sees it. Used on every piece of text this module pushes toward the guard — not just the
+// block-scalar header test below — so a trailing same-line comment (e.g. `run: npm ci # see npm
+// install docs`) can never be mistaken for part of the command itself. (This is a line-based
+// heuristic, not a full YAML/shell parser: a literal "#" inside a quoted string is also stripped,
+// same limitation as the rest of this file's regex-based scanning.)
+function stripComment(line) {
+  return line.replace(/[ \t]*#.*$/u, "");
+}
+
 // A deeper-indented line that looks like a new mapping key (`foo:`) or sequence item (`- foo`) is
 // YAML structure, not a continuation of the run: value above it — folding it in would swallow
 // unrelated keys. Anything else at a deeper indent is a plain- or quoted-scalar continuation line
@@ -48,32 +58,38 @@ function runStepCommandText(source) {
     const [, indent, rest] = match;
     const keyIndent = indent.length;
     // YAML allows a comment (and/or trailing whitespace) after a block-scalar header, e.g.
-    // `run: | # explain`. Strip it only for the header shape test below — `rest` itself is left
-    // untouched, since in the non-block-scalar branch it is real command text that may legitimately
-    // contain "#" (e.g. a URL fragment or shell comment of its own).
-    const headerCandidate = rest.replace(/[ \t]*#.*$/u, "").trimEnd();
+    // `run: | # explain`. The header test needs the comment gone; `rest` itself stays untouched
+    // here since in the non-block-scalar branch it is real command text, stripped separately below.
+    const headerCandidate = stripComment(rest).trimEnd();
     if (BLOCK_SCALAR_HEADER.test(headerCandidate)) {
-      // ">" is a YAML *folded* scalar: GitHub Actions joins its body lines with a space, producing
-      // one shell command, not one per line. "|" is *literal*: each line stays a separate command,
-      // newline-joined (handled by the outer commands.join("\n") below). Folding ">" the same way
-      // as "|" would leave "npm" and "install" split across an un-matchable newline.
+      // ">" is a YAML *folded* scalar: lines within one paragraph join with a space; a blank line
+      // starts a new paragraph, and paragraphs join with a newline (real YAML folding). "|" is
+      // *literal*: every line stays separate, newline-joined regardless of blank lines (handled by
+      // the outer commands.join("\n") below, so literal lines are pushed one at a time as before).
       const folded = rest.startsWith(">");
-      const body = [];
+      const paragraphs = [];
+      let paragraph = [];
       let cursor = index + 1;
       while (cursor < lines.length) {
         const line = lines[cursor];
-        if (line.trim() === "") { cursor += 1; continue; }
+        if (line.trim() === "") {
+          if (folded && paragraph.length > 0) { paragraphs.push(paragraph.join(" ")); paragraph = []; }
+          cursor += 1;
+          continue;
+        }
         if (lineIndent(line) <= keyIndent) break;
-        body.push(folded ? line.trim() : line);
+        if (folded) paragraph.push(stripComment(line).trim());
+        else paragraphs.push(stripComment(line));
         cursor += 1;
       }
-      commands.push(folded ? body.join(" ") : body.join("\n"));
+      if (folded && paragraph.length > 0) paragraphs.push(paragraph.join(" "));
+      commands.push(paragraphs.join("\n"));
       index = cursor - 1;
     } else {
-      const parts = [rest];
+      const parts = [stripComment(rest)];
       let cursor = index + 1;
       while (cursor < lines.length && isScalarContinuation(lines[cursor], keyIndent)) {
-        parts.push(lines[cursor].trim());
+        parts.push(stripComment(lines[cursor]).trim());
         cursor += 1;
       }
       commands.push(parts.join(" "));
@@ -359,6 +375,49 @@ test("a block-scalar header followed only by trailing whitespace (no comment) is
   const fixture = [
     "jobs:", "  test:", "    steps:",
     "      - run: |   ", "          status: ok", "          npm install",
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("a trailing same-line YAML comment mentioning npm install is never read as the command itself", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: npm ci # TODO: remove legacy npm install fallback",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a trailing comment inside a block-scalar body is stripped, not read as part of the command", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: |",
+    "          npm ci # see npm install docs for context",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a folded (>) block scalar with a blank-line paragraph break joins within but not across paragraphs", () => {
+  // Real YAML folding: a blank line starts a new paragraph, which becomes a newline in the result —
+  // not a space — so a line ending in "npm" in one paragraph must never bridge into an install-alias
+  // token starting the next paragraph.
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: >",
+    "          echo installing npm",
+    "",
+    "          i=1",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a folded (>) block scalar still folds lines within the same paragraph, even with other paragraphs present", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: >",
+    "          echo preparing",
+    "",
+    "          npm",
+    "          install",
   ].join("\n");
   assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
 });
