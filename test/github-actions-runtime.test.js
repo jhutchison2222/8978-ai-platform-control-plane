@@ -21,8 +21,11 @@ const isWorkflowFile = (name) => name.endsWith(".yml") || name.endsWith(".yaml")
 // dozen rounds of edge-case fixes (block-scalar header variants, folded-vs-literal joining, comment
 // stripping, paragraph breaks, shell control operators...) and still could not be fully trusted not
 // to have another gap. A real bare install silently slipping through undetected is the only failure
-// mode this guard cannot tolerate; an occasional reword is a trivial one.
-const BARE_NPM_INSTALL = /\bnpm\s+(?:install(?:-test)?|i|in|ins|inst|insta|instal|it|add)(?![\w-])/gu;
+// mode this guard cannot tolerate; an occasional reword is a trivial one. [\s\\]+ (rather than just
+// \s+) between "npm" and the subcommand also tolerates a shell line-continuation backslash (e.g.
+// `run: |` / `  npm \` / `    install`, a real bare install bash executes identically to one line),
+// so wrapping a long command across lines can't silently defeat the one thing this guard must catch.
+const BARE_NPM_INSTALL = /\bnpm[\s\\]+(?:install(?:-test)?|i|in|ins|inst|insta|instal|it|add)(?![\w-])/gu;
 
 async function readWorkflows() {
   const workflowNames = (await readdir(workflowDirectory)).filter(isWorkflowFile);
@@ -112,4 +115,12 @@ test("a comment or step name merely mentioning npm install is also flagged — a
   // BARE_NPM_INSTALL above). A maintainer hitting this on a genuinely compliant workflow needs only
   // to reword the comment or step name; that tradeoff is what keeps this guard simple and reliable.
   assert.equal(matches("# do not use npm install, use npm ci instead"), true);
+});
+
+test("a bare npm install wrapped across lines with a shell line-continuation backslash is still caught", () => {
+  // `npm \` then a newline then `install` is a real bare install — bash executes it identically to
+  // `npm install` on one line. A real false negative here is exactly the one failure mode this
+  // guard's design (see the comment on BARE_NPM_INSTALL above) says it must never have.
+  assert.equal(matches(["run: |", "  npm \\", "    install --no-audit"].join("\n")), true);
+  assert.equal(matches(["run: |", "  npm \\", "    ci"].join("\n")), false);
 });
