@@ -52,6 +52,8 @@ test("v7 target contract rejects arbitrary and production targets", () => {
   assert.doesNotThrow(() => requireExactApproval("runCanary", WRITE_APPROVALS.runCanary));
 });
 
+const LATEST_VERSION_ID = "11111111-2222-3333-4444-555555555555";
+
 test("Cloudflare API adapter pins account and exposes only fixed operations with redirect rejection", async () => {
   assert.throws(() => new CloudflareAdminV7Api({ apiToken: "x".repeat(30), accountId: "wrong" }), /pinned development account/);
   const requests = [];
@@ -59,15 +61,17 @@ test("Cloudflare API adapter pins account and exposes only fixed operations with
     apiToken: "x".repeat(30),
     fetchImpl: async (url, init) => {
       requests.push({ url, init });
-      // getLatestWorkerVersion() lists versions and takes the first (Cloudflare documents no
-      // "versions/latest" GET); every other call in this test ignores the body.
-      return response({ items: [{ id: "test-version" }] });
+      // getLatestWorkerVersion() lists versions (summary fields only), then GETs the first item's
+      // ID for full detail (Cloudflare documents no "versions/latest" GET); every other call in
+      // this test ignores the body.
+      return response(url.endsWith("/versions") ? { items: [{ id: LATEST_VERSION_ID }] } : { id: LATEST_VERSION_ID });
     },
   });
   assert.equal("request" in api, false);
   assert.equal("accountPath" in api, false);
   const versionsListUrl =
     `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions`;
+  const versionGetUrl = `${versionsListUrl}/${LATEST_VERSION_ID}`;
   // Cloudflare documents no PATCH under /workers/scripts/.../versions/latest; this mirrors
   // wrangler's own "wrangler versions secret" implementation, which patches the newer
   // /workers/workers/ collection instead.
@@ -79,20 +83,39 @@ test("Cloudflare API adapter pins account and exposes only fixed operations with
   await api.getLatestWorkerVersion();
   assert.equal(requests[1].init.method, "GET");
   assert.equal(requests[1].url, versionsListUrl);
+  assert.equal(requests[2].init.method, "GET");
+  assert.equal(requests[2].url, versionGetUrl);
   await api.createServiceAuthVersion("{}", "a".repeat(40), "b".repeat(64));
-  assert.equal(requests[2].url, patchLatestVersionUrl);
-  assert.equal(requests[2].init.method, "PATCH");
-  assert.equal(requests[2].init.headers.get("content-type"), "application/merge-patch+json");
+  assert.equal(requests[3].url, patchLatestVersionUrl);
+  assert.equal(requests[3].init.method, "PATCH");
+  assert.equal(requests[3].init.headers.get("content-type"), "application/merge-patch+json");
 });
 
 // Cloudflare API contract hardening (Part E): confirmed against the real "list versions" endpoint
-// (no "versions/latest" GET is documented) — the first item in the list is the latest version.
-test("getLatestWorkerVersion lists versions and returns the first one, and fails closed when the list is empty", async () => {
+// (no "versions/latest" GET is documented) — the first item in the list is the latest version, but
+// the list response carries only summary fields (id, number, metadata), never resources
+// (bindings/script/script_runtime) or annotations. The latest ID is resolved, then passed through
+// the single-version GET for the full detail every caller of this method relies on.
+test("getLatestWorkerVersion resolves the latest ID from the list, then fetches its full detail", async () => {
+  const requests = [];
   const api = new CloudflareAdminV7Api({
     apiToken: "x".repeat(30),
-    fetchImpl: async () => response({ items: [{ id: "newest" }, { id: "older" }] }),
+    fetchImpl: async (url) => {
+      requests.push(url);
+      if (url.endsWith("/versions")) {
+        // The list item deliberately carries ONLY summary fields — no resources, no annotations —
+        // matching Cloudflare's documented list response shape exactly.
+        return response({ items: [{ id: LATEST_VERSION_ID, number: 7, metadata: { author_email: "a@b.c" } }, { id: "older" }] });
+      }
+      // The full-detail GET carries the fields downstream security checks actually read.
+      return response({ id: LATEST_VERSION_ID, resources: { bindings: [{ name: "X" }] }, annotations: { "workers/message": "hi" } });
+    },
   });
-  assert.deepEqual(await api.getLatestWorkerVersion(), { id: "newest" });
+  const latest = await api.getLatestWorkerVersion();
+  assert.equal(latest.id, LATEST_VERSION_ID, "must resolve to the first (latest) item in the list, not a later one");
+  assert.deepEqual(latest.resources?.bindings, [{ name: "X" }], "full detail, not the list's summary fields, must be returned");
+  assert.deepEqual(latest.annotations, { "workers/message": "hi" });
+  assert.equal(requests.length, 2, "exactly one list call and one single-version detail call");
 
   const emptyApi = new CloudflareAdminV7Api({
     apiToken: "x".repeat(30),

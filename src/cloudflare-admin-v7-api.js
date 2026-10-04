@@ -97,11 +97,14 @@ export class CloudflareAdminV7Api {
   }
 
   // Cloudflare documents no "versions/latest" path; the list endpoint's own documentation states
-  // "The first version in the list is the latest version", so that is how the latest is obtained.
+  // "The first version in the list is the latest version", so that is how the latest ID is
+  // obtained. The list response carries only summary fields (id, number, metadata) — never
+  // resources (bindings, script, script_runtime) or annotations — so the latest ID is then passed
+  // through the single-version GET to get the full detail every caller of this method relies on.
   async getLatestWorkerVersion() {
     const { items } = await this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions`));
     if (!Array.isArray(items) || items.length === 0) throw new Error(`${CLOUDFLARE_ADMIN_V7.workerName} has no versions`);
-    return items[0];
+    return this.getWorkerVersion(items[0].id);
   }
 
   async createWorkerDeployment(versionId, reviewedCommit) {
