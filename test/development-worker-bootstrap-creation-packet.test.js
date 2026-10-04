@@ -130,6 +130,19 @@ test("the three owner-run commands are pinned exactly in the schema, packet, val
   assert.ok(validator.includes("--bootstrap-version-id <BOOTSTRAP_VERSION_ID>"));
 });
 
+test("the remediation checkout installs the target-runtime verifier sub-package before invoking it", async () => {
+  // Confirmed review finding: verify-target-runtime-closure.js's parserClosure() execFileSync's
+  // tools/target-runtime-verifier/parser.mjs and hard-fails if that sub-package was never installed.
+  // The documented remediation checkout runs verify-target-runtime-closure.js but, before this test,
+  // never ran npm ci there — an operator following the runbook verbatim would hit that hard failure.
+  const doc = await readFile("docs/development-worker-bootstrap-creation.md", "utf8");
+  const remediationSection = doc.slice(doc.indexOf("**Remediation checkout**"), doc.indexOf("**Reviewed target checkout**"));
+  assert.match(remediationSection, /cd tools\/target-runtime-verifier.*npm ci/su);
+  const installIndex = remediationSection.search(/cd tools\/target-runtime-verifier.*npm ci/su);
+  const verifyIndex = remediationSection.indexOf("verify-target-runtime-closure.js");
+  assert.ok(installIndex >= 0 && installIndex < verifyIndex, "the install step must come before the verifier is invoked");
+});
+
 test("an altered, weakened, or substituted command is rejected by the schema", () => {
   const altered = {
     routeAudit: [

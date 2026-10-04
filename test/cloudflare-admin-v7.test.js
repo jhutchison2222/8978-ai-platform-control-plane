@@ -151,7 +151,9 @@ test("collectPagedResults warns, without failing, once a listing approaches its 
   assert.equal(result.length, totalPages * 10, "the listing still completes fully despite the warning");
   assert.equal(warnings.length, 1);
   assert.match(warnings[0], new RegExp(`requires ${totalPages} of a maximum ${MAXIMUM_LISTING_PAGES} pages`));
-  assert.doesNotMatch(warnings[0], /completed/u, "a page-1 warning must not claim the listing has already completed");
+  // The warning is deferred until the listing actually finishes (see the dedicated test below for
+  // why), so by the time it fires, claiming the listing "completed" is accurate, not premature.
+  assert.match(warnings[0], /completed/u);
 });
 
 test("collectPagedResults isolates synchronous and asynchronous warning callback failures", async () => {
@@ -184,6 +186,28 @@ test("collectPagedResults never warns on a listing it ultimately rejects as exce
     /did not terminate within \d+ pages/u,
   );
   assert.equal(warnings.length, 0, "a listing that fails closed is reported by its own error, not a warning");
+});
+
+test("collectPagedResults never reports its ceiling warning before the listing actually finishes, even when a later page fails closed", async () => {
+  // Page 1 alone is enough to cross CEILING_WARNING_THRESHOLD, but a later page then reports a
+  // different total_count — a real fail-closed condition (concurrent Cloudflare-side mutation
+  // mid-pagination is exactly when a near-ceiling listing is most likely to hit this). The warning
+  // must never have been emitted already, since it claims the listing "completed" and this one did not.
+  const warnings = [];
+  const perPage = 10;
+  const totalPages = Math.ceil(MAXIMUM_LISTING_PAGES * CEILING_WARNING_THRESHOLD);
+  const totalCount = totalPages * perPage;
+  const page = (index, count) => ({
+    success: true,
+    result: Array.from({ length: perPage }, (_, i) => ({ id: `item-${index}-${i}` })),
+    result_info: { page: index, per_page: perPage, count: perPage, total_count: count, total_pages: totalPages },
+  });
+  const fetchPage = async (requested) => (requested === 1 ? page(1, totalCount) : page(requested, totalCount + 1));
+  await assert.rejects(
+    () => collectPagedResults(fetchPage, "test listing", { onApproachingCeiling: (message) => warnings.push(message) }),
+    /pagination totals changed between pages/u,
+  );
+  assert.equal(warnings.length, 0, "a warning claiming the listing completed must never fire before a later page proves it did not");
 });
 
 test("collectPagedResults warns through console.warn by default when no callback is supplied", async () => {

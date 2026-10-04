@@ -11,7 +11,7 @@
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -85,6 +85,9 @@ export function compareToManifest(label, actual, manifestPaths = new Set(Object.
     if (file.includes("target-runtime-manifest") || file.includes("validate-artifacts") || file.includes("verify-target-runtime-closure")) {
       failures.push(`${label}: manifest or validation file entered the target bundle: ${file}`);
     }
+    if (file.includes("tools/target-runtime-verifier")) {
+      failures.push(`${label}: verifier tooling file entered the target bundle: ${file}`);
+    }
   }
   return failures;
 }
@@ -103,42 +106,31 @@ export function assertExternalSpecifiers(external) {
 }
 
 // ---------------------------------------- mechanism A: es-module-lexer parser ---
+// Delegated to the independently-locked tools/target-runtime-verifier sub-package (its own
+// package.json, exact pinned es-module-lexer version, own lockfile, own node_modules), so
+// Generation-1 target-runtime provenance never depends on what the repository root happens to
+// hoist, or on a transitive devDependency of an unrelated tool (vitest/vite). The child process's
+// own module resolution anchors to that sub-package's directory first; the parent never imports
+// es-module-lexer itself. Return shape is unchanged from the prior in-process implementation.
+const PARSER_SUBPACKAGE = path.join(repoRoot, "tools", "target-runtime-verifier");
+const PARSER_ENTRY = path.join(PARSER_SUBPACKAGE, "parser.mjs");
+
 export async function parserClosure(entry = TARGET_ENTRYPOINT, root = repoRoot) {
-  const lexer = await import("es-module-lexer");
-  await lexer.init;
-  const failures = [];
-  const seen = new Set();
-  const external = new Set();
-  const queue = [entry];
-  while (queue.length > 0) {
-    const rel = queue.pop();
-    if (seen.has(rel)) continue;
-    seen.add(rel);
-    if (rel.endsWith(".json")) continue;
-    const text = readFileSync(path.join(root, rel), "utf8");
-    let imports;
-    try {
-      [imports] = lexer.parse(text, rel);
-    } catch (error) {
-      failures.push(`target runtime module ${rel} could not be parsed: ${error instanceof Error ? error.message : "unknown parse failure"}`);
-      continue;
-    }
-    for (const record of imports) {
-      if (record.d >= 0) { failures.push(`dynamic import expression in ${rel} is unresolved; dynamic imports are a stop condition`); continue; }
-      if (record.d === -2) continue;
-      const spec = record.n;
-      if (typeof spec !== "string") { failures.push(`non-literal import specifier in ${rel} cannot be resolved; this is a stop condition`); continue; }
-      if (!spec.startsWith(".")) { external.add(spec); continue; }
-      const base = toPosix(path.posix.join(path.posix.dirname(rel), spec));
-      const candidates = [base, `${base}.js`, `${base}.json`, `${base}/index.js`];
-      const resolved = candidates.find((candidate) => {
-        try { return statSync(path.join(root, candidate)).isFile(); } catch { return false; }
-      });
-      if (!resolved) { failures.push(`unresolved relative import in ${rel}: ${spec}`); continue; }
-      queue.push(resolved);
-    }
+  let raw;
+  try {
+    raw = execFileSync(process.execPath, [PARSER_ENTRY, "--entry", entry, "--root", root], {
+      cwd: PARSER_SUBPACKAGE,
+      maxBuffer: 64 * 1024 * 1024,
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(
+      `tools/target-runtime-verifier parser invocation failed; run \`npm ci\` inside tools/target-runtime-verifier: ` +
+      `${error instanceof Error ? error.message : "unknown failure"}`,
+    );
   }
-  return { local: seen, external, failures };
+  const parsed = JSON.parse(raw);
+  return { local: new Set(parsed.local), external: new Set(parsed.external), failures: parsed.failures };
 }
 
 // --------------------------- mechanism B: Wrangler credential-free dry run ---
