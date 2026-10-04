@@ -5,8 +5,6 @@ on:
     types: [opened, reopened, synchronize]
   pull_request_review:
     types: [submitted, edited, dismissed]
-  pull_request_review_thread:
-    types: [resolved, unresolved]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -24,11 +22,17 @@ permissions:
 jobs:
   # Resolves the PR number, head sha, and base sha for every trigger shape, and whether this run's
   # result needs to be manually published against the PR's head commit. For pull_request/
-  # pull_request_review/pull_request_review_thread, GitHub Actions already attaches each job's own
-  # check run to the correct commit for required-status-check purposes — publish_externally is false.
-  # For issue_comment and workflow_dispatch, `github.sha` resolves to the default branch tip, not the
-  # PR's head, so a job's own pass/fail is invisible to the PR's required checks unless republished
-  # explicitly against the real head sha (see the "Publish result" step in each gate job below).
+  # pull_request_review, GitHub Actions already attaches each job's own check run to the correct
+  # commit for required-status-check purposes — publish_externally is false. For issue_comment and
+  # workflow_dispatch, `github.sha` resolves to the default branch tip, not the PR's head, so a job's
+  # own pass/fail is invisible to the PR's required checks unless republished explicitly against the
+  # real head sha (see the "Publish result" step in each gate job below).
+  #
+  # Known limitation, left as-is: GitHub Actions has no workflow trigger for "a review thread was
+  # resolved" alone (pull_request_review_thread is a real webhook/GraphQL event but is not a
+  # supported `on:` trigger — using it here previously made the whole workflow file unparseable, so
+  # it was removed). Resolving the last actionable thread does not by itself re-run review-gate; a
+  # new commit, a new review, a new issue comment, or workflow_dispatch does.
   resolve-pr:
     runs-on: ubuntu-latest
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
@@ -51,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
-            pull_request|pull_request_review|pull_request_review_thread)
+            pull_request|pull_request_review)
               echo "pr_number=$PR_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
               echo "head_sha=$PR_HEAD_SHA_INPUT" >> "$GITHUB_OUTPUT"
               echo "base_sha=$PR_BASE_SHA_INPUT" >> "$GITHUB_OUTPUT"
