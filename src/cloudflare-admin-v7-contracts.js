@@ -108,7 +108,15 @@ function derivedPageCount(label, page, info) {
   return derived;
 }
 
-export async function collectPagedResults(fetchPage, label, { maximumPages = MAXIMUM_LISTING_PAGES } = {}) {
+// Early, non-blocking capacity signal: once a listing's derived page count reaches this fraction of
+// the fail-closed ceiling, collectPagedResults reports it (still completes normally) so an operator
+// has notice well before the listing becomes unprovable, rather than finding out only when it stops.
+export const CEILING_WARNING_THRESHOLD = 0.8;
+
+export async function collectPagedResults(fetchPage, label, {
+  maximumPages = MAXIMUM_LISTING_PAGES,
+  onApproachingCeiling = (message) => console.warn(message),
+} = {}) {
   const collected = [];
   const seen = new Set();
   let first = null;
@@ -124,6 +132,16 @@ export async function collectPagedResults(fetchPage, label, { maximumPages = MAX
       totalPages = derivedPageCount(label, page, info);
       first = { per_page: info.per_page, total_count: info.total_count, total_pages: info.total_pages };
       if (totalPages > maximumPages) throw new Error(`${label} pagination did not terminate within ${maximumPages} pages; completeness cannot be proven`);
+      if (totalPages >= maximumPages * CEILING_WARNING_THRESHOLD) {
+        const warning =
+          `${label} requires ${totalPages} of a maximum ${maximumPages} pages (${info.total_count} items at ${info.per_page} per page); ` +
+          "approaching the fail-closed pagination ceiling; raise per_page or the ceiling before it becomes unprovable.";
+        try {
+          await onApproachingCeiling(warning);
+        } catch {
+          // Capacity reporting is advisory and must never change listing success or failure.
+        }
+      }
     } else if (info.per_page !== first.per_page || info.total_count !== first.total_count || info.total_pages !== first.total_pages) {
       throw new Error(`${label} pagination totals changed between pages; state is ambiguous`);
     }
