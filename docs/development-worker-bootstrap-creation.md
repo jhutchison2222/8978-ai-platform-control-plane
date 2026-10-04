@@ -50,6 +50,7 @@ its own SHA. `deployment/development-worker-bootstrap-creation-packet.json` pins
 git rev-parse HEAD                       # must equal the authorized SHA
 git status --porcelain                   # must be empty
 node scripts/validate-artifacts.js
+(cd tools/target-runtime-verifier && npm ci)   # the closure verifier's own locked sub-package
 node scripts/verify-target-runtime-closure.js --against 371b02d797528f175e9e6075aef6fc92757dfd52
 # only when separately authorized:
 npx wrangler deploy --config wrangler.bootstrap.jsonc --strict --message "8978-bootstrap:371b02d797528f175e9e6075aef6fc92757dfd52:9f9cd5ee1a388d0a50959f9fc68a2c2efecdb6e05ed7bdac1bfae9559d434e8d"
