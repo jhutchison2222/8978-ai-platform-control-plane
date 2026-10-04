@@ -264,12 +264,30 @@ export class CloudflareAdminV7Api {
   // customer Cloudflare calls from this environment); the wrangler source permalink is the verification
   // this project relies on, and issue #87 is where that gets redone if this ever needs re-checking
   // against a real account.
-  // Rationale for depending on an undocumented endpoint at all: it is the only known mechanism that
-  // creates a new, secret-bearing Worker version WITHOUT deploying it — the dedicated, fully
-  // documented PUT .../workers/scripts/{name}/secrets endpoint deploys the secret to the currently
-  // active version immediately, which would break this flow's deliberate separation between
-  // "derive a secret-bearing version" and "deploy it" (createWorkerDeployment, called separately).
-  // Substituting the documented PUT would change activation semantics, not just the request shape.
+  // Both fully documented alternatives were checked against this flow's required semantics (new
+  // version; install only this one secret; preserve reviewed code/modules/every other binding/
+  // annotation; do NOT deploy; return the new version id) and neither can satisfy them:
+  //   - PUT /accounts/{id}/workers/scripts/{name}/secrets (developers.cloudflare.com/api/resources/
+  //     workers/subresources/scripts/subresources/secrets/methods/update/) takes only the secret's
+  //     name/type/text — nothing to preserve code or other bindings with — but per Cloudflare's own
+  //     docs (developers.cloudflare.com/workers/configuration/secrets/) this is the mechanism behind
+  //     `wrangler secret put`, which "creates a new version of the Worker and deploys it immediately."
+  //     That is the one disqualifying property: it violates "do NOT deploy," unconditionally, by
+  //     design — not a request-shape difference, a different operation entirely.
+  //   - POST /accounts/{id}/workers/scripts/{name}/versions (developers.cloudflare.com/api/operations/
+  //     worker-versions-upload-version) does not deploy, and does support a secret_text binding plus
+  //     annotations — but it requires the full Worker script as an uploaded multipart module set in
+  //     every call ("an array of modules... with at least one module present"); it has no mode that
+  //     takes zero code and only patches one binding onto whatever the latest version already is.
+  //     bindings_inherit can carry over other *bindings* without restating them, but the code modules
+  //     themselves must still be resubmitted each call. This codebase's service-auth activation flow
+  //     does not hold the Worker's script bundle at this call site at all (only reviewedCommit and
+  //     configurationSha256) — using this endpoint would mean reconstructing or re-fetching unverified
+  //     code to satisfy a request shape this flow was never designed to carry, exactly the condition
+  //     under which an undocumented mechanism was to be preferred instead of forcing a documented one.
+  // Both failures are structural, not incidental, so the undocumented wrangler-confirmed PATCH is kept
+  // as a deliberate, bounded, tracked external dependency (issue #87), not a stopgap pending a
+  // documented replacement — there isn't one that preserves this flow's semantics.
   // If Cloudflare changes or removes this path, the request fails closed: #request() throws on any
   // response status other than its expected list, so a 404/405/400 here surfaces as a thrown
   // CloudflareApiError, never a silent no-op.
