@@ -25,17 +25,18 @@ function lineIndent(line) {
   return line.match(/^(\s*)/u)[1].length;
 }
 
-// YAML strips everything from an unquoted, whitespace-preceded "#" onward before the shell ever
-// sees it. Used on every piece of text this module pushes toward the guard — not just the
-// block-scalar header test below — so a trailing same-line comment (e.g. `run: npm ci # see npm
-// install docs`) can never be mistaken for part of the command itself. (This is a line-based
-// heuristic, not a full YAML/shell parser: a literal "#" inside a quoted string is also stripped,
-// same limitation as the rest of this file's regex-based scanning.) The (?:^|[ \t]) requires the
-// "#" itself to be at the very start of the line or preceded by whitespace — never bare after a
-// word character — so bash's `${VAR#pattern}` prefix-strip (a "#" with no preceding whitespace,
-// common when deriving a branch name from GITHUB_REF) is correctly left alone.
+// Bash (what GitHub Actions' default `run:` shell invokes) treats "#" as a comment start when it
+// begins a new word: at the start of the line, after whitespace, or after a control operator like
+// ;, &, |, or ( that itself ends the previous word. Used on every piece of text this module pushes
+// toward the guard — not just the block-scalar header test below — so a trailing comment (e.g.
+// `run: npm ci # see npm install docs` or `run: npm ci;# see npm install docs`) can never be
+// mistaken for part of the command itself. Deliberately excludes bare word characters: bash's
+// `${VAR#pattern}` prefix-strip (a "#" with no preceding whitespace or operator, common when
+// deriving a branch name from GITHUB_REF) is correctly left alone. (This is a line-based heuristic,
+// not a full YAML/shell parser: a literal "#" inside a quoted string is also stripped, same
+// limitation as the rest of this file's regex-based scanning.)
 function stripComment(line) {
-  return line.replace(/(?:^|[ \t])#.*$/u, "");
+  return line.replace(/(?:^|[ \t;&|(])#.*$/u, "");
 }
 
 // A deeper-indented line that looks like a new mapping key (`foo:`) or sequence item (`- foo`) is
@@ -467,4 +468,26 @@ test("a comment-only line inside a folded (>) block scalar is a paragraph break,
     "          install",
   ].join("\n");
   assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a comment following a shell control operator with no space (e.g. ';#') is still stripped", () => {
+  const fixture = ["jobs:", "  test:", "    steps:", "      - run: npm ci;# see npm install docs"].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("comments following other shell control operators (&, |, () with no space are also stripped", () => {
+  for (const operator of ["&", "|", "("]) {
+    const fixture = ["jobs:", "  test:", "    steps:", `      - run: npm ci ${operator}# see npm install docs`].join("\n");
+    assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], [], `operator: ${operator}`);
+  }
+});
+
+test("${VAR#pattern} immediately followed by a control operator is still left alone, not mistaken for a comment", () => {
+  // Guards against an overly broad fix: the operator-awareness above must not regress the earlier
+  // ${VAR#pattern} case merely because a control operator appears elsewhere on the same line.
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    '      - run: BRANCH="${GITHUB_REF#refs/heads/}"; npm install',
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
 });
