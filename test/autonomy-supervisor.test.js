@@ -740,6 +740,7 @@ test("changed-file inspection isolates failures and preserves other PR results",
   assert.deepEqual(inspected.failures, [
     "pull request #1 changed files could not be inspected; dispatch is deferred for this cycle",
   ]);
+  assert.deepEqual(inspected.failedPullRequestNumbers, new Set([1]));
   assert.deepEqual(securityStopReasons({
     issues: [],
     pullRequests: [{ number: 1 }, { number: 2 }],

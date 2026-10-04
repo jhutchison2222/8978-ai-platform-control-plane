@@ -104,6 +104,18 @@ test("a disposition bound to an earlier head no longer applies after a new commi
 });
 
 // 5. unrelated protected PR -> current PR unaffected.
+test("a non-canonical labeled stop closed by anyone other than the repository owner still blocks globally", () => {
+  const reasons = globalSecurityStopReasons({
+    issues: [
+      CLOSED_66_BY_OWNER,
+      { number: 67, state: "closed", closed_by: { login: "collaborator" }, labels: [{ name: "autonomy-security-stop" }] },
+    ],
+    ownerLogin: OWNER,
+  });
+  assert.equal(reasons.length, 1);
+  assert.match(reasons[0], /was closed by collaborator, not repository owner owner/u);
+});
+
 test("globalSecurityStopReasons carries no information about any individual pull request", () => {
   // The old securityStopReasons() mixed every open PR's own sensitive-path state into one shared
   // list; globalSecurityStopReasons() must never do that — it is fed only issues, never PRs.

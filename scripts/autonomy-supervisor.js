@@ -249,10 +249,15 @@ export function pullRequestSensitivePathReason(pr, changedFiles) {
   return sensitive.length > 0 ? `pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}` : null;
 }
 
-// Preserved for the watchdog/supervisor's existing #66 body: the full combined reason set across
-// every open pull request. Not used for gating an individual PR's merge — see security-gate, which
-// uses globalSecurityStopReasons() and pullRequestSensitivePathReason() separately instead, scoped to
-// one PR, specifically to avoid this function's cross-PR mixing.
+// Retained for direct testing/diagnostic use only: the full combined reason set across every open
+// pull request. NEITHER runWatchdog NOR runSupervisor feed this into ensureSecurityStop any more —
+// doing so was the actual bug behind a real merge deadlock: an ordinary pull request changing
+// protected automation would reopen the canonical #66 (a repository-wide stop), which then made
+// security-gate (which fails every PR while #66 is open) fail every open PR, including the very
+// protected-automation PR that caused it, with no exact-head owner disposition able to help because
+// the global check runs first. The producers now use globalSecurityStopReasons() (repository-wide
+// only) to drive #66, and pullRequestSensitivePathReason() per PR for everything else. Do not
+// reintroduce this function as #66's input in either producer.
 export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
   return [
     ...globalSecurityStopReasons({ issues, ownerLogin }),
@@ -351,6 +356,7 @@ export async function inspectPullRequestFiles(api, pullRequests) {
   return {
     changedFilesByPullRequest: new Map(inspections.map(({ number, files }) => [number, files])),
     failures: inspections.flatMap(({ failure }) => failure ? [failure] : []),
+    failedPullRequestNumbers: new Set(inspections.filter(({ failure }) => failure).map(({ number }) => number)),
   };
 }
 
@@ -777,28 +783,43 @@ export async function runSupervisor({
     readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
     readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
-  // Must compute the exact same persistentReasons the watchdog computes (localBoundaryViolations
-  // plus securityStopReasons) — not a supervisor-only subset — so the two schedulers that share
-  // #66 never feed ensureSecurityStop two different reason sets and overwrite each other's body
-  // every run. See the comment on localBoundaryViolations above.
-  const persistentReasons = [
+  const ownerLogin = repository.split("/", 1)[0];
+  // Must compute the exact same global reasons the watchdog computes (localBoundaryViolations plus
+  // globalSecurityStopReasons) — not a supervisor-only subset — so the two schedulers that share #66
+  // never feed ensureSecurityStop two different reason sets and overwrite each other's body every
+  // run. See the comment on localBoundaryViolations above. Deliberately excludes any individual pull
+  // request's own state: a PR editing protected automation is that PR's own condition, handled below
+  // on a per-PR basis (and by security-gate at merge time), never a reason to open the
+  // repository-wide canonical stop and halt supervision of every unrelated PR. (globalSecurityStopReasons
+  // was split out of the old combined securityStopReasons specifically to fix this: the combined
+  // function used here would reopen #66 for any ordinary protected-automation PR, which then made the
+  // merge-time security-gate — which fails-closed whenever #66 is open — fail every open PR, including
+  // the very protected-automation PR that caused it, with no exact-head disposition able to help
+  // because the global check runs first. securityStopReasons() itself is retained only for direct
+  // testing/diagnostic use; it must not be reintroduced here or in runWatchdog.)
+  const globalReasons = [
     ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
-    ...securityStopReasons({
-      issues: [securityStop, ...otherStops],
-      pullRequests,
-      changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
-      ownerLogin: repository.split("/", 1)[0],
-    }),
+    ...globalSecurityStopReasons({ issues: [securityStop, ...otherStops], ownerLogin }),
   ];
-  const reasons = [...persistentReasons, ...fileInspections.failures];
-  if (reasons.length > 0) {
-    await ensureSecurityStop(api, persistentReasons, securityStop);
-    console.error(`Autonomous dispatch stopped: ${reasons.join("; ")}`);
+  await ensureSecurityStop(api, globalReasons, securityStop);
+  if (globalReasons.length > 0) {
+    console.error(`Autonomous dispatch stopped: ${globalReasons.join("; ")}`);
     return;
   }
-  const errors = await runAllIsolated(pullRequests,
-    (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
-    (error) => console.error("Pull request supervision failed:", error));
+  // A pull request whose files could not be inspected, or that changes protected automation itself,
+  // is skipped individually here — never treated as a reason to stop supervising every other PR.
+  const errors = await runAllIsolated(pullRequests, (pr) => {
+    if (fileInspections.failedPullRequestNumbers.has(pr.number)) {
+      console.error(`pull request #${pr.number} changed files could not be inspected; dispatch is deferred for this cycle`);
+      return;
+    }
+    const sensitiveReason = pullRequestSensitivePathReason(pr, fileInspections.changedFilesByPullRequest.get(pr.number));
+    if (sensitiveReason) {
+      console.error(`pull request #${pr.number} supervision deferred: ${sensitiveReason}`);
+      return;
+    }
+    return supervisePullRequest({ api, agent, nowMs, pr });
+  }, (error) => console.error("Pull request supervision failed:", error));
   try {
     await superviseTaskQueue({ api, agent, nowMs, pullRequests });
   } catch (error) {
