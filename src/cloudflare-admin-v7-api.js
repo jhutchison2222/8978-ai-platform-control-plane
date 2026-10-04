@@ -237,11 +237,30 @@ export class CloudflareAdminV7Api {
     );
   }
 
-  // PATCH-on-"latest" with a merge-patch body is a real Cloudflare mechanism for creating a new
-  // version carrying a secret without deploying it (confirmed against wrangler's own
-  // "wrangler versions secret" implementation, which this mirrors), but it lives under
-  // /workers/workers/, not /workers/scripts/ — the only other endpoint documenting a PATCH on a
-  // versions resource at all is under the newer workers/workers collection.
+  // UNDOCUMENTED CLOUDFLARE ENDPOINT — tracked for re-verification in issue #87. Cloudflare's public API reference
+  // (developers.cloudflare.com/api/) documents no PATCH on any /workers/.../versions resource, under
+  // either /workers/scripts/ or /workers/workers/. This exact method/path/body is confirmed only by
+  // reading Cloudflare's own first-party client, wrangler, directly:
+  //   cloudflare/workers-sdk @ c82d96ba63a3b343b520e781a070889251868d9a (2026-07-20, PR #14448,
+  //   "WC-5290 Use PATCH APIs for 'wrangler versions secret' commands"),
+  //   packages/wrangler/src/versions/secrets/index.ts, patchLatestWorkerVersionWithSecrets().
+  // That source confirms: PATCH /accounts/{id}/workers/workers/{scriptName}/versions/latest, where
+  // scriptName is the Worker's human-readable NAME (typed `string`, passed from the CLI's --name /
+  // wrangler.toml `name`) — NOT the 32-hex immutable ID that getWorkerById() below requires. The
+  // /workers/workers/ collection is keyed by "ID or name" per Cloudflare's own docs for the
+  // single-worker GET; getWorkerById()'s stricter requireImmutableWorkerId() check is this
+  // codebase's own self-imposed constraint for that specific identity-confirmation call site, not a
+  // universal requirement of the collection — wrangler's own use of the plain name on this exact
+  // sub-resource is the only concrete evidence for what this particular PATCH endpoint accepts.
+  // Rationale for depending on an undocumented endpoint at all: it is the only known mechanism that
+  // creates a new, secret-bearing Worker version WITHOUT deploying it — the dedicated, fully
+  // documented PUT .../workers/scripts/{name}/secrets endpoint deploys the secret to the currently
+  // active version immediately, which would break this flow's deliberate separation between
+  // "derive a secret-bearing version" and "deploy it" (createWorkerDeployment, called separately).
+  // Substituting the documented PUT would change activation semantics, not just the request shape.
+  // If Cloudflare changes or removes this path, the request fails closed: #request() throws on any
+  // response status other than its expected list, so a 404/405/400 here surfaces as a thrown
+  // CloudflareApiError, never a silent no-op.
   async createServiceAuthVersion(secretJson, reviewedCommit, configurationSha256) {
     return this.#request("PATCH", this.#accountPath(`/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
       contentType: "application/merge-patch+json",

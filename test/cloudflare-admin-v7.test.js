@@ -124,6 +124,38 @@ test("getLatestWorkerVersion resolves the latest ID from the list, then fetches 
   await assert.rejects(() => emptyApi.getLatestWorkerVersion(), /has no versions/);
 });
 
+// Pins createServiceAuthVersion()'s exact method/path/body against an undocumented Cloudflare
+// endpoint, confirmed only by reading wrangler's own source directly (cloudflare/workers-sdk @
+// c82d96ba63a3b343b520e781a070889251868d9a, packages/wrangler/src/versions/secrets/index.ts,
+// patchLatestWorkerVersionWithSecrets() — not an agent paraphrase, the file was fetched and read).
+// That source proves the path segment is the Worker's human-readable NAME, not its 32-hex immutable
+// ID (contrary to how getWorkerById()'s own stricter, self-imposed validation might suggest) — this
+// test exists specifically to catch anyone "fixing" this back to the ID under that assumption.
+test("createServiceAuthVersion PATCHes workers/workers/{name}/versions/latest with the wrangler-confirmed body shape", async () => {
+  const requests = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url, init) => {
+      requests.push({ url, init });
+      return response({ id: LATEST_VERSION_ID });
+    },
+  });
+  await api.createServiceAuthVersion("{\"k\":\"v\"}", "a".repeat(40), "b".repeat(64));
+  assert.equal(requests.length, 1);
+  const { url, init } = requests[0];
+  assert.equal(
+    url,
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`,
+    "must use the Worker's human-readable name, not its immutable ID, in this exact sub-resource path",
+  );
+  assert.equal(init.method, "PATCH");
+  assert.equal(init.headers.get("content-type"), "application/merge-patch+json");
+  const body = JSON.parse(init.body);
+  assert.deepEqual(Object.keys(body).sort(), ["annotations", "env"]);
+  assert.deepEqual(body.env[CLOUDFLARE_ADMIN_V7.serviceAuthSecretName], { type: "secret_text", text: "{\"k\":\"v\"}" });
+  assert.equal(body.annotations["workers/message"], `8978-activated:${"a".repeat(40)}:${"b".repeat(64)}`);
+});
+
 // Mirrors the bug found and fixed in the owner-run Phase 2 verifier: CLOUDFLARE_ADMIN_API_TOKEN is
 // required to be an Account API Token, which Cloudflare verifies at the account-owned endpoint, not
 // the user-token endpoint. No existing test exercised verifyIdentity()'s real request URL; every
