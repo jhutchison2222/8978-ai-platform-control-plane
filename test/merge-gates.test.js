@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   CLAUDE_LOGIN,
   CLAUDE_USER_ID,
@@ -271,4 +272,29 @@ test("review-gate rejects a review from an account merely named claude[bot] with
     reviewThreads: [],
   });
   assert.equal(decision.ok, false);
+});
+
+// --- merge-gates.yml trigger safety ---
+//
+// pull_request, pull_request_review, and pull_request_review_comment all execute the workflow's own
+// step DEFINITIONS from the pull request's merge commit, not the base branch — the documented reason
+// pull_request_target exists at all. A PR editing merge-gates.yml itself could delete the overlay
+// step, the "Fail if the gate failed" step, or the whole job, and that edited version would execute
+// and be reported as the result — no checkout-ref pinning or file overlay inside those steps can help,
+// because the steps themselves would be attacker-controlled. These tests pin the workflow file to
+// never reintroduce any of those three trigger types for this specific workflow.
+test("merge-gates.yml never triggers on pull_request, pull_request_review, or pull_request_review_comment", async () => {
+  const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
+  const onBlock = workflow.split(/\njobs:\n/u)[0];
+  for (const forbidden of ["\n  pull_request:", "\n  pull_request_review:", "\n  pull_request_review_comment:"]) {
+    assert.equal(onBlock.includes(forbidden), false, `merge-gates.yml must not trigger on ${forbidden.trim()}`);
+  }
+});
+
+test("merge-gates.yml triggers only on workflow_run (validate and Dispatch PR merge gate), issue_comment, and workflow_dispatch", async () => {
+  const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
+  const onBlock = workflow.split(/\njobs:\n/u)[0];
+  assert.match(onBlock, /\n\s+workflow_run:\n\s+workflows: \[validate, "Dispatch PR merge gate"\]/u);
+  assert.match(onBlock, /\n\s+issue_comment:\n\s+types: \[created\]/u);
+  assert.match(onBlock, /\n\s+workflow_dispatch:/u);
 });
