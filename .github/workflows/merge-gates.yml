@@ -1,0 +1,65 @@
+name: Merge gates
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to re-evaluate
+        required: true
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  resolve-pr-number:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
+    outputs:
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+    steps:
+      - id: resolve
+        run: |
+          case "${{ github.event_name }}" in
+            pull_request) echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT" ;;
+            pull_request_review) echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT" ;;
+            issue_comment) echo "pr_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT" ;;
+            workflow_dispatch) echo "pr_number=${{ github.event.inputs.pr_number }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  security-gate:
+    needs: resolve-pr-number
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Evaluate security gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.resolve-pr-number.outputs.pr_number }}
+        run: node scripts/security-gate.js
+
+  review-gate:
+    needs: resolve-pr-number
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Evaluate review gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.resolve-pr-number.outputs.pr_number }}
+        run: node scripts/review-gate.js

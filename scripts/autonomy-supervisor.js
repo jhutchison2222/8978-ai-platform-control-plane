@@ -193,7 +193,11 @@ export function isSensitiveAutomationPath(path) {
   return SENSITIVE_AUTOMATION_PATHS.includes(path);
 }
 
-export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
+// Repository-wide conditions only: a genuine canonical #66 stop, or an unexpected non-canonical
+// stop issue. Deliberately excludes any single pull request's own state, so a required check built
+// on this (security-gate) fails every PR uniformly when #66 is a real emergency stop, but — unlike
+// securityStopReasons() below — never mixes in facts about PRs other than the one being evaluated.
+export function globalSecurityStopReasons({ issues, ownerLogin }) {
   const reasons = [];
   const stops = issues
     .filter((issue) => !issue.pull_request && issue.number === SECURITY_STOP_ISSUE_NUMBER);
@@ -232,15 +236,84 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
       );
     }
   }
-  for (const pr of pullRequests) {
-    const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
-    const sensitive = [...new Set(changedFiles.flatMap((file) =>
-      [file.filename, file.previous_filename].filter((path) => isSensitiveAutomationPath(path))))];
-    if (sensitive.length > 0) {
-      reasons.push(`pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}`);
-    }
-  }
   return reasons;
+}
+
+// A single pull request's own protected-automation reason, or null. Deliberately takes one PR, not
+// a list — used both by securityStopReasons() below (looped over every open PR, for the #66 body)
+// and by security-gate (called with only the PR currently being evaluated), so that gate never sees
+// or is affected by any other PR's sensitive-path state.
+export function pullRequestSensitivePathReason(pr, changedFiles) {
+  const sensitive = [...new Set((changedFiles ?? []).flatMap((file) =>
+    [file.filename, file.previous_filename].filter((path) => isSensitiveAutomationPath(path))))];
+  return sensitive.length > 0 ? `pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}` : null;
+}
+
+// Preserved for the watchdog/supervisor's existing #66 body: the full combined reason set across
+// every open pull request. Not used for gating an individual PR's merge — see security-gate, which
+// uses globalSecurityStopReasons() and pullRequestSensitivePathReason() separately instead, scoped to
+// one PR, specifically to avoid this function's cross-PR mixing.
+export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
+  return [
+    ...globalSecurityStopReasons({ issues, ownerLogin }),
+    ...pullRequests.flatMap((pr) => {
+      const reason = pullRequestSensitivePathReason(pr, changedFilesByPullRequest.get(pr.number));
+      return reason ? [reason] : [];
+    }),
+  ];
+}
+
+// Marks an explicit, owner-made exception allowing one pull request's own protected-automation
+// change through security-gate, for its exact current head only. Deliberately bound to both the PR
+// number and the head SHA: a new commit changes head.sha, so any existing disposition comment's
+// marker no longer matches and the PR falls back to failing closed until a fresh one is posted.
+export function ownerDispositionMarker(prNumber, headSha) {
+  return `<!-- security-disposition: pr=${prNumber} head=${headSha.toLowerCase()} -->`;
+}
+
+// Finds a valid owner disposition for this exact PR and exact head among a list of issue comments.
+// Authenticity rests on two independent, non-forgeable-by-comment-body facts GitHub itself computes
+// server-side, not on anything in the comment text: author_association must be the literal "OWNER"
+// association (GitHub assigns this only to the repository's own owner account, never to a bot, a
+// collaborator, or anyone impersonating the owner by name), and the login must match. No automated
+// process (the supervisor, the watchdog, or any workflow using GITHUB_TOKEN) can produce a comment
+// with author_association "OWNER" — those post as SUPERVISOR_LOGIN ("github-actions[bot]"), which
+// GitHub always associates as "NONE" on a public repository, regardless of what the comment body says.
+export function findOwnerDisposition({ comments, prNumber, headSha, ownerLogin }) {
+  const expected = ownerDispositionMarker(prNumber, headSha);
+  return comments.find((comment) =>
+    typeof comment.body === "string" && comment.body.includes(expected) &&
+    comment.user?.login?.toLowerCase() === ownerLogin.toLowerCase() &&
+    comment.author_association === "OWNER") ?? null;
+}
+
+// The merge-gate decision for one pull request: fails closed on any genuine global stop (identical
+// for every PR, by design — see globalSecurityStopReasons), otherwise only on this PR's own
+// protected-automation change, and only when no valid, exact-head owner disposition covers it. An
+// unrelated PR's protected-automation change never appears here, because changedFiles/comments are
+// this PR's own and globalSecurityStopReasons() carries no per-PR information at all.
+export function securityGateDecision({ issues, pr, changedFiles, comments, ownerLogin }) {
+  const globalReasons = globalSecurityStopReasons({ issues, ownerLogin });
+  if (globalReasons.length > 0) return { ok: false, reasons: globalReasons };
+  const sensitiveReason = pullRequestSensitivePathReason(pr, changedFiles);
+  if (!sensitiveReason) return { ok: true, reasons: [] };
+  const disposition = findOwnerDisposition({ comments, prNumber: pr.number, headSha: pr.head.sha, ownerLogin });
+  if (disposition) return { ok: true, reasons: [] };
+  return { ok: false, reasons: [sensitiveReason] };
+}
+
+// The merge-gate decision for a PR's review state: requires the canonical exact-head Claude verdict
+// (see exactHeadClaudeVerdict — the same logic the supervisor already uses, not a second parser) to
+// be "accepted" for the PR's current head.sha, and zero unresolved review threads. Because the
+// verdict lookup filters reviews to commit_id === the PASSED headSha, a push after acceptance changes
+// head.sha and the next evaluation call (with the new head.sha) immediately finds no matching review,
+// so this fails closed on its own without any extra staleness bookkeeping.
+export function reviewGateDecision({ reviews, headSha, reviewThreads }) {
+  const verdict = exactHeadClaudeVerdict(reviews, headSha);
+  if (verdict !== "accepted") return { ok: false, reasons: [`exact-head Claude verdict is "${verdict}", not "accepted"`] };
+  const unresolved = (reviewThreads ?? []).filter((thread) => !thread.isResolved);
+  if (unresolved.length > 0) return { ok: false, reasons: [`${unresolved.length} unresolved review thread(s)`] };
+  return { ok: true, reasons: [] };
 }
 
 export async function fetchSecurityStop(api) {
