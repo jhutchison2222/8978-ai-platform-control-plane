@@ -205,6 +205,19 @@ test("pullRequestSensitivePathReason mirrors securityStopReasons' per-PR text ex
   assert.equal(pullRequestSensitivePathReason(SENSITIVE_PR, undefined), null);
 });
 
+test("the merge-gate's own enforcement files are themselves protected automation", () => {
+  // A PR touching only the gate scripts or their workflow must require owner disposition too —
+  // otherwise it could weaken securityGateDecision/reviewGateDecision, or remove merge-gates.yml's
+  // base-sha checkout pin, without ever being treated as a protected-automation change.
+  for (const path of [".github/workflows/merge-gates.yml", "scripts/security-gate.js", "scripts/review-gate.js"]) {
+    assert.equal(
+      pullRequestSensitivePathReason(SENSITIVE_PR, [{ filename: path }]),
+      `pull request #100 changes protected automation: ${path}`,
+      `${path} must be covered by SENSITIVE_AUTOMATION_PATHS`,
+    );
+  }
+});
+
 // --- review-gate ---
 
 function claudeReview({ state = "COMMENTED", body, commitId }) {

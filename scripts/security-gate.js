@@ -1,6 +1,8 @@
 import { pathToFileURL } from "node:url";
 import {
   GitHubApi,
+  fetchOtherSecurityStops,
+  fetchSecurityStop,
   securityGateDecision,
 } from "./autonomy-supervisor.js";
 
@@ -14,12 +16,17 @@ export async function runSecurityGate({
   const prNumber = Number(pullRequestNumber);
   if (!Number.isInteger(prNumber) || prNumber <= 0) throw new Error("PR_NUMBER is not configured");
 
-  const [pr, issues, changedFiles, comments] = await Promise.all([
+  // Matches what runWatchdog/runSupervisor already fetch for the same global check: the canonical
+  // issue plus any issue carrying the stop label, not a full-repository issue listing (globalSecurityStopReasons
+  // only ever looks at those two things).
+  const [pr, securityStop, otherStops, changedFiles, comments] = await Promise.all([
     api.get(`/pulls/${prNumber}`),
-    api.getAll("/issues?state=all"),
+    fetchSecurityStop(api),
+    fetchOtherSecurityStops(api),
     api.getAll(`/pulls/${prNumber}/files`),
     api.getAll(`/issues/${prNumber}/comments`),
   ]);
+  const issues = [securityStop, ...otherStops];
 
   const ownerLogin = repository.split("/", 1)[0];
   const decision = securityGateDecision({ issues, pr, changedFiles, comments, ownerLogin });

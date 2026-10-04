@@ -5,6 +5,8 @@ on:
     types: [opened, reopened, synchronize]
   pull_request_review:
     types: [submitted, edited, dismissed]
+  pull_request_review_thread:
+    types: [resolved, unresolved]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -17,49 +19,133 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
+  checks: write
 
 jobs:
-  resolve-pr-number:
+  # Resolves the PR number, head sha, and base sha for every trigger shape, and whether this run's
+  # result needs to be manually published against the PR's head commit. For pull_request/
+  # pull_request_review/pull_request_review_thread, GitHub Actions already attaches each job's own
+  # check run to the correct commit for required-status-check purposes — publish_externally is false.
+  # For issue_comment and workflow_dispatch, `github.sha` resolves to the default branch tip, not the
+  # PR's head, so a job's own pass/fail is invisible to the PR's required checks unless republished
+  # explicitly against the real head sha (see the "Publish result" step in each gate job below).
+  resolve-pr:
     runs-on: ubuntu-latest
     if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
     outputs:
       pr_number: ${{ steps.resolve.outputs.pr_number }}
+      head_sha: ${{ steps.resolve.outputs.head_sha }}
+      base_sha: ${{ steps.resolve.outputs.base_sha }}
+      publish_externally: ${{ steps.resolve.outputs.publish_externally }}
     steps:
       - id: resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER_INPUT: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA_INPUT: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA_INPUT: ${{ github.event.pull_request.base.sha }}
+          ISSUE_NUMBER_INPUT: ${{ github.event.issue.number }}
+          WORKFLOW_DISPATCH_PR_NUMBER: ${{ github.event.inputs.pr_number }}
         run: |
-          case "${{ github.event_name }}" in
-            pull_request) echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT" ;;
-            pull_request_review) echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT" ;;
-            issue_comment) echo "pr_number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT" ;;
-            workflow_dispatch) echo "pr_number=${{ github.event.inputs.pr_number }}" >> "$GITHUB_OUTPUT" ;;
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request|pull_request_review|pull_request_review_thread)
+              echo "pr_number=$PR_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
+              echo "head_sha=$PR_HEAD_SHA_INPUT" >> "$GITHUB_OUTPUT"
+              echo "base_sha=$PR_BASE_SHA_INPUT" >> "$GITHUB_OUTPUT"
+              echo "publish_externally=false" >> "$GITHUB_OUTPUT"
+              ;;
+            issue_comment|workflow_dispatch)
+              number="${ISSUE_NUMBER_INPUT:-$WORKFLOW_DISPATCH_PR_NUMBER}"
+              pr_json="$(gh api "repos/$REPOSITORY/pulls/$number")"
+              echo "pr_number=$number" >> "$GITHUB_OUTPUT"
+              echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
+              echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
+              echo "publish_externally=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unexpected event: $EVENT_NAME"
+              exit 1
+              ;;
           esac
 
   security-gate:
-    needs: resolve-pr-number
+    needs: resolve-pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Deliberately checks out the PR's BASE commit, not its head: security-gate.js/
+      # autonomy-supervisor.js are themselves protected-automation paths, so a pull request editing
+      # them must be evaluated by the trusted copy already on the base branch, never by its own
+      # possibly-rewritten gate logic. (dispatch-pr-merge-gate.yml avoids checkout entirely for the
+      # same reason; this job needs the scripts, so it pins the ref instead.)
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.resolve-pr.outputs.base_sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Evaluate security gate
+        id: run
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ needs.resolve-pr-number.outputs.pr_number }}
+          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
         run: node scripts/security-gate.js
+      - name: Publish result against the pull request's head commit
+        if: needs.resolve-pr.outputs.publish_externally == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          conclusion="success"
+          if [ "${{ steps.run.outcome }}" != "success" ]; then conclusion="failure"; fi
+          gh api --method POST "repos/${{ github.repository }}/check-runs" \
+            -f "name=security-gate" \
+            -f "head_sha=${{ needs.resolve-pr.outputs.head_sha }}" \
+            -f "status=completed" \
+            -f "conclusion=$conclusion" > /dev/null
+      - name: Fail if the gate failed
+        if: steps.run.outcome != 'success'
+        run: exit 1
 
   review-gate:
-    needs: resolve-pr-number
+    needs: resolve-pr
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Review-gate's own logic is not itself a thing a PR could usefully rewrite to force its own
+      # acceptance (reviewGateDecision only reads already-posted GitHub review/thread state, which
+      # the PR author cannot forge), but it is pinned to the same base commit as security-gate for
+      # consistency and because it lives in the same protected-automation file.
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.resolve-pr.outputs.base_sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Evaluate review gate
+        id: run
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ needs.resolve-pr-number.outputs.pr_number }}
+          PR_NUMBER: ${{ needs.resolve-pr.outputs.pr_number }}
         run: node scripts/review-gate.js
+      - name: Publish result against the pull request's head commit
+        if: needs.resolve-pr.outputs.publish_externally == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          conclusion="success"
+          if [ "${{ steps.run.outcome }}" != "success" ]; then conclusion="failure"; fi
+          gh api --method POST "repos/${{ github.repository }}/check-runs" \
+            -f "name=review-gate" \
+            -f "head_sha=${{ needs.resolve-pr.outputs.head_sha }}" \
+            -f "status=completed" \
+            -f "conclusion=$conclusion" > /dev/null
+      - name: Fail if the gate failed
+        if: steps.run.outcome != 'success'
+        run: exit 1

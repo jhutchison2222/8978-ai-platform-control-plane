@@ -18,8 +18,11 @@ export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence
 export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
   ".github/workflows/autonomy-watchdog.yml",
+  ".github/workflows/merge-gates.yml",
   "scripts/autonomy-supervisor.js",
   "scripts/autonomy-watchdog.js",
+  "scripts/security-gate.js",
+  "scripts/review-gate.js",
 ];
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
