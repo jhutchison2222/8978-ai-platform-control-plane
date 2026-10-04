@@ -99,13 +99,27 @@ jobs:
               echo "needs_overlay=false" >> "$GITHUB_OUTPUT"
               echo "publish_externally=false" >> "$GITHUB_OUTPUT"
               ;;
-            issue_comment|workflow_dispatch)
-              number="${ISSUE_NUMBER_INPUT:-$WORKFLOW_DISPATCH_PR_NUMBER}"
-              pr_json="$(gh api "repos/$REPOSITORY/pulls/$number")"
-              echo "pr_number=$number" >> "$GITHUB_OUTPUT"
+            issue_comment)
+              pr_json="$(gh api "repos/$REPOSITORY/pulls/$ISSUE_NUMBER_INPUT")"
+              echo "pr_number=$ISSUE_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
               echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
               echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
               echo "needs_overlay=false" >> "$GITHUB_OUTPUT"
+              echo "publish_externally=true" >> "$GITHUB_OUTPUT"
+              ;;
+            workflow_dispatch)
+              # Unlike issue_comment, workflow_dispatch lets the caller choose ANY ref to run this
+              # workflow against — the default checkout below would then check out that caller-chosen
+              # ref, not necessarily anything trusted. needs_overlay=true forces the same
+              # protected-path overlay used for pull_request_review, so the gate scripts that actually
+              # execute are always the base-branch's trusted copies regardless of which ref was
+              # dispatched against, and the PR they evaluate is always resolved fresh via the API
+              # (pr_json below), never from local files.
+              pr_json="$(gh api "repos/$REPOSITORY/pulls/$WORKFLOW_DISPATCH_PR_NUMBER")"
+              echo "pr_number=$WORKFLOW_DISPATCH_PR_NUMBER" >> "$GITHUB_OUTPUT"
+              echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
+              echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
+              echo "needs_overlay=true" >> "$GITHUB_OUTPUT"
               echo "publish_externally=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
@@ -150,7 +164,13 @@ jobs:
               echo 'import { SENSITIVE_AUTOMATION_PATHS } from "./base-autonomy-supervisor.mjs";'
               echo 'console.log(SENSITIVE_AUTOMATION_PATHS.join("\n"));'
             } > /tmp/merge-gate-overlay/print-sensitive-paths.mjs
-            mapfile -t paths < <(node /tmp/merge-gate-overlay/print-sensitive-paths.mjs)
+            # A plain redirect into a file, not `mapfile < <(...)`: bash's `set -e` does not see a
+            # process substitution's exit status, only mapfile's own, so a crashing node helper would
+            # otherwise leave `paths` silently empty and this step would exit 0 — disabling the entire
+            # tamper-protection overlay without any error. Redirecting to a real file makes node's own
+            # exit code the one `set -e` observes, failing the step loudly instead.
+            node /tmp/merge-gate-overlay/print-sensitive-paths.mjs > /tmp/merge-gate-overlay/sensitive-paths.txt
+            mapfile -t paths < /tmp/merge-gate-overlay/sensitive-paths.txt
             for path in "${paths[@]}"; do
               if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
                 git show "$BASE_SHA:$path" > "$path"
@@ -216,7 +236,13 @@ jobs:
               echo 'import { SENSITIVE_AUTOMATION_PATHS } from "./base-autonomy-supervisor.mjs";'
               echo 'console.log(SENSITIVE_AUTOMATION_PATHS.join("\n"));'
             } > /tmp/merge-gate-overlay/print-sensitive-paths.mjs
-            mapfile -t paths < <(node /tmp/merge-gate-overlay/print-sensitive-paths.mjs)
+            # A plain redirect into a file, not `mapfile < <(...)`: bash's `set -e` does not see a
+            # process substitution's exit status, only mapfile's own, so a crashing node helper would
+            # otherwise leave `paths` silently empty and this step would exit 0 — disabling the entire
+            # tamper-protection overlay without any error. Redirecting to a real file makes node's own
+            # exit code the one `set -e` observes, failing the step loudly instead.
+            node /tmp/merge-gate-overlay/print-sensitive-paths.mjs > /tmp/merge-gate-overlay/sensitive-paths.txt
+            mapfile -t paths < /tmp/merge-gate-overlay/sensitive-paths.txt
             for path in "${paths[@]}"; do
               if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
                 git show "$BASE_SHA:$path" > "$path"
