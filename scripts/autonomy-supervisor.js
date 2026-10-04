@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 export const CLAUDE_LOGIN = "claude[bot]";
@@ -36,6 +37,70 @@ const PRIOR_FINDINGS_FIXED = [
 ];
 const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
+
+const WORKSPACE_AGENT_CREDENTIAL = /CHATGPT_WORKSPACE_AGENT_(?:ID|TOKEN)|AGENT_(?:ID|TOKEN)/u;
+const WORKSPACE_AGENT_TRIGGER = /api\.chatgpt\.com|triggerWorkspaceAgent/u;
+const EXPECTED_SUPERVISOR_PERMISSIONS = new Map([
+  ["actions", "read"],
+  ["checks", "read"],
+  ["contents", "read"],
+  ["issues", "write"],
+  ["pull-requests", "write"],
+]);
+const EXPECTED_WATCHDOG_PERMISSIONS = new Map([
+  ["contents", "read"],
+  ["issues", "write"],
+  ["pull-requests", "read"],
+]);
+
+// This lives here, not in autonomy-watchdog.js, specifically so runSupervisor below can share it:
+// both the supervisor and the watchdog feed the exact same reason set into ensureSecurityStop for
+// the shared canonical issue #66, or the two schedulers would overwrite each other's #66 body with
+// their own differing reason set on every run, patching it forever even once the owner has read it,
+// and silently discarding any note the owner added to the body in between.
+export function topLevelPermissions(workflow) {
+  const lines = workflow.split(/\r?\n/u);
+  const start = lines.findIndex((line) => line === "permissions:");
+  if (start < 0) return null;
+  const permissions = new Map();
+  for (const line of lines.slice(start + 1)) {
+    if (line !== "" && !line.startsWith(" ")) break;
+    const match = line.match(/^  ([a-z-]+): (read|write|none)$/u);
+    if (match) permissions.set(match[1], match[2]);
+  }
+  return permissions;
+}
+
+function permissionMismatch(name, actual, expected) {
+  if (!actual || actual.size !== expected.size) return `${name} permissions do not exactly match the reviewed allowlist`;
+  for (const [scope, access] of expected) {
+    if (actual.get(scope) !== access) return `${name} permissions do not exactly match the reviewed allowlist`;
+  }
+  return null;
+}
+
+export function localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }) {
+  const violations = [];
+  const supervisorMismatch = permissionMismatch(
+    "the supervisor",
+    topLevelPermissions(supervisorWorkflow),
+    EXPECTED_SUPERVISOR_PERMISSIONS,
+  );
+  if (supervisorMismatch) violations.push(supervisorMismatch);
+  const watchdogMismatch = permissionMismatch(
+    "the watchdog",
+    topLevelPermissions(watchdogWorkflow),
+    EXPECTED_WATCHDOG_PERMISSIONS,
+  );
+  if (watchdogMismatch) violations.push(watchdogMismatch);
+  if (WORKSPACE_AGENT_CREDENTIAL.test(watchdogWorkflow)) {
+    violations.push("the watchdog workflow references a Workspace Agent credential");
+  }
+  if (WORKSPACE_AGENT_TRIGGER.test(watchdogWorkflow)) {
+    violations.push("the watchdog workflow can reference Workspace Agent dispatch code or endpoints");
+  }
+  return violations;
+}
 
 function required(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new Error(`${name} is not configured`);
@@ -143,6 +208,30 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
       reasons.push(`security stop #${latest.number} was not closed by repository owner ${ownerLogin}`);
     }
   }
+  // The canonical issue is the only one automation ever creates, edits, or closes. But automation
+  // must not silently ignore a different issue that carries the exact same label: it is still a
+  // fail-closed condition, it is only ever reported (by number), and it is never auto-closed or
+  // auto-modified. Mirrors the canonical issue's own rule immediately above: an open non-canonical
+  // stop always blocks, and a closed one only stops blocking once the repository owner was the one
+  // who closed it. A non-owner closing a non-canonical stop must not silently clear it — that is
+  // exactly the same disposition gap the canonical issue already guards against, and the state
+  // transition (open -> closed by someone else) must not make the condition stop mattering.
+  const otherStops = issues.filter((issue) =>
+    !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER && hasLabel(issue, SECURITY_STOP_LABEL));
+  for (const issue of otherStops) {
+    if (issue.state === "open") {
+      reasons.push(
+        `unexpected open security-stop issue #${issue.number} carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
+        `#${SECURITY_STOP_ISSUE_NUMBER}; owner review is required before automation may treat this condition as resolved`,
+      );
+    } else if (issue.closed_by?.login?.toLowerCase() !== ownerLogin.toLowerCase()) {
+      reasons.push(
+        `unexpected security-stop issue #${issue.number} carries the ${SECURITY_STOP_LABEL} label but is not the canonical ` +
+        `#${SECURITY_STOP_ISSUE_NUMBER}, and was closed by ${issue.closed_by?.login ?? "an unknown actor"}, not repository owner ` +
+        `${ownerLogin}; owner review is required before automation may treat this condition as resolved`,
+      );
+    }
+  }
   for (const pr of pullRequests) {
     const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
     const sensitive = [...new Set(changedFiles.flatMap((file) =>
@@ -160,6 +249,18 @@ export async function fetchSecurityStop(api) {
     throw new Error(`Canonical security stop #${SECURITY_STOP_ISSUE_NUMBER} is unavailable`);
   }
   return issue;
+}
+
+// Every issue carrying the exact canonical label, open or closed, other than the canonical issue
+// itself. Closed ones are included — not just open ones — because securityStopReasons() must be
+// able to tell whether a non-canonical stop was closed by the repository owner: a closed issue
+// whose closer is unknown is indistinguishable from one that was never fetched, which would let a
+// non-owner closure silently stop blocking. Used only to feed that detection; never written to. A
+// GitHub-side label filter is advisory for discovery only — hasLabel() inside securityStopReasons
+// re-applies the exact match, so a server-side quirk can never widen or narrow what actually blocks.
+export async function fetchOtherSecurityStops(api) {
+  const labeled = await api.getAll(`/issues?state=all&labels=${encodeURIComponent(SECURITY_STOP_LABEL)}`);
+  return labeled.filter((issue) => !issue.pull_request && issue.number !== SECURITY_STOP_ISSUE_NUMBER);
 }
 
 export async function inspectPullRequestFiles(api, pullRequests) {
@@ -427,13 +528,32 @@ export async function ensureLabels(api) {
   }
 }
 
+export function securityStopBody(reasons) {
+  return [
+    "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
+    "",
+    "Detected conditions:",
+    ...reasons.map((reason) => `- ${reason}`),
+    "",
+    "Only the repository owner may reactivate autonomous dispatch, after reviewing and resolving every condition, by closing this issue. The supervisor and watchdog never close this issue automatically.",
+  ].join("\n");
+}
+
 export async function ensureSecurityStop(api, reasons, knownStop) {
   if (reasons.length === 0) return null;
   const stop = knownStop ?? await fetchSecurityStop(api);
   const labels = [SECURITY_STOP_LABEL, "security-review"];
+  const body = securityStopBody(reasons);
   if (stop.state === "open") {
     if (!labels.every((label) => hasLabel(stop, label))) {
       await api.post(`/issues/${SECURITY_STOP_ISSUE_NUMBER}/labels`, { labels });
+    }
+    // #66 staying open never changes automatically, but new conditions can be discovered after it
+    // was first opened (e.g. a non-canonical stop appears, or a different protected-automation PR
+    // is found) — without this, the owner would read a stale "Detected conditions" list that no
+    // longer names every condition actually blocking dispatch, which is misleading, not fail-safe.
+    if (stop.body !== body) {
+      await api.patch(`/issues/${SECURITY_STOP_ISSUE_NUMBER}`, { body });
     }
     return stop;
   }
@@ -441,14 +561,7 @@ export async function ensureSecurityStop(api, reasons, knownStop) {
     state: "open",
     title: "Autonomous dispatch security stop",
     labels,
-    body: [
-      "The repository's fail-closed automation guard stopped all new Workspace Agent dispatches.",
-      "",
-      "Detected conditions:",
-      ...reasons.map((reason) => `- ${reason}`),
-      "",
-      "Only the repository owner may reactivate autonomous dispatch, after reviewing and resolving every condition, by closing this issue. The supervisor and watchdog never close this issue automatically.",
-    ].join("\n"),
+    body,
   });
 }
 
@@ -578,21 +691,32 @@ export async function runSupervisor({
   agentToken = process.env.AGENT_TOKEN,
   fetchImpl = fetch,
   nowMs = Date.now(),
+  readFileImpl = readFile,
 } = {}) {
   const api = new GitHubApi({ repository, token: githubToken, fetchImpl });
   const agent = { agentId, agentToken, fetchImpl };
   await ensureLabels(api);
   const pullRequests = await api.getAll("/pulls?state=open");
-  const [securityStop, fileInspections] = await Promise.all([
+  const [securityStop, otherStops, fileInspections, supervisorWorkflow, watchdogWorkflow] = await Promise.all([
     fetchSecurityStop(api),
+    fetchOtherSecurityStops(api),
     inspectPullRequestFiles(api, pullRequests),
+    readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
+    readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
-  const persistentReasons = securityStopReasons({
-    issues: [securityStop],
-    pullRequests,
-    changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
-    ownerLogin: repository.split("/", 1)[0],
-  });
+  // Must compute the exact same persistentReasons the watchdog computes (localBoundaryViolations
+  // plus securityStopReasons) — not a supervisor-only subset — so the two schedulers that share
+  // #66 never feed ensureSecurityStop two different reason sets and overwrite each other's body
+  // every run. See the comment on localBoundaryViolations above.
+  const persistentReasons = [
+    ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
+    ...securityStopReasons({
+      issues: [securityStop, ...otherStops],
+      pullRequests,
+      changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
+      ownerLogin: repository.split("/", 1)[0],
+    }),
+  ];
   const reasons = [...persistentReasons, ...fileInspections.failures];
   if (reasons.length > 0) {
     await ensureSecurityStop(api, persistentReasons, securityStop);
