@@ -69,6 +69,16 @@ jobs:
   # it was removed). Resolving the last actionable thread does not by itself re-run review-gate; a
   # new commit (reruns validate), a new review (reruns Dispatch PR merge gate), a new issue comment,
   # or workflow_dispatch does.
+  #
+  # Known limitation, left as-is: GitHub leaves github.event.workflow_run.pull_requests empty for a
+  # pull request from a forked repository (the same documented behavior dispatch-pr-merge-gate.yml
+  # already relies on unprotected, at its own identical `pull_requests[0].number > 0` check). A fork
+  # PR's ordinary push therefore never resolves a PR number here and never gets a security-gate/
+  # review-gate result on its own — only issue_comment (an owner/maintainer commenting) or an explicit
+  # workflow_dispatch does. This repository has no history of fork contributions and this gate's
+  # purpose is to protect merges, not to review fork PRs in general, so a maintainer reviewing a fork
+  # PR manually (as the existing supervisor dispatch flow's own restrictedForkPullRequest handling
+  # already assumes) is an acceptable, pre-existing boundary, not something this PR introduces.
   resolve-pr:
     runs-on: ubuntu-latest
     if: >-
