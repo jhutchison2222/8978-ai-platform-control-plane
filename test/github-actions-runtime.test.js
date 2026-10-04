@@ -5,17 +5,21 @@ import test from "node:test";
 const workflowDirectory = ".github/workflows";
 const isWorkflowFile = (name) => name.endsWith(".yml") || name.endsWith(".yaml");
 // npm's documented aliases for `npm install` (https://docs.npmjs.com/cli/v10/commands/npm-install):
-// every true prefix of "install" from "i" up, plus "add". (Earlier versions of this list also
+// every true prefix of "install" from "i" up, plus "add", plus "it" (short for "install-test": a
+// real, registry-resolving install followed by a test run — unlike "install-ci-test"/"cit", which
+// use "npm ci" internally and are not a reproducibility risk). (Earlier versions of this list also
 // included "isnt"/"isnta"/"isntal"/"isntall" — transpositions, not prefixes, of "inst"/"insta"/
 // "instal"/"install" that match no real npm command, and that falsely flagged ordinary text like
-// "npm isnt installed" in an availability check.) None of these are prefixes of "ci", so this cannot
-// false-positive on the one command this guard allows. The trailing (?![\w-]) (rather than a plain
-// \b) rejects a composite subcommand like "install-ci-test": a real, lockfile-respecting npm command
-// whose name merely starts with "install", not an alias of it. Uses [ \t]+ rather than \s+ between
-// "npm" and the subcommand: \s matches a literal newline, and runStepCommandText joins separate,
-// unrelated command lines with "\n" — a plain \s+ could bridge one line ending in "npm" into the
-// next line's unrelated leading token and false-positive across the join.
-const BARE_NPM_INSTALL = /\bnpm[ \t]+(?:install|i|in|ins|inst|insta|instal|add)(?![\w-])/gu;
+// "npm isnt installed" in an availability check.) None of these are prefixes of "ci"/"cit", so this
+// cannot false-positive on the ci-based commands this guard allows. "install" may optionally be
+// followed by exactly "-test" (its own real alias), but the trailing (?![\w-]) still rejects any
+// other hyphenated continuation — in particular "install-ci-test" — since "it"/"install-test" are
+// the only two non-ci composites with a hyphen or word boundary that still mean a real install.
+// Uses [ \t]+ rather than \s+ between "npm" and the subcommand: \s matches a literal newline, and
+// runStepCommandText joins separate, unrelated command lines with "\n" — a plain \s+ could bridge
+// one line ending in "npm" into the next line's unrelated leading token and false-positive across
+// the join.
+const BARE_NPM_INSTALL = /\bnpm[ \t]+(?:install(?:-test)?|i|in|ins|inst|insta|instal|it|add)(?![\w-])/gu;
 
 // Any valid YAML block-scalar header: "|" or ">", with an optional chomping indicator (-/+) and/or
 // a single-digit explicit indentation indicator, in either order (both orders are valid YAML).
@@ -88,11 +92,16 @@ function runStepCommandText(source) {
           // shell then truncates execution at that "#". Either way, the words before and after a
           // comment-only line must never be bridged into one false match, so it is treated exactly
           // like a blank line: a paragraph break, not a word that joins its neighbors with a space.
-          const content = stripComment(line).trim();
+          const stripped = stripComment(line);
+          const content = stripped.trim();
           if (content === "") {
             if (paragraph.length > 0) { paragraphs.push(paragraph.join(" ")); paragraph = []; }
           } else {
             paragraph.push(content);
+            // Same reasoning, for a line with real content *before* its comment: once folded into
+            // one bash line, that comment extends to the end of the whole line, so nothing folded
+            // onto it from later source lines could ever actually run. Close the paragraph here too.
+            if (stripped !== line) { paragraphs.push(paragraph.join(" ")); paragraph = []; }
           }
         } else {
           paragraphs.push(stripComment(line));
@@ -488,6 +497,45 @@ test("${VAR#pattern} immediately followed by a control operator is still left al
   const fixture = [
     "jobs:", "  test:", "    steps:",
     '      - run: BRANCH="${GITHUB_REF#refs/heads/}"; npm install',
+  ].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("npm install-test (the real, registry-resolving install+test alias, not install-ci-test) is flagged", () => {
+  const fixture = ["jobs:", "  test:", "    steps:", "      - run: npm install-test"].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("npm it (the short alias for install-test) is flagged", () => {
+  const fixture = ["jobs:", "  test:", "    steps:", "      - run: npm it"].join("\n");
+  assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
+});
+
+test("npm install-ci-test is still correctly spared even with install-test/it now recognized", () => {
+  const fixture = ["jobs:", "  test:", "    steps:", "      - run: npm install-ci-test"].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a folded (>) paragraph with real content before an inline comment closes there, never folding a later line in", () => {
+  // Real YAML folds "git log && npm" / "install" to "git log && npm install" as plain text, but bash
+  // then reads the trailing "#" on the first line as starting a comment that swallows everything to
+  // the end of that already-joined line — "install" never actually runs.
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: >",
+    "          git log && npm # verify before running install manually",
+    "          install",
+  ].join("\n");
+  assert.deepEqual([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)], []);
+});
+
+test("a folded (>) paragraph still folds everything before the inline comment, and a later paragraph can still be flagged", () => {
+  const fixture = [
+    "jobs:", "  test:", "    steps:",
+    "      - run: >",
+    "          echo building # note",
+    "",
+    "          npm install",
   ].join("\n");
   assert.equal([...runStepCommandText(fixture).matchAll(BARE_NPM_INSTALL)].length, 1);
 });
