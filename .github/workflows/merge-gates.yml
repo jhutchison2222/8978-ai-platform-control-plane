@@ -1,8 +1,9 @@
 name: Merge gates
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  workflow_run:
+    workflows: [validate]
+    types: [completed]
   pull_request_review:
     types: [submitted, edited, dismissed]
   issue_comment:
@@ -20,26 +21,52 @@ permissions:
   checks: write
 
 jobs:
-  # Resolves the PR number, head sha, and base sha for every trigger shape, and whether this run's
-  # result needs to be manually published against the PR's head commit. For pull_request/
-  # pull_request_review, GitHub Actions already attaches each job's own check run to the correct
-  # commit for required-status-check purposes — publish_externally is false. For issue_comment and
-  # workflow_dispatch, `github.sha` resolves to the default branch tip, not the PR's head, so a job's
-  # own pass/fail is invisible to the PR's required checks unless republished explicitly against the
-  # real head sha (see the "Publish result" step in each gate job below).
+  # Resolves the PR number, head sha, base sha, and the checkout/publish posture for every trigger
+  # shape:
+  #
+  # needs_overlay — whether this run's default checkout can contain the PR's own proposed edits
+  # (true for pull_request_review, which operates in the context of the PR's merge commit) versus
+  # already being the trusted base/default branch content (workflow_run always runs in the context of
+  # its own trigger event, which occurs on the base branch; issue_comment/workflow_dispatch likewise
+  # check out the default branch by default). A PR CANNOT edit this workflow file's own steps and
+  # have that edited version execute, specifically because none of these four trigger types read the
+  # workflow DEFINITION from the PR's head: workflow_run and pull_request_review are both sourced from
+  # the default branch for the workflow file itself (same as dispatch-pr-merge-gate.yml, which uses
+  # this exact pull_request_review + workflow_run combination for the same reason — a plain
+  # `pull_request` trigger was used here previously and was a real vulnerability, since GitHub reads a
+  # pull_request-triggered workflow's own step definitions from the PR's own head: see the fixed
+  # review thread on this PR for the citation). needs_overlay only protects the FILE CONTENTS checked
+  # out at runtime (autonomy-supervisor.js and friends), which is a separate, narrower concern from
+  # which workflow steps execute at all.
+  #
+  # publish_externally — whether this run's own pass/fail is invisible to the PR's required checks and
+  # must be explicitly republished against the real head sha via the Checks API. workflow_run and
+  # pull_request_review both correctly auto-attach to the originating PR (confirmed by this repo's own
+  # "dispatch" check, driven by the identical trigger combination, showing up correctly scoped per PR
+  # throughout this project's history) — publish_externally is false for both. issue_comment and
+  # workflow_dispatch do not — github.sha resolves to the default branch tip for those two event
+  # types, not the PR's head — so publish_externally is true for both.
   #
   # Known limitation, left as-is: GitHub Actions has no workflow trigger for "a review thread was
   # resolved" alone (pull_request_review_thread is a real webhook/GraphQL event but is not a
   # supported `on:` trigger — using it here previously made the whole workflow file unparseable, so
   # it was removed). Resolving the last actionable thread does not by itself re-run review-gate; a
-  # new commit, a new review, a new issue comment, or workflow_dispatch does.
+  # new commit (which reruns validate, triggering workflow_run), a new review, a new issue comment,
+  # or workflow_dispatch does.
   resolve-pr:
     runs-on: ubuntu-latest
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request != null
+    if: >-
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'pull_request' &&
+       github.event.workflow_run.pull_requests[0].number > 0) ||
+      github.event_name == 'pull_request_review' ||
+      github.event_name == 'workflow_dispatch'
     outputs:
       pr_number: ${{ steps.resolve.outputs.pr_number }}
       head_sha: ${{ steps.resolve.outputs.head_sha }}
       base_sha: ${{ steps.resolve.outputs.base_sha }}
+      needs_overlay: ${{ steps.resolve.outputs.needs_overlay }}
       publish_externally: ${{ steps.resolve.outputs.publish_externally }}
     steps:
       - id: resolve
@@ -50,15 +77,26 @@ jobs:
           PR_NUMBER_INPUT: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA_INPUT: ${{ github.event.pull_request.head.sha }}
           PR_BASE_SHA_INPUT: ${{ github.event.pull_request.base.sha }}
+          WORKFLOW_RUN_PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
+          WORKFLOW_RUN_BASE_SHA: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
           ISSUE_NUMBER_INPUT: ${{ github.event.issue.number }}
           WORKFLOW_DISPATCH_PR_NUMBER: ${{ github.event.inputs.pr_number }}
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
-            pull_request|pull_request_review)
+            pull_request_review)
               echo "pr_number=$PR_NUMBER_INPUT" >> "$GITHUB_OUTPUT"
               echo "head_sha=$PR_HEAD_SHA_INPUT" >> "$GITHUB_OUTPUT"
               echo "base_sha=$PR_BASE_SHA_INPUT" >> "$GITHUB_OUTPUT"
+              echo "needs_overlay=true" >> "$GITHUB_OUTPUT"
+              echo "publish_externally=false" >> "$GITHUB_OUTPUT"
+              ;;
+            workflow_run)
+              echo "pr_number=$WORKFLOW_RUN_PR_NUMBER" >> "$GITHUB_OUTPUT"
+              echo "head_sha=$WORKFLOW_RUN_HEAD_SHA" >> "$GITHUB_OUTPUT"
+              echo "base_sha=$WORKFLOW_RUN_BASE_SHA" >> "$GITHUB_OUTPUT"
+              echo "needs_overlay=false" >> "$GITHUB_OUTPUT"
               echo "publish_externally=false" >> "$GITHUB_OUTPUT"
               ;;
             issue_comment|workflow_dispatch)
@@ -67,6 +105,7 @@ jobs:
               echo "pr_number=$number" >> "$GITHUB_OUTPUT"
               echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
               echo "base_sha=$(echo "$pr_json" | jq -r .base.sha)" >> "$GITHUB_OUTPUT"
+              echo "needs_overlay=false" >> "$GITHUB_OUTPUT"
               echo "publish_externally=true" >> "$GITHUB_OUTPUT"
               ;;
             *)
@@ -84,19 +123,16 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      # Default checkout above uses the PR's own head/merge ref for pull_request/pull_request_review
-      # (publish_externally == 'false'), and the default branch tip for issue_comment/workflow_dispatch
-      # (publish_externally == 'true' — already trusted, so this step is skipped entirely there). For
-      # the PR-head case, overwrite every SENSITIVE_AUTOMATION_PATHS file with its base-branch copy
-      # before evaluating, so a PR editing scripts/autonomy-supervisor.js (or this gate's own files)
-      # cannot control its own gate run. The protected-path list itself is read from the BASE branch's
-      # copy of autonomy-supervisor.js, not the PR's, so a PR cannot shrink the list to exempt its own
-      # edits. If no trusted gate exists on the base branch yet (scripts/security-gate.js absent
-      # there), this is the one-time PR introducing the gate mechanism itself — there is nothing to
-      # fall back to, so this PR's own code runs unmodified; protection begins with the next PR, once
-      # this one has merged.
+      # See resolve-pr's needs_overlay comment above for why only pull_request_review needs this.
+      # Overwrites every SENSITIVE_AUTOMATION_PATHS file with its base-branch copy before evaluating,
+      # so a PR editing scripts/autonomy-supervisor.js (or this gate's own files) cannot control its
+      # own gate run. The protected-path list itself is read from the BASE branch's copy of
+      # autonomy-supervisor.js, not the PR's, so a PR cannot shrink the list to exempt its own edits.
+      # If no trusted gate exists on the base branch yet (scripts/security-gate.js absent there), this
+      # is the one-time PR introducing the gate mechanism itself — there is nothing to fall back to, so
+      # this PR's own code runs unmodified; protection begins with the next PR, once this one merges.
       - name: Protect gate logic against this PR's own proposed edits
-        if: needs.resolve-pr.outputs.publish_externally == 'false'
+        if: needs.resolve-pr.outputs.needs_overlay == 'true'
         env:
           BASE_SHA: ${{ needs.resolve-pr.outputs.base_sha }}
         run: |
@@ -156,12 +192,13 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      # Same protection as security-gate — see its comment above. review-gate's own decision logic
-      # only reads already-posted GitHub review/thread state (nothing the PR author's local files can
-      # forge), but it imports from the same autonomy-supervisor.js, so it is protected identically
-      # for consistency and because a future PR could still try to weaken reviewGateDecision itself.
+      # Same protection as security-gate — see its comment above and resolve-pr's needs_overlay
+      # comment. review-gate's own decision logic only reads already-posted GitHub review/thread
+      # state (nothing the PR author's local files can forge), but it imports from the same
+      # autonomy-supervisor.js, so it is protected identically for consistency and because a future PR
+      # could still try to weaken reviewGateDecision itself.
       - name: Protect gate logic against this PR's own proposed edits
-        if: needs.resolve-pr.outputs.publish_externally == 'false'
+        if: needs.resolve-pr.outputs.needs_overlay == 'true'
         env:
           BASE_SHA: ${{ needs.resolve-pr.outputs.base_sha }}
         run: |
