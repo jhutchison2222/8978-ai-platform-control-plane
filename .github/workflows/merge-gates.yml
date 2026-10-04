@@ -80,17 +80,49 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Deliberately checks out the PR's BASE commit, not its head: security-gate.js/
-      # autonomy-supervisor.js are themselves protected-automation paths, so a pull request editing
-      # them must be evaluated by the trusted copy already on the base branch, never by its own
-      # possibly-rewritten gate logic. (dispatch-pr-merge-gate.yml avoids checkout entirely for the
-      # same reason; this job needs the scripts, so it pins the ref instead.)
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.resolve-pr.outputs.base_sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # Default checkout above uses the PR's own head/merge ref for pull_request/pull_request_review
+      # (publish_externally == 'false'), and the default branch tip for issue_comment/workflow_dispatch
+      # (publish_externally == 'true' — already trusted, so this step is skipped entirely there). For
+      # the PR-head case, overwrite every SENSITIVE_AUTOMATION_PATHS file with its base-branch copy
+      # before evaluating, so a PR editing scripts/autonomy-supervisor.js (or this gate's own files)
+      # cannot control its own gate run. The protected-path list itself is read from the BASE branch's
+      # copy of autonomy-supervisor.js, not the PR's, so a PR cannot shrink the list to exempt its own
+      # edits. If no trusted gate exists on the base branch yet (scripts/security-gate.js absent
+      # there), this is the one-time PR introducing the gate mechanism itself — there is nothing to
+      # fall back to, so this PR's own code runs unmodified; protection begins with the next PR, once
+      # this one has merged.
+      - name: Protect gate logic against this PR's own proposed edits
+        if: needs.resolve-pr.outputs.publish_externally == 'false'
+        env:
+          BASE_SHA: ${{ needs.resolve-pr.outputs.base_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth 1 origin "$BASE_SHA"
+          if git cat-file -e "$BASE_SHA:scripts/security-gate.js" 2>/dev/null; then
+            mkdir -p /tmp/merge-gate-overlay
+            git show "$BASE_SHA:scripts/autonomy-supervisor.js" > /tmp/merge-gate-overlay/base-autonomy-supervisor.mjs
+            # A relative import from a wrapper file placed alongside it, not `node -e` with an
+            # absolute specifier: autonomy-supervisor.js's own entry-point guard
+            # (`if (import.meta.url === pathToFileURL(process.argv[1]).href)`) would otherwise compare
+            # against an undefined argv[1] under `-e` and crash trying to run the full supervisor, and
+            # a bare absolute-path import specifier is not portably valid across Node ESM resolvers.
+            {
+              echo 'import { SENSITIVE_AUTOMATION_PATHS } from "./base-autonomy-supervisor.mjs";'
+              echo 'console.log(SENSITIVE_AUTOMATION_PATHS.join("\n"));'
+            } > /tmp/merge-gate-overlay/print-sensitive-paths.mjs
+            mapfile -t paths < <(node /tmp/merge-gate-overlay/print-sensitive-paths.mjs)
+            for path in "${paths[@]}"; do
+              if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
+                git show "$BASE_SHA:$path" > "$path"
+              fi
+            done
+          else
+            echo "::notice::No trusted gate exists yet on the base branch; evaluating this PR's own gate code (bootstrap). Protection begins once this PR merges."
+          fi
       - name: Evaluate security gate
         id: run
         continue-on-error: true
@@ -120,16 +152,42 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Review-gate's own logic is not itself a thing a PR could usefully rewrite to force its own
-      # acceptance (reviewGateDecision only reads already-posted GitHub review/thread state, which
-      # the PR author cannot forge), but it is pinned to the same base commit as security-gate for
-      # consistency and because it lives in the same protected-automation file.
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.resolve-pr.outputs.base_sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # Same protection as security-gate — see its comment above. review-gate's own decision logic
+      # only reads already-posted GitHub review/thread state (nothing the PR author's local files can
+      # forge), but it imports from the same autonomy-supervisor.js, so it is protected identically
+      # for consistency and because a future PR could still try to weaken reviewGateDecision itself.
+      - name: Protect gate logic against this PR's own proposed edits
+        if: needs.resolve-pr.outputs.publish_externally == 'false'
+        env:
+          BASE_SHA: ${{ needs.resolve-pr.outputs.base_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --depth 1 origin "$BASE_SHA"
+          if git cat-file -e "$BASE_SHA:scripts/review-gate.js" 2>/dev/null; then
+            mkdir -p /tmp/merge-gate-overlay
+            git show "$BASE_SHA:scripts/autonomy-supervisor.js" > /tmp/merge-gate-overlay/base-autonomy-supervisor.mjs
+            # A relative import from a wrapper file placed alongside it, not `node -e` with an
+            # absolute specifier: autonomy-supervisor.js's own entry-point guard
+            # (`if (import.meta.url === pathToFileURL(process.argv[1]).href)`) would otherwise compare
+            # against an undefined argv[1] under `-e` and crash trying to run the full supervisor, and
+            # a bare absolute-path import specifier is not portably valid across Node ESM resolvers.
+            {
+              echo 'import { SENSITIVE_AUTOMATION_PATHS } from "./base-autonomy-supervisor.mjs";'
+              echo 'console.log(SENSITIVE_AUTOMATION_PATHS.join("\n"));'
+            } > /tmp/merge-gate-overlay/print-sensitive-paths.mjs
+            mapfile -t paths < <(node /tmp/merge-gate-overlay/print-sensitive-paths.mjs)
+            for path in "${paths[@]}"; do
+              if git cat-file -e "$BASE_SHA:$path" 2>/dev/null; then
+                git show "$BASE_SHA:$path" > "$path"
+              fi
+            done
+          else
+            echo "::notice::No trusted gate exists yet on the base branch; evaluating this PR's own gate code (bootstrap). Protection begins once this PR merges."
+          fi
       - name: Evaluate review gate
         id: run
         continue-on-error: true
