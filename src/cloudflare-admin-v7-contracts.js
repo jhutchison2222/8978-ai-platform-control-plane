@@ -121,6 +121,11 @@ export async function collectPagedResults(fetchPage, label, {
   const seen = new Set();
   let first = null;
   let totalPages = null;
+  // Set at page 1 once the listing is known to be near the ceiling, but only ever reported once the
+  // listing has actually finished successfully (see the two return points below) — never while a
+  // later page could still throw one of the fail-closed checks and contradict an already-reported
+  // "this listing completed" warning.
+  let pendingCeilingWarning = null;
   for (let page = 1; page <= maximumPages; page += 1) {
     const envelope = await fetchPage(page);
     const items = envelope?.result;
@@ -133,14 +138,9 @@ export async function collectPagedResults(fetchPage, label, {
       first = { per_page: info.per_page, total_count: info.total_count, total_pages: info.total_pages };
       if (totalPages > maximumPages) throw new Error(`${label} pagination did not terminate within ${maximumPages} pages; completeness cannot be proven`);
       if (totalPages >= maximumPages * CEILING_WARNING_THRESHOLD) {
-        const warning =
+        pendingCeilingWarning =
           `${label} requires ${totalPages} of a maximum ${maximumPages} pages (${info.total_count} items at ${info.per_page} per page); ` +
-          "approaching the fail-closed pagination ceiling; raise per_page or the ceiling before it becomes unprovable.";
-        try {
-          await onApproachingCeiling(warning);
-        } catch {
-          // Capacity reporting is advisory and must never change listing success or failure.
-        }
+          "approaching the fail-closed pagination ceiling. This listing completed; raise per_page or the ceiling before it becomes unprovable.";
       }
     } else if (info.per_page !== first.per_page || info.total_count !== first.total_count || info.total_pages !== first.total_pages) {
       throw new Error(`${label} pagination totals changed between pages; state is ambiguous`);
@@ -162,6 +162,13 @@ export async function collectPagedResults(fetchPage, label, {
     }
     if (page === totalPages) {
       if (collected.length !== first.total_count) throw new Error(`${label} collected ${collected.length} items but total_count is ${first.total_count}; completeness cannot be proven`);
+      if (pendingCeilingWarning) {
+        try {
+          await onApproachingCeiling(pendingCeilingWarning);
+        } catch {
+          // Capacity reporting is advisory and must never change listing success or failure.
+        }
+      }
       return collected;
     }
   }
