@@ -240,18 +240,30 @@ export class CloudflareAdminV7Api {
   // UNDOCUMENTED CLOUDFLARE ENDPOINT — tracked for re-verification in issue #87. Cloudflare's public API reference
   // (developers.cloudflare.com/api/) documents no PATCH on any /workers/.../versions resource, under
   // either /workers/scripts/ or /workers/workers/. This exact method/path/body is confirmed only by
-  // reading Cloudflare's own first-party client, wrangler, directly:
-  //   cloudflare/workers-sdk @ c82d96ba63a3b343b520e781a070889251868d9a (2026-07-20, PR #14448,
-  //   "WC-5290 Use PATCH APIs for 'wrangler versions secret' commands"),
-  //   packages/wrangler/src/versions/secrets/index.ts, patchLatestWorkerVersionWithSecrets().
-  // That source confirms: PATCH /accounts/{id}/workers/workers/{scriptName}/versions/latest, where
-  // scriptName is the Worker's human-readable NAME (typed `string`, passed from the CLI's --name /
-  // wrangler.toml `name`) — NOT the 32-hex immutable ID that getWorkerById() below requires. The
-  // /workers/workers/ collection is keyed by "ID or name" per Cloudflare's own docs for the
-  // single-worker GET; getWorkerById()'s stricter requireImmutableWorkerId() check is this
-  // codebase's own self-imposed constraint for that specific identity-confirmation call site, not a
-  // universal requirement of the collection — wrangler's own use of the plain name on this exact
-  // sub-resource is the only concrete evidence for what this particular PATCH endpoint accepts.
+  // reading Cloudflare's own first-party client, wrangler, directly — independently checkable at the
+  // permalink below, not just asserted here:
+  //   https://github.com/cloudflare/workers-sdk/blob/c82d96ba63a3b343b520e781a070889251868d9a/packages/wrangler/src/versions/secrets/index.ts#L80-L95
+  //   (PR #14448 "WC-5290 Use PATCH APIs for 'wrangler versions secret' commands", 2026-07-20)
+  // Verbatim from that file:
+  //   export async function patchLatestWorkerVersionWithSecrets({ ..., scriptName, ... }) {
+  //     return await fetchResult(config,
+  //       `/accounts/${accountId}/workers/workers/${scriptName}/versions/latest`,
+  //       { method: "PATCH", ... });
+  //   }
+  // scriptName's type at the only two call sites (packages/wrangler/src/versions/secrets/put.ts#L47,
+  // bulk.ts#L45 at the same commit) is the return value of wrangler's own getLegacyScriptName(args,
+  // config) — the CLI's --name / wrangler.toml `name` helper used throughout wrangler for the
+  // human-readable Worker name — NOT a 32-hex ID. This is NOT the 32-hex immutable ID that
+  // getWorkerById() below requires. The /workers/workers/ collection is keyed by "ID or name" per
+  // Cloudflare's own docs for the single-worker GET; getWorkerById()'s stricter
+  // requireImmutableWorkerId() check is this codebase's own self-imposed constraint for that specific
+  // identity-confirmation call site, not a universal requirement of the collection — wrangler's own
+  // use of the plain name on this exact sub-resource, verifiable at the permalink above, is the
+  // concrete evidence for what this particular PATCH endpoint accepts. Reaching a live Cloudflare
+  // account to re-confirm this independently of wrangler's source is out of scope here (no production/
+  // customer Cloudflare calls from this environment); the wrangler source permalink is the verification
+  // this project relies on, and issue #87 is where that gets redone if this ever needs re-checking
+  // against a real account.
   // Rationale for depending on an undocumented endpoint at all: it is the only known mechanism that
   // creates a new, secret-bearing Worker version WITHOUT deploying it — the dedicated, fully
   // documented PUT .../workers/scripts/{name}/secrets endpoint deploys the secret to the currently
