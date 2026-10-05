@@ -33,3 +33,7 @@ export async function runReviewGate({
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   await runReviewGate();
 }
+
+// Post-bootstrap governance proof (Part G Step 1): harmless comment-only change to a
+// protected-automation path, used solely to exercise security-gate/review-gate end to end
+// against the now-merged trusted implementation. No functional change.
