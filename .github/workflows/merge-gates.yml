@@ -81,8 +81,17 @@ jobs:
   # boundary, not something this PR introduces.
   resolve-pr:
     runs-on: ubuntu-latest
+    # issue_comment is further restricted to trusted commenters (same OWNER/MEMBER/COLLABORATOR set
+    # autonomy-supervisor.js already uses for trusted PR authorship): unlike workflow_run, nothing
+    # about this trigger required write access to fire — on a public repo, ANY account can comment on
+    # an open PR, so without this check anyone could repeatedly spend this repo's Actions minutes on
+    # demand with no write access at all. This is a CI-cost/availability guard only; it is not a
+    # security boundary for the gate decision itself, which is unaffected either way — the owner
+    # disposition check inside security-gate.js already independently requires author_association ==
+    # "OWNER" on the disposition comment specifically, regardless of who else can trigger a re-run.
     if: >-
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null) ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null &&
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number > 0)
     outputs:
       pr_numbers: ${{ steps.resolve.outputs.pr_numbers }}

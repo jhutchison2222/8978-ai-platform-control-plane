@@ -334,3 +334,17 @@ test("security-gate and review-gate evaluate every pull request sharing a workfl
   const prNumberUses = [...workflow.matchAll(/PR_NUMBER: \$\{\{ matrix\.pr_number \}\}/gu)];
   assert.ok(prNumberUses.length >= 4, "each matrix job must use its own matrix.pr_number, not a shared resolve-pr output");
 });
+
+// Unlike workflow_run, issue_comment requires no write access to fire at all — on a public repo, any
+// account can comment on an open PR, so without a commenter check anyone could repeatedly spend this
+// repo's Actions minutes on demand (a CI-cost/availability concern, not a security-gate-correctness
+// one — the owner disposition check inside security-gate.js already independently requires
+// author_association == "OWNER" on the disposition comment specifically, regardless of who else can
+// trigger a re-run).
+test("resolve-pr's issue_comment branch requires a trusted commenter association", async () => {
+  const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
+  assert.match(
+    workflow,
+    /github\.event_name == 'issue_comment' && github\.event\.issue\.pull_request != null &&\n\s+contains\(fromJSON\('\["OWNER", "MEMBER", "COLLABORATOR"\]'\), github\.event\.comment\.author_association\)/u,
+  );
+});
