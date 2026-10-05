@@ -147,3 +147,6 @@ npm run cf:admin-v7:dry-run
 ```
 
 <!-- governance probe: harmless no-op comment, branch-protection enforcement test, see issue tracking Part G -->
+
+<!-- Stage 1 branch-protection verification (Part G): harmless no-op comment, proving
+security-gate/review-gate are recognized as required GitHub status checks. -->
