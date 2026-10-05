@@ -209,8 +209,16 @@ test("pullRequestSensitivePathReason mirrors securityStopReasons' per-PR text ex
 test("the merge-gate's own enforcement files are themselves protected automation", () => {
   // A PR touching only the gate scripts or their workflow must require owner disposition too —
   // otherwise it could weaken securityGateDecision/reviewGateDecision, or remove merge-gates.yml's
-  // base-sha checkout pin, without ever being treated as a protected-automation change.
-  for (const path of [".github/workflows/merge-gates.yml", "scripts/security-gate.js", "scripts/review-gate.js"]) {
+  // base-sha checkout pin, without ever being treated as a protected-automation change. Includes
+  // dispatch-pr-merge-gate.yml: it holds AGENT_TOKEN-driven access to trigger the Workspace Agent and
+  // decides what payload it receives, and merge-gates.yml's own required security-gate check relies
+  // on this exact list to decide whether edits to it need owner disposition.
+  for (const path of [
+    ".github/workflows/merge-gates.yml",
+    ".github/workflows/dispatch-pr-merge-gate.yml",
+    "scripts/security-gate.js",
+    "scripts/review-gate.js",
+  ]) {
     assert.equal(
       pullRequestSensitivePathReason(SENSITIVE_PR, [{ filename: path }]),
       `pull request #100 changes protected automation: ${path}`,

@@ -19,6 +19,7 @@ export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
   ".github/workflows/autonomy-watchdog.yml",
   ".github/workflows/merge-gates.yml",
+  ".github/workflows/dispatch-pr-merge-gate.yml",
   "scripts/autonomy-supervisor.js",
   "scripts/autonomy-watchdog.js",
   "scripts/security-gate.js",
