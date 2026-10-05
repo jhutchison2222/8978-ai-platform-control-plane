@@ -1,0 +1,210 @@
+name: Merge gates
+
+on:
+  workflow_run:
+    workflows: [validate, "Dispatch PR merge gate"]
+    types: [completed]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  checks: write
+
+jobs:
+  # TRIGGER SAFETY, read this before changing `on:` above: pull_request, pull_request_review, and
+  # pull_request_review_comment all execute the workflow's own step DEFINITIONS from the pull
+  # request's merge commit, not the base branch (this is the documented reason pull_request_target
+  # exists at all) — none of the three may ever be added here. workflow_dispatch was also removed: it
+  # lets the CALLER choose any ref to run the workflow against, and if that ref is the PR's own branch
+  # (or any other attacker-influenced branch), that ref's copy of this file defines which steps
+  # execute — the same structural vulnerability, not something a protected-path file overlay can fix,
+  # since the PR-controlled workflow could simply delete the overlay step itself, the gate invocation,
+  # the Checks API publish step, or the final failure step. "The caller is trusted" is not an
+  # acceptable security boundary for a required merge gate. Only workflow_run (always sourced from the
+  # default branch) and issue_comment (a pure data trigger — a comment cannot alter which steps run)
+  # remain, and both are genuinely safe: a PR can never control which version of this file's steps
+  # execute against it.
+  #
+  # workflow_run listens to BOTH validate (re-evaluates after every push/test completion) and
+  # Dispatch PR merge gate (re-evaluates promptly after Claude review activity, since that workflow's
+  # own trigger includes pull_request_review — an indirection that gets the fast reaction time of
+  # reacting to a review without this file ever listening to pull_request_review directly). Dispatch
+  # PR merge gate's own output is never treated as evidence of anything: it merely wakes this
+  # workflow, which independently re-fetches reviews, the PR's current head, and review threads from
+  # GitHub and applies reviewGateDecision() itself — even a compromised Dispatch PR merge gate run
+  # cannot forge a genuine claude[bot] exact-head review, since this workflow never reads anything
+  # from that run's own output or logs.
+  #
+  # Resolves EVERY pull request number this run must gate, for every trigger shape, as a JSON array —
+  # never a single number. github.event.workflow_run.pull_requests can legitimately contain more than
+  # one open PR sharing the exact same head branch/commit (e.g. the same branch opened as a PR against
+  # two different base branches); indexing [0] and trusting its bundled head_sha/base_sha would risk
+  # evaluating and publishing one PR's result onto a different PR that merely shares that commit. Each
+  # downstream matrix job (see security-gate/review-gate below) re-fetches its OWN pr_number's current
+  # head sha fresh via the API, rather than trusting anything bundled in this event payload, so there
+  # is no step at which two PRs' identities could be confused with each other.
+  #
+  # Both workflow_run and issue_comment already execute in the context of the default branch —
+  # including the tree checked out by the gate jobs below — so there is no PR-controlled checkout to
+  # defend against here and no overlay/protected-path mechanism is needed (a prior version of this
+  # file had one, built to protect against pull_request_review and workflow_dispatch's untrusted
+  # checkouts; with both removed, it had no remaining purpose and was removed with them rather than
+  # kept as unreachable complexity).
+  #
+  # publish_externally: every trigger here needs its result explicitly republished against the
+  # resolved PR head sha via the Checks API — confirmed empirically (not assumed): `gh api
+  # .../check-runs` on this PR's own head showed dispatch-pr-merge-gate.yml's "dispatch" check-run was
+  # present only from its pull_request_review-triggered runs (now a removed trigger class); its
+  # workflow_run-triggered runs' own associated commit was main's tip, not this PR's head, and
+  # produced no check-run on this PR at all. issue_comment has the same property: github.sha resolves
+  # to the default branch tip for it, not the PR's head.
+  #
+  # Known limitation, left as-is: GitHub Actions has no workflow trigger for "a review thread was
+  # resolved" alone (pull_request_review_thread is a real webhook/GraphQL event but is not a
+  # supported `on:` trigger — using it here previously made the whole workflow file unparseable, so
+  # it was removed). Resolving the last actionable thread does not by itself re-run review-gate; a
+  # new commit (reruns validate), a new review (reruns Dispatch PR merge gate), or a new issue
+  # comment does.
+  #
+  # Known limitation, left as-is: GitHub leaves github.event.workflow_run.pull_requests empty for a
+  # pull request from a forked repository (the same documented behavior dispatch-pr-merge-gate.yml
+  # already relies on unprotected, at its own identical `pull_requests[0].number > 0` check). A fork
+  # PR's ordinary push therefore never resolves a PR number here and never gets a security-gate/
+  # review-gate result on its own. Operational path for that case: a maintainer posts a comment on the
+  # fork PR, which fires issue_comment and evaluates the gates using the trusted default-branch
+  # workflow — the same path this file already provides for the owner's exact-head disposition
+  # comment. This repository has no history of fork contributions and this gate's purpose is to
+  # protect merges, not to review fork PRs in general, so this is an acceptable, pre-existing
+  # boundary, not something this PR introduces.
+  resolve-pr:
+    runs-on: ubuntu-latest
+    # issue_comment is further restricted to trusted commenters (same OWNER/MEMBER/COLLABORATOR set
+    # autonomy-supervisor.js already uses for trusted PR authorship): unlike workflow_run, nothing
+    # about this trigger required write access to fire — on a public repo, ANY account can comment on
+    # an open PR, so without this check anyone could repeatedly spend this repo's Actions minutes on
+    # demand with no write access at all. This is a CI-cost/availability guard only; it is not a
+    # security boundary for the gate decision itself, which is unaffected either way — the owner
+    # disposition check inside security-gate.js already independently requires author_association ==
+    # "OWNER" on the disposition comment specifically, regardless of who else can trigger a re-run.
+    if: >-
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null &&
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number > 0)
+    outputs:
+      pr_numbers: ${{ steps.resolve.outputs.pr_numbers }}
+    steps:
+      - id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_RUN_PULL_REQUESTS_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+          ISSUE_NUMBER_INPUT: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            workflow_run)
+              echo "pr_numbers=$(jq -c '[.[].number]' <<< "$WORKFLOW_RUN_PULL_REQUESTS_JSON")" >> "$GITHUB_OUTPUT"
+              ;;
+            issue_comment)
+              echo "pr_numbers=[$ISSUE_NUMBER_INPUT]" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unexpected event: $EVENT_NAME"
+              exit 1
+              ;;
+          esac
+
+  security-gate:
+    needs: resolve-pr
+    strategy:
+      fail-fast: false
+      matrix:
+        pr_number: ${{ fromJSON(needs.resolve-pr.outputs.pr_numbers) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # Fetched fresh here, never trusted from the triggering event payload: this is the one place
+      # that fixes the pull_requests[0] ambiguity described above — each matrix entry resolves its OWN
+      # head sha independently, so two PRs sharing a head branch can never have their results swapped.
+      - name: Resolve this pull request's current head commit
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER")"
+          echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
+      - name: Evaluate security gate
+        id: run
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: node scripts/security-gate.js
+      - name: Publish result against the pull request's head commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          conclusion="success"
+          if [ "${{ steps.run.outcome }}" != "success" ]; then conclusion="failure"; fi
+          gh api --method POST "repos/${{ github.repository }}/check-runs" \
+            -f "name=security-gate" \
+            -f "head_sha=${{ steps.pr.outputs.head_sha }}" \
+            -f "status=completed" \
+            -f "conclusion=$conclusion" > /dev/null
+      - name: Fail if the gate failed
+        if: steps.run.outcome != 'success'
+        run: exit 1
+
+  review-gate:
+    needs: resolve-pr
+    strategy:
+      fail-fast: false
+      matrix:
+        pr_number: ${{ fromJSON(needs.resolve-pr.outputs.pr_numbers) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Resolve this pull request's current head commit
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER")"
+          echo "head_sha=$(echo "$pr_json" | jq -r .head.sha)" >> "$GITHUB_OUTPUT"
+      - name: Evaluate review gate
+        id: run
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: node scripts/review-gate.js
+      - name: Publish result against the pull request's head commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          conclusion="success"
+          if [ "${{ steps.run.outcome }}" != "success" ]; then conclusion="failure"; fi
+          gh api --method POST "repos/${{ github.repository }}/check-runs" \
+            -f "name=review-gate" \
+            -f "head_sha=${{ steps.pr.outputs.head_sha }}" \
+            -f "status=completed" \
+            -f "conclusion=$conclusion" > /dev/null
+      - name: Fail if the gate failed
+        if: steps.run.outcome != 'success'
+        run: exit 1

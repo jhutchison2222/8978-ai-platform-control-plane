@@ -18,8 +18,12 @@ export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence
 export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
   ".github/workflows/autonomy-watchdog.yml",
+  ".github/workflows/merge-gates.yml",
+  ".github/workflows/dispatch-pr-merge-gate.yml",
   "scripts/autonomy-supervisor.js",
   "scripts/autonomy-watchdog.js",
+  "scripts/security-gate.js",
+  "scripts/review-gate.js",
 ];
 
 const SUCCESS_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
@@ -193,7 +197,11 @@ export function isSensitiveAutomationPath(path) {
   return SENSITIVE_AUTOMATION_PATHS.includes(path);
 }
 
-export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
+// Repository-wide conditions only: a genuine canonical #66 stop, or an unexpected non-canonical
+// stop issue. Deliberately excludes any single pull request's own state, so a required check built
+// on this (security-gate) fails every PR uniformly when #66 is a real emergency stop, but — unlike
+// securityStopReasons() below — never mixes in facts about PRs other than the one being evaluated.
+export function globalSecurityStopReasons({ issues, ownerLogin }) {
   const reasons = [];
   const stops = issues
     .filter((issue) => !issue.pull_request && issue.number === SECURITY_STOP_ISSUE_NUMBER);
@@ -232,15 +240,89 @@ export function securityStopReasons({ issues, pullRequests, changedFilesByPullRe
       );
     }
   }
-  for (const pr of pullRequests) {
-    const changedFiles = changedFilesByPullRequest.get(pr.number) ?? [];
-    const sensitive = [...new Set(changedFiles.flatMap((file) =>
-      [file.filename, file.previous_filename].filter((path) => isSensitiveAutomationPath(path))))];
-    if (sensitive.length > 0) {
-      reasons.push(`pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}`);
-    }
-  }
   return reasons;
+}
+
+// A single pull request's own protected-automation reason, or null. Deliberately takes one PR, not
+// a list — used both by securityStopReasons() below (looped over every open PR, for the #66 body)
+// and by security-gate (called with only the PR currently being evaluated), so that gate never sees
+// or is affected by any other PR's sensitive-path state.
+export function pullRequestSensitivePathReason(pr, changedFiles) {
+  const sensitive = [...new Set((changedFiles ?? []).flatMap((file) =>
+    [file.filename, file.previous_filename].filter((path) => isSensitiveAutomationPath(path))))];
+  return sensitive.length > 0 ? `pull request #${pr.number} changes protected automation: ${sensitive.join(", ")}` : null;
+}
+
+// Retained for direct testing/diagnostic use only: the full combined reason set across every open
+// pull request. NEITHER runWatchdog NOR runSupervisor feed this into ensureSecurityStop any more —
+// doing so was the actual bug behind a real merge deadlock: an ordinary pull request changing
+// protected automation would reopen the canonical #66 (a repository-wide stop), which then made
+// security-gate (which fails every PR while #66 is open) fail every open PR, including the very
+// protected-automation PR that caused it, with no exact-head owner disposition able to help because
+// the global check runs first. The producers now use globalSecurityStopReasons() (repository-wide
+// only) to drive #66, and pullRequestSensitivePathReason() per PR for everything else. Do not
+// reintroduce this function as #66's input in either producer.
+export function securityStopReasons({ issues, pullRequests, changedFilesByPullRequest, ownerLogin }) {
+  return [
+    ...globalSecurityStopReasons({ issues, ownerLogin }),
+    ...pullRequests.flatMap((pr) => {
+      const reason = pullRequestSensitivePathReason(pr, changedFilesByPullRequest.get(pr.number));
+      return reason ? [reason] : [];
+    }),
+  ];
+}
+
+// Marks an explicit, owner-made exception allowing one pull request's own protected-automation
+// change through security-gate, for its exact current head only. Deliberately bound to both the PR
+// number and the head SHA: a new commit changes head.sha, so any existing disposition comment's
+// marker no longer matches and the PR falls back to failing closed until a fresh one is posted.
+export function ownerDispositionMarker(prNumber, headSha) {
+  return `<!-- security-disposition: pr=${prNumber} head=${headSha.toLowerCase()} -->`;
+}
+
+// Finds a valid owner disposition for this exact PR and exact head among a list of issue comments.
+// Authenticity rests on two independent, non-forgeable-by-comment-body facts GitHub itself computes
+// server-side, not on anything in the comment text: author_association must be the literal "OWNER"
+// association (GitHub assigns this only to the repository's own owner account, never to a bot, a
+// collaborator, or anyone impersonating the owner by name), and the login must match. No automated
+// process (the supervisor, the watchdog, or any workflow using GITHUB_TOKEN) can produce a comment
+// with author_association "OWNER" — those post as SUPERVISOR_LOGIN ("github-actions[bot]"), which
+// GitHub always associates as "NONE" on a public repository, regardless of what the comment body says.
+export function findOwnerDisposition({ comments, prNumber, headSha, ownerLogin }) {
+  const expected = ownerDispositionMarker(prNumber, headSha);
+  return comments.find((comment) =>
+    typeof comment.body === "string" && comment.body.includes(expected) &&
+    comment.user?.login?.toLowerCase() === ownerLogin.toLowerCase() &&
+    comment.author_association === "OWNER") ?? null;
+}
+
+// The merge-gate decision for one pull request: fails closed on any genuine global stop (identical
+// for every PR, by design — see globalSecurityStopReasons), otherwise only on this PR's own
+// protected-automation change, and only when no valid, exact-head owner disposition covers it. An
+// unrelated PR's protected-automation change never appears here, because changedFiles/comments are
+// this PR's own and globalSecurityStopReasons() carries no per-PR information at all.
+export function securityGateDecision({ issues, pr, changedFiles, comments, ownerLogin }) {
+  const globalReasons = globalSecurityStopReasons({ issues, ownerLogin });
+  if (globalReasons.length > 0) return { ok: false, reasons: globalReasons };
+  const sensitiveReason = pullRequestSensitivePathReason(pr, changedFiles);
+  if (!sensitiveReason) return { ok: true, reasons: [] };
+  const disposition = findOwnerDisposition({ comments, prNumber: pr.number, headSha: pr.head.sha, ownerLogin });
+  if (disposition) return { ok: true, reasons: [] };
+  return { ok: false, reasons: [sensitiveReason] };
+}
+
+// The merge-gate decision for a PR's review state: requires the canonical exact-head Claude verdict
+// (see exactHeadClaudeVerdict — the same logic the supervisor already uses, not a second parser) to
+// be "accepted" for the PR's current head.sha, and zero unresolved review threads. Because the
+// verdict lookup filters reviews to commit_id === the PASSED headSha, a push after acceptance changes
+// head.sha and the next evaluation call (with the new head.sha) immediately finds no matching review,
+// so this fails closed on its own without any extra staleness bookkeeping.
+export function reviewGateDecision({ reviews, headSha, reviewThreads }) {
+  const verdict = exactHeadClaudeVerdict(reviews, headSha);
+  if (verdict !== "accepted") return { ok: false, reasons: [`exact-head Claude verdict is "${verdict}", not "accepted"`] };
+  const unresolved = (reviewThreads ?? []).filter((thread) => !thread.isResolved);
+  if (unresolved.length > 0) return { ok: false, reasons: [`${unresolved.length} unresolved review thread(s)`] };
+  return { ok: true, reasons: [] };
 }
 
 export async function fetchSecurityStop(api) {
@@ -278,6 +360,7 @@ export async function inspectPullRequestFiles(api, pullRequests) {
   return {
     changedFilesByPullRequest: new Map(inspections.map(({ number, files }) => [number, files])),
     failures: inspections.flatMap(({ failure }) => failure ? [failure] : []),
+    failedPullRequestNumbers: new Set(inspections.filter(({ failure }) => failure).map(({ number }) => number)),
   };
 }
 
@@ -704,28 +787,43 @@ export async function runSupervisor({
     readFileImpl(".github/workflows/autonomy-supervisor.yml", "utf8"),
     readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
-  // Must compute the exact same persistentReasons the watchdog computes (localBoundaryViolations
-  // plus securityStopReasons) — not a supervisor-only subset — so the two schedulers that share
-  // #66 never feed ensureSecurityStop two different reason sets and overwrite each other's body
-  // every run. See the comment on localBoundaryViolations above.
-  const persistentReasons = [
+  const ownerLogin = repository.split("/", 1)[0];
+  // Must compute the exact same global reasons the watchdog computes (localBoundaryViolations plus
+  // globalSecurityStopReasons) — not a supervisor-only subset — so the two schedulers that share #66
+  // never feed ensureSecurityStop two different reason sets and overwrite each other's body every
+  // run. See the comment on localBoundaryViolations above. Deliberately excludes any individual pull
+  // request's own state: a PR editing protected automation is that PR's own condition, handled below
+  // on a per-PR basis (and by security-gate at merge time), never a reason to open the
+  // repository-wide canonical stop and halt supervision of every unrelated PR. (globalSecurityStopReasons
+  // was split out of the old combined securityStopReasons specifically to fix this: the combined
+  // function used here would reopen #66 for any ordinary protected-automation PR, which then made the
+  // merge-time security-gate — which fails-closed whenever #66 is open — fail every open PR, including
+  // the very protected-automation PR that caused it, with no exact-head disposition able to help
+  // because the global check runs first. securityStopReasons() itself is retained only for direct
+  // testing/diagnostic use; it must not be reintroduced here or in runWatchdog.)
+  const globalReasons = [
     ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
-    ...securityStopReasons({
-      issues: [securityStop, ...otherStops],
-      pullRequests,
-      changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
-      ownerLogin: repository.split("/", 1)[0],
-    }),
+    ...globalSecurityStopReasons({ issues: [securityStop, ...otherStops], ownerLogin }),
   ];
-  const reasons = [...persistentReasons, ...fileInspections.failures];
-  if (reasons.length > 0) {
-    await ensureSecurityStop(api, persistentReasons, securityStop);
-    console.error(`Autonomous dispatch stopped: ${reasons.join("; ")}`);
+  await ensureSecurityStop(api, globalReasons, securityStop);
+  if (globalReasons.length > 0) {
+    console.error(`Autonomous dispatch stopped: ${globalReasons.join("; ")}`);
     return;
   }
-  const errors = await runAllIsolated(pullRequests,
-    (pr) => supervisePullRequest({ api, agent, nowMs, pr }),
-    (error) => console.error("Pull request supervision failed:", error));
+  // A pull request whose files could not be inspected, or that changes protected automation itself,
+  // is skipped individually here — never treated as a reason to stop supervising every other PR.
+  const errors = await runAllIsolated(pullRequests, (pr) => {
+    if (fileInspections.failedPullRequestNumbers.has(pr.number)) {
+      console.error(`pull request #${pr.number} changed files could not be inspected; dispatch is deferred for this cycle`);
+      return;
+    }
+    const sensitiveReason = pullRequestSensitivePathReason(pr, fileInspections.changedFilesByPullRequest.get(pr.number));
+    if (sensitiveReason) {
+      console.error(`pull request #${pr.number} supervision deferred: ${sensitiveReason}`);
+      return;
+    }
+    return supervisePullRequest({ api, agent, nowMs, pr });
+  }, (error) => console.error("Pull request supervision failed:", error));
   try {
     await superviseTaskQueue({ api, agent, nowMs, pullRequests });
   } catch (error) {
