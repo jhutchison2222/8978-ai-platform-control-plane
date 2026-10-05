@@ -42,3 +42,6 @@ export async function runSecurityGate({
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   await runSecurityGate();
 }
+
+// Staleness proof (Part G, second proof PR): harmless comment-only change to a
+// protected-automation path. No functional change.
