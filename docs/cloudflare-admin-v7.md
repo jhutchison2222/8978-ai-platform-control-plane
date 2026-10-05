@@ -145,3 +145,5 @@ npm run check
 npm run secret-scan
 npm run cf:admin-v7:dry-run
 ```
+
+<!-- governance probe: harmless no-op comment, branch-protection enforcement test, see issue tracking Part G -->

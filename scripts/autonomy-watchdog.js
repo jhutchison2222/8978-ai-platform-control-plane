@@ -6,9 +6,9 @@ import {
   ensureSecurityStop,
   fetchOtherSecurityStops,
   fetchSecurityStop,
+  globalSecurityStopReasons,
   inspectPullRequestFiles,
   localBoundaryViolations,
-  securityStopReasons,
   topLevelPermissions,
 } from "./autonomy-supervisor.js";
 
@@ -43,12 +43,16 @@ export async function runWatchdog({
     readFileImpl(".github/workflows/autonomy-watchdog.yml", "utf8"),
   ]);
   const fileInspections = await inspectPullRequestFiles(api, pullRequests);
+  // Deliberately global-only: an individual pull request's own protected-automation change must
+  // never cause the canonical #66 to open. #66 is the repository-wide stop; a PR-specific condition
+  // is security-gate's job alone (see securityGateDecision), scoped to that one PR, so that PR A
+  // changing protected automation can never block supervision/dispatch for unrelated PR B, and can
+  // never create the merge deadlock a global stop would (a protected-automation PR could never pass
+  // its own gate if merely touching that path reopened the very issue the gate checks).
   const persistentReasons = [
     ...localBoundaryViolations({ supervisorWorkflow, watchdogWorkflow }),
-    ...securityStopReasons({
+    ...globalSecurityStopReasons({
       issues: [securityStop, ...otherStops],
-      pullRequests,
-      changedFilesByPullRequest: fileInspections.changedFilesByPullRequest,
       ownerLogin: repository.split("/", 1)[0],
     }),
   ];
