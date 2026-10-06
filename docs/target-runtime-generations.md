@@ -88,15 +88,18 @@ retroactively to Generation 1's own protected files (`package.json`, `package-lo
    undeclared transitive dependency.** If code imports a package directly, that package is declared
    directly, in the package.json of whichever install actually provides it at resolution time — not
    assumed to be present because some other dependency happens to pull it in. This is the defect
-   issue #77 identified: `scripts/verify-target-runtime-closure.js` imports `es-module-lexer`
-   directly, but as of this document, package.json declares no `es-module-lexer` dependency of its
-   own — it resolves only because `vitest` happens to pull it in as a transitive, hoisted dependency.
-   If `vitest`'s own `es-module-lexer` range ever changes, or npm's hoisting picks a different
-   version, the closure verifier would silently resolve a different, undeclared version with no
-   package.json diff to flag it in review. Remediating this — isolating the parser into its own
-   sub-package with `es-module-lexer` declared as an exact-pinned, direct dependency — is tracked as
-   a separate, independently reviewed companion change; this rule states the requirement that
-   remediation must satisfy regardless of when it lands.
+   issue #77 identified (closed): `scripts/verify-target-runtime-closure.js` imports `es-module-lexer`
+   directly, and package.json originally declared no `es-module-lexer` dependency of its own — it
+   resolved only because `vitest` happened to pull it in as a transitive, hoisted dependency. If
+   `vitest`'s own `es-module-lexer` range ever changed, or npm's hoisting picked a different version,
+   the closure verifier would have silently resolved a different, undeclared version with no
+   package.json diff to flag it in review. Remediated by isolating the parser into its own
+   sub-package (`tools/target-runtime-verifier/`), with `es-module-lexer` declared there as an
+   exact-pinned, direct dependency (`2.3.1`), independently locked from the root repository's
+   dependency snapshot — deliberately, so Generation 1's own protected `package.json` never needed to
+   be rewritten to fix a tooling dependency (see "Generation 1" above for why that file is never
+   edited). This rule states the requirement every current and future verifier/tooling dependency must
+   continue to satisfy, not only the one issue #77 identified.
 3. **Lockfiles are committed** for every package.json in the repository, root and sub-package alike.
 4. **CI installs only with `npm ci` (or equivalent deterministic installation), never
    `npm install`.** `npm install` re-resolves ranges against the registry and can silently rewrite
