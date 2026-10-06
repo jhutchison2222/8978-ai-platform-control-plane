@@ -96,8 +96,15 @@ export class CloudflareAdminV7Api {
     return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/${versionId}`));
   }
 
+  // Cloudflare documents no "versions/latest" path; the list endpoint's own documentation states
+  // "The first version in the list is the latest version", so that is how the latest ID is
+  // obtained. The list response carries only summary fields (id, number, metadata) — never
+  // resources (bindings, script, script_runtime) or annotations — so the latest ID is then passed
+  // through the single-version GET to get the full detail every caller of this method relies on.
   async getLatestWorkerVersion() {
-    return this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`));
+    const { items } = await this.#request("GET", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions`));
+    if (!Array.isArray(items) || items.length === 0) throw new Error(`${CLOUDFLARE_ADMIN_V7.workerName} has no versions`);
+    return this.getWorkerVersion(items[0].id);
   }
 
   async createWorkerDeployment(versionId, reviewedCommit) {
@@ -129,10 +136,6 @@ export class CloudflareAdminV7Api {
 
   async listWorkerScripts() {
     return this.#request("GET", this.#accountPath("/workers/scripts"));
-  }
-
-  async getWorkerService() {
-    return this.#request("GET", this.#accountPath(`/workers/services/${CLOUDFLARE_ADMIN_V7.workerName}`));
   }
 
   async getAccountWorkersSubdomain() {
@@ -234,8 +237,62 @@ export class CloudflareAdminV7Api {
     );
   }
 
+  // UNDOCUMENTED CLOUDFLARE ENDPOINT — tracked for re-verification in issue #87. Cloudflare's public API reference
+  // (developers.cloudflare.com/api/) documents no PATCH on any /workers/.../versions resource, under
+  // either /workers/scripts/ or /workers/workers/. This exact method/path/body is confirmed only by
+  // reading Cloudflare's own first-party client, wrangler, directly — independently checkable at the
+  // permalink below, not just asserted here:
+  //   https://github.com/cloudflare/workers-sdk/blob/c82d96ba63a3b343b520e781a070889251868d9a/packages/wrangler/src/versions/secrets/index.ts#L80-L95
+  //   (PR #14448 "WC-5290 Use PATCH APIs for 'wrangler versions secret' commands", 2026-07-20)
+  // Verbatim from that file:
+  //   export async function patchLatestWorkerVersionWithSecrets({ ..., scriptName, ... }) {
+  //     return await fetchResult(config,
+  //       `/accounts/${accountId}/workers/workers/${scriptName}/versions/latest`,
+  //       { method: "PATCH", ... });
+  //   }
+  // scriptName's type at the only two call sites (packages/wrangler/src/versions/secrets/put.ts#L47,
+  // bulk.ts#L45 at the same commit) is the return value of wrangler's own getLegacyScriptName(args,
+  // config) — the CLI's --name / wrangler.toml `name` helper used throughout wrangler for the
+  // human-readable Worker name — NOT a 32-hex ID. This is NOT the 32-hex immutable ID that
+  // getWorkerById() below requires. The /workers/workers/ collection is keyed by "ID or name" per
+  // Cloudflare's own docs for the single-worker GET; getWorkerById()'s stricter
+  // requireImmutableWorkerId() check is this codebase's own self-imposed constraint for that specific
+  // identity-confirmation call site, not a universal requirement of the collection — wrangler's own
+  // use of the plain name on this exact sub-resource, verifiable at the permalink above, is the
+  // concrete evidence for what this particular PATCH endpoint accepts. Reaching a live Cloudflare
+  // account to re-confirm this independently of wrangler's source is out of scope here (no production/
+  // customer Cloudflare calls from this environment); the wrangler source permalink is the verification
+  // this project relies on, and issue #87 is where that gets redone if this ever needs re-checking
+  // against a real account.
+  // Both fully documented alternatives were checked against this flow's required semantics (new
+  // version; install only this one secret; preserve reviewed code/modules/every other binding/
+  // annotation; do NOT deploy; return the new version id) and neither can satisfy them:
+  //   - PUT /accounts/{id}/workers/scripts/{name}/secrets (developers.cloudflare.com/api/resources/
+  //     workers/subresources/scripts/subresources/secrets/methods/update/) takes only the secret's
+  //     name/type/text — nothing to preserve code or other bindings with — but per Cloudflare's own
+  //     docs (developers.cloudflare.com/workers/configuration/secrets/) this is the mechanism behind
+  //     `wrangler secret put`, which "creates a new version of the Worker and deploys it immediately."
+  //     That is the one disqualifying property: it violates "do NOT deploy," unconditionally, by
+  //     design — not a request-shape difference, a different operation entirely.
+  //   - POST /accounts/{id}/workers/scripts/{name}/versions (developers.cloudflare.com/api/operations/
+  //     worker-versions-upload-version) does not deploy, and does support a secret_text binding plus
+  //     annotations — but it requires the full Worker script as an uploaded multipart module set in
+  //     every call ("an array of modules... with at least one module present"); it has no mode that
+  //     takes zero code and only patches one binding onto whatever the latest version already is.
+  //     bindings_inherit can carry over other *bindings* without restating them, but the code modules
+  //     themselves must still be resubmitted each call. This codebase's service-auth activation flow
+  //     does not hold the Worker's script bundle at this call site at all (only reviewedCommit and
+  //     configurationSha256) — using this endpoint would mean reconstructing or re-fetching unverified
+  //     code to satisfy a request shape this flow was never designed to carry, exactly the condition
+  //     under which an undocumented mechanism was to be preferred instead of forcing a documented one.
+  // Both failures are structural, not incidental, so the undocumented wrangler-confirmed PATCH is kept
+  // as a deliberate, bounded, tracked external dependency (issue #87), not a stopgap pending a
+  // documented replacement — there isn't one that preserves this flow's semantics.
+  // If Cloudflare changes or removes this path, the request fails closed: #request() throws on any
+  // response status other than its expected list, so a 404/405/400 here surfaces as a thrown
+  // CloudflareApiError, never a silent no-op.
   async createServiceAuthVersion(secretJson, reviewedCommit, configurationSha256) {
-    return this.#request("PATCH", this.#accountPath(`/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
+    return this.#request("PATCH", this.#accountPath(`/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`), {
       contentType: "application/merge-patch+json",
       body: {
         env: {

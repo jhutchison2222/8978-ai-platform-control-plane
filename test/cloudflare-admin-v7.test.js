@@ -52,6 +52,8 @@ test("v7 target contract rejects arbitrary and production targets", () => {
   assert.doesNotThrow(() => requireExactApproval("runCanary", WRITE_APPROVALS.runCanary));
 });
 
+const LATEST_VERSION_ID = "11111111-2222-3333-4444-555555555555";
+
 test("Cloudflare API adapter pins account and exposes only fixed operations with redirect rejection", async () => {
   assert.throws(() => new CloudflareAdminV7Api({ apiToken: "x".repeat(30), accountId: "wrong" }), /pinned development account/);
   const requests = [];
@@ -59,24 +61,99 @@ test("Cloudflare API adapter pins account and exposes only fixed operations with
     apiToken: "x".repeat(30),
     fetchImpl: async (url, init) => {
       requests.push({ url, init });
-      return response([]);
+      // getLatestWorkerVersion() lists versions (summary fields only), then GETs the first item's
+      // ID for full detail (Cloudflare documents no "versions/latest" GET); every other call in
+      // this test ignores the body.
+      return response(url.endsWith("/versions") ? { items: [{ id: LATEST_VERSION_ID }] } : { id: LATEST_VERSION_ID });
     },
   });
   assert.equal("request" in api, false);
   assert.equal("accountPath" in api, false);
-  const latestVersionUrl =
-    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`;
+  const versionsListUrl =
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/scripts/${CLOUDFLARE_ADMIN_V7.workerName}/versions`;
+  const versionGetUrl = `${versionsListUrl}/${LATEST_VERSION_ID}`;
+  // Cloudflare documents no PATCH under /workers/scripts/.../versions/latest; this mirrors
+  // wrangler's own "wrangler versions secret" implementation, which patches the newer
+  // /workers/workers/ collection instead.
+  const patchLatestVersionUrl =
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`;
   await api.listWorkerSecrets();
   assert.equal(requests[0].init.redirect, "error");
   assert.equal(requests[0].url.includes(CLOUDFLARE_ADMIN_V7.accountId), true);
   await api.getLatestWorkerVersion();
   assert.equal(requests[1].init.method, "GET");
-  assert.equal(requests[1].url, latestVersionUrl);
+  assert.equal(requests[1].url, versionsListUrl);
+  assert.equal(requests[2].init.method, "GET");
+  assert.equal(requests[2].url, versionGetUrl);
   await api.createServiceAuthVersion("{}", "a".repeat(40), "b".repeat(64));
-  assert.equal(requests[2].url, latestVersionUrl);
-  assert.equal(requests[2].init.method, "PATCH");
-  assert.equal(requests[2].init.headers.get("content-type"), "application/merge-patch+json");
-  assert.equal(requests.some(({ url }) => url.includes("/workers/workers/")), false);
+  assert.equal(requests[3].url, patchLatestVersionUrl);
+  assert.equal(requests[3].init.method, "PATCH");
+  assert.equal(requests[3].init.headers.get("content-type"), "application/merge-patch+json");
+});
+
+// Cloudflare API contract hardening (Part E): confirmed against the real "list versions" endpoint
+// (no "versions/latest" GET is documented) — the first item in the list is the latest version, but
+// the list response carries only summary fields (id, number, metadata), never resources
+// (bindings/script/script_runtime) or annotations. The latest ID is resolved, then passed through
+// the single-version GET for the full detail every caller of this method relies on.
+test("getLatestWorkerVersion resolves the latest ID from the list, then fetches its full detail", async () => {
+  const requests = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url) => {
+      requests.push(url);
+      if (url.endsWith("/versions")) {
+        // The list item deliberately carries ONLY summary fields — no resources, no annotations —
+        // matching Cloudflare's documented list response shape exactly.
+        return response({ items: [{ id: LATEST_VERSION_ID, number: 7, metadata: { author_email: "a@b.c" } }, { id: "older" }] });
+      }
+      // The full-detail GET carries the fields downstream security checks actually read.
+      return response({ id: LATEST_VERSION_ID, resources: { bindings: [{ name: "X" }] }, annotations: { "workers/message": "hi" } });
+    },
+  });
+  const latest = await api.getLatestWorkerVersion();
+  assert.equal(latest.id, LATEST_VERSION_ID, "must resolve to the first (latest) item in the list, not a later one");
+  assert.deepEqual(latest.resources?.bindings, [{ name: "X" }], "full detail, not the list's summary fields, must be returned");
+  assert.deepEqual(latest.annotations, { "workers/message": "hi" });
+  assert.equal(requests.length, 2, "exactly one list call and one single-version detail call");
+
+  const emptyApi = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async () => response({ items: [] }),
+  });
+  await assert.rejects(() => emptyApi.getLatestWorkerVersion(), /has no versions/);
+});
+
+// Pins createServiceAuthVersion()'s exact method/path/body against an undocumented Cloudflare
+// endpoint, confirmed only by reading wrangler's own source directly (cloudflare/workers-sdk @
+// c82d96ba63a3b343b520e781a070889251868d9a, packages/wrangler/src/versions/secrets/index.ts,
+// patchLatestWorkerVersionWithSecrets() — not an agent paraphrase, the file was fetched and read).
+// That source proves the path segment is the Worker's human-readable NAME, not its 32-hex immutable
+// ID (contrary to how getWorkerById()'s own stricter, self-imposed validation might suggest) — this
+// test exists specifically to catch anyone "fixing" this back to the ID under that assumption.
+test("createServiceAuthVersion PATCHes workers/workers/{name}/versions/latest with the wrangler-confirmed body shape", async () => {
+  const requests = [];
+  const api = new CloudflareAdminV7Api({
+    apiToken: "x".repeat(30),
+    fetchImpl: async (url, init) => {
+      requests.push({ url, init });
+      return response({ id: LATEST_VERSION_ID });
+    },
+  });
+  await api.createServiceAuthVersion("{\"k\":\"v\"}", "a".repeat(40), "b".repeat(64));
+  assert.equal(requests.length, 1);
+  const { url, init } = requests[0];
+  assert.equal(
+    url,
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ADMIN_V7.accountId}/workers/workers/${CLOUDFLARE_ADMIN_V7.workerName}/versions/latest`,
+    "must use the Worker's human-readable name, not its immutable ID, in this exact sub-resource path",
+  );
+  assert.equal(init.method, "PATCH");
+  assert.equal(init.headers.get("content-type"), "application/merge-patch+json");
+  const body = JSON.parse(init.body);
+  assert.deepEqual(Object.keys(body).sort(), ["annotations", "env"]);
+  assert.deepEqual(body.env[CLOUDFLARE_ADMIN_V7.serviceAuthSecretName], { type: "secret_text", text: "{\"k\":\"v\"}" });
+  assert.equal(body.annotations["workers/message"], `8978-activated:${"a".repeat(40)}:${"b".repeat(64)}`);
 });
 
 // Mirrors the bug found and fixed in the owner-run Phase 2 verifier: CLOUDFLARE_ADMIN_API_TOKEN is
