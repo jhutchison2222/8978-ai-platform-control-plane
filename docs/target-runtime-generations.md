@@ -88,9 +88,9 @@ retroactively to Generation 1's own protected files (`package.json`, `package-lo
    undeclared transitive dependency.** If code imports a package directly, that package is declared
    directly, in the package.json of whichever install actually provides it at resolution time — not
    assumed to be present because some other dependency happens to pull it in. This is the defect
-   issue #77 identified (closed): `scripts/verify-target-runtime-closure.js` imports `es-module-lexer`
-   directly, and package.json originally declared no `es-module-lexer` dependency of its own — it
-   resolved only because `vitest` happened to pull it in as a transitive, hoisted dependency. If
+   issue #77 identified (closed): `scripts/verify-target-runtime-closure.js` imported `es-module-lexer`
+   directly, and package.json declared no `es-module-lexer` dependency of its own — it resolved only
+   because `vitest` happened to pull it in as a transitive, hoisted dependency. If
    `vitest`'s own `es-module-lexer` range ever changed, or npm's hoisting picked a different version,
    the closure verifier would have silently resolved a different, undeclared version with no
    package.json diff to flag it in review. Remediated by isolating the parser into its own
