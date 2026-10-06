@@ -42,3 +42,9 @@ export async function runSecurityGate({
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   await runSecurityGate();
 }
+
+// Staleness proof (Part G, second proof PR): harmless comment-only change to a
+// protected-automation path. No functional change.
+// Scenario C/F: a second harmless commit, pushed to prove the exact-head review
+// acceptance/rejection AND the exact-head owner disposition both go stale automatically
+// once head.sha changes, with no separate invalidation logic needed on either side.
