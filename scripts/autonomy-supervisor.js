@@ -118,6 +118,24 @@ export function checkState(checkRuns) {
   return ciRuns.every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion)) ? "passed" : "failed";
 }
 
+const REVIEW_GATE_CHECK_NAME = "review-gate";
+
+// review-gate's own check-run reports "failure" whenever no accepted exact-head Claude verdict
+// exists yet — which is the normal starting state of every review cycle, not an edge case. Once
+// review-gate became a real required check (Part G), checkState() started folding that into the
+// PR's overall "failed" state, which made nextPullRequestAction's generic checks-failed dispatch
+// path trigger before the bounded Claude-request retry sequence below it was ever reached — attempts
+// 2 and 3 became structurally unreachable, because attempt 1 alone never clears review-gate's own
+// failing conclusion. This distinguishes that one specific case — review-gate failing while every
+// other CI run already passed — from a genuine failure elsewhere, which must still fail closed via
+// the existing generic path unchanged.
+export function isOnlyReviewGateFailing(checkRuns) {
+  const ciRuns = Array.isArray(checkRuns) ? checkRuns.filter((run) => !NON_CI_CHECK_NAMES.has(run.name)) : [];
+  const reviewGateRuns = ciRuns.filter((run) => run.name === REVIEW_GATE_CHECK_NAME);
+  if (reviewGateRuns.length === 0 || reviewGateRuns.some((run) => SUCCESS_CONCLUSIONS.has(run.conclusion))) return false;
+  return ciRuns.filter((run) => run.name !== REVIEW_GATE_CHECK_NAME).every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion));
+}
+
 function acceptedReview(review, previousAccepted = false) {
   if (!review || review.state === "CHANGES_REQUESTED" || review.state === "DISMISSED") return false;
   if (review.state === "APPROVED") return true;
@@ -444,7 +462,7 @@ export async function runAllIsolated(items, handler, onError = console.error) {
 export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
-  if (checks === "failed") {
+  if (checks === "failed" && !isOnlyReviewGateFailing(checkRuns)) {
     const latestCompletion = Math.max(...checkRuns
       .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
       .map((run) => Date.parse(run.completed_at ?? 0)));
