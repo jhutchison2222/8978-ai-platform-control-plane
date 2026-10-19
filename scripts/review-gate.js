@@ -37,3 +37,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 // Post-bootstrap governance proof (Part G Step 1): harmless comment-only change to a
 // protected-automation path, used solely to exercise security-gate/review-gate end to end
 // against the now-merged trusted implementation. No functional change.
+//
+// Stage-1 re-verification (post PR #95 retry-path fix): another harmless comment-only
+// change, used to prove the repaired review-gate retry path end to end without ever
+// closing/reopening this PR mid-lifecycle. No functional change.
