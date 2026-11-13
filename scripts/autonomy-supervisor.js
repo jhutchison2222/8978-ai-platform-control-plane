@@ -31,8 +31,19 @@ const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const ACCEPTED_REVIEW = /^ACCEPTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})\s*[—:-]\s*no surviving actionable findings[.]?$/iu;
 const REJECTED_REVIEW = /^REJECTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})[.]?$/iu;
-const CLEAR_INITIAL_REVIEW = /^\s*(?:ACCEPTED|APPROVED|\*\*code review found no issues\*\*\s*no high-confidence issues detected in this change|no (?:high-confidence |actionable |blocking )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: in this change)?|i reviewed this pr and (?:did not|didn['’]t) find any (?:issues|errors|bugs))[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
-const CLEAR_REREVIEW = /^\s*(?:\*\*code review completed\*\*\s*)?nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
+// Claude Code Review appends its own trailing HTML-comment metadata markers (currently seen:
+// bhrv:<hash>, bhfs:<hash>) after the verdict text; the set and order of these bot-generated
+// markers is not under this repo's control and has changed before. Tolerate any number of them,
+// in any order, without loosening what verdict text itself is accepted.
+const TRAILING_REVIEW_MARKERS = /(?:<!--\s*(?:bhrv|bhfs):[0-9a-f]+\s*-->\s*)*/iu.source;
+const CLEAR_INITIAL_REVIEW = new RegExp(
+  `^\\s*(?:ACCEPTED|APPROVED|\\*\\*code review found no issues\\*\\*\\s*no high-confidence issues detected in this change|no (?:high-confidence |actionable |blocking )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: in this change)?|i reviewed this pr and (?:did not|didn['’]t) find any (?:issues|errors|bugs))[.!]?\\s*${TRAILING_REVIEW_MARKERS}\\s*$`,
+  "iu",
+);
+const CLEAR_REREVIEW = new RegExp(
+  `^\\s*(?:\\*\\*code review completed\\*\\*\\s*)?nothing new to post(?::\\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\\s*${TRAILING_REVIEW_MARKERS}\\s*$`,
+  "iu",
+);
 const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
 const PRIOR_FINDINGS_FIXED = [
   /\b(?:fix(?:es|ed)?|address(?:es|ed)?|resolv(?:es|ed)?) all (?:the )?(?:previously[- ](?:reported|flagged) )?(?:\w+ )*(?:issues|errors|bugs|findings)\b/iu,
@@ -116,6 +127,24 @@ export function checkState(checkRuns) {
   if (ciRuns.length === 0) return "pending";
   if (ciRuns.some((run) => run.status !== "completed")) return "pending";
   return ciRuns.every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion)) ? "passed" : "failed";
+}
+
+const REVIEW_GATE_CHECK_NAME = "review-gate";
+
+// review-gate's own check-run reports "failure" whenever no accepted exact-head Claude verdict
+// exists yet — which is the normal starting state of every review cycle, not an edge case. Once
+// review-gate became a real required check (Part G), checkState() started folding that into the
+// PR's overall "failed" state, which made nextPullRequestAction's generic checks-failed dispatch
+// path trigger before the bounded Claude-request retry sequence below it was ever reached — attempts
+// 2 and 3 became structurally unreachable, because attempt 1 alone never clears review-gate's own
+// failing conclusion. This distinguishes that one specific case — review-gate failing while every
+// other CI run already passed — from a genuine failure elsewhere, which must still fail closed via
+// the existing generic path unchanged.
+export function isOnlyReviewGateFailing(checkRuns) {
+  const ciRuns = Array.isArray(checkRuns) ? checkRuns.filter((run) => !NON_CI_CHECK_NAMES.has(run.name)) : [];
+  const reviewGateRuns = ciRuns.filter((run) => run.name === REVIEW_GATE_CHECK_NAME);
+  if (reviewGateRuns.length === 0 || reviewGateRuns.some((run) => SUCCESS_CONCLUSIONS.has(run.conclusion))) return false;
+  return ciRuns.filter((run) => run.name !== REVIEW_GATE_CHECK_NAME).every((run) => SUCCESS_CONCLUSIONS.has(run.conclusion));
 }
 
 function acceptedReview(review, previousAccepted = false) {
@@ -444,7 +473,7 @@ export async function runAllIsolated(items, handler, onError = console.error) {
 export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
-  if (checks === "failed") {
+  if (checks === "failed" && !isOnlyReviewGateFailing(checkRuns)) {
     const latestCompletion = Math.max(...checkRuns
       .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
       .map((run) => Date.parse(run.completed_at ?? 0)));
@@ -670,6 +699,15 @@ function idempotencyKey(repository, subject, headSha, reason) {
   return `autonomy-${createHash("sha256").update(`${repository}:${subject}:${headSha}:${reason}`).digest("hex")}`;
 }
 
+export function claudeReviewRequestBody({ attempt, headSha }) {
+  return [
+    "@claude review",
+    "",
+    marker(`claude-request-${attempt}`, headSha),
+    `Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+  ].join("\n");
+}
+
 async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
   const headSha = pr.head.sha;
   if (hasMarker(comments, `dispatch-${reason}`, headSha)) return;
@@ -709,7 +747,7 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (action.kind === "wait") return;
   if (action.kind === "request-review") {
     await api.post(`/issues/${pr.number}/comments`, {
-      body: `${marker(`claude-request-${action.attempt}`, headSha)}\n@claude Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${action.attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+      body: claudeReviewRequestBody({ attempt: action.attempt, headSha }),
     });
     return;
   }

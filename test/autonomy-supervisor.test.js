@@ -17,6 +17,7 @@ import {
   blockedLabelAction,
   checkState,
   claudeRequests,
+  claudeReviewRequestBody,
   ensureLabels,
   ensureSecurityStop,
   exactHeadClaudeVerdict,
@@ -26,6 +27,7 @@ import {
   hasMarker,
   hasPullRequestForTask,
   inspectPullRequestFiles,
+  isOnlyReviewGateFailing,
   linkedPullRequestPausesTask,
   marker,
   nextPullRequestAction,
@@ -53,9 +55,18 @@ const review = (body, overrides = {}) => ({
 });
 const request = (createdAt, attempt = 1, overrides = {}) => ({
   user: { login: SUPERVISOR_LOGIN },
-  body: `${marker(`claude-request-${attempt}`, HEAD)}\n@claude exact ${HEAD}`,
+  body: claudeReviewRequestBody({ attempt, headSha: HEAD }),
   created_at: createdAt,
   ...overrides,
+});
+
+test("automated Claude review requests begin with the hosted reviewer trigger and preserve the verdict contract", () => {
+  const body = claudeReviewRequestBody({ attempt: 2, headSha: HEAD });
+  assert.equal(body.split("\n")[0], "@claude review");
+  assert.ok(body.includes(marker("claude-request-2", HEAD)));
+  assert.ok(body.includes(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`));
+  assert.ok(body.includes(`REJECTED — exact head ${HEAD}`));
+  assert.match(body, /automated attempt 2 of 3/u);
 });
 
 test("workflow is scheduled and least-privilege", async () => {
@@ -100,6 +111,7 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("LGTM")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("looks good")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("**Code review found no issues**\n\nNo high-confidence issues detected in this change.\n\n<!-- bhrv:abc123 -->")], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([review("**Code review found no issues**\n\nNo high-confidence issues detected in this change.\n\n<!-- bhfs:35f6691a1e419782d25bd7d514a7ee55ba9fe17bd9d40b91 -->\n\n<!-- bhrv:7cc244d655ea7762 -->")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("I reviewed this PR and didn't find any bugs.")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("No blocking issues found.")], HEAD), "accepted");
   assert.equal(exactHeadClaudeVerdict([review("Nothing new to post")], HEAD), "inconclusive");
@@ -683,6 +695,124 @@ test("event-triggered dispatch receives a ten-minute head start", () => {
   assert.deepEqual(nextPullRequestAction({ checkRuns: recentFailure, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "wait", reason: "event-dispatch-fallback-delay" });
   const recentAcceptance = review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`, { submitted_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS + 1).toISOString() });
   assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [recentAcceptance] }), { kind: "wait", reason: "event-dispatch-fallback-delay" });
+});
+
+// review-gate's own check-run fails whenever no accepted exact-head Claude verdict exists yet — the
+// normal starting state of every review cycle, not an edge case. Before this fix, checkState()
+// folding that into the PR's overall "failed" state made the generic checks-failed dispatch path
+// trigger before the bounded Claude-request retry sequence was ever reached, so attempts 2 and 3
+// were structurally unreachable. These tests pin the corrected behavior directly.
+const allGreenExceptReviewGate = [
+  { name: "test", status: "completed", conclusion: "success" },
+  { name: "guard", status: "completed", conclusion: "success" },
+  { name: "supervise", status: "completed", conclusion: "success" },
+  { name: "dispatch", status: "completed", conclusion: "success" },
+  { name: "security-gate", status: "completed", conclusion: "success" },
+  { name: "review-gate", status: "completed", conclusion: "failure", completed_at: "2026-09-01T17:30:00Z" },
+];
+
+test("isOnlyReviewGateFailing distinguishes a review-gate-only failure from any other real failure", () => {
+  assert.equal(isOnlyReviewGateFailing(allGreenExceptReviewGate), true);
+  assert.equal(isOnlyReviewGateFailing(checks), false, "no review-gate run at all is not \"only review-gate failing\"");
+  assert.equal(isOnlyReviewGateFailing([
+    ...allGreenExceptReviewGate.filter((run) => run.name !== "test"),
+    { name: "test", status: "completed", conclusion: "failure" },
+  ]), false, "a second genuinely failing check must not be masked");
+  assert.equal(isOnlyReviewGateFailing([
+    ...allGreenExceptReviewGate.filter((run) => run.name !== "security-gate"),
+    { name: "security-gate", status: "completed", conclusion: "failure" },
+  ]), false, "security-gate failing alongside review-gate must not be masked");
+  assert.equal(isOnlyReviewGateFailing([
+    ...allGreenExceptReviewGate.filter((run) => run.name !== "review-gate"),
+    { name: "review-gate", status: "completed", conclusion: "success" },
+  ]), false, "a passing review-gate is not a failure to special-case at all");
+});
+
+test("a review-gate-only failure reaches the bounded Claude-request retry sequence (1 -> 2 -> 3 -> stalled)", () => {
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "request-review", attempt: 1 },
+  );
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate,
+      comments: [request(new Date(NOW - SECOND_REQUEST_DELAY_MS).toISOString())],
+      headSha: HEAD, nowMs: NOW, reviews: [],
+    }),
+    { kind: "request-review", attempt: 2 },
+  );
+  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 2)];
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: two, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "request-review", attempt: 3 },
+  );
+  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 3)];
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: three, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "review-stalled" },
+  );
+});
+
+test("a review-gate-only failure with a new accepted exact-head review resumes the normal merge-ready path", () => {
+  // Covers the transient window where a genuine accepted review has just posted (exactHeadClaudeVerdict
+  // sees it immediately via the fresh reviews list) but merge-gates.yml's own review-gate check-run has
+  // not yet re-evaluated and republished — the two are independently triggered by the same review
+  // event. The verdict, not the stale check-run conclusion, must govern.
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      reviews: [review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)],
+    }),
+    { kind: "dispatch", reason: "merge-ready" },
+  );
+});
+
+test("a real check failure alongside a failing review-gate still fails closed via the generic path, never the retry sequence", () => {
+  const withFailingTest = [
+    ...allGreenExceptReviewGate.filter((run) => run.name !== "test"),
+    { name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() },
+  ];
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: withFailingTest, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "checks-failed" },
+  );
+  const withFailingSecurityGate = [
+    ...allGreenExceptReviewGate.filter((run) => run.name !== "security-gate"),
+    { name: "security-gate", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() },
+  ];
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: withFailingSecurityGate, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "checks-failed" },
+  );
+});
+
+test("a rejected exact-head verdict and unresolved review threads remain fail-closed through the same review-gate-only fall-through", () => {
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      reviews: [review(`REJECTED — exact head ${HEAD}`)],
+    }),
+    { kind: "dispatch", reason: "review-rejected" },
+  );
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      reviewThreads: [{ id: "unresolved", isResolved: false }],
+      reviews: [review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)],
+    }),
+    { kind: "dispatch", reason: "review-rejected" },
+  );
+});
+
+test("a stale prior-head acceptance does not clear the current head even when review-gate is the only failure", () => {
+  const staleHead = "b".repeat(40);
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      reviews: [review(`ACCEPTED — exact head ${staleHead} — no surviving actionable findings.`, { commit_id: staleHead })],
+    }),
+    { kind: "request-review", attempt: 1 },
+  );
 });
 
 test("dispatch markers are exact-head idempotency records", () => {
