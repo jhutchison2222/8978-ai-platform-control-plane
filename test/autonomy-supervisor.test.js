@@ -17,6 +17,7 @@ import {
   blockedLabelAction,
   checkState,
   claudeRequests,
+  claudeReviewRequestBody,
   ensureLabels,
   ensureSecurityStop,
   exactHeadClaudeVerdict,
@@ -54,9 +55,18 @@ const review = (body, overrides = {}) => ({
 });
 const request = (createdAt, attempt = 1, overrides = {}) => ({
   user: { login: SUPERVISOR_LOGIN },
-  body: `${marker(`claude-request-${attempt}`, HEAD)}\n@claude exact ${HEAD}`,
+  body: claudeReviewRequestBody({ attempt, headSha: HEAD }),
   created_at: createdAt,
   ...overrides,
+});
+
+test("automated Claude review requests begin with the hosted reviewer trigger and preserve the verdict contract", () => {
+  const body = claudeReviewRequestBody({ attempt: 2, headSha: HEAD });
+  assert.equal(body.split("\n")[0], "@claude review");
+  assert.ok(body.includes(marker("claude-request-2", HEAD)));
+  assert.ok(body.includes(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`));
+  assert.ok(body.includes(`REJECTED — exact head ${HEAD}`));
+  assert.match(body, /automated attempt 2 of 3/u);
 });
 
 test("workflow is scheduled and least-privilege", async () => {
