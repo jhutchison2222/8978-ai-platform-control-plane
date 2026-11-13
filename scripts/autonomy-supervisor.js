@@ -699,6 +699,15 @@ function idempotencyKey(repository, subject, headSha, reason) {
   return `autonomy-${createHash("sha256").update(`${repository}:${subject}:${headSha}:${reason}`).digest("hex")}`;
 }
 
+export function claudeReviewRequestBody({ attempt, headSha }) {
+  return [
+    "@claude review",
+    "",
+    marker(`claude-request-${attempt}`, headSha),
+    `Automated review request for exact head \`${headSha}\`. This is attempt ${attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+  ].join("\n");
+}
+
 async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
   const headSha = pr.head.sha;
   if (hasMarker(comments, `dispatch-${reason}`, headSha)) return;
@@ -738,7 +747,7 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
   if (action.kind === "wait") return;
   if (action.kind === "request-review") {
     await api.post(`/issues/${pr.number}/comments`, {
-      body: `${marker(`claude-request-${action.attempt}`, headSha)}\n@claude Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${action.attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+      body: claudeReviewRequestBody({ attempt: action.attempt, headSha }),
     });
     return;
   }
