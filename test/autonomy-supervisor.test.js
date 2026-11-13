@@ -5,10 +5,10 @@ import {
   CLAUDE_LOGIN,
   CLAUDE_USER_ID,
   EVENT_DISPATCH_FALLBACK_DELAY_MS,
-  LATER_ACTION_DELAY_MS,
   MAX_TASK_DISPATCHES,
+  NATIVE_REVIEW_PENDING_TIMEOUT_MS,
+  NATIVE_REVIEW_WAIT_MS,
   PULL_REQUEST_DISPATCH_INSTRUCTION,
-  SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
   TASK_DISPATCH_RETRY_DELAY_MS,
   SECURITY_STOP_LABEL,
@@ -16,8 +16,6 @@ import {
   GitHubApi,
   blockedLabelAction,
   checkState,
-  claudeRequests,
-  claudeReviewRequestBody,
   ensureLabels,
   ensureSecurityStop,
   exactHeadClaudeVerdict,
@@ -30,6 +28,8 @@ import {
   isOnlyReviewGateFailing,
   linkedPullRequestPausesTask,
   marker,
+  nativeReviewCheckState,
+  nativeReviewWaitStartedAt,
   nextPullRequestAction,
   nextTaskDispatchAction,
   pullRequestForTask,
@@ -44,7 +44,7 @@ import {
 
 const HEAD = "a".repeat(40);
 const NOW = Date.parse("2026-09-01T18:00:00Z");
-const checks = [{ name: "test", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:30:00Z" }];
+const checks = [{ name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" }];
 const review = (body, overrides = {}) => ({
   user: { id: CLAUDE_USER_ID, login: CLAUDE_LOGIN },
   commit_id: HEAD,
@@ -53,22 +53,6 @@ const review = (body, overrides = {}) => ({
   body,
   ...overrides,
 });
-const request = (createdAt, attempt = 1, overrides = {}) => ({
-  user: { login: SUPERVISOR_LOGIN },
-  body: claudeReviewRequestBody({ attempt, headSha: HEAD }),
-  created_at: createdAt,
-  ...overrides,
-});
-
-test("automated Claude review requests begin with the hosted reviewer trigger and preserve the verdict contract", () => {
-  const body = claudeReviewRequestBody({ attempt: 2, headSha: HEAD });
-  assert.equal(body.split("\n")[0], "@claude review");
-  assert.ok(body.includes(marker("claude-request-2", HEAD)));
-  assert.ok(body.includes(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`));
-  assert.ok(body.includes(`REJECTED — exact head ${HEAD}`));
-  assert.match(body, /automated attempt 2 of 3/u);
-});
-
 test("workflow is scheduled and least-privilege", async () => {
   const workflow = await readFile(".github/workflows/autonomy-supervisor.yml", "utf8");
   for (const required of [
@@ -171,6 +155,78 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("approved, but token handling should be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "inconclusive");
+
+  // Hosted Claude Code Review's actual remediation-recheck wording (observed on PR #101): a
+  // free-form summary, not either of this file's other two fixed-template shapes. It also still
+  // defers the timing/timeout design choices to a maintainer, so despite its affirmative
+  // "look addressed" remediation language, it must stay inconclusive rather than clear the gate.
+  const hostedRemediationClearance = review(
+    `I reviewed the latest push and found no new bugs. The four timing issues still open from my last review look addressed in the code. This supervisor decides when PRs get blocked and when the agent is dispatched, and the timing logic has needed several rounds of fixes, so a human look would still be worthwhile.\n\n` +
+    `What was reviewed:\n- The missing-review branch: a pending "Claude Code Review" run now times out at 40 minutes from its \`started_at\`/\`created_at\`. If its start time is missing or invalid, it waits fail-closed.\n` +
+    `- Unresolved threads are no longer checked before the native review of a new head finishes. An inconclusive exact-head review now escalates to \`review-stalled\` 15 minutes after it was submitted.\n` +
+    `- \`pr.updated_at\` no longer feeds the wait anchor. Only check-run and review timestamps are used, so the supervisor's own label changes and comments can't reset the window. Nothing still references the removed exports or the \`comments\` parameter.\n\n` +
+    `<details>\n<summary>Extended reasoning...</summary>\n\nThe change touches scripts/autonomy-supervisor.js, its tests and its doc. It swaps the bot-authored \`@claude review\` retry path for a passive wait on the native Claude Code Review check run. No auth, crypto or data exposure surface is involved, but this governance automation controls the \`autonomy-blocked\` label and Workspace Agent dispatches. All earlier findings were resolved by the PR author, and the current code appears to address them. I deferred because earlier rounds of the timing and escalation logic surfaced several real bugs, and the anchor and timeout choices (15 and 40 minutes) are design decisions a maintainer should confirm.\n\n</details>\n\n` +
+    `<!-- bhfs:093877049085a05700ba0c94c2c2a980165f503fe1a1ee79 -->\n\n<!-- bhrv:4f8270d30873d9e6 -->`,
+  );
+  assert.equal(exactHeadClaudeVerdict([hostedRemediationClearance], HEAD), "inconclusive");
+
+  // The same hosted bot's "no new issues, but prior findings are still open" template must stay
+  // non-accepted: it says findings are still open, not resolved.
+  const hostedStillOpenFindings = review(
+    `**Code review found no new issues**\n\nNo new issues were found in this update; 4 findings from earlier reviews are still open above.\n\n` +
+    `**Still open from earlier reviews** (4):\n- 🔴 [\`scripts/autonomy-supervisor.js:528\`](#discussion_r4568566446) — one finding\n\n` +
+    `<!-- bughunter:open-items:v1 count=4 -->\n\n<!-- bhfs:9bb940663604b19a75d9fdbc30ca0d013c7d1c678b9abc04 -->\n\n<!-- bhrv:a301842553042390 -->`,
+  );
+  assert.equal(exactHeadClaudeVerdict([hostedStillOpenFindings], HEAD), "inconclusive");
+
+  // Negated or partial remediation language must never count as clearance, even though the
+  // unanchored "all ... findings (were) (fixed|addressed|resolved)" pattern would otherwise match
+  // as a trailing substring of each of these negated/partial statements.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Not all earlier findings were resolved.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Only some prior findings were addressed.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. None of the prior findings were resolved.")], HEAD),
+    "inconclusive",
+  );
+  // A negator separated from the affirmative claim by an inserted verb, a quantifier with no
+  // noun, or a quantifier word outside the original fixed bigram list must all still disqualify —
+  // these must not be fixed one exact phrasing at a time.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. This push has not addressed all the findings from my last review.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Of the earlier findings, not all three are now resolved.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Only two of the issues still open from my last review look addressed.")], HEAD),
+    "inconclusive",
+  );
+  // A clearly affirmative remediation statement, with no negation/partial qualifier and no
+  // maintainer deferral, still qualifies.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. All earlier findings were resolved.")], HEAD),
+    "accepted",
+  );
+
+  // A remediation review that still defers a substantive design/governance decision to a
+  // maintainer must not be accepted, even when it also reports no new bugs and prior findings
+  // fixed — unless the deferral is solely the existing security-sensitive exception.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. All earlier findings were resolved, but this is a design decision a maintainer should confirm.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("Automated review ran and found no new bugs on this push. I deferred because the approach itself needs a maintainer's sign-off, even though all previously flagged issues are now fixed.")], HEAD),
+    "inconclusive",
+  );
 });
 
 test("merge dispatch preserves bounded remediation clearance without weakening blockers", () => {
@@ -186,13 +242,55 @@ test("merge dispatch preserves bounded remediation clearance without weakening b
     "owner security decisions",
   ]) assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, new RegExp(blocker, "iu"));
   assert.doesNotMatch(PULL_REQUEST_DISPATCH_INSTRUCTION, /mixed or caveated wording.*deferral.*fail-closed/iu);
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /review-stalled.*do not post a bot-authored.*@claude review/iu);
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /eligible OWNER\/MEMBER\/COLLABORATOR manual trigger/iu);
 });
 
-test("only supervisor-authored exact-head markers consume retry attempts", () => {
-  const valid = request("2026-09-01T17:30:00Z");
-  const arbitrary = { user: { login: "attacker" }, body: `@claude exact ${HEAD}`, created_at: "2026-09-01T17:31:00Z" };
-  const forgedMarker = { ...valid, user: { login: "attacker" } };
-  assert.deepEqual(claudeRequests([arbitrary, forgedMarker, valid], HEAD), [valid]);
+test("native review state uses head-stable timestamps and bounds a stuck pending review", () => {
+  const pending = [
+    { id: 10, name: "Claude Code Review", status: "queued", started_at: new Date(NOW - NATIVE_REVIEW_PENDING_TIMEOUT_MS + 1).toISOString() },
+    { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:20:00Z", completed_at: "2026-09-01T17:30:00Z" },
+  ];
+  assert.deepEqual(nativeReviewCheckState(pending), {
+    status: "pending",
+    pendingSince: NOW - NATIVE_REVIEW_PENDING_TIMEOUT_MS + 1,
+    completedAt: null,
+  });
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: pending, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "wait", reason: "native-review-in-progress" },
+  );
+
+  const stuck = pending.map((run) => run.name === "Claude Code Review"
+    ? { ...run, started_at: new Date(NOW - NATIVE_REVIEW_PENDING_TIMEOUT_MS).toISOString() }
+    : run);
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: stuck, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "review-stalled" },
+  );
+
+  const completed = [
+    { id: 11, name: "Claude Code Review", status: "completed", started_at: "2026-09-01T17:40:00Z", completed_at: "2026-09-01T17:50:00Z" },
+    { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:20:00Z", completed_at: "2026-09-01T17:30:00Z" },
+  ];
+  assert.deepEqual(nativeReviewCheckState(completed), {
+    status: "completed",
+    pendingSince: Date.parse("2026-09-01T17:40:00Z"),
+    completedAt: Date.parse("2026-09-01T17:50:00Z"),
+  });
+  assert.equal(nativeReviewWaitStartedAt(completed), Date.parse("2026-09-01T17:50:00Z"));
+
+  assert.equal(nativeReviewWaitStartedAt([
+    { name: "test", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:40:00Z" },
+    { name: "guard", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:45:00Z" },
+  ]), Date.parse("2026-09-01T17:45:00Z"));
+  assert.equal(nativeReviewWaitStartedAt([]), null);
+});
+
+test("the supervisor source contains no bot-authored hosted-Claude review trigger path or mutable PR activity timer", async () => {
+  const source = await readFile("scripts/autonomy-supervisor.js", "utf8");
+  assert.doesNotMatch(source, /claudeReviewRequestBody|claudeRequests|claude-request-|kind === "request-review"/u);
+  assert.doesNotMatch(source, /reviewWaitFallbackAt|pr\.updated_at/u);
 });
 
 test("one failed item cannot prevent later supervision", async () => {
@@ -667,13 +765,29 @@ test("stall reporting is owner-visible and retryable before blocking", async () 
   assert.deepEqual(posts.map(({ path }) => path), ["/issues/61/labels"]);
 });
 
-test("green PRs request Claude and retry on capped delays", () => {
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 1 });
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [request(new Date(NOW - SECOND_REQUEST_DELAY_MS).toISOString())], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 2 });
-  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 2)];
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: two, headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 3 });
-  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 3)];
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: three, headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "review-stalled" });
+test("green PRs passively await native Claude review and escalate only after the bounded wait", () => {
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: checks, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "wait", reason: "native-review-wait" },
+  );
+  const stalledChecks = checks.map((run) => ({
+    ...run,
+    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS - 60_000).toISOString(),
+    completed_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
+  }));
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: stalledChecks, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "review-stalled" },
+  );
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: [{ name: "test", status: "completed", conclusion: "success" }],
+      headSha: HEAD,
+      nowMs: NOW,
+      reviews: [],
+    }),
+    { kind: "wait", reason: "native-review-wait-anchor-missing" },
+  );
 });
 
 test("checks and verdicts route to the Workspace Agent", () => {
@@ -698,17 +812,15 @@ test("event-triggered dispatch receives a ten-minute head start", () => {
 });
 
 // review-gate's own check-run fails whenever no accepted exact-head Claude verdict exists yet — the
-// normal starting state of every review cycle, not an edge case. Before this fix, checkState()
-// folding that into the PR's overall "failed" state made the generic checks-failed dispatch path
-// trigger before the bounded Claude-request retry sequence was ever reached, so attempts 2 and 3
-// were structurally unreachable. These tests pin the corrected behavior directly.
+// normal starting state while native Claude Code Review is still running. That failure must not
+// bypass the passive native-review wait or be misrouted as a generic checks-failed condition.
 const allGreenExceptReviewGate = [
-  { name: "test", status: "completed", conclusion: "success" },
-  { name: "guard", status: "completed", conclusion: "success" },
-  { name: "supervise", status: "completed", conclusion: "success" },
-  { name: "dispatch", status: "completed", conclusion: "success" },
-  { name: "security-gate", status: "completed", conclusion: "success" },
-  { name: "review-gate", status: "completed", conclusion: "failure", completed_at: "2026-09-01T17:30:00Z" },
+  { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "guard", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "supervise", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "dispatch", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "security-gate", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "review-gate", status: "completed", conclusion: "failure", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
 ];
 
 test("isOnlyReviewGateFailing distinguishes a review-gate-only failure from any other real failure", () => {
@@ -728,27 +840,18 @@ test("isOnlyReviewGateFailing distinguishes a review-gate-only failure from any 
   ]), false, "a passing review-gate is not a failure to special-case at all");
 });
 
-test("a review-gate-only failure reaches the bounded Claude-request retry sequence (1 -> 2 -> 3 -> stalled)", () => {
+test("a review-gate-only failure passively waits for native review, then escalates after fifteen minutes", () => {
   assert.deepEqual(
-    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
-    { kind: "request-review", attempt: 1 },
+    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "wait", reason: "native-review-wait" },
   );
+  const stalled = allGreenExceptReviewGate.map((run) => ({
+    ...run,
+    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS - 60_000).toISOString(),
+    completed_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
+  }));
   assert.deepEqual(
-    nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate,
-      comments: [request(new Date(NOW - SECOND_REQUEST_DELAY_MS).toISOString())],
-      headSha: HEAD, nowMs: NOW, reviews: [],
-    }),
-    { kind: "request-review", attempt: 2 },
-  );
-  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 2)];
-  assert.deepEqual(
-    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: two, headSha: HEAD, nowMs: NOW, reviews: [] }),
-    { kind: "request-review", attempt: 3 },
-  );
-  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 3)];
-  assert.deepEqual(
-    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: three, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    nextPullRequestAction({ checkRuns: stalled, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "dispatch", reason: "review-stalled" },
   );
 });
@@ -767,51 +870,88 @@ test("a review-gate-only failure with a new accepted exact-head review resumes t
   );
 });
 
-test("a real check failure alongside a failing review-gate still fails closed via the generic path, never the retry sequence", () => {
+test("an aged real check failure alongside a failing review-gate still uses the generic checks-failed path", () => {
+  const aged = allGreenExceptReviewGate.map((run) => ({
+    ...run,
+    completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString(),
+  }));
   const withFailingTest = [
-    ...allGreenExceptReviewGate.filter((run) => run.name !== "test"),
+    ...aged.filter((run) => run.name !== "test"),
     { name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() },
   ];
   assert.deepEqual(
-    nextPullRequestAction({ checkRuns: withFailingTest, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    nextPullRequestAction({ checkRuns: withFailingTest, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "dispatch", reason: "checks-failed" },
   );
   const withFailingSecurityGate = [
-    ...allGreenExceptReviewGate.filter((run) => run.name !== "security-gate"),
+    ...aged.filter((run) => run.name !== "security-gate"),
     { name: "security-gate", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() },
   ];
   assert.deepEqual(
-    nextPullRequestAction({ checkRuns: withFailingSecurityGate, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    nextPullRequestAction({ checkRuns: withFailingSecurityGate, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "dispatch", reason: "checks-failed" },
   );
 });
 
-test("a rejected exact-head verdict and unresolved review threads remain fail-closed through the same review-gate-only fall-through", () => {
+test("rejected findings remediate immediately, while inconclusive reviews have a bounded terminal fallback", () => {
   assert.deepEqual(
     nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
       reviews: [review(`REJECTED — exact head ${HEAD}`)],
     }),
     { kind: "dispatch", reason: "review-rejected" },
   );
+
+  const inconclusive = review("LGTM", {
+    submitted_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS + 1).toISOString(),
+  });
   assert.deepEqual(
     nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
+      reviews: [inconclusive],
+    }),
+    { kind: "wait", reason: "inconclusive-review-wait" },
+  );
+  const staleInconclusive = { ...inconclusive, submitted_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString() };
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
+      reviews: [staleInconclusive],
+    }),
+    { kind: "dispatch", reason: "review-stalled" },
+  );
+
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
       reviewThreads: [{ id: "unresolved", isResolved: false }],
-      reviews: [review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)],
+      reviews: [review("Review contains findings.")],
     }),
     { kind: "dispatch", reason: "review-rejected" },
   );
 });
 
-test("a stale prior-head acceptance does not clear the current head even when review-gate is the only failure", () => {
+test("a stale prior-head acceptance and unresolved old threads do not preempt a fresh native re-review", () => {
   const staleHead = "b".repeat(40);
+  const pendingNativeReview = [
+    ...allGreenExceptReviewGate,
+    {
+      id: 99,
+      name: "Claude Code Review",
+      status: "in_progress",
+      conclusion: null,
+      started_at: new Date(NOW - 60_000).toISOString(),
+    },
+  ];
   assert.deepEqual(
     nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      checkRuns: pendingNativeReview,
+      headSha: HEAD,
+      nowMs: NOW,
+      reviewThreads: [{ id: "old-thread", isResolved: false }],
       reviews: [review(`ACCEPTED — exact head ${staleHead} — no surviving actionable findings.`, { commit_id: staleHead })],
     }),
-    { kind: "request-review", attempt: 1 },
+    { kind: "wait", reason: "native-review-in-progress" },
   );
 });
 

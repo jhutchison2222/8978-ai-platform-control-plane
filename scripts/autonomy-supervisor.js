@@ -5,15 +5,14 @@ import { pathToFileURL } from "node:url";
 export const CLAUDE_LOGIN = "claude[bot]";
 export const CLAUDE_USER_ID = 209825114;
 export const SUPERVISOR_LOGIN = "github-actions[bot]";
-export const MAX_CLAUDE_REQUESTS = 3;
 export const MAX_TASK_DISPATCHES = 3;
-export const SECOND_REQUEST_DELAY_MS = 10 * 60 * 1000;
-export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
+export const NATIVE_REVIEW_WAIT_MS = 15 * 60 * 1000;
+export const NATIVE_REVIEW_PENDING_TIMEOUT_MS = 40 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 export const SECURITY_STOP_LABEL = "autonomy-security-stop";
 export const SECURITY_STOP_ISSUE_NUMBER = 66;
-export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. After actionable findings are remediated, a genuine exact-head re-review may clear when it expressly states both that no new issues, errors, bugs, or findings were found and that all prior findings were fixed, even if it recommends or defers to optional human review solely because the change is security-sensitive. Require green exact-head checks and no unresolved review threads. Treat stale reviews, rejection, surviving actionable or blocking risks, required correction, requested changes, do-not-merge language, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.";
+export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. After actionable findings are remediated, a genuine exact-head re-review may clear when it expressly states both that no new issues, errors, bugs, or findings were found and that all prior findings were fixed, even if it recommends or defers to optional human review solely because the change is security-sensitive. Require green exact-head checks and no unresolved review threads. Treat stale reviews, rejection, surviving actionable or blocking risks, required correction, requested changes, do-not-merge language, and owner security decisions as fail-closed. If dispatched for `review-stalled`, do not post a bot-authored `@claude review`; report whether the exact-head review is missing, stuck pending, or persistently inconclusive, and request an eligible OWNER/MEMBER/COLLABORATOR manual trigger only if native review did not recover. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.";
 
 export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
@@ -44,13 +43,39 @@ const CLEAR_REREVIEW = new RegExp(
   `^\\s*(?:\\*\\*code review completed\\*\\*\\s*)?nothing new to post(?::\\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\\s*${TRAILING_REVIEW_MARKERS}\\s*$`,
   "iu",
 );
-const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
+const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|i reviewed (?:the latest|this) push and found no new bugs|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
 const PRIOR_FINDINGS_FIXED = [
   /\b(?:fix(?:es|ed)?|address(?:es|ed)?|resolv(?:es|ed)?) all (?:the )?(?:previously[- ](?:reported|flagged) )?(?:\w+ )*(?:issues|errors|bugs|findings)\b/iu,
   /\ball (?:\w+ )*(?:issues|errors|bugs|findings) (?:are|were|have been) (?:now )?(?:fixed|addressed|resolved)\b/iu,
   /\ball (?:three|four|five|six|seven|eight|nine|ten) are now (?:fixed|addressed|resolved)\b/iu,
+  // Hosted Claude Code Review's own remediation-recheck phrasing: it refers back to the specific
+  // prior findings as still-open-until-now, then reports them resolved with "look addressed" rather
+  // than this file's other "all N are now fixed/addressed/resolved" templates.
+  /\b(?:issues|errors|bugs|findings) still open from (?:my|the) last review look(?:s)? addressed(?: in the code)?\b/iu,
 ];
 const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
+// Any negation or partial-quantifier word, anywhere in the same clause as an affirmative
+// PRIOR_FINDINGS_FIXED match, disqualifies it. A fixed list of exact negator-plus-noun bigrams
+// (e.g. "not all ... findings") is not enough: the negator and the resolution claim can have a verb
+// or other words between them ("has not addressed all the findings"), the quantifier can omit the
+// noun entirely ("not all three are now resolved"), or use a different quantifier word ("only two
+// of the issues..."). Scoping the check to the same clause, rather than the whole review body,
+// keeps an unrelated negation elsewhere in a long review from disqualifying a genuine affirmative
+// claim in a different sentence.
+const REMEDIATION_NEGATION_OR_PARTIAL = /\b(?:not|never|only|none|few)\b|n['’]t\b/iu;
+function hasUnnegatedPriorFindingsFixed(body) {
+  const clauses = (body ?? "").split(/(?<=[.!?])\s+/u);
+  return clauses.some((clause) =>
+    PRIOR_FINDINGS_FIXED.some((pattern) => pattern.test(clause)) &&
+    !REMEDIATION_NEGATION_OR_PARTIAL.test(clause));
+}
+// Hosted Claude Code Review's remediation re-reviews sometimes still defer a substantive design or
+// governance decision to a human maintainer/owner, independent of whether any new bugs were found.
+// That deferral must not be treated as clearance — only the already-supported exception (deferring
+// solely because the change is security-sensitive, per PULL_REQUEST_DISPATCH_INSTRUCTION) may still
+// qualify, and this pattern is lexically distinct from that exception's own wording so it never
+// matches it.
+const NON_SECURITY_MAINTAINER_DEFERRAL = /\b(?:i deferred because|maintainer should confirm)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 const WORKSPACE_AGENT_CREDENTIAL = /CHATGPT_WORKSPACE_AGENT_(?:ID|TOKEN)|AGENT_(?:ID|TOKEN)/u;
@@ -167,8 +192,9 @@ function acceptedReview(review, previousAccepted = false) {
 
 function clearRemediationRereview(body) {
   return CLEAR_REMEDIATION_REREVIEW.test(body) &&
-    PRIOR_FINDINGS_FIXED.some((pattern) => pattern.test(body)) &&
-    !SURVIVING_ACTIONABLE_CAVEAT.test(body);
+    hasUnnegatedPriorFindingsFixed(body) &&
+    !SURVIVING_ACTIONABLE_CAVEAT.test(body) &&
+    !NON_SECURITY_MAINTAINER_DEFERRAL.test(body);
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
@@ -449,14 +475,6 @@ export function nextTaskDispatchAction({ comments, nowMs }) {
   return { kind: "block" };
 }
 
-export function claudeRequests(comments, headSha) {
-  const expectedPrefix = `${MARKER_PREFIX}claude-request-`;
-  return comments
-    .filter((comment) => comment.user?.login === SUPERVISOR_LOGIN && typeof comment.body === "string" &&
-      comment.body.includes(expectedPrefix) && comment.body.includes(`:${headSha} -->`) && comment.body.includes("@claude"))
-    .sort((left, right) => Date.parse(left.created_at) - Date.parse(right.created_at));
-}
-
 export async function runAllIsolated(items, handler, onError = console.error) {
   const errors = [];
   for (const item of items) {
@@ -470,7 +488,62 @@ export async function runAllIsolated(items, handler, onError = console.error) {
   return errors;
 }
 
-export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviewThreads = [], reviews }) {
+export function nativeReviewCheckState(checkRuns) {
+  const runs = checkRuns
+    .filter((run) => run.name === "Claude Code Review")
+    .sort((left, right) => {
+      const leftStarted = Date.parse(left.started_at ?? left.created_at ?? "");
+      const rightStarted = Date.parse(right.started_at ?? right.created_at ?? "");
+      const leftTime = Number.isFinite(leftStarted) ? leftStarted : 0;
+      const rightTime = Number.isFinite(rightStarted) ? rightStarted : 0;
+      if (leftTime !== rightTime) return leftTime - rightTime;
+      return Number(left.id ?? 0) - Number(right.id ?? 0);
+    });
+  const latest = runs.at(-1);
+  if (!latest) return { status: "missing", pendingSince: null, completedAt: null };
+
+  const startedAt = Date.parse(latest.started_at ?? latest.created_at ?? "");
+  const pendingSince = Number.isFinite(startedAt) ? startedAt : null;
+  if (latest.status !== "completed") return { status: "pending", pendingSince, completedAt: null };
+
+  const completedAt = Date.parse(latest.completed_at ?? "");
+  return {
+    status: "completed",
+    pendingSince,
+    completedAt: Number.isFinite(completedAt) ? completedAt : pendingSince,
+  };
+}
+
+export function nativeReviewWaitStartedAt(checkRuns) {
+  const nativeReview = nativeReviewCheckState(checkRuns);
+  if (nativeReview.status === "completed" && nativeReview.completedAt !== null) {
+    return nativeReview.completedAt;
+  }
+
+  const timestamps = checkRuns
+    .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
+    .map((run) => {
+      const completedAt = Date.parse(run.completed_at ?? "");
+      if (Number.isFinite(completedAt)) return completedAt;
+      const startedAt = Date.parse(run.started_at ?? "");
+      return Number.isFinite(startedAt) ? startedAt : null;
+    })
+    .filter((timestamp) => timestamp !== null);
+  return timestamps.length > 0 ? Math.max(...timestamps) : null;
+}
+
+function latestExactHeadClaudeReviewSubmittedAt(reviews, headSha) {
+  const expectedHead = headSha.toLowerCase();
+  const timestamps = reviews
+    .filter((review) => review.user?.id === CLAUDE_USER_ID &&
+      review.user?.login === CLAUDE_LOGIN &&
+      review.commit_id?.toLowerCase() === expectedHead)
+    .map((review) => Date.parse(review.submitted_at ?? ""))
+    .filter(Number.isFinite);
+  return timestamps.length > 0 ? Math.max(...timestamps) : null;
+}
+
+export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed" && !isOnlyReviewGateFailing(checkRuns)) {
@@ -483,10 +556,11 @@ export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, rev
   }
 
   const verdict = exactHeadClaudeVerdict(reviews, headSha);
+  const hasUnresolvedReviewThread = reviewThreads.some((thread) => !thread.isResolved);
+  const nativeReview = nativeReviewCheckState(checkRuns);
+
   if (verdict === "accepted") {
-    if (reviewThreads.some((thread) => !thread.isResolved)) {
-      return { kind: "dispatch", reason: "review-rejected" };
-    }
+    if (hasUnresolvedReviewThread) return { kind: "dispatch", reason: "review-rejected" };
     const latestAcceptance = Math.max(...reviews
       .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN && review.commit_id === headSha)
       .map((review) => Date.parse(review.submitted_at)));
@@ -494,21 +568,33 @@ export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, rev
       ? { kind: "dispatch", reason: "merge-ready" }
       : { kind: "wait", reason: "event-dispatch-fallback-delay" };
   }
+
   if (verdict === "rejected") return { kind: "dispatch", reason: "review-rejected" };
 
-  const requests = claudeRequests(comments, headSha);
-  if (requests.length === 0) return { kind: "request-review", attempt: 1 };
+  if (verdict === "missing") {
+    if (nativeReview.status === "pending") {
+      if (nativeReview.pendingSince === null) {
+        return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+      }
+      return nowMs - nativeReview.pendingSince >= NATIVE_REVIEW_PENDING_TIMEOUT_MS
+        ? { kind: "dispatch", reason: "review-stalled" }
+        : { kind: "wait", reason: "native-review-in-progress" };
+    }
 
-  const elapsed = nowMs - Date.parse(requests.at(-1).created_at);
-  if (requests.length < MAX_CLAUDE_REQUESTS) {
-    const delay = requests.length === 1 ? SECOND_REQUEST_DELAY_MS : LATER_ACTION_DELAY_MS;
-    return elapsed >= delay
-      ? { kind: "request-review", attempt: requests.length + 1 }
-      : { kind: "wait", reason: "review-retry-delay" };
+    const reviewWaitStartedAt = nativeReviewWaitStartedAt(checkRuns);
+    if (reviewWaitStartedAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+    return nowMs - reviewWaitStartedAt >= NATIVE_REVIEW_WAIT_MS
+      ? { kind: "dispatch", reason: "review-stalled" }
+      : { kind: "wait", reason: "native-review-wait" };
   }
-  return elapsed >= LATER_ACTION_DELAY_MS
+
+  if (hasUnresolvedReviewThread) return { kind: "dispatch", reason: "review-rejected" };
+
+  const inconclusiveAt = latestExactHeadClaudeReviewSubmittedAt(reviews, headSha);
+  if (inconclusiveAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+  return nowMs - inconclusiveAt >= NATIVE_REVIEW_WAIT_MS
     ? { kind: "dispatch", reason: "review-stalled" }
-    : { kind: "wait", reason: "review-stall-delay" };
+    : { kind: "wait", reason: "inconclusive-review-wait" };
 }
 
 export function marker(reason, headSha) {
@@ -699,15 +785,6 @@ function idempotencyKey(repository, subject, headSha, reason) {
   return `autonomy-${createHash("sha256").update(`${repository}:${subject}:${headSha}:${reason}`).digest("hex")}`;
 }
 
-export function claudeReviewRequestBody({ attempt, headSha }) {
-  return [
-    "@claude review",
-    "",
-    marker(`claude-request-${attempt}`, headSha),
-    `Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${attempt} of ${MAX_CLAUDE_REQUESTS}.`,
-  ].join("\n");
-}
-
 async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
   const headSha = pr.head.sha;
   if (hasMarker(comments, `dispatch-${reason}`, headSha)) return;
@@ -737,7 +814,13 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     api.getAll(`/issues/${pr.number}/comments`),
     api.reviewThreads(pr.number),
   ]);
-  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviewThreads, reviews });
+  const action = nextPullRequestAction({
+    checkRuns: checkData,
+    headSha,
+    nowMs,
+    reviewThreads,
+    reviews,
+  });
   const labelAction = blockedLabelAction(pr, action);
   if (labelAction?.kind === "add") {
     await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
@@ -745,12 +828,6 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     await api.delete(`/issues/${pr.number}/labels/${encodeURIComponent(labelAction.name)}`);
   }
   if (action.kind === "wait") return;
-  if (action.kind === "request-review") {
-    await api.post(`/issues/${pr.number}/comments`, {
-      body: claudeReviewRequestBody({ attempt: action.attempt, headSha }),
-    });
-    return;
-  }
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
 }
 
