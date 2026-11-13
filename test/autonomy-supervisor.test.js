@@ -183,7 +183,7 @@ test("native review wait anchor uses the earliest non-Claude check timestamp and
 
 test("the supervisor source contains no bot-authored hosted-Claude review trigger path", async () => {
   const source = await readFile("scripts/autonomy-supervisor.js", "utf8");
-  assert.doesNotMatch(source, /@claude review|claude-request-|request-review/u);
+  assert.doesNotMatch(source, /claudeReviewRequestBody|claudeRequests|claude-request-|kind === "request-review"/u);
 });
 
 test("one failed item cannot prevent later supervision", async () => {
