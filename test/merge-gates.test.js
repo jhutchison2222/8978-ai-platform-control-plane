@@ -349,10 +349,17 @@ test("security-gate and review-gate evaluate every pull request sharing a workfl
 // one — the owner disposition check inside security-gate.js already independently requires
 // author_association == "OWNER" on the disposition comment specifically, regardless of who else can
 // trigger a re-run).
-test("resolve-pr's issue_comment branch requires a trusted commenter association", async () => {
+test("resolve-pr's issue_comment branch requires a trusted commenter and an explicit recheck or disposition signal", async () => {
   const workflow = await readFile(".github/workflows/merge-gates.yml", "utf8");
   assert.match(
     workflow,
-    /github\.event_name == 'issue_comment' && github\.event\.issue\.pull_request != null &&\n\s+contains\(fromJSON\('\["OWNER", "MEMBER", "COLLABORATOR"\]'\), github\.event\.comment\.author_association\)/u,
+    /github\.event_name == 'issue_comment' && github\.event\.issue\.pull_request != null &&\n\s+contains\(fromJSON\('\["OWNER", "MEMBER", "COLLABORATOR"\]'\), github\.event\.comment\.author_association\) &&/u,
+  );
+  assert.match(workflow, /startsWith\(github\.event\.comment\.body, '\/recheck-gates'\)/u);
+  assert.match(workflow, /contains\(github\.event\.comment\.body, '<!-- security-disposition:'\)/u);
+  assert.doesNotMatch(
+    workflow,
+    /contains\(fromJSON\('\["OWNER", "MEMBER", "COLLABORATOR"\]'\), github\.event\.comment\.author_association\)\) \|\|\n\s+\(github\.event_name == 'workflow_run'/u,
+    "trusted status chatter must not be sufficient by itself to wake merge gates",
   );
 });
