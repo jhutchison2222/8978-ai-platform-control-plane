@@ -761,21 +761,25 @@ test("a review-gate-only failure with a new accepted exact-head review resumes t
   );
 });
 
-test("a real check failure alongside a failing review-gate still fails closed via the generic path, never the retry sequence", () => {
+test("an aged real check failure alongside a failing review-gate still uses the generic checks-failed path", () => {
+  const aged = allGreenExceptReviewGate.map((run) => ({
+    ...run,
+    completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString(),
+  }));
   const withFailingTest = [
-    ...allGreenExceptReviewGate.filter((run) => run.name !== "test"),
+    ...aged.filter((run) => run.name !== "test"),
     { name: "test", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() },
   ];
   assert.deepEqual(
-    nextPullRequestAction({ checkRuns: withFailingTest, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    nextPullRequestAction({ checkRuns: withFailingTest, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "dispatch", reason: "checks-failed" },
   );
   const withFailingSecurityGate = [
-    ...allGreenExceptReviewGate.filter((run) => run.name !== "security-gate"),
+    ...aged.filter((run) => run.name !== "security-gate"),
     { name: "security-gate", status: "completed", conclusion: "failure", completed_at: new Date(NOW - EVENT_DISPATCH_FALLBACK_DELAY_MS).toISOString() },
   ];
   assert.deepEqual(
-    nextPullRequestAction({ checkRuns: withFailingSecurityGate, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
+    nextPullRequestAction({ checkRuns: withFailingSecurityGate, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "dispatch", reason: "checks-failed" },
   );
 });
