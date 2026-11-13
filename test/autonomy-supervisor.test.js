@@ -6,6 +6,7 @@ import {
   CLAUDE_USER_ID,
   EVENT_DISPATCH_FALLBACK_DELAY_MS,
   MAX_TASK_DISPATCHES,
+  NATIVE_REVIEW_PENDING_TIMEOUT_MS,
   NATIVE_REVIEW_WAIT_MS,
   PULL_REQUEST_DISPATCH_INSTRUCTION,
   SUPERVISOR_LOGIN,
@@ -173,34 +174,51 @@ test("merge dispatch preserves bounded remediation clearance without weakening b
   assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /eligible OWNER\/MEMBER\/COLLABORATOR manual trigger/iu);
 });
 
-test("native review state and wait anchor never stall an active native review", () => {
+test("native review state uses head-stable timestamps and bounds a stuck pending review", () => {
   const pending = [
-    { id: 10, name: "Claude Code Review", status: "queued", started_at: "2026-09-01T17:40:00Z" },
+    { id: 10, name: "Claude Code Review", status: "queued", started_at: new Date(NOW - NATIVE_REVIEW_PENDING_TIMEOUT_MS + 1).toISOString() },
     { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:20:00Z", completed_at: "2026-09-01T17:30:00Z" },
   ];
-  assert.deepEqual(nativeReviewCheckState(pending), { status: "pending", completedAt: null });
+  assert.deepEqual(nativeReviewCheckState(pending), {
+    status: "pending",
+    pendingSince: NOW - NATIVE_REVIEW_PENDING_TIMEOUT_MS + 1,
+    completedAt: null,
+  });
   assert.deepEqual(
     nextPullRequestAction({ checkRuns: pending, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "wait", reason: "native-review-in-progress" },
+  );
+
+  const stuck = pending.map((run) => run.name === "Claude Code Review"
+    ? { ...run, started_at: new Date(NOW - NATIVE_REVIEW_PENDING_TIMEOUT_MS).toISOString() }
+    : run);
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: stuck, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "review-stalled" },
   );
 
   const completed = [
     { id: 11, name: "Claude Code Review", status: "completed", started_at: "2026-09-01T17:40:00Z", completed_at: "2026-09-01T17:50:00Z" },
     { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:20:00Z", completed_at: "2026-09-01T17:30:00Z" },
   ];
-  assert.deepEqual(nativeReviewCheckState(completed), { status: "completed", completedAt: Date.parse("2026-09-01T17:50:00Z") });
+  assert.deepEqual(nativeReviewCheckState(completed), {
+    status: "completed",
+    pendingSince: Date.parse("2026-09-01T17:40:00Z"),
+    completedAt: Date.parse("2026-09-01T17:50:00Z"),
+  });
   assert.equal(nativeReviewWaitStartedAt(completed), Date.parse("2026-09-01T17:50:00Z"));
 
   assert.equal(nativeReviewWaitStartedAt([
     { name: "test", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:40:00Z" },
     { name: "guard", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:45:00Z" },
-  ], "2026-09-01T17:50:00Z"), Date.parse("2026-09-01T17:50:00Z"));
-  assert.equal(nativeReviewWaitStartedAt([], null), null);
+  ]), Date.parse("2026-09-01T17:45:00Z"));
+  assert.equal(nativeReviewWaitStartedAt([]), null);
 });
 
-test("the supervisor source contains no bot-authored hosted-Claude review trigger path", async () => {
+test("the supervisor source contains no bot-authored hosted-Claude review trigger path or mutable PR activity timer", async () => {
   const source = await readFile("scripts/autonomy-supervisor.js", "utf8");
   assert.doesNotMatch(source, /claudeReviewRequestBody|claudeRequests|claude-request-|kind === "request-review"/u);
+  assert.doesNotMatch(source, /reviewWaitFallbackAt|pr\.updated_at/u);
 });
 
 test("one failed item cannot prevent later supervision", async () => {
@@ -803,7 +821,7 @@ test("an aged real check failure alongside a failing review-gate still uses the 
   );
 });
 
-test("rejected, inconclusive, and unresolved exact-head reviews route to remediation instead of stall", () => {
+test("rejected findings remediate immediately, while inconclusive reviews have a bounded terminal fallback", () => {
   assert.deepEqual(
     nextPullRequestAction({
       checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
@@ -811,31 +829,57 @@ test("rejected, inconclusive, and unresolved exact-head reviews route to remedia
     }),
     { kind: "dispatch", reason: "review-rejected" },
   );
+
+  const inconclusive = review("LGTM", {
+    submitted_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS + 1).toISOString(),
+  });
   assert.deepEqual(
     nextPullRequestAction({
       checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
-      reviews: [review("Findings marked optional suggestions and need no follow-up push.")],
+      reviews: [inconclusive],
     }),
-    { kind: "dispatch", reason: "review-rejected" },
+    { kind: "wait", reason: "inconclusive-review-wait" },
   );
+  const staleInconclusive = { ...inconclusive, submitted_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString() };
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
+      reviews: [staleInconclusive],
+    }),
+    { kind: "dispatch", reason: "review-stalled" },
+  );
+
   assert.deepEqual(
     nextPullRequestAction({
       checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
       reviewThreads: [{ id: "unresolved", isResolved: false }],
-      reviews: [],
+      reviews: [review("Review contains findings.")],
     }),
     { kind: "dispatch", reason: "review-rejected" },
   );
 });
 
-test("a stale prior-head acceptance does not clear the current head even when review-gate is the only failure", () => {
+test("a stale prior-head acceptance and unresolved old threads do not preempt a fresh native re-review", () => {
   const staleHead = "b".repeat(40);
+  const pendingNativeReview = [
+    ...allGreenExceptReviewGate,
+    {
+      id: 99,
+      name: "Claude Code Review",
+      status: "in_progress",
+      conclusion: null,
+      started_at: new Date(NOW - 60_000).toISOString(),
+    },
+  ];
   assert.deepEqual(
     nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      checkRuns: pendingNativeReview,
+      headSha: HEAD,
+      nowMs: NOW,
+      reviewThreads: [{ id: "old-thread", isResolved: false }],
       reviews: [review(`ACCEPTED — exact head ${staleHead} — no surviving actionable findings.`, { commit_id: staleHead })],
     }),
-    { kind: "wait", reason: "native-review-wait" },
+    { kind: "wait", reason: "native-review-in-progress" },
   );
 });
 
