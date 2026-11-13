@@ -31,8 +31,19 @@ const NON_CI_CHECK_NAMES = new Set(["Claude Code Review"]);
 const TRUSTED_PR_AUTHOR_ASSOCIATIONS = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 const ACCEPTED_REVIEW = /^ACCEPTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})\s*[—:-]\s*no surviving actionable findings[.]?$/iu;
 const REJECTED_REVIEW = /^REJECTED\s*[—:-]\s*exact head\s+([0-9a-f]{40})[.]?$/iu;
-const CLEAR_INITIAL_REVIEW = /^\s*(?:ACCEPTED|APPROVED|\*\*code review found no issues\*\*\s*no high-confidence issues detected in this change|no (?:high-confidence |actionable |blocking )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: in this change)?|i reviewed this pr and (?:did not|didn['’]t) find any (?:issues|errors|bugs))[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
-const CLEAR_REREVIEW = /^\s*(?:\*\*code review completed\*\*\s*)?nothing new to post(?::\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\s*(?:<!--\s*bhrv:[0-9a-f]+\s*-->)?\s*$/iu;
+// Claude Code Review appends its own trailing HTML-comment metadata markers (currently seen:
+// bhrv:<hash>, bhfs:<hash>) after the verdict text; the set and order of these bot-generated
+// markers is not under this repo's control and has changed before. Tolerate any number of them,
+// in any order, without loosening what verdict text itself is accepted.
+const TRAILING_REVIEW_MARKERS = /(?:<!--\s*(?:bhrv|bhfs):[0-9a-f]+\s*-->\s*)*/iu.source;
+const CLEAR_INITIAL_REVIEW = new RegExp(
+  `^\\s*(?:ACCEPTED|APPROVED|\\*\\*code review found no issues\\*\\*\\s*no high-confidence issues detected in this change|no (?:high-confidence |actionable |blocking )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: in this change)?|i reviewed this pr and (?:did not|didn['’]t) find any (?:issues|errors|bugs))[.!]?\\s*${TRAILING_REVIEW_MARKERS}\\s*$`,
+  "iu",
+);
+const CLEAR_REREVIEW = new RegExp(
+  `^\\s*(?:\\*\\*code review completed\\*\\*\\s*)?nothing new to post(?::\\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\\s*${TRAILING_REVIEW_MARKERS}\\s*$`,
+  "iu",
+);
 const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
 const PRIOR_FINDINGS_FIXED = [
   /\b(?:fix(?:es|ed)?|address(?:es|ed)?|resolv(?:es|ed)?) all (?:the )?(?:previously[- ](?:reported|flagged) )?(?:\w+ )*(?:issues|errors|bugs|findings)\b/iu,
