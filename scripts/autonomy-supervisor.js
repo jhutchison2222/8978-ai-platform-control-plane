@@ -7,6 +7,7 @@ export const CLAUDE_USER_ID = 209825114;
 export const SUPERVISOR_LOGIN = "github-actions[bot]";
 export const MAX_TASK_DISPATCHES = 3;
 export const NATIVE_REVIEW_WAIT_MS = 15 * 60 * 1000;
+export const NATIVE_REVIEW_PENDING_TIMEOUT_MS = 40 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 export const SECURITY_STOP_LABEL = "autonomy-security-stop";
@@ -472,15 +473,21 @@ export function nativeReviewCheckState(checkRuns) {
       return Number(left.id ?? 0) - Number(right.id ?? 0);
     });
   const latest = runs.at(-1);
-  if (!latest) return { status: "missing", completedAt: null };
-  if (latest.status !== "completed") return { status: "pending", completedAt: null };
+  if (!latest) return { status: "missing", pendingSince: null, completedAt: null };
+
+  const startedAt = Date.parse(latest.started_at ?? latest.created_at ?? "");
+  const pendingSince = Number.isFinite(startedAt) ? startedAt : null;
+  if (latest.status !== "completed") return { status: "pending", pendingSince, completedAt: null };
+
   const completedAt = Date.parse(latest.completed_at ?? "");
-  if (Number.isFinite(completedAt)) return { status: "completed", completedAt };
-  const startedAt = Date.parse(latest.started_at ?? "");
-  return { status: "completed", completedAt: Number.isFinite(startedAt) ? startedAt : null };
+  return {
+    status: "completed",
+    pendingSince,
+    completedAt: Number.isFinite(completedAt) ? completedAt : pendingSince,
+  };
 }
 
-export function nativeReviewWaitStartedAt(checkRuns, fallbackAt = null) {
+export function nativeReviewWaitStartedAt(checkRuns) {
   const nativeReview = nativeReviewCheckState(checkRuns);
   if (nativeReview.status === "completed" && nativeReview.completedAt !== null) {
     return nativeReview.completedAt;
@@ -495,12 +502,21 @@ export function nativeReviewWaitStartedAt(checkRuns, fallbackAt = null) {
       return Number.isFinite(startedAt) ? startedAt : null;
     })
     .filter((timestamp) => timestamp !== null);
-  const fallback = Date.parse(fallbackAt ?? "");
-  if (Number.isFinite(fallback)) timestamps.push(fallback);
   return timestamps.length > 0 ? Math.max(...timestamps) : null;
 }
 
-export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads = [], reviews, reviewWaitFallbackAt = null }) {
+function latestExactHeadClaudeReviewSubmittedAt(reviews, headSha) {
+  const expectedHead = headSha.toLowerCase();
+  const timestamps = reviews
+    .filter((review) => review.user?.id === CLAUDE_USER_ID &&
+      review.user?.login === CLAUDE_LOGIN &&
+      review.commit_id?.toLowerCase() === expectedHead)
+    .map((review) => Date.parse(review.submitted_at ?? ""))
+    .filter(Number.isFinite);
+  return timestamps.length > 0 ? Math.max(...timestamps) : null;
+}
+
+export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed" && !isOnlyReviewGateFailing(checkRuns)) {
@@ -514,6 +530,8 @@ export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads
 
   const verdict = exactHeadClaudeVerdict(reviews, headSha);
   const hasUnresolvedReviewThread = reviewThreads.some((thread) => !thread.isResolved);
+  const nativeReview = nativeReviewCheckState(checkRuns);
+
   if (verdict === "accepted") {
     if (hasUnresolvedReviewThread) return { kind: "dispatch", reason: "review-rejected" };
     const latestAcceptance = Math.max(...reviews
@@ -523,19 +541,33 @@ export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads
       ? { kind: "dispatch", reason: "merge-ready" }
       : { kind: "wait", reason: "event-dispatch-fallback-delay" };
   }
-  if (verdict === "rejected" || verdict === "inconclusive" || hasUnresolvedReviewThread) {
-    return { kind: "dispatch", reason: "review-rejected" };
+
+  if (verdict === "rejected") return { kind: "dispatch", reason: "review-rejected" };
+
+  if (verdict === "missing") {
+    if (nativeReview.status === "pending") {
+      if (nativeReview.pendingSince === null) {
+        return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+      }
+      return nowMs - nativeReview.pendingSince >= NATIVE_REVIEW_PENDING_TIMEOUT_MS
+        ? { kind: "dispatch", reason: "review-stalled" }
+        : { kind: "wait", reason: "native-review-in-progress" };
+    }
+
+    const reviewWaitStartedAt = nativeReviewWaitStartedAt(checkRuns);
+    if (reviewWaitStartedAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+    return nowMs - reviewWaitStartedAt >= NATIVE_REVIEW_WAIT_MS
+      ? { kind: "dispatch", reason: "review-stalled" }
+      : { kind: "wait", reason: "native-review-wait" };
   }
 
-  const nativeReview = nativeReviewCheckState(checkRuns);
-  if (nativeReview.status === "pending") {
-    return { kind: "wait", reason: "native-review-in-progress" };
-  }
-  const reviewWaitStartedAt = nativeReviewWaitStartedAt(checkRuns, reviewWaitFallbackAt);
-  if (reviewWaitStartedAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
-  return nowMs - reviewWaitStartedAt >= NATIVE_REVIEW_WAIT_MS
+  if (hasUnresolvedReviewThread) return { kind: "dispatch", reason: "review-rejected" };
+
+  const inconclusiveAt = latestExactHeadClaudeReviewSubmittedAt(reviews, headSha);
+  if (inconclusiveAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+  return nowMs - inconclusiveAt >= NATIVE_REVIEW_WAIT_MS
     ? { kind: "dispatch", reason: "review-stalled" }
-    : { kind: "wait", reason: "native-review-wait" };
+    : { kind: "wait", reason: "inconclusive-review-wait" };
 }
 
 export function marker(reason, headSha) {
@@ -761,7 +793,6 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     nowMs,
     reviewThreads,
     reviews,
-    reviewWaitFallbackAt: pr.updated_at,
   });
   const labelAction = blockedLabelAction(pr, action);
   if (labelAction?.kind === "add") {
