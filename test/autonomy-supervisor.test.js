@@ -5,10 +5,9 @@ import {
   CLAUDE_LOGIN,
   CLAUDE_USER_ID,
   EVENT_DISPATCH_FALLBACK_DELAY_MS,
-  LATER_ACTION_DELAY_MS,
   MAX_TASK_DISPATCHES,
+  NATIVE_REVIEW_WAIT_MS,
   PULL_REQUEST_DISPATCH_INSTRUCTION,
-  SECOND_REQUEST_DELAY_MS,
   SUPERVISOR_LOGIN,
   TASK_DISPATCH_RETRY_DELAY_MS,
   SECURITY_STOP_LABEL,
@@ -16,8 +15,6 @@ import {
   GitHubApi,
   blockedLabelAction,
   checkState,
-  claudeRequests,
-  claudeReviewRequestBody,
   ensureLabels,
   ensureSecurityStop,
   exactHeadClaudeVerdict,
@@ -30,6 +27,7 @@ import {
   isOnlyReviewGateFailing,
   linkedPullRequestPausesTask,
   marker,
+  nativeReviewWaitStartedAt,
   nextPullRequestAction,
   nextTaskDispatchAction,
   pullRequestForTask,
@@ -44,7 +42,7 @@ import {
 
 const HEAD = "a".repeat(40);
 const NOW = Date.parse("2026-09-01T18:00:00Z");
-const checks = [{ name: "test", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:30:00Z" }];
+const checks = [{ name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" }];
 const review = (body, overrides = {}) => ({
   user: { id: CLAUDE_USER_ID, login: CLAUDE_LOGIN },
   commit_id: HEAD,
@@ -53,22 +51,6 @@ const review = (body, overrides = {}) => ({
   body,
   ...overrides,
 });
-const request = (createdAt, attempt = 1, overrides = {}) => ({
-  user: { login: SUPERVISOR_LOGIN },
-  body: claudeReviewRequestBody({ attempt, headSha: HEAD }),
-  created_at: createdAt,
-  ...overrides,
-});
-
-test("automated Claude review requests begin with the hosted reviewer trigger and preserve the verdict contract", () => {
-  const body = claudeReviewRequestBody({ attempt: 2, headSha: HEAD });
-  assert.equal(body.split("\n")[0], "@claude review");
-  assert.ok(body.includes(marker("claude-request-2", HEAD)));
-  assert.ok(body.includes(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`));
-  assert.ok(body.includes(`REJECTED — exact head ${HEAD}`));
-  assert.match(body, /automated attempt 2 of 3/u);
-});
-
 test("workflow is scheduled and least-privilege", async () => {
   const workflow = await readFile(".github/workflows/autonomy-supervisor.yml", "utf8");
   for (const required of [
@@ -188,11 +170,18 @@ test("merge dispatch preserves bounded remediation clearance without weakening b
   assert.doesNotMatch(PULL_REQUEST_DISPATCH_INSTRUCTION, /mixed or caveated wording.*deferral.*fail-closed/iu);
 });
 
-test("only supervisor-authored exact-head markers consume retry attempts", () => {
-  const valid = request("2026-09-01T17:30:00Z");
-  const arbitrary = { user: { login: "attacker" }, body: `@claude exact ${HEAD}`, created_at: "2026-09-01T17:31:00Z" };
-  const forgedMarker = { ...valid, user: { login: "attacker" } };
-  assert.deepEqual(claudeRequests([arbitrary, forgedMarker, valid], HEAD), [valid]);
+test("native review wait anchor uses the earliest non-Claude check timestamp and fails closed without one", () => {
+  assert.equal(nativeReviewWaitStartedAt([
+    { name: "Claude Code Review", started_at: "2026-09-01T17:00:00Z" },
+    { name: "test", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+    { name: "guard", completed_at: "2026-09-01T17:52:00Z" },
+  ]), Date.parse("2026-09-01T17:50:00Z"));
+  assert.equal(nativeReviewWaitStartedAt([{ name: "Claude Code Review", started_at: "2026-09-01T17:00:00Z" }]), null);
+});
+
+test("the supervisor source contains no bot-authored hosted-Claude review trigger path", async () => {
+  const source = await readFile("scripts/autonomy-supervisor.js", "utf8");
+  assert.doesNotMatch(source, /@claude review|claude-request-|request-review/u);
 });
 
 test("one failed item cannot prevent later supervision", async () => {
@@ -667,13 +656,28 @@ test("stall reporting is owner-visible and retryable before blocking", async () 
   assert.deepEqual(posts.map(({ path }) => path), ["/issues/61/labels"]);
 });
 
-test("green PRs request Claude and retry on capped delays", () => {
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 1 });
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: [request(new Date(NOW - SECOND_REQUEST_DELAY_MS).toISOString())], headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 2 });
-  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 2)];
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: two, headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "request-review", attempt: 3 });
-  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 3)];
-  assert.deepEqual(nextPullRequestAction({ checkRuns: checks, comments: three, headSha: HEAD, nowMs: NOW, reviews: [] }), { kind: "dispatch", reason: "review-stalled" });
+test("green PRs passively await native Claude review and escalate only after the bounded wait", () => {
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: checks, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "wait", reason: "native-review-wait" },
+  );
+  const stalledChecks = checks.map((run) => ({
+    ...run,
+    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
+  }));
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: stalledChecks, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "dispatch", reason: "review-stalled" },
+  );
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: [{ name: "test", status: "completed", conclusion: "success" }],
+      headSha: HEAD,
+      nowMs: NOW,
+      reviews: [],
+    }),
+    { kind: "wait", reason: "native-review-wait-anchor-missing" },
+  );
 });
 
 test("checks and verdicts route to the Workspace Agent", () => {
@@ -698,17 +702,15 @@ test("event-triggered dispatch receives a ten-minute head start", () => {
 });
 
 // review-gate's own check-run fails whenever no accepted exact-head Claude verdict exists yet — the
-// normal starting state of every review cycle, not an edge case. Before this fix, checkState()
-// folding that into the PR's overall "failed" state made the generic checks-failed dispatch path
-// trigger before the bounded Claude-request retry sequence was ever reached, so attempts 2 and 3
-// were structurally unreachable. These tests pin the corrected behavior directly.
+// normal starting state while native Claude Code Review is still running. That failure must not
+// bypass the passive native-review wait or be misrouted as a generic checks-failed condition.
 const allGreenExceptReviewGate = [
-  { name: "test", status: "completed", conclusion: "success" },
-  { name: "guard", status: "completed", conclusion: "success" },
-  { name: "supervise", status: "completed", conclusion: "success" },
-  { name: "dispatch", status: "completed", conclusion: "success" },
-  { name: "security-gate", status: "completed", conclusion: "success" },
-  { name: "review-gate", status: "completed", conclusion: "failure", completed_at: "2026-09-01T17:30:00Z" },
+  { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "guard", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "supervise", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "dispatch", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "security-gate", status: "completed", conclusion: "success", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
+  { name: "review-gate", status: "completed", conclusion: "failure", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
 ];
 
 test("isOnlyReviewGateFailing distinguishes a review-gate-only failure from any other real failure", () => {
@@ -728,27 +730,17 @@ test("isOnlyReviewGateFailing distinguishes a review-gate-only failure from any 
   ]), false, "a passing review-gate is not a failure to special-case at all");
 });
 
-test("a review-gate-only failure reaches the bounded Claude-request retry sequence (1 -> 2 -> 3 -> stalled)", () => {
+test("a review-gate-only failure passively waits for native review, then escalates after fifteen minutes", () => {
   assert.deepEqual(
-    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW, reviews: [] }),
-    { kind: "request-review", attempt: 1 },
+    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "wait", reason: "native-review-wait" },
   );
+  const stalled = allGreenExceptReviewGate.map((run) => ({
+    ...run,
+    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
+  }));
   assert.deepEqual(
-    nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate,
-      comments: [request(new Date(NOW - SECOND_REQUEST_DELAY_MS).toISOString())],
-      headSha: HEAD, nowMs: NOW, reviews: [],
-    }),
-    { kind: "request-review", attempt: 2 },
-  );
-  const two = [request("2026-09-01T17:30:00Z"), request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 2)];
-  assert.deepEqual(
-    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: two, headSha: HEAD, nowMs: NOW, reviews: [] }),
-    { kind: "request-review", attempt: 3 },
-  );
-  const three = [...two, request(new Date(NOW - LATER_ACTION_DELAY_MS).toISOString(), 3)];
-  assert.deepEqual(
-    nextPullRequestAction({ checkRuns: allGreenExceptReviewGate, comments: three, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    nextPullRequestAction({ checkRuns: stalled, headSha: HEAD, nowMs: NOW, reviews: [] }),
     { kind: "dispatch", reason: "review-stalled" },
   );
 });
@@ -811,7 +803,7 @@ test("a stale prior-head acceptance does not clear the current head even when re
       checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
       reviews: [review(`ACCEPTED — exact head ${staleHead} — no surviving actionable findings.`, { commit_id: staleHead })],
     }),
-    { kind: "request-review", attempt: 1 },
+    { kind: "wait", reason: "native-review-wait" },
   );
 });
 
