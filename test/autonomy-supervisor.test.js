@@ -155,6 +155,27 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("LGTM"), review("blocking", { state: "CHANGES_REQUESTED", submitted_at: "2026-09-01T17:55:00Z" })], HEAD), "rejected");
   assert.equal(exactHeadClaudeVerdict([review("approved, but token handling should be fixed")], HEAD), "inconclusive");
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "inconclusive");
+
+  // Hosted Claude Code Review's actual remediation-recheck wording (observed on PR #101): a
+  // free-form summary, not either of this file's other two fixed-template shapes.
+  const hostedRemediationClearance = review(
+    `I reviewed the latest push and found no new bugs. The four timing issues still open from my last review look addressed in the code. This supervisor decides when PRs get blocked and when the agent is dispatched, and the timing logic has needed several rounds of fixes, so a human look would still be worthwhile.\n\n` +
+    `What was reviewed:\n- The missing-review branch: a pending "Claude Code Review" run now times out at 40 minutes from its \`started_at\`/\`created_at\`. If its start time is missing or invalid, it waits fail-closed.\n` +
+    `- Unresolved threads are no longer checked before the native review of a new head finishes. An inconclusive exact-head review now escalates to \`review-stalled\` 15 minutes after it was submitted.\n` +
+    `- \`pr.updated_at\` no longer feeds the wait anchor. Only check-run and review timestamps are used, so the supervisor's own label changes and comments can't reset the window. Nothing still references the removed exports or the \`comments\` parameter.\n\n` +
+    `<details>\n<summary>Extended reasoning...</summary>\n\nThe change touches scripts/autonomy-supervisor.js, its tests and its doc. It swaps the bot-authored \`@claude review\` retry path for a passive wait on the native Claude Code Review check run. No auth, crypto or data exposure surface is involved, but this governance automation controls the \`autonomy-blocked\` label and Workspace Agent dispatches. All earlier findings were resolved by the PR author, and the current code appears to address them. I deferred because earlier rounds of the timing and escalation logic surfaced several real bugs, and the anchor and timeout choices (15 and 40 minutes) are design decisions a maintainer should confirm.\n\n</details>\n\n` +
+    `<!-- bhfs:093877049085a05700ba0c94c2c2a980165f503fe1a1ee79 -->\n\n<!-- bhrv:4f8270d30873d9e6 -->`,
+  );
+  assert.equal(exactHeadClaudeVerdict([hostedRemediationClearance], HEAD), "accepted");
+
+  // The same hosted bot's "no new issues, but prior findings are still open" template must stay
+  // non-accepted: it says findings are still open, not resolved.
+  const hostedStillOpenFindings = review(
+    `**Code review found no new issues**\n\nNo new issues were found in this update; 4 findings from earlier reviews are still open above.\n\n` +
+    `**Still open from earlier reviews** (4):\n- 🔴 [\`scripts/autonomy-supervisor.js:528\`](#discussion_r4568566446) — one finding\n\n` +
+    `<!-- bughunter:open-items:v1 count=4 -->\n\n<!-- bhfs:9bb940663604b19a75d9fdbc30ca0d013c7d1c678b9abc04 -->\n\n<!-- bhrv:a301842553042390 -->`,
+  );
+  assert.equal(exactHeadClaudeVerdict([hostedStillOpenFindings], HEAD), "inconclusive");
 });
 
 test("merge dispatch preserves bounded remediation clearance without weakening blockers", () => {

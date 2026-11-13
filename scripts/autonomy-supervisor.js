@@ -43,11 +43,15 @@ const CLEAR_REREVIEW = new RegExp(
   `^\\s*(?:\\*\\*code review completed\\*\\*\\s*)?nothing new to post(?::\\s*everything this review found is already covered by existing comments on this pull request or didn['’]t merit a separate one)?[.!]?\\s*${TRAILING_REVIEW_MARKERS}\\s*$`,
   "iu",
 );
-const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
+const CLEAR_REMEDIATION_REREVIEW = /\b(?:automated review ran and found no new bugs(?: on this push)?|i reviewed (?:the latest|this) push and found no new bugs|no new (?:actionable )?(?:issues|errors|bugs|findings) (?:were )?(?:detected|found)(?: this round)?)\b/iu;
 const PRIOR_FINDINGS_FIXED = [
   /\b(?:fix(?:es|ed)?|address(?:es|ed)?|resolv(?:es|ed)?) all (?:the )?(?:previously[- ](?:reported|flagged) )?(?:\w+ )*(?:issues|errors|bugs|findings)\b/iu,
   /\ball (?:\w+ )*(?:issues|errors|bugs|findings) (?:are|were|have been) (?:now )?(?:fixed|addressed|resolved)\b/iu,
   /\ball (?:three|four|five|six|seven|eight|nine|ten) are now (?:fixed|addressed|resolved)\b/iu,
+  // Hosted Claude Code Review's own remediation-recheck phrasing: it refers back to the specific
+  // prior findings as still-open-until-now, then reports them resolved with "look addressed" rather
+  // than this file's other "all N are now fixed/addressed/resolved" templates.
+  /\b(?:issues|errors|bugs|findings) still open from (?:my|the) last review look(?:s)? addressed(?: in the code)?\b/iu,
 ];
 const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
