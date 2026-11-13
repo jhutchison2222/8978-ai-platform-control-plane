@@ -54,12 +54,21 @@ const PRIOR_FINDINGS_FIXED = [
   /\b(?:issues|errors|bugs|findings) still open from (?:my|the) last review look(?:s)? addressed(?: in the code)?\b/iu,
 ];
 const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
-// PRIOR_FINDINGS_FIXED's patterns are unanchored substring matches, so a negated or partial
-// remediation claim ("Not all earlier findings were resolved", "has not addressed all the
-// findings") contains the same "all ... findings (were) (fixed|addressed|resolved)" substring as a
-// genuine affirmative one. This disqualifies any remediation re-review whose own wording reports
-// the resolution as negated or partial, independent of which specific affirmative pattern matched.
-const NEGATED_OR_PARTIAL_REMEDIATION = /\b(?:not all|only some|none of|not every|not each)\b(?:\s+\w+){0,4}\s+(?:issues|errors|bugs|findings)\b/iu;
+// Any negation or partial-quantifier word, anywhere in the same clause as an affirmative
+// PRIOR_FINDINGS_FIXED match, disqualifies it. A fixed list of exact negator-plus-noun bigrams
+// (e.g. "not all ... findings") is not enough: the negator and the resolution claim can have a verb
+// or other words between them ("has not addressed all the findings"), the quantifier can omit the
+// noun entirely ("not all three are now resolved"), or use a different quantifier word ("only two
+// of the issues..."). Scoping the check to the same clause, rather than the whole review body,
+// keeps an unrelated negation elsewhere in a long review from disqualifying a genuine affirmative
+// claim in a different sentence.
+const REMEDIATION_NEGATION_OR_PARTIAL = /\b(?:not|never|only|none|few)\b|n['’]t\b/iu;
+function hasUnnegatedPriorFindingsFixed(body) {
+  const clauses = (body ?? "").split(/(?<=[.!?])\s+/u);
+  return clauses.some((clause) =>
+    PRIOR_FINDINGS_FIXED.some((pattern) => pattern.test(clause)) &&
+    !REMEDIATION_NEGATION_OR_PARTIAL.test(clause));
+}
 // Hosted Claude Code Review's remediation re-reviews sometimes still defer a substantive design or
 // governance decision to a human maintainer/owner, independent of whether any new bugs were found.
 // That deferral must not be treated as clearance — only the already-supported exception (deferring
@@ -183,9 +192,8 @@ function acceptedReview(review, previousAccepted = false) {
 
 function clearRemediationRereview(body) {
   return CLEAR_REMEDIATION_REREVIEW.test(body) &&
-    PRIOR_FINDINGS_FIXED.some((pattern) => pattern.test(body)) &&
+    hasUnnegatedPriorFindingsFixed(body) &&
     !SURVIVING_ACTIONABLE_CAVEAT.test(body) &&
-    !NEGATED_OR_PARTIAL_REMEDIATION.test(body) &&
     !NON_SECURITY_MAINTAINER_DEFERRAL.test(body);
 }
 

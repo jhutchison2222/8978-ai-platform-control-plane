@@ -194,6 +194,21 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
     exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. None of the prior findings were resolved.")], HEAD),
     "inconclusive",
   );
+  // A negator separated from the affirmative claim by an inserted verb, a quantifier with no
+  // noun, or a quantifier word outside the original fixed bigram list must all still disqualify —
+  // these must not be fixed one exact phrasing at a time.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. This push has not addressed all the findings from my last review.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Of the earlier findings, not all three are now resolved.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Only two of the issues still open from my last review look addressed.")], HEAD),
+    "inconclusive",
+  );
   // A clearly affirmative remediation statement, with no negation/partial qualifier and no
   // maintainer deferral, still qualifies.
   assert.equal(
