@@ -27,6 +27,7 @@ import {
   isOnlyReviewGateFailing,
   linkedPullRequestPausesTask,
   marker,
+  nativeReviewCheckState,
   nativeReviewWaitStartedAt,
   nextPullRequestAction,
   nextTaskDispatchAction,
@@ -172,13 +173,29 @@ test("merge dispatch preserves bounded remediation clearance without weakening b
   assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /eligible OWNER\/MEMBER\/COLLABORATOR manual trigger/iu);
 });
 
-test("native review wait anchor uses the earliest non-Claude check timestamp and fails closed without one", () => {
+test("native review state and wait anchor never stall an active native review", () => {
+  const pending = [
+    { id: 10, name: "Claude Code Review", status: "queued", started_at: "2026-09-01T17:40:00Z" },
+    { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:20:00Z", completed_at: "2026-09-01T17:30:00Z" },
+  ];
+  assert.deepEqual(nativeReviewCheckState(pending), { status: "pending", completedAt: null });
+  assert.deepEqual(
+    nextPullRequestAction({ checkRuns: pending, headSha: HEAD, nowMs: NOW, reviews: [] }),
+    { kind: "wait", reason: "native-review-in-progress" },
+  );
+
+  const completed = [
+    { id: 11, name: "Claude Code Review", status: "completed", started_at: "2026-09-01T17:40:00Z", completed_at: "2026-09-01T17:50:00Z" },
+    { name: "test", status: "completed", conclusion: "success", started_at: "2026-09-01T17:20:00Z", completed_at: "2026-09-01T17:30:00Z" },
+  ];
+  assert.deepEqual(nativeReviewCheckState(completed), { status: "completed", completedAt: Date.parse("2026-09-01T17:50:00Z") });
+  assert.equal(nativeReviewWaitStartedAt(completed), Date.parse("2026-09-01T17:50:00Z"));
+
   assert.equal(nativeReviewWaitStartedAt([
-    { name: "Claude Code Review", started_at: "2026-09-01T17:00:00Z" },
-    { name: "test", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
-    { name: "guard", started_at: "invalid", completed_at: "2026-09-01T17:52:00Z" },
-  ]), Date.parse("2026-09-01T17:50:00Z"));
-  assert.equal(nativeReviewWaitStartedAt([{ name: "Claude Code Review", started_at: "2026-09-01T17:00:00Z" }]), null);
+    { name: "test", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:40:00Z" },
+    { name: "guard", status: "completed", conclusion: "success", completed_at: "2026-09-01T17:45:00Z" },
+  ], "2026-09-01T17:50:00Z"), Date.parse("2026-09-01T17:50:00Z"));
+  assert.equal(nativeReviewWaitStartedAt([], null), null);
 });
 
 test("the supervisor source contains no bot-authored hosted-Claude review trigger path", async () => {
@@ -665,7 +682,8 @@ test("green PRs passively await native Claude review and escalate only after the
   );
   const stalledChecks = checks.map((run) => ({
     ...run,
-    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
+    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS - 60_000).toISOString(),
+    completed_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
   }));
   assert.deepEqual(
     nextPullRequestAction({ checkRuns: stalledChecks, headSha: HEAD, nowMs: NOW, reviews: [] }),
@@ -739,7 +757,8 @@ test("a review-gate-only failure passively waits for native review, then escalat
   );
   const stalled = allGreenExceptReviewGate.map((run) => ({
     ...run,
-    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
+    started_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS - 60_000).toISOString(),
+    completed_at: new Date(NOW - NATIVE_REVIEW_WAIT_MS).toISOString(),
   }));
   assert.deepEqual(
     nextPullRequestAction({ checkRuns: stalled, headSha: HEAD, nowMs: NOW, reviews: [] }),
@@ -784,19 +803,26 @@ test("an aged real check failure alongside a failing review-gate still uses the 
   );
 });
 
-test("a rejected exact-head verdict and unresolved review threads remain fail-closed through the same review-gate-only fall-through", () => {
+test("rejected, inconclusive, and unresolved exact-head reviews route to remediation instead of stall", () => {
   assert.deepEqual(
     nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
       reviews: [review(`REJECTED — exact head ${HEAD}`)],
     }),
     { kind: "dispatch", reason: "review-rejected" },
   );
   assert.deepEqual(
     nextPullRequestAction({
-      checkRuns: allGreenExceptReviewGate, comments: [], headSha: HEAD, nowMs: NOW,
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
+      reviews: [review("Findings marked optional suggestions and need no follow-up push.")],
+    }),
+    { kind: "dispatch", reason: "review-rejected" },
+  );
+  assert.deepEqual(
+    nextPullRequestAction({
+      checkRuns: allGreenExceptReviewGate, headSha: HEAD, nowMs: NOW,
       reviewThreads: [{ id: "unresolved", isResolved: false }],
-      reviews: [review(`ACCEPTED — exact head ${HEAD} — no surviving actionable findings.`)],
+      reviews: [],
     }),
     { kind: "dispatch", reason: "review-rejected" },
   );
