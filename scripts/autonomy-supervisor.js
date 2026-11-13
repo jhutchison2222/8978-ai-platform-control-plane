@@ -704,7 +704,7 @@ export function claudeReviewRequestBody({ attempt, headSha }) {
     "@claude review",
     "",
     marker(`claude-request-${attempt}`, headSha),
-    `Automated review request for exact head \`${headSha}\`. This is attempt ${attempt} of ${MAX_CLAUDE_REQUESTS}.`,
+    `Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${attempt} of ${MAX_CLAUDE_REQUESTS}.`,
   ].join("\n");
 }
 
