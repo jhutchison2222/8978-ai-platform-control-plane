@@ -11,7 +11,7 @@ export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 export const SECURITY_STOP_LABEL = "autonomy-security-stop";
 export const SECURITY_STOP_ISSUE_NUMBER = 66;
-export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. After actionable findings are remediated, a genuine exact-head re-review may clear when it expressly states both that no new issues, errors, bugs, or findings were found and that all prior findings were fixed, even if it recommends or defers to optional human review solely because the change is security-sensitive. Require green exact-head checks and no unresolved review threads. Treat stale reviews, rejection, surviving actionable or blocking risks, required correction, requested changes, do-not-merge language, and owner security decisions as fail-closed. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.";
+export const PULL_REQUEST_DISPATCH_INSTRUCTION = "Retrieve fresh GitHub evidence. Continue autonomously within the owner's standing code-only authorization. A genuine exact-head initial Claude review may provide technical clearance through explicit acceptance/approval or unambiguous whole-review no-issues/no-errors wording. A genuine exact-head re-review may also clear with the canonical 'Nothing new to post' response when an earlier genuine Claude review exists. After actionable findings are remediated, a genuine exact-head re-review may clear when it expressly states both that no new issues, errors, bugs, or findings were found and that all prior findings were fixed, even if it recommends or defers to optional human review solely because the change is security-sensitive. Require green exact-head checks and no unresolved review threads. Treat stale reviews, rejection, surviving actionable or blocking risks, required correction, requested changes, do-not-merge language, and owner security decisions as fail-closed. If dispatched for `review-stalled`, do not post a bot-authored `@claude review`; report the missing or inconclusive exact-head review and request an eligible OWNER/MEMBER/COLLABORATOR manual trigger only if native review did not recover. Never perform Cloudflare deployment, production, customer, secret, destructive, or permission-expanding operations.";
 
 export const SENSITIVE_AUTOMATION_PATHS = [
   ".github/workflows/autonomy-supervisor.yml",
@@ -463,8 +463,13 @@ export async function runAllIsolated(items, handler, onError = console.error) {
 export function nativeReviewWaitStartedAt(checkRuns) {
   const timestamps = checkRuns
     .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
-    .map((run) => Date.parse(run.started_at ?? run.completed_at ?? ""))
-    .filter(Number.isFinite);
+    .map((run) => {
+      const startedAt = Date.parse(run.started_at ?? "");
+      if (Number.isFinite(startedAt)) return startedAt;
+      const completedAt = Date.parse(run.completed_at ?? "");
+      return Number.isFinite(completedAt) ? completedAt : null;
+    })
+    .filter((timestamp) => timestamp !== null);
   return timestamps.length > 0 ? Math.min(...timestamps) : null;
 }
 
