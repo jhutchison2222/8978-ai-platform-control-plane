@@ -460,20 +460,47 @@ export async function runAllIsolated(items, handler, onError = console.error) {
   return errors;
 }
 
-export function nativeReviewWaitStartedAt(checkRuns) {
+export function nativeReviewCheckState(checkRuns) {
+  const runs = checkRuns
+    .filter((run) => run.name === "Claude Code Review")
+    .sort((left, right) => {
+      const leftStarted = Date.parse(left.started_at ?? left.created_at ?? "");
+      const rightStarted = Date.parse(right.started_at ?? right.created_at ?? "");
+      const leftTime = Number.isFinite(leftStarted) ? leftStarted : 0;
+      const rightTime = Number.isFinite(rightStarted) ? rightStarted : 0;
+      if (leftTime !== rightTime) return leftTime - rightTime;
+      return Number(left.id ?? 0) - Number(right.id ?? 0);
+    });
+  const latest = runs.at(-1);
+  if (!latest) return { status: "missing", completedAt: null };
+  if (latest.status !== "completed") return { status: "pending", completedAt: null };
+  const completedAt = Date.parse(latest.completed_at ?? "");
+  if (Number.isFinite(completedAt)) return { status: "completed", completedAt };
+  const startedAt = Date.parse(latest.started_at ?? "");
+  return { status: "completed", completedAt: Number.isFinite(startedAt) ? startedAt : null };
+}
+
+export function nativeReviewWaitStartedAt(checkRuns, fallbackAt = null) {
+  const nativeReview = nativeReviewCheckState(checkRuns);
+  if (nativeReview.status === "completed" && nativeReview.completedAt !== null) {
+    return nativeReview.completedAt;
+  }
+
   const timestamps = checkRuns
     .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
     .map((run) => {
-      const startedAt = Date.parse(run.started_at ?? "");
-      if (Number.isFinite(startedAt)) return startedAt;
       const completedAt = Date.parse(run.completed_at ?? "");
-      return Number.isFinite(completedAt) ? completedAt : null;
+      if (Number.isFinite(completedAt)) return completedAt;
+      const startedAt = Date.parse(run.started_at ?? "");
+      return Number.isFinite(startedAt) ? startedAt : null;
     })
     .filter((timestamp) => timestamp !== null);
-  return timestamps.length > 0 ? Math.min(...timestamps) : null;
+  const fallback = Date.parse(fallbackAt ?? "");
+  if (Number.isFinite(fallback)) timestamps.push(fallback);
+  return timestamps.length > 0 ? Math.max(...timestamps) : null;
 }
 
-export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads = [], reviews }) {
+export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads = [], reviews, reviewWaitFallbackAt = null }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed" && !isOnlyReviewGateFailing(checkRuns)) {
@@ -486,10 +513,9 @@ export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads
   }
 
   const verdict = exactHeadClaudeVerdict(reviews, headSha);
+  const hasUnresolvedReviewThread = reviewThreads.some((thread) => !thread.isResolved);
   if (verdict === "accepted") {
-    if (reviewThreads.some((thread) => !thread.isResolved)) {
-      return { kind: "dispatch", reason: "review-rejected" };
-    }
+    if (hasUnresolvedReviewThread) return { kind: "dispatch", reason: "review-rejected" };
     const latestAcceptance = Math.max(...reviews
       .filter((review) => review.user?.id === CLAUDE_USER_ID && review.user?.login === CLAUDE_LOGIN && review.commit_id === headSha)
       .map((review) => Date.parse(review.submitted_at)));
@@ -497,9 +523,15 @@ export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads
       ? { kind: "dispatch", reason: "merge-ready" }
       : { kind: "wait", reason: "event-dispatch-fallback-delay" };
   }
-  if (verdict === "rejected") return { kind: "dispatch", reason: "review-rejected" };
+  if (verdict === "rejected" || verdict === "inconclusive" || hasUnresolvedReviewThread) {
+    return { kind: "dispatch", reason: "review-rejected" };
+  }
 
-  const reviewWaitStartedAt = nativeReviewWaitStartedAt(checkRuns);
+  const nativeReview = nativeReviewCheckState(checkRuns);
+  if (nativeReview.status === "pending") {
+    return { kind: "wait", reason: "native-review-in-progress" };
+  }
+  const reviewWaitStartedAt = nativeReviewWaitStartedAt(checkRuns, reviewWaitFallbackAt);
   if (reviewWaitStartedAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
   return nowMs - reviewWaitStartedAt >= NATIVE_REVIEW_WAIT_MS
     ? { kind: "dispatch", reason: "review-stalled" }
@@ -723,7 +755,14 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     api.getAll(`/issues/${pr.number}/comments`),
     api.reviewThreads(pr.number),
   ]);
-  const action = nextPullRequestAction({ checkRuns: checkData, headSha, nowMs, reviewThreads, reviews });
+  const action = nextPullRequestAction({
+    checkRuns: checkData,
+    headSha,
+    nowMs,
+    reviewThreads,
+    reviews,
+    reviewWaitFallbackAt: pr.updated_at,
+  });
   const labelAction = blockedLabelAction(pr, action);
   if (labelAction?.kind === "add") {
     await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
