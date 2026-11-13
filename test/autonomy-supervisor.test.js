@@ -157,7 +157,9 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
   assert.equal(exactHeadClaudeVerdict([review("LGTM", { state: "DISMISSED" })], HEAD), "inconclusive");
 
   // Hosted Claude Code Review's actual remediation-recheck wording (observed on PR #101): a
-  // free-form summary, not either of this file's other two fixed-template shapes.
+  // free-form summary, not either of this file's other two fixed-template shapes. It also still
+  // defers the timing/timeout design choices to a maintainer, so despite its affirmative
+  // "look addressed" remediation language, it must stay inconclusive rather than clear the gate.
   const hostedRemediationClearance = review(
     `I reviewed the latest push and found no new bugs. The four timing issues still open from my last review look addressed in the code. This supervisor decides when PRs get blocked and when the agent is dispatched, and the timing logic has needed several rounds of fixes, so a human look would still be worthwhile.\n\n` +
     `What was reviewed:\n- The missing-review branch: a pending "Claude Code Review" run now times out at 40 minutes from its \`started_at\`/\`created_at\`. If its start time is missing or invalid, it waits fail-closed.\n` +
@@ -166,7 +168,7 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
     `<details>\n<summary>Extended reasoning...</summary>\n\nThe change touches scripts/autonomy-supervisor.js, its tests and its doc. It swaps the bot-authored \`@claude review\` retry path for a passive wait on the native Claude Code Review check run. No auth, crypto or data exposure surface is involved, but this governance automation controls the \`autonomy-blocked\` label and Workspace Agent dispatches. All earlier findings were resolved by the PR author, and the current code appears to address them. I deferred because earlier rounds of the timing and escalation logic surfaced several real bugs, and the anchor and timeout choices (15 and 40 minutes) are design decisions a maintainer should confirm.\n\n</details>\n\n` +
     `<!-- bhfs:093877049085a05700ba0c94c2c2a980165f503fe1a1ee79 -->\n\n<!-- bhrv:4f8270d30873d9e6 -->`,
   );
-  assert.equal(exactHeadClaudeVerdict([hostedRemediationClearance], HEAD), "accepted");
+  assert.equal(exactHeadClaudeVerdict([hostedRemediationClearance], HEAD), "inconclusive");
 
   // The same hosted bot's "no new issues, but prior findings are still open" template must stay
   // non-accepted: it says findings are still open, not resolved.
@@ -176,6 +178,40 @@ test("exact-head Claude verdicts accept bounded initial and re-review clearance"
     `<!-- bughunter:open-items:v1 count=4 -->\n\n<!-- bhfs:9bb940663604b19a75d9fdbc30ca0d013c7d1c678b9abc04 -->\n\n<!-- bhrv:a301842553042390 -->`,
   );
   assert.equal(exactHeadClaudeVerdict([hostedStillOpenFindings], HEAD), "inconclusive");
+
+  // Negated or partial remediation language must never count as clearance, even though the
+  // unanchored "all ... findings (were) (fixed|addressed|resolved)" pattern would otherwise match
+  // as a trailing substring of each of these negated/partial statements.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Not all earlier findings were resolved.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. Only some prior findings were addressed.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. None of the prior findings were resolved.")], HEAD),
+    "inconclusive",
+  );
+  // A clearly affirmative remediation statement, with no negation/partial qualifier and no
+  // maintainer deferral, still qualifies.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. All earlier findings were resolved.")], HEAD),
+    "accepted",
+  );
+
+  // A remediation review that still defers a substantive design/governance decision to a
+  // maintainer must not be accepted, even when it also reports no new bugs and prior findings
+  // fixed — unless the deferral is solely the existing security-sensitive exception.
+  assert.equal(
+    exactHeadClaudeVerdict([review("I reviewed the latest push and found no new bugs. All earlier findings were resolved, but this is a design decision a maintainer should confirm.")], HEAD),
+    "inconclusive",
+  );
+  assert.equal(
+    exactHeadClaudeVerdict([review("Automated review ran and found no new bugs on this push. I deferred because the approach itself needs a maintainer's sign-off, even though all previously flagged issues are now fixed.")], HEAD),
+    "inconclusive",
+  );
 });
 
 test("merge dispatch preserves bounded remediation clearance without weakening blockers", () => {

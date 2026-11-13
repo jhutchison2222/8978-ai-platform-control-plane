@@ -54,6 +54,19 @@ const PRIOR_FINDINGS_FIXED = [
   /\b(?:issues|errors|bugs|findings) still open from (?:my|the) last review look(?:s)? addressed(?: in the code)?\b/iu,
 ];
 const SURVIVING_ACTIONABLE_CAVEAT = /\b(?:do not merge|requires? correction|changes requested|(?:must|should|needs? to) (?:be )?(?:fixed|addressed|resolved|corrected)|(?:blocking|actionable|moderate|high|critical) (?:risk|issue|error|bug|finding) remains?)\b/iu;
+// PRIOR_FINDINGS_FIXED's patterns are unanchored substring matches, so a negated or partial
+// remediation claim ("Not all earlier findings were resolved", "has not addressed all the
+// findings") contains the same "all ... findings (were) (fixed|addressed|resolved)" substring as a
+// genuine affirmative one. This disqualifies any remediation re-review whose own wording reports
+// the resolution as negated or partial, independent of which specific affirmative pattern matched.
+const NEGATED_OR_PARTIAL_REMEDIATION = /\b(?:not all|only some|none of|not every|not each)\b(?:\s+\w+){0,4}\s+(?:issues|errors|bugs|findings)\b/iu;
+// Hosted Claude Code Review's remediation re-reviews sometimes still defer a substantive design or
+// governance decision to a human maintainer/owner, independent of whether any new bugs were found.
+// That deferral must not be treated as clearance — only the already-supported exception (deferring
+// solely because the change is security-sensitive, per PULL_REQUEST_DISPATCH_INSTRUCTION) may still
+// qualify, and this pattern is lexically distinct from that exception's own wording so it never
+// matches it.
+const NON_SECURITY_MAINTAINER_DEFERRAL = /\b(?:i deferred because|maintainer should confirm)\b/iu;
 const MARKER_PREFIX = "<!-- autonomy-supervisor:";
 
 const WORKSPACE_AGENT_CREDENTIAL = /CHATGPT_WORKSPACE_AGENT_(?:ID|TOKEN)|AGENT_(?:ID|TOKEN)/u;
@@ -171,7 +184,9 @@ function acceptedReview(review, previousAccepted = false) {
 function clearRemediationRereview(body) {
   return CLEAR_REMEDIATION_REREVIEW.test(body) &&
     PRIOR_FINDINGS_FIXED.some((pattern) => pattern.test(body)) &&
-    !SURVIVING_ACTIONABLE_CAVEAT.test(body);
+    !SURVIVING_ACTIONABLE_CAVEAT.test(body) &&
+    !NEGATED_OR_PARTIAL_REMEDIATION.test(body) &&
+    !NON_SECURITY_MAINTAINER_DEFERRAL.test(body);
 }
 
 export function exactHeadClaudeVerdict(reviews, headSha) {
