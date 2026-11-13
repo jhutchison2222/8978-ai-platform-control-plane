@@ -168,13 +168,15 @@ test("merge dispatch preserves bounded remediation clearance without weakening b
     "owner security decisions",
   ]) assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, new RegExp(blocker, "iu"));
   assert.doesNotMatch(PULL_REQUEST_DISPATCH_INSTRUCTION, /mixed or caveated wording.*deferral.*fail-closed/iu);
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /review-stalled.*do not post a bot-authored.*@claude review/iu);
+  assert.match(PULL_REQUEST_DISPATCH_INSTRUCTION, /eligible OWNER\/MEMBER\/COLLABORATOR manual trigger/iu);
 });
 
 test("native review wait anchor uses the earliest non-Claude check timestamp and fails closed without one", () => {
   assert.equal(nativeReviewWaitStartedAt([
     { name: "Claude Code Review", started_at: "2026-09-01T17:00:00Z" },
     { name: "test", started_at: "2026-09-01T17:50:00Z", completed_at: "2026-09-01T17:55:00Z" },
-    { name: "guard", completed_at: "2026-09-01T17:52:00Z" },
+    { name: "guard", started_at: "invalid", completed_at: "2026-09-01T17:52:00Z" },
   ]), Date.parse("2026-09-01T17:50:00Z"));
   assert.equal(nativeReviewWaitStartedAt([{ name: "Claude Code Review", started_at: "2026-09-01T17:00:00Z" }]), null);
 });
