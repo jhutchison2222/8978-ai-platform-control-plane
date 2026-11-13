@@ -5,10 +5,8 @@ import { pathToFileURL } from "node:url";
 export const CLAUDE_LOGIN = "claude[bot]";
 export const CLAUDE_USER_ID = 209825114;
 export const SUPERVISOR_LOGIN = "github-actions[bot]";
-export const MAX_CLAUDE_REQUESTS = 3;
 export const MAX_TASK_DISPATCHES = 3;
-export const SECOND_REQUEST_DELAY_MS = 10 * 60 * 1000;
-export const LATER_ACTION_DELAY_MS = 15 * 60 * 1000;
+export const NATIVE_REVIEW_WAIT_MS = 15 * 60 * 1000;
 export const EVENT_DISPATCH_FALLBACK_DELAY_MS = 10 * 60 * 1000;
 export const TASK_DISPATCH_RETRY_DELAY_MS = 15 * 60 * 1000;
 export const SECURITY_STOP_LABEL = "autonomy-security-stop";
@@ -449,14 +447,6 @@ export function nextTaskDispatchAction({ comments, nowMs }) {
   return { kind: "block" };
 }
 
-export function claudeRequests(comments, headSha) {
-  const expectedPrefix = `${MARKER_PREFIX}claude-request-`;
-  return comments
-    .filter((comment) => comment.user?.login === SUPERVISOR_LOGIN && typeof comment.body === "string" &&
-      comment.body.includes(expectedPrefix) && comment.body.includes(`:${headSha} -->`) && comment.body.includes("@claude"))
-    .sort((left, right) => Date.parse(left.created_at) - Date.parse(right.created_at));
-}
-
 export async function runAllIsolated(items, handler, onError = console.error) {
   const errors = [];
   for (const item of items) {
@@ -470,7 +460,15 @@ export async function runAllIsolated(items, handler, onError = console.error) {
   return errors;
 }
 
-export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, reviewThreads = [], reviews }) {
+export function nativeReviewWaitStartedAt(checkRuns) {
+  const timestamps = checkRuns
+    .filter((run) => !NON_CI_CHECK_NAMES.has(run.name))
+    .map((run) => Date.parse(run.started_at ?? run.completed_at ?? ""))
+    .filter(Number.isFinite);
+  return timestamps.length > 0 ? Math.min(...timestamps) : null;
+}
+
+export function nextPullRequestAction({ checkRuns, headSha, nowMs, reviewThreads = [], reviews }) {
   const checks = checkState(checkRuns);
   if (checks === "pending") return { kind: "wait", reason: "checks-pending" };
   if (checks === "failed" && !isOnlyReviewGateFailing(checkRuns)) {
@@ -496,19 +494,11 @@ export function nextPullRequestAction({ checkRuns, comments, headSha, nowMs, rev
   }
   if (verdict === "rejected") return { kind: "dispatch", reason: "review-rejected" };
 
-  const requests = claudeRequests(comments, headSha);
-  if (requests.length === 0) return { kind: "request-review", attempt: 1 };
-
-  const elapsed = nowMs - Date.parse(requests.at(-1).created_at);
-  if (requests.length < MAX_CLAUDE_REQUESTS) {
-    const delay = requests.length === 1 ? SECOND_REQUEST_DELAY_MS : LATER_ACTION_DELAY_MS;
-    return elapsed >= delay
-      ? { kind: "request-review", attempt: requests.length + 1 }
-      : { kind: "wait", reason: "review-retry-delay" };
-  }
-  return elapsed >= LATER_ACTION_DELAY_MS
+  const reviewWaitStartedAt = nativeReviewWaitStartedAt(checkRuns);
+  if (reviewWaitStartedAt === null) return { kind: "wait", reason: "native-review-wait-anchor-missing" };
+  return nowMs - reviewWaitStartedAt >= NATIVE_REVIEW_WAIT_MS
     ? { kind: "dispatch", reason: "review-stalled" }
-    : { kind: "wait", reason: "review-stall-delay" };
+    : { kind: "wait", reason: "native-review-wait" };
 }
 
 export function marker(reason, headSha) {
@@ -699,15 +689,6 @@ function idempotencyKey(repository, subject, headSha, reason) {
   return `autonomy-${createHash("sha256").update(`${repository}:${subject}:${headSha}:${reason}`).digest("hex")}`;
 }
 
-export function claudeReviewRequestBody({ attempt, headSha }) {
-  return [
-    "@claude review",
-    "",
-    marker(`claude-request-${attempt}`, headSha),
-    `Review exact head \`${headSha}\`. Return exactly one explicit final verdict: \`ACCEPTED — exact head ${headSha} — no surviving actionable findings.\`, or \`REJECTED — exact head ${headSha}\` followed by every surviving actionable finding. This is automated attempt ${attempt} of ${MAX_CLAUDE_REQUESTS}.`,
-  ].join("\n");
-}
-
 async function dispatchForPullRequest({ api, agent, comments, pr, reason }) {
   const headSha = pr.head.sha;
   if (hasMarker(comments, `dispatch-${reason}`, headSha)) return;
@@ -737,7 +718,7 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     api.getAll(`/issues/${pr.number}/comments`),
     api.reviewThreads(pr.number),
   ]);
-  const action = nextPullRequestAction({ checkRuns: checkData, comments, headSha, nowMs, reviewThreads, reviews });
+  const action = nextPullRequestAction({ checkRuns: checkData, headSha, nowMs, reviewThreads, reviews });
   const labelAction = blockedLabelAction(pr, action);
   if (labelAction?.kind === "add") {
     await api.post(`/issues/${pr.number}/labels`, { labels: ["autonomy-blocked"] });
@@ -745,12 +726,6 @@ async function supervisePullRequest({ api, agent, nowMs, pr }) {
     await api.delete(`/issues/${pr.number}/labels/${encodeURIComponent(labelAction.name)}`);
   }
   if (action.kind === "wait") return;
-  if (action.kind === "request-review") {
-    await api.post(`/issues/${pr.number}/comments`, {
-      body: claudeReviewRequestBody({ attempt: action.attempt, headSha }),
-    });
-    return;
-  }
   await dispatchForPullRequest({ api, agent, comments, pr, reason: action.reason });
 }
 
